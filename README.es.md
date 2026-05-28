@@ -52,6 +52,11 @@ Primera sesión recomendada dentro de este repositorio:
 
 El repositorio público de AOI arranca limpio: los registries de tareas están vacíos, no hay sandboxes activas y la memoria versionada todavía no tiene ningún workspace activo registrado.
 
+Artefactos de release y validación:
+
+- [docs/releases/v0.1.0.es.md](docs/releases/v0.1.0.es.md) — notas de la primera baseline pública de la plantilla.
+- [docs/verification/external-smoke-plan.es.md](docs/verification/external-smoke-plan.es.md) — checklist externa para validar AOI como repo y bootstrapper.
+
 ## Qué Se Instala
 
 ### Herramientas (en orden de prioridad)

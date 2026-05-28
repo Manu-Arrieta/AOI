@@ -49,6 +49,11 @@ Recommended first session inside this repository:
 
 The published AOI repository starts clean: task registries are empty, no sandboxes are active, and versioned memory has no active workspace registered yet.
 
+Release and validation artifacts:
+
+- [docs/releases/v0.1.0.md](docs/releases/v0.1.0.md) — first public template baseline notes.
+- [docs/verification/external-smoke-plan.md](docs/verification/external-smoke-plan.md) — external validation checklist for AOI as repo and bootstrapper.
+
 ## What Gets Installed
 
 ### Tools (in priority order)
