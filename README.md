@@ -23,6 +23,30 @@ Then in VS Code Copilot Chat:
 
 ```
 
+## Onboarding
+
+Use AOI in one of two modes:
+
+1. **Install AOI into another project**
+	Run `setup.sh` or `setup.ps1` and point it at the target repository you want to bootstrap with the AOI stack.
+2. **Work on AOI itself**
+	Open this repository, install the workspace dependencies, and use the internal dashboard plus the SDD prompts to evolve the template.
+
+Minimum prerequisites before the first run:
+
+- Node `>=20.19.0`
+- `corepack` or `pnpm >=11.3.0`
+- `icm`
+- GitHub Copilot in VS Code
+
+Recommended first session inside this repository:
+
+1. Open the repository in VS Code.
+2. Run `pnpm install` or `corepack pnpm install`.
+3. Start the dashboard with `pnpm dev:dashboard`.
+4. Open Copilot Chat and run `/speckit.constitution` if you are shaping a new downstream installation.
+5. Start the first workflow with `/sdd-new`.
+
 ## What Gets Installed
 
 ### Tools (in priority order)
