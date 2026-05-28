@@ -1,0 +1,20 @@
+{
+  "versionId": __VERSION_ID_JSON__,
+  "workspace": __WORKSPACE_JSON__,
+  "status": "candidate",
+  "previousVersionId": __PREVIOUS_VERSION_ID_JSON__,
+  "sourceWorkspace": __SOURCE_WORKSPACE_JSON__,
+  "sourceVersionId": __SOURCE_VERSION_ID_JSON__,
+  "sourceTransport": __SOURCE_TRANSPORT_JSON__,
+  "selectedScopes": __SELECTED_SCOPES_JSON__,
+  "ownerContext": __OWNER_CONTEXT_JSON__,
+  "decisions": {
+    "retain": __RETAIN_JSON__,
+    "complement": __COMPLEMENT_JSON__,
+    "discard": __DISCARD_JSON__
+  },
+  "bundleMetadata": __BUNDLE_METADATA_JSON__,
+  "dynamicConstitutionPath": __DYNAMIC_CONSTITUTION_PATH_JSON__,
+  "createdAt": __CREATED_AT_JSON__,
+  "activatedAt": __ACTIVATED_AT_JSON__
+}

@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "icm": {
+      "type": "stdio",
+      "command": "icm",
+      "args": ["serve", "--compact"]
+    }
+  }
+}

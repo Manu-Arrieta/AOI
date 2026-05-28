@@ -1,0 +1,24 @@
+{
+  "versionId": "fixture-v1",
+  "workspace": "fixture-workspace",
+  "status": "superseded",
+  "previousVersionId": null,
+  "sourceWorkspace": "fixture-workspace",
+  "sourceVersionId": null,
+  "sourceTransport": "workspace-sync",
+  "selectedScopes": [
+    "memories"
+  ],
+  "ownerContext": "Fixture baseline",
+  "decisions": {
+    "retain": [
+      "baseline"
+    ],
+    "complement": [],
+    "discard": []
+  },
+  "bundleMetadata": null,
+  "dynamicConstitutionPath": ".specify/memory/versions/constitutions/fixture-workspace/fixture-v1.md",
+  "createdAt": "2026-05-27T00:00:00.000Z",
+  "activatedAt": "2026-05-27T00:00:00.000Z"
+}

@@ -1,0 +1,26 @@
+{
+  "metadata": {
+    "sourceWorkspace": "fixture-source",
+    "sourceVersionId": "source-v8",
+    "exportedAt": "2026-05-28T00:00:00.000Z",
+    "formatVersion": "1",
+    "includedScopes": [
+      "memories"
+    ],
+    "omittedScopes": [
+      "memories"
+    ],
+    "integrity": {
+      "algorithm": "sha256",
+      "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  },
+  "payload": {
+    "memories": [
+      {
+        "topic": "fixture-topic",
+        "content": "invalid overlap"
+      }
+    ]
+  }
+}

@@ -1,0 +1,117 @@
+---
+description: "Initialize a project's agentic infrastructure: ICM bootstrap, constitution, directories, skill registry."
+mode: "agent"
+---
+
+# /init — Project Initialization
+
+Bootstrap the agentic infrastructure for a new project.
+
+## Instructions
+
+You are the @supervisor. Execute these steps IN ORDER.
+
+### Step 1: Detect Workspace
+
+```bash
+WORKSPACE=$(basename "$(git remote get-url origin 2>/dev/null | sed 's/.git$//')" 2>/dev/null || basename "$PWD")
+```
+
+Confirm with the user: "Detected workspace: `{WORKSPACE}`. Is this correct?"
+
+### Step 2: ICM Bootstrap
+
+Initialize project memory:
+
+```
+icm_memory_store(
+  topic: "{WORKSPACE}-context",
+  importance: "critical",
+  content: "## Project: {WORKSPACE}\n**Stack**: {detected or user-provided}\n**Architecture**: {detected or TBD}\n**Team**: {ask user}\n**Conventions**: {detected from constitution or TBD}\n**ICM Protocol**: v3\n**SDD Version**: scaffold-based"
+)
+```
+
+Create the architecture memoir:
+
+```
+icm learn
+```
+
+Or via MCP:
+
+```
+icm_memoir_create(name: "{WORKSPACE}-architecture", description: "Architecture knowledge graph for {WORKSPACE}")
+```
+
+### Step 3: Verify Directory Structure
+
+Ensure these directories exist (create if missing):
+
+```
+.tasks/              ← Task registry + feature directories
+.tasks/registry.md   ← Feature/task tracking
+.sandboxes/          ← Optional sandbox environments
+.sandboxes/registry.md
+.atl/                ← Agent/skill discovery index
+.atl/skill-registry.md
+```
+
+### Step 4: Verify spec-kit Integration
+
+```bash
+specify integration list
+```
+
+If NO integration is installed:
+
+```bash
+specify init . --ai copilot
+specify init . --ai agy --ai-skills
+```
+
+Verify the `/speckit.*` commands are available.
+
+### Step 5: Verify Constitution
+
+Check `.specify/memory/constitution.md` exists:
+
+- If exists → read and summarize key constraints
+- If missing → warn: "No constitution found. Run `specify constitution init` or create `.specify/memory/constitution.md` manually."
+
+### Step 6: Verify Agent Files
+
+Check that all required agent files exist in both tools:
+
+| Agent | Copilot | Antigravity |
+|-------|---------|-------------|
+| Supervisor | `.github/agents/supervisor.agent.md` | `.agent/skills/agents/supervisor.md` |
+| Functional Analyst | `.github/agents/functional-analyst.agent.md` | `.agent/skills/agents/functional-analyst.md` |
+| Solution Architect | `.github/agents/solution-architect.agent.md` | `.agent/skills/agents/solution-architect.md` |
+| Frontend Developer | `.github/agents/frontend-developer.agent.md` | `.agent/skills/agents/frontend-developer.md` |
+| UX Designer | `.github/agents/ux-designer.agent.md` | `.agent/skills/agents/ux-designer.md` |
+| Documentation Analyst | `.github/agents/documentation-analyst.agent.md` | `.agent/skills/agents/documentation-analyst.md` |
+| Integration Specialist | `.github/agents/integration-specialist.agent.md` | `.agent/skills/agents/integration-specialist.md` |
+| Project Expert | `.github/agents/project-expert.agent.md` | `.agent/skills/agents/project-expert.md` |
+
+Report any missing agents.
+
+### Step 7: Populate Skill Registry
+
+Read `.atl/skill-registry.md` and update the `{WORKSPACE}` placeholders with the actual workspace name.
+
+### Step 8: Summary
+
+Present a checklist:
+
+```
+✅ Workspace: {name}
+✅ ICM: bootstrapped with {WORKSPACE}-context
+✅ Memoir: {WORKSPACE}-architecture created
+✅ Directories: .tasks/ .sandboxes/ .atl/
+✅ spec-kit: integration installed ({copilot|agy|both})
+✅ Constitution: {found|missing}
+✅ Agents: {N}/8 present
+✅ Skill Registry: populated
+```
+
+Suggest next action: "Project is ready. Create your first task with `/sdd-new`."

@@ -1,0 +1,12 @@
+# Changelog - dashboard-nuxtui-refactor
+
+| Version | Date | Change | Rationale |
+|---------|------|--------|-----------|
+| v1 | 2026-05-27 | Initial creation | Refactor visual del dashboard con Nuxt UI y Figma para modernizar la interfaz sin cambiar contratos existentes. |
+| v2 | 2026-05-27 | Figma capture created and sandbox export documented | Preserve the generated Figma reference file and note the Starter-plan MCP rate limit that blocked further design-system assembly. |
+| v3 | 2026-05-27 | Landing-template shell applied to live and scaffold dashboards | Replace the stalled Figma refinement path with a Nuxt UI landing-inspired hero, capability, and metrics shell while preserving the existing three-panel operational model. |
+| v4 | 2026-05-27 | Hero metrics bug fixed and first fold compacted after browser QA | Correct script-side access to the computed workspace counts and tighten hero density so actions and telemetry remain visible in a laptop-sized viewport. |
+| v5 | 2026-05-27 | Operational panels retuned to match the landing shell | Replaced the remaining warm task/resource/detail surface treatments with cooler glass-like panels, structured fact cards, and boxed resource rows so the working area matches the new shell without changing component logic. |
+| v6 | 2026-05-27 | Dashboard-style operational shell organized around navbar, toolbar, and detail split | Moved workspace actions into a dedicated operational shell with `UDashboardNavbar` and `UDashboardToolbar`, separated task detail into informative and functional sections, and kept the final navigation stable with direct toolbar actions after a `?macro=true` parser failure from the first `UNavigationMenu` attempt. |
+| v7 | 2026-05-27 | Governed explorer reorganized as an operational resource surface | Added summary badges, a dedicated operational toolbar, explicit root/protected/read-only node states, and clearer per-row action hierarchy in `ResourceExplorer`, then corrected a CSS specificity regression that initially stretched the new state chips. |
+| v8 | 2026-05-27 | Overview layer compacted to reduce dashboard saturation | Removed the duplicated capabilities and metrics sections above the workspace, replaced the landing-style intro with a single compact operational overview, and shortened the remaining heading copy so the Nuxt UI dashboard workspace becomes the primary visual focus. |

@@ -1,0 +1,485 @@
+export const supportedLocales = ['en', 'es'] as const
+
+export type DashboardLocale = (typeof supportedLocales)[number]
+
+export const defaultLocale: DashboardLocale = 'en'
+export const localeStorageKey = 'agentic-ops-dashboard-locale'
+
+export const dashboardMessages = {
+  en: {
+    common: {
+      language: 'Language',
+      english: 'English',
+      spanish: 'Spanish',
+      refresh: 'Refresh snapshot',
+      resetLayout: 'Reset layout',
+      refreshing: 'Refreshing…',
+      close: 'Close',
+      cancel: 'Cancel',
+      apply: 'Apply',
+      working: 'Working…',
+    },
+    hero: {
+      eyebrow: 'Agentic Ops Dashboard',
+      title: 'Live task control, explicit relations, and governed resource edits.',
+      copy: 'The dashboard reads authoritative workspace state, streams operational changes, and limits write actions to governed resource operations.',
+      streamWaiting: 'Realtime stream awaiting first event',
+      streamConnected: 'stream connected',
+      features: 'Features',
+      tasks: 'Tasks',
+      activeTasks: 'Active tasks',
+    },
+    landing: {
+      hero: {
+        badge: 'Sandbox direction',
+        release: 'Nuxt UI landing-inspired shell for governed operations',
+        label: 'Operational surface',
+        title: 'One modern command surface for tasks, resources, and explicit relations.',
+        copy: 'Using the cadence of the Nuxt UI landing template as reference, this shell reframes the dashboard like a product surface while preserving the same workspace contracts underneath.',
+        command: '$ npx agentic-ops surface',
+        baseline: 'Workspace topology loaded',
+        governed: 'Governed roots',
+      },
+      trust: {
+        workstreams: 'Active workstreams',
+      },
+      capabilities: {
+        eyebrow: 'Why this shell works',
+        title: 'The refactor prioritizes clarity before density.',
+        copy: 'Each block below maps a landing-style Nuxt UI pattern to an actual operational responsibility inside the workspace.',
+        surfaceTitle: 'Task inventory stays explorable',
+        surfaceCopy: 'The board remains the first scanning surface, but now feels closer to a curated launchpad than a raw internal list.',
+        relationsTitle: 'Relations stay explicit',
+        relationsCopy: 'Selected-task context keeps dependencies readable without forcing the operator to hunt across disconnected panes.',
+        governanceTitle: 'Resource writes stay governed',
+        governanceCopy: 'The explorer keeps audited actions in place while inheriting a calmer and more deliberate surface system.',
+        streamEyebrow: 'Realtime signal',
+        streamTitle: 'Live state stays visible',
+        streamCopy: 'Workspace feedback becomes ambient operational signal instead of a status line that only matters when something breaks.',
+        live: 'Live',
+        standby: 'Standby',
+      },
+      numbers: {
+        eyebrow: 'Snapshot metrics',
+        title: 'The current workspace already gives us enough signal to structure the interface.',
+        copy: 'These numbers come from the same live snapshot that powers the operational panels below.',
+        activeRatio: 'Active ratio',
+        artifactLoad: 'Artifacts in focus',
+        governedRoots: 'Governed roots',
+        selectedTask: 'Selected task',
+        noSelection: 'No task selected',
+      },
+      workspace: {
+        eyebrow: 'Operational workspace',
+        title: 'Keep the resizable panels, upgrade the entry experience.',
+        copy: 'The workspace now prioritizes one active surface at a time, while contextual cards keep task, resource, and realtime state visible without compressing every panel at once.',
+        badge: 'Command center',
+        dashboardTitle: 'Operational workspace',
+        currentTask: 'Current task',
+        currentStatus: 'Feature status',
+        stageEyebrow: 'Active surface',
+        contextEyebrow: 'Pinned context',
+        contextTitle: 'Operational context',
+        selectionTitle: 'Selected task focus',
+        selectionCopy: 'Move from the board into task detail without shrinking relations and artifacts into a narrow middle column.',
+        inventoryTitle: 'Task inventory pulse',
+        inventoryCopy: 'Keep live inventory visible, but let the active stage own the horizontal space.',
+        governanceTitle: 'Governed resource state',
+        governanceCopy: 'Resource actions stay one click away without forcing the explorer into a compressed side column.',
+        signalTitle: 'Workspace signal',
+        openBoard: 'Open board',
+        openDetail: 'Open detail',
+        openResources: 'Open resources',
+      },
+    },
+    taskBoard: {
+      eyebrow: 'Task Board',
+      title: 'Live task inventory',
+      trackedTasks: 'tracked tasks',
+      boardMode: 'Registry status legend',
+      boardCopy: 'Columns follow the same workflow states defined in `.tasks/registry.md`, so board movement matches the authoritative task lifecycle.',
+      refreshing: 'Refreshing workspace snapshot…',
+      empty: 'No tracked tasks were found in `.tasks/registry.md`.',
+      exploringLane: 'Exploring',
+      exploringCopy: 'Early discovery and workspace reconnaissance.',
+      proposedLane: 'Proposed',
+      proposedCopy: 'Proposal is drafted and awaiting analysis approval.',
+      analysisLane: 'In analysis',
+      analysisCopy: 'Functional analysis is shaping scope and constraints.',
+      plannedLane: 'Planned',
+      plannedCopy: 'Spec, design, and implementation tasks are ready.',
+      implementationLane: 'In implementation',
+      implementationCopy: 'Delivery work is actively being built.',
+      implementedLane: 'Implemented',
+      implementedCopy: 'Verify passed and archive or further iteration is pending.',
+      archivedLane: 'Archived',
+      archivedCopy: 'Closed work kept for traceability and context.',
+      sandboxLane: 'Active sandbox',
+      sandboxCopy: 'Verified work stays open for continued iteration.',
+      cancelledLane: 'Cancelled',
+      cancelledCopy: 'Closed without completion and retained for audit context.',
+      collapseLane: 'Collapse column',
+      expandLane: 'Expand column',
+      laneEmpty: 'No tasks in this lane right now.',
+    },
+    taskCard: {
+      artifacts: 'Artifacts',
+      relations: 'Relations',
+      warnings: 'Warnings',
+    },
+    detail: {
+      eyebrow: 'Task detail',
+      selectTask: 'Select a task',
+      noFeatureStatus: 'No feature status',
+      refreshing: 'Refreshing task details…',
+      empty: 'Pick a task from the board to inspect artifacts and explicit relations.',
+      status: 'Status',
+      directory: 'Directory',
+      created: 'Created',
+      closed: 'Closed',
+      open: 'Open',
+      attention: 'Attention',
+      informationEyebrow: 'Informative section',
+      informationTitle: 'Task context and state',
+      contextEyebrow: 'Operational context',
+      contextTitle: 'Board pulse, governed resources, and live signal',
+      listening: 'Listening',
+      standby: 'Standby',
+      operationsEyebrow: 'Functional section',
+      operationsTitle: 'Relations and artifacts',
+    },
+    relationsPanel: {
+      title: 'Explicit relations',
+      empty: 'This task has no explicit `relations.json` links yet.',
+      userstories: 'User stories',
+      workflows: 'Workflows',
+      linked: 'Linked',
+      missing: 'Missing',
+    },
+    artifactsPanel: {
+      title: 'Artifacts',
+      empty: 'No artifacts discovered for this task yet.',
+      preview: 'Preview',
+      pathInfo: 'Artifact path',
+      noExtension: 'n/a',
+      inspectPrompt: 'Select an artifact to inspect it.',
+      directoryPreview: 'Directories do not expose inline previews. Use the artifact list to inspect files beneath them in the workspace.',
+      missingPreview: 'This artifact does not have a preview payload. Large files and non-text content stay read-only in the workspace.',
+    },
+    resources: {
+      eyebrow: 'Resources',
+      title: 'Governed explorer',
+      newFolder: 'New folder',
+      copy: 'All writes are constrained to `.resources/`, audited through ICM, and reflected back into the local constitution.',
+      operationsEyebrow: 'Operational section',
+      operationsTitle: 'Governed tree actions',
+      totalNodes: 'Nodes',
+      folders: 'Folders',
+      files: 'Files',
+      protected: 'Protected',
+      managed: 'Managed',
+      root: 'Root',
+      readOnly: 'Read-only',
+      ready: 'Ready for governed writes',
+      busy: 'Operation in progress',
+      empty: 'No `.resources/` tree was discovered.',
+      directoryKind: 'DIR',
+      fileKind: 'FILE',
+      child: 'Child',
+      move: 'Move',
+      delete: 'Delete',
+    },
+    resourceDialog: {
+      eyebrow: 'Governed action',
+      resourceAction: 'Resource action',
+      createTitle: 'Create governed resource folder',
+      moveTitle: 'Move governed resource folder',
+      deleteTitle: 'Delete governed resource folder',
+      parentPath: 'Parent path',
+      folderName: 'Folder name',
+      purpose: 'Purpose',
+      sourcePath: 'Source path',
+      destinationPath: 'Destination path',
+      reason: 'Reason',
+      targetPath: 'Target path',
+      confirmDelete: 'I confirm that this governed folder should be deleted.',
+      relatedTaskId: 'Related TASK-ID',
+      folderPlaceholder: 'research-notes',
+      taskPlaceholder: 'TASK-2026-002',
+    },
+  },
+  es: {
+    common: {
+      language: 'Idioma',
+      english: 'Ingles',
+      spanish: 'Espanol',
+      refresh: 'Actualizar snapshot',
+      resetLayout: 'Restablecer layout',
+      refreshing: 'Actualizando…',
+      close: 'Cerrar',
+      cancel: 'Cancelar',
+      apply: 'Aplicar',
+      working: 'Procesando…',
+    },
+    hero: {
+      eyebrow: 'Dashboard de Operaciones Agenticas',
+      title: 'Control vivo de tareas, relaciones explicitas y ediciones gobernadas de recursos.',
+      copy: 'El dashboard lee el estado autoritativo del workspace, transmite cambios operativos y limita las escrituras a operaciones gobernadas sobre recursos.',
+      streamWaiting: 'El stream en tiempo real espera su primer evento',
+      streamConnected: 'stream conectado',
+      features: 'Features',
+      tasks: 'Tareas',
+      activeTasks: 'Tareas activas',
+    },
+    landing: {
+      hero: {
+        badge: 'Direccion del sandbox',
+        release: 'Shell inspirado en el landing de Nuxt UI para operaciones gobernadas',
+        label: 'Superficie operativa',
+        title: 'Una superficie moderna de comando para tareas, recursos y relaciones explicitas.',
+        copy: 'Tomando como referencia el ritmo visual del landing template de Nuxt UI, este shell reencuadra el dashboard como una superficie de producto sin tocar los contratos del workspace.',
+        command: '$ npx agentic-ops surface',
+        baseline: 'Topologia del workspace cargada',
+        governed: 'Raices gobernadas',
+      },
+      trust: {
+        workstreams: 'Workstreams activos',
+      },
+      capabilities: {
+        eyebrow: 'Por que funciona este shell',
+        title: 'El refactor prioriza claridad antes que densidad.',
+        copy: 'Cada bloque de abajo traduce un patron de landing con Nuxt UI a una responsabilidad operativa real dentro del workspace.',
+        surfaceTitle: 'El inventario de tareas sigue siendo explorable',
+        surfaceCopy: 'El tablero sigue siendo la primera superficie de escaneo, pero ahora se siente mas cerca de un launchpad curado que de una lista interna cruda.',
+        relationsTitle: 'Las relaciones siguen siendo explicitas',
+        relationsCopy: 'El contexto de la tarea seleccionada mantiene las dependencias legibles sin obligar al operador a perseguirlas entre paneles desconectados.',
+        governanceTitle: 'Las escrituras sobre recursos siguen gobernadas',
+        governanceCopy: 'El explorador conserva las acciones auditadas mientras hereda un sistema de superficies mas sereno y deliberado.',
+        streamEyebrow: 'Senal en tiempo real',
+        streamTitle: 'El estado vivo sigue visible',
+        streamCopy: 'El feedback del workspace pasa a sentirse como senal operativa ambiental en vez de una linea de estado que solo importa cuando algo se rompe.',
+        live: 'Activo',
+        standby: 'En espera',
+      },
+      numbers: {
+        eyebrow: 'Metricas del snapshot',
+        title: 'El workspace actual ya nos da suficiente senal para estructurar la interfaz.',
+        copy: 'Estos numeros salen del mismo snapshot vivo que alimenta los paneles operativos de abajo.',
+        activeRatio: 'Ratio activo',
+        artifactLoad: 'Artefactos en foco',
+        governedRoots: 'Raices gobernadas',
+        selectedTask: 'Tarea seleccionada',
+        noSelection: 'Sin tarea seleccionada',
+      },
+      workspace: {
+        eyebrow: 'Workspace operativo',
+        title: 'Mantener los paneles redimensionables, mejorar la experiencia de entrada.',
+        copy: 'El workspace ahora prioriza una superficie activa a la vez, mientras tarjetas de contexto mantienen visible el estado de tareas, recursos y realtime sin comprimir todos los paneles al mismo tiempo.',
+        badge: 'Centro operativo',
+        dashboardTitle: 'Workspace operativo',
+        currentTask: 'Tarea actual',
+        currentStatus: 'Estado de feature',
+        stageEyebrow: 'Superficie activa',
+        contextEyebrow: 'Contexto fijado',
+        contextTitle: 'Contexto operativo',
+        selectionTitle: 'Foco de tarea seleccionada',
+        selectionCopy: 'Pasa del tablero al detalle de tarea sin encoger relaciones y artefactos dentro de una columna media demasiado estrecha.',
+        inventoryTitle: 'Pulso del tablero',
+        inventoryCopy: 'Mantene visible el inventario en vivo, pero dejando que la superficie activa se quede con el ancho principal.',
+        governanceTitle: 'Estado de recursos gobernados',
+        governanceCopy: 'Las acciones sobre recursos quedan a un click sin forzar al explorador a vivir comprimido en una columna lateral.',
+        signalTitle: 'Senal del workspace',
+        openBoard: 'Abrir tablero',
+        openDetail: 'Abrir detalle',
+        openResources: 'Abrir recursos',
+      },
+    },
+    taskBoard: {
+      eyebrow: 'Tablero de Tareas',
+      title: 'Inventario vivo de tareas',
+      trackedTasks: 'tareas monitoreadas',
+      boardMode: 'Leyenda de estados del registry',
+      boardCopy: 'Las columnas siguen los mismos estados de workflow definidos en `.tasks/registry.md`, para que el movimiento del tablero coincida con el ciclo de vida autoritativo de cada tarea.',
+      refreshing: 'Actualizando el snapshot del workspace…',
+      empty: 'No se encontraron tareas registradas en `.tasks/registry.md`.',
+      exploringLane: 'Explorando',
+      exploringCopy: 'Descubrimiento inicial y reconocimiento del workspace.',
+      proposedLane: 'Propuesto',
+      proposedCopy: 'La propuesta esta lista y espera aprobacion de analisis.',
+      analysisLane: 'En analisis',
+      analysisCopy: 'El analisis funcional esta definiendo alcance y restricciones.',
+      plannedLane: 'Planificado',
+      plannedCopy: 'Spec, design y tareas de implementacion ya estan listas.',
+      implementationLane: 'En implementacion',
+      implementationCopy: 'La entrega se esta construyendo activamente.',
+      implementedLane: 'Implementado',
+      implementedCopy: 'La verificacion paso y queda pendiente archivar o seguir iterando.',
+      archivedLane: 'Archivado',
+      archivedCopy: 'Trabajo cerrado que se conserva por trazabilidad y contexto.',
+      sandboxLane: 'Sandbox activo',
+      sandboxCopy: 'Trabajo verificado que sigue abierto para iteracion continua.',
+      cancelledLane: 'Cancelado',
+      cancelledCopy: 'Trabajo cerrado sin completarse y retenido para auditoria.',
+      collapseLane: 'Colapsar columna',
+      expandLane: 'Expandir columna',
+      laneEmpty: 'No hay tareas en esta columna por ahora.',
+    },
+    taskCard: {
+      artifacts: 'Artefactos',
+      relations: 'Relaciones',
+      warnings: 'Alertas',
+    },
+    detail: {
+      eyebrow: 'Detalle de la Tarea',
+      selectTask: 'Selecciona una tarea',
+      noFeatureStatus: 'Sin estado de feature',
+      refreshing: 'Actualizando los detalles de la tarea…',
+      empty: 'Elige una tarea del tablero para inspeccionar artefactos y relaciones explicitas.',
+      status: 'Estado',
+      directory: 'Directorio',
+      created: 'Creada',
+      closed: 'Cerrada',
+      open: 'Abierta',
+      attention: 'Atencion',
+      informationEyebrow: 'Seccion informativa',
+      informationTitle: 'Contexto y estado de la tarea',
+      contextEyebrow: 'Contexto operativo',
+      contextTitle: 'Pulso del tablero, recursos gobernados y senal en tiempo real',
+      listening: 'Escuchando',
+      standby: 'En espera',
+      operationsEyebrow: 'Seccion funcional',
+      operationsTitle: 'Relaciones y artefactos',
+    },
+    relationsPanel: {
+      title: 'Relaciones explicitas',
+      empty: 'Esta tarea todavia no tiene links explicitos en `relations.json`.',
+      userstories: 'Historias de usuario',
+      workflows: 'Workflows',
+      linked: 'Vinculado',
+      missing: 'Faltante',
+    },
+    artifactsPanel: {
+      title: 'Artefactos',
+      empty: 'Todavia no se descubrieron artefactos para esta tarea.',
+      preview: 'Vista previa',
+      pathInfo: 'Ruta del artefacto',
+      noExtension: 's/d',
+      inspectPrompt: 'Selecciona un artefacto para inspeccionarlo.',
+      directoryPreview: 'Los directorios no exponen vistas previas inline. Usa la lista de artefactos para inspeccionar los archivos debajo de ellos en el workspace.',
+      missingPreview: 'Este artefacto no tiene un payload de vista previa. Los archivos grandes y el contenido no textual permanecen en modo solo lectura dentro del workspace.',
+    },
+    resources: {
+      eyebrow: 'Recursos',
+      title: 'Explorador gobernado',
+      newFolder: 'Nueva carpeta',
+      copy: 'Todas las escrituras quedan limitadas a `.resources/`, auditadas por ICM y reflejadas de regreso en la constitucion local.',
+      operationsEyebrow: 'Seccion operativa',
+      operationsTitle: 'Acciones del arbol gobernado',
+      totalNodes: 'Nodos',
+      folders: 'Carpetas',
+      files: 'Archivos',
+      protected: 'Protegidas',
+      managed: 'Gestionada',
+      root: 'Raiz',
+      readOnly: 'Solo lectura',
+      ready: 'Lista para escrituras gobernadas',
+      busy: 'Operacion en curso',
+      empty: 'No se descubrio ningun arbol `.resources/`.',
+      directoryKind: 'DIR',
+      fileKind: 'ARCH',
+      child: 'Hija',
+      move: 'Mover',
+      delete: 'Eliminar',
+    },
+    resourceDialog: {
+      eyebrow: 'Accion gobernada',
+      resourceAction: 'Accion sobre recursos',
+      createTitle: 'Crear carpeta gobernada de recursos',
+      moveTitle: 'Mover carpeta gobernada de recursos',
+      deleteTitle: 'Eliminar carpeta gobernada de recursos',
+      parentPath: 'Ruta padre',
+      folderName: 'Nombre de carpeta',
+      purpose: 'Proposito',
+      sourcePath: 'Ruta origen',
+      destinationPath: 'Ruta destino',
+      reason: 'Motivo',
+      targetPath: 'Ruta objetivo',
+      confirmDelete: 'Confirmo que esta carpeta gobernada debe eliminarse.',
+      relatedTaskId: 'TASK-ID relacionado',
+      folderPlaceholder: 'notas-de-investigacion',
+      taskPlaceholder: 'TASK-2026-002',
+    },
+  },
+} as const
+
+export type DashboardMessages = (typeof dashboardMessages)[DashboardLocale]
+
+export function isDashboardLocale(value: unknown): value is DashboardLocale {
+  return typeof value === 'string' && supportedLocales.includes(value as DashboardLocale)
+}
+
+export function resolveDashboardLocale(value: unknown): DashboardLocale {
+  return isDashboardLocale(value) ? value : defaultLocale
+}
+
+const translatedStatuses = [
+  { matches: ['Explorando', 'Exploring'], en: 'Exploring', es: 'Explorando' },
+  { matches: ['Propuesto', 'Proposed'], en: 'Proposed', es: 'Propuesto' },
+  { matches: ['En Análisis', 'En Analisis', 'In Analysis'], en: 'In analysis', es: 'En analisis' },
+  { matches: ['Planificado', 'Planned'], en: 'Planned', es: 'Planificado' },
+  { matches: ['En Implementación', 'En Implementacion', 'In Implementation'], en: 'In implementation', es: 'En implementacion' },
+  { matches: ['Implementado', 'Implemented'], en: 'Implemented', es: 'Implementado' },
+  { matches: ['Archivado', 'Archived'], en: 'Archived', es: 'Archivado' },
+  { matches: ['Sandbox Activo', 'Active Sandbox'], en: 'Active sandbox', es: 'Sandbox activo' },
+  { matches: ['Cancelado', 'Cancelled'], en: 'Cancelled', es: 'Cancelado' },
+] as const
+
+export function translateDashboardStatus(status: string, locale: DashboardLocale) {
+  const firstSpace = status.indexOf(' ')
+  const prefix = firstSpace >= 0 ? status.slice(0, firstSpace).trim() : ''
+  const body = firstSpace >= 0 ? status.slice(firstSpace + 1).trim() : status.trim()
+
+  const translation = translatedStatuses.find((entry) =>
+    entry.matches.some((match) => body.includes(match)),
+  )
+
+  if (!translation) {
+    return status
+  }
+
+  const translatedBody = translation[locale]
+
+  return prefix ? `${prefix} ${translatedBody}` : translatedBody
+}
+
+export function translateWorkspaceError(message: string, locale: DashboardLocale) {
+  const taskDetailPrefix = 'Could not load task details for '
+
+  if (message.startsWith(taskDetailPrefix)) {
+    const taskId = message.slice(taskDetailPrefix.length).replace(/[.]$/, '')
+
+    return locale === 'es'
+      ? `No se pudieron cargar los detalles de la tarea ${taskId}.`
+      : `Could not load task details for ${taskId}.`
+  }
+
+  if (message === 'Could not load the workspace snapshot.') {
+    return locale === 'es'
+      ? 'No se pudo cargar el snapshot del workspace.'
+      : message
+  }
+
+  if (message === 'Realtime stream disconnected. Attempting to reconnect.') {
+    return locale === 'es'
+      ? 'El stream en tiempo real se desconecto. Intentando reconectar.'
+      : message
+  }
+
+  if (message === 'The resource operation failed.') {
+    return locale === 'es'
+      ? 'La operacion sobre recursos fallo.'
+      : message
+  }
+
+  return message
+}

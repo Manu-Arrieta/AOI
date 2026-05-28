@@ -1,0 +1,19 @@
+# AOI Node runtime artifacts
+node_modules/
+.pnpm-store/
+pnpm-lock.yaml
+
+# Nuxt runtime artifacts
+.nuxt/
+.output/
+dist/
+
+# Test and cache artifacts
+coverage/
+*.tsbuildinfo
+
+# Exported memory bundle artifacts
+.exportsmemories/*
+!.exportsmemories/.gitkeep
+scaffold/.exportsmemories/*
+!scaffold/.exportsmemories/.gitkeep

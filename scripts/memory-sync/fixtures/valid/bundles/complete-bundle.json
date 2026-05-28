@@ -1,0 +1,42 @@
+{
+  "metadata": {
+    "sourceWorkspace": "fixture-source",
+    "sourceVersionId": "source-v8",
+    "exportedAt": "2026-05-28T00:00:00.000Z",
+    "formatVersion": "1",
+    "includedScopes": [
+      "memories",
+      "memoir",
+      "feedback"
+    ],
+    "omittedScopes": [],
+    "integrity": {
+      "algorithm": "sha256",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  "payload": {
+    "memories": [
+      {
+        "topic": "fixture-topic",
+        "content": "fixture episodic memory"
+      }
+    ],
+    "memoir": {
+      "memoir": "fixture-architecture",
+      "concepts": [
+        {
+          "name": "bundle-concept",
+          "definition": "fixture memoir export"
+        }
+      ]
+    },
+    "feedback": [
+      {
+        "topic": "fixture-feedback",
+        "predicted": "x",
+        "corrected": "y"
+      }
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "bash .github/scripts/rtk-hook.sh",
+        "cwd": ".",
+        "timeout": 5
+      }
+    ]
+  }
+}

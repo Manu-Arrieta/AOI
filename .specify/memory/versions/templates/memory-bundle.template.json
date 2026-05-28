@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "sourceWorkspace": __SOURCE_WORKSPACE_JSON__,
+    "sourceVersionId": __SOURCE_VERSION_ID_JSON__,
+    "exportedAt": __EXPORTED_AT_JSON__,
+    "formatVersion": __FORMAT_VERSION_JSON__,
+    "includedScopes": __INCLUDED_SCOPES_JSON__,
+    "omittedScopes": __OMITTED_SCOPES_JSON__,
+    "integrity": {
+      "algorithm": "sha256",
+      "digest": __DIGEST_JSON__
+    }
+  },
+  "payload": __PAYLOAD_JSON__
+}
