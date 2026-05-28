@@ -6,7 +6,6 @@
 
 | Sandbox | Feature | Status | Created | Last Modified |
 | ------- | ------- | ------ | ------- | ------------- |
-| `dashboard-nuxtui-refactor` | `TASK-2026-003` | 🟢 Active | 2026-05-27 | 2026-05-27 |
 
 ## Status Legend
 

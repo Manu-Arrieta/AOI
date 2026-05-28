@@ -47,6 +47,8 @@ Recommended first session inside this repository:
 4. Open Copilot Chat and run `/speckit.constitution` if you are shaping a new downstream installation.
 5. Start the first workflow with `/sdd-new`.
 
+The published AOI repository starts clean: task registries are empty, no sandboxes are active, and versioned memory has no active workspace registered yet.
+
 ## What Gets Installed
 
 ### Tools (in priority order)

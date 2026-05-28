@@ -6,19 +6,11 @@
 
 | Feature | Status | Tasks | Created |
 | ------- | ------ | ----- | ------- |
-| resource-governance | 📦 Archivado | 1 | 2026-05-26 |
-| agentic-ops-dashboard | 📦 Archivado | 2 | 2026-05-26 |
-| workspace-memory-sync | ✅ Implementado | 2 | 2026-05-27 |
 
 ## Tasks
 
 | TASK-ID | Feature | Title | Status | Owner | Created | Closed |
 | ------- | ------- | ----- | ------ | ----- | ------- | ------ |
-| TASK-2026-001 | resource-governance | Govern internal resources folder | 📦 Archivado | Supervisor | 2026-05-26 | 2026-05-26 |
-| TASK-2026-002 | agentic-ops-dashboard | Create real-time agentic operations dashboard | 📦 Archivado | Supervisor | 2026-05-26 | 2026-05-27 |
-| TASK-2026-003 | agentic-ops-dashboard | Enhance dashboard UX and bilingual language switching | 📦 Archivado | Supervisor | 2026-05-26 | 2026-05-27 |
-| TASK-2026-004 | workspace-memory-sync | Synchronize and version cross-workspace ICM memories | 📦 Archivado | Supervisor | 2026-05-27 | 2026-05-27 |
-| TASK-2026-005 | workspace-memory-sync | Export and import compressed workspace memory bundles | 📦 Archivado | Supervisor | 2026-05-27 | 2026-05-28 |
 
 ## Status Legend
 

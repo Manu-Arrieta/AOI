@@ -50,6 +50,8 @@ Primera sesión recomendada dentro de este repositorio:
 4. Abrí Copilot Chat y corré `/speckit.constitution` si vas a preparar una nueva instalación downstream.
 5. Iniciá el primer flujo con `/sdd-new`.
 
+El repositorio público de AOI arranca limpio: los registries de tareas están vacíos, no hay sandboxes activas y la memoria versionada todavía no tiene ningún workspace activo registrado.
+
 ## Qué Se Instala
 
 ### Herramientas (en orden de prioridad)
