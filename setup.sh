@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # setup.sh — AOI Installer
 # Installs agentic infrastructure (RTK + ICM + Spec-Kit) into a target project
-# Windows users should run setup.ps1 from PowerShell.
+# Windows Git Bash delegates to setup.ps1 automatically.
 #
 # Usage:
 #   ./setup.sh                         # interactive
@@ -21,6 +21,95 @@ ok()    { printf "${GREEN}✓${NC} %s\n" "$1"; }
 warn()  { printf "${YELLOW}⚠${NC} %s\n" "$1"; }
 err()   { printf "${RED}✗${NC} %s\n" "$1"; }
 header(){ printf "\n${BOLD}═══ %s ═══${NC}\n\n" "$1"; }
+
+is_windows_git_bash() {
+  case "${OSTYPE:-}" in
+    msys*|cygwin*|win32*)
+      return 0
+      ;;
+  esac
+
+  case "$(uname -s 2>/dev/null || true)" in
+    MINGW*|MSYS*|CYGWIN*)
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
+to_windows_path() {
+  local path_value
+  path_value="$1"
+
+  if [ -z "$path_value" ]; then
+    printf '%s' "$path_value"
+    return 0
+  fi
+
+  if [[ "$path_value" =~ ^[A-Za-z]:[\\/].* ]]; then
+    printf '%s' "$path_value"
+    return 0
+  fi
+
+  if ! command -v cygpath &>/dev/null; then
+    return 1
+  fi
+
+  cygpath -w "$path_value"
+}
+
+run_windows_setup_from_git_bash() {
+  local project_path windows_project_path windows_script_path
+
+  if [ -n "${1:-}" ]; then
+    project_path="$1"
+  else
+    printf "📂 Project path to install AOI into:\n> "
+    read -r project_path
+  fi
+
+  project_path="$(eval echo "$project_path")"
+
+  if ! windows_script_path="$(to_windows_path "$SCRIPT_DIR/setup.ps1")"; then
+    err "Git Bash on Windows requires cygpath to delegate to setup.ps1."
+    exit 1
+  fi
+
+  if ! windows_project_path="$(to_windows_path "$project_path")"; then
+    err "Could not convert project path for Windows PowerShell: $project_path"
+    exit 1
+  fi
+
+  info "Git Bash on Windows detected — delegating to setup.ps1"
+
+  if command -v powershell.exe &>/dev/null; then
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$windows_script_path" "$windows_project_path"
+    exit $?
+  fi
+
+  if command -v powershell &>/dev/null; then
+    powershell -NoProfile -ExecutionPolicy Bypass -File "$windows_script_path" "$windows_project_path"
+    exit $?
+  fi
+
+  if command -v pwsh.exe &>/dev/null; then
+    pwsh.exe -NoProfile -File "$windows_script_path" "$windows_project_path"
+    exit $?
+  fi
+
+  if command -v pwsh &>/dev/null; then
+    pwsh -NoProfile -File "$windows_script_path" "$windows_project_path"
+    exit $?
+  fi
+
+  err "Git Bash on Windows requires powershell.exe, powershell, or pwsh to run setup.ps1."
+  exit 1
+}
+
+if is_windows_git_bash; then
+  run_windows_setup_from_git_bash "${1:-}"
+fi
 
 # ── Target project path ────────────────────────────────────────────────────
 if [ -n "${1:-}" ]; then

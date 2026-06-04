@@ -10,14 +10,21 @@ Installs a complete agentic ecosystem into any project: **RTK** (token optimizat
 bash "/path/to/AOI/setup.sh" /path/to/my-project
 ```
 
-### Windows 11+
+### Windows 11+ (PowerShell)
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\AOI\setup.ps1" "C:\path\to\my-project"
 ```
 
+### Windows 11+ (Git Bash)
+
+```bash
+bash "/c/repos/AOI/AOI/setup.sh" "/c/repos/bsc-portal-comercial-pj"
+```
+
 Then in VS Code Copilot Chat:
 
+```text
 /init # Configure project stack, agents, constitution
 /sdd-new # Start first feature
 
@@ -285,6 +292,7 @@ The `dual-sync.instructions.md` enforces this rule automatically. If agents dive
 ## Windows Notes
 
 - Native Windows 11+ installation is supported through `setup.ps1`.
+- If you launch setup from Git Bash, run `setup.sh` with Git Bash paths such as `/c/repos/AOI/AOI/setup.sh`; the script delegates to `setup.ps1` automatically.
 - The installer injects `terminal.integrated.env.windows.Path` into the target workspace so `rtk`, `icm`, and `specify` resolve from VS Code terminals.
 - AOI also rewrites local Copilot hook commands to PowerShell wrappers on Windows.
 - RTK upstream still recommends WSL for the broadest shell-hook compatibility across tools, but this template now provides a native PowerShell path for GitHub Copilot projects.

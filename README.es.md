@@ -13,10 +13,16 @@ Copilot y Antigravity.
 bash "/path/to/AOI/setup.sh" /path/to/my-project
 ```
 
-### Windows 11+
+### Windows 11+ (PowerShell)
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\AOI\setup.ps1" "C:\path\to\my-project"
+```
+
+### Windows 11+ (Git Bash)
+
+```bash
+bash "/c/path/to/AOI/setup.sh" "/c/path/to/my-project"
 ```
 
 Luego, en el chat de Copilot dentro de VS Code:
@@ -297,6 +303,7 @@ agentes divergen, `/sdd-verify` falla.
 ## Notas para Windows
 
 - La instalación nativa en Windows 11+ está soportada mediante `setup.ps1`.
+- Si lanzás el setup desde Git Bash, ejecutá `setup.sh` con rutas de Git Bash como `/c/path/to/AOI/setup.sh`; el script delega a `setup.ps1` automáticamente.
 - El instalador inyecta `terminal.integrated.env.windows.Path` en el workspace
   de destino para que `rtk`, `icm` y `specify` resuelvan desde las terminales
   de VS Code.
