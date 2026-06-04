@@ -40,3 +40,6 @@ icm_feedback_record(topic: "{WORKSPACE}-{category}", predicted: "X", actual: "Y"
 - [ ] Tests exist and pass
 - [ ] Dual-sync: `.github/agents/` ↔ `.agent/skills/agents/`
 - [ ] GEMINI.md agents table is current
+- [ ] UI and state layers do not select between real and temporary implementations at runtime
+- [ ] Sandbox-only dependencies, prototype diagnostics, and temporary runtime branches were removed or explicitly approved by the Owner
+- [ ] Verification report includes cleanup required before migration when temporary behavior still exists

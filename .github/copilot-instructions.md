@@ -30,3 +30,13 @@ icm health                                # topic hygiene audit
 icm topics                                # list all topics
 ```
 <!-- icm:end -->
+
+## Sandbox, Services, and Integration Standard
+
+1. Any sandbox for components, pages, or flows must preserve a migratable chain: UI entrypoint -> state boundary -> service boundary -> execution client or contract adapter.
+2. Components, pages, and stores must not contain runtime selection between real and temporary implementations.
+3. Real execution truth belongs in service boundaries. The contract must live in code and types, not in runtime diagnostic metadata.
+4. Temporary behavior for prototyping or testing must be isolated in sandbox-only adapters, fixtures, or explicit environment flags outside the normal UI or state path.
+5. E2E and QA tooling must not shape runtime architecture. Test doubles belong in test infrastructure.
+6. Any artifact expected to integrate later must be removable from temporary behavior before migration unless the Owner explicitly approves an exception.
+7. Verification must treat prototype-only runtime branches, sandbox-only dependencies, and diagnostic surfaces as blockers until they are removed or explicitly accepted.
