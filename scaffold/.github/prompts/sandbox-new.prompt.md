@@ -47,24 +47,30 @@ Write `config.md`:
 # Sandbox: {sandbox-name}
 
 ## Metadata
+
 - **Created**: {date}
 - **Owner**: {user}
 - **Related Task**: {TASK-ID or "None"}
 - **Status**: 🟢 Active
 
 ## Purpose
+
 {user-provided purpose}
 
 ## Scope
+
 {user-provided scope — files/directories this sandbox touches}
 
 ## Stack Constraints
+
 {user-provided or "Follow project constitution"}
 
 ## Service Execution Needs
+
 {user-provided or "Prefer real service boundaries; isolate any temporary doubles outside the integration path"}
 
 ## Rules
+
 1. This config is IMMUTABLE after creation — changes go to changelog.md
 2. All sandbox work is exploratory — no guarantees of integration
 3. Export before integration via `.sandboxes/{sandbox-name}/exports/`
@@ -79,9 +85,9 @@ Write `changelog.md`:
 ```markdown
 # Changelog — {sandbox-name}
 
-| Version | Date | Change | Rationale |
-|---------|------|--------|-----------|
-| v1 | {date} | Initial creation | {purpose} |
+| Version | Date   | Change           | Rationale |
+| ------- | ------ | ---------------- | --------- |
+| v1      | {date} | Initial creation | {purpose} |
 ```
 
 ### Step 4: Register + Persist

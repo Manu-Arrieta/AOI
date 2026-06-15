@@ -45,21 +45,21 @@ ALL ICM topics and memoirs MUST use `{WORKSPACE}` prefix. See ICM Protocol v3 fo
 
 ## Agents
 
-| Agent                  | Skill File                                       | SDD Phase                    |
-| ---------------------- | ------------------------------------------------ | ---------------------------- |
-| Supervisor             | `.agent/skills/agents/supervisor.md`             | Orchestration (all phases)   |
-| Functional Analyst     | `.agent/skills/agents/functional-analyst.md`     | Explore, Specify             |
-| Solution Architect     | `.agent/skills/agents/solution-architect.md`     | Plan, Tasks                  |
-| Frontend Developer     | `.agent/skills/agents/frontend-developer.md`     | Implement (UI)               |
-| Backend Developer      | `.agent/skills/agents/backend-developer.md`      | Implement (API) — optional   |
-| DevOps Engineer        | `.agent/skills/agents/devops-engineer.md`        | Implement (infra) — optional |
-| UX Designer            | `.agent/skills/agents/ux-designer.md`            | Design                       |
-| Documentation Analyst  | `.agent/skills/agents/documentation-analyst.md`  | Archive                      |
-| Integration Specialist | `.agent/skills/agents/integration-specialist.md` | Verify                       |
-| Project Expert         | `.agent/skills/agents/project-expert.md`         | Domain Q&A — transversal     |
+| Agent                  | Skill File                                       | SDD Phase                      |
+| ---------------------- | ------------------------------------------------ | ------------------------------ |
+| Supervisor             | `.agent/skills/agents/supervisor.md`             | Orchestration (all phases)     |
+| Functional Analyst     | `.agent/skills/agents/functional-analyst.md`     | Explore, Specify               |
+| Solution Architect     | `.agent/skills/agents/solution-architect.md`     | Plan, Tasks                    |
+| Frontend Developer     | `.agent/skills/agents/frontend-developer.md`     | Implement (UI)                 |
+| Backend Developer      | `.agent/skills/agents/backend-developer.md`      | Implement (API) — optional     |
+| DevOps Engineer        | `.agent/skills/agents/devops-engineer.md`        | Implement (infra) — optional   |
+| UX Designer            | `.agent/skills/agents/ux-designer.md`            | Design                         |
+| Documentation Analyst  | `.agent/skills/agents/documentation-analyst.md`  | Archive                        |
+| Integration Specialist | `.agent/skills/agents/integration-specialist.md` | Verify                         |
+| Project Expert         | `.agent/skills/agents/project-expert.md`         | Domain Q&A — transversal       |
 | Triage Specialist      | `.agent/skills/agents/triage-specialist.md`      | Bug & Definition — transversal |
-| Resource Analyst       | `.agent/skills/agents/resource-analyst.md`       | Resources — transversal      |
-| Project Analyzer       | `.agent/skills/agents/project-analyzer.md`       | Analysis — transversal       |
+| Resource Analyst       | `.agent/skills/agents/resource-analyst.md`       | Resources — transversal        |
+| Project Analyzer       | `.agent/skills/agents/project-analyzer.md`       | Analysis — transversal         |
 
 ## SDD Lifecycle (via spec-kit)
 
@@ -106,18 +106,18 @@ Para resumen rápido:
 
 ## Sources of Truth
 
-| Resource         | Path                                    |
-| ---------------- | --------------------------------------- |
-| Constitution     | `.specify/memory/constitution.md`       |
-| Resources Constitution | `.resources/constitution.md`       |
-| Dashboard Runtime | `apps/agentic-ops-dashboard/`          |
-| Export Bundles    | `.exportsmemories/`                    |
-| Task Registry    | `.tasks/registry.md`                    |
-| Skill Registry   | `.atl/skill-registry.md`                |
-| Sandbox Registry | `.sandboxes/registry.md`                |
-| ICM Protocol     | `.agent/skills/_shared/icm-protocol.md` |
-| Task Artifacts   | `.tasks/{feature}/TASK-YYYY-NNN/`       |
-| Sandbox Config   | `.sandboxes/{name}/config.md`           |
+| Resource               | Path                                    |
+| ---------------------- | --------------------------------------- |
+| Constitution           | `.specify/memory/constitution.md`       |
+| Resources Constitution | `.resources/constitution.md`            |
+| Dashboard Runtime      | `apps/agentic-ops-dashboard/`           |
+| Export Bundles         | `.exportsmemories/`                     |
+| Task Registry          | `.tasks/registry.md`                    |
+| Skill Registry         | `.atl/skill-registry.md`                |
+| Sandbox Registry       | `.sandboxes/registry.md`                |
+| ICM Protocol           | `.agent/skills/_shared/icm-protocol.md` |
+| Task Artifacts         | `.tasks/{feature}/TASK-YYYY-NNN/`       |
+| Sandbox Config         | `.sandboxes/{name}/config.md`           |
 
 ## Task Structure
 
@@ -146,9 +146,9 @@ Managed workspace commands:
 Runtime boundaries:
 
 - Reads `.tasks/registry.md`, task artifact directories, and optional
-	`.resources/` content.
+  `.resources/` content.
 - Uses `.tasks/{feature}/TASK-YYYY-NNN/relations.json` as the canonical explicit
-	relation record.
+  relation record.
 - Limits server-side writes to governed `.resources/` operations only.
 
 ## Key Rules
@@ -156,15 +156,15 @@ Runtime boundaries:
 - ALWAYS use `{WORKSPACE}` prefix for ICM topics
 - ALWAYS run Service Discovery before requirement.md
 - `.resources/` is optional context; never auto-ingest it during task
-	construction unless the Owner explicitly links resource paths
+  construction unless the Owner explicitly links resource paths
 - `.resources/workflows/` stores interaction definitions, not executable
-	commands or shell instructions
+  commands or shell instructions
 - Structural changes inside `.resources/` MUST go through
-	`/new-resource-folder`, `/move-resource-folder`, or
-	`/delete-resource-folder`
+  `/new-resource-folder`, `/move-resource-folder`, or
+  `/delete-resource-folder`
 - Exported memory bundles MUST stay inside `.exportsmemories/`
 - Bundle imports NEVER auto-activate; they prepare candidates first and still
-	require explicit Owner approval before activation
+  require explicit Owner approval before activation
 - NEVER auto-archive — Owner decides (flexible archive gate)
 - NEVER skip ICM operations
 - Consolidate topics at 7+ entries

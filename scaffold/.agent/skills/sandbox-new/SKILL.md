@@ -25,6 +25,7 @@ icm_memory_recall(query: "context conventions", topic: "{WORKSPACE}-context")
 ### Step 2: Gather Owner Intent
 
 Ask for:
+
 1. **Sandbox name** (kebab-case)
 2. **Purpose** — what are you prototyping?
 3. **Scope** — which codebase parts?
@@ -44,6 +45,7 @@ Ask for:
 Write `config.md` with: Metadata (created, owner, related task, status), Purpose, Scope, Stack Constraints, Temporary Execution Strategy, Rules.
 
 Mandatory Rules:
+
 1. Config is immutable after creation
 2. Sandbox work is exploratory
 3. Export before integration
