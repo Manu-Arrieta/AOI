@@ -15,59 +15,75 @@
 // (`manifest-schema.mjs`) and `scripts/memory-sync/schema.mjs` precedents. No
 // `yaml`/`glob` dependency — a small line parser handles the `packages:` list.
 
-import fs from 'node:fs'
-import path from 'node:path'
-import process from 'node:process'
-import { fileURLToPath } from 'node:url'
+import fs from "node:fs";
+import path from "node:path";
+import process from "node:process";
+import { fileURLToPath } from "node:url";
 
 // Dependency signatures that classify a package by its `package.json` deps.
-export const frontendSignatures = new Set(['nuxt', 'vue', 'react', 'next', 'vite'])
-export const backendSignatures = new Set(['nitro', 'express', 'fastify', 'h3', 'nest', 'koa', 'hapi'])
+export const frontendSignatures = new Set([
+  "nuxt",
+  "vue",
+  "react",
+  "next",
+  "vite",
+]);
+export const backendSignatures = new Set([
+  "nitro",
+  "express",
+  "fastify",
+  "h3",
+  "nest",
+  "koa",
+  "hapi",
+]);
 
 function normalizeDir(dir) {
-  return String(dir ?? '').replace(/\\/g, '/').replace(/\/+$/, '')
+  return String(dir ?? "")
+    .replace(/\\/g, "/")
+    .replace(/\/+$/, "");
 }
 
 function joinRelative(dir, child) {
-  const base = normalizeDir(dir)
-  return base ? `${base}/${child}` : child
+  const base = normalizeDir(dir);
+  return base ? `${base}/${child}` : child;
 }
 
 function pushUnique(list, value) {
   if (value && !list.includes(value)) {
-    list.push(value)
+    list.push(value);
   }
 }
 
 function collectDependencyNames(packageJson) {
-  const names = new Set()
-  for (const field of ['dependencies', 'devDependencies', 'peerDependencies']) {
-    const group = packageJson?.[field]
-    if (group && typeof group === 'object') {
+  const names = new Set();
+  for (const field of ["dependencies", "devDependencies", "peerDependencies"]) {
+    const group = packageJson?.[field];
+    if (group && typeof group === "object") {
       for (const name of Object.keys(group)) {
-        names.add(name)
+        names.add(name);
       }
     }
   }
-  return names
+  return names;
 }
 
 function matchesSignature(depNames, signatures) {
   for (const name of depNames) {
     if (signatures.has(name)) {
-      return true
+      return true;
     }
     // Scoped backend frameworks, e.g. `@nestjs/core`, `@nestjs/common`.
-    if (signatures.has('nest') && name.startsWith('@nestjs/')) {
-      return true
+    if (signatures.has("nest") && name.startsWith("@nestjs/")) {
+      return true;
     }
   }
-  return false
+  return false;
 }
 
 function isUnderTopDir(dir, topDir) {
-  const normalized = normalizeDir(dir)
-  return normalized === topDir || normalized.startsWith(`${topDir}/`)
+  const normalized = normalizeDir(dir);
+  return normalized === topDir || normalized.startsWith(`${topDir}/`);
 }
 
 /**
@@ -79,61 +95,65 @@ function isUnderTopDir(dir, topDir) {
  * @param {Array<{ dir: string, packageJson?: object, json?: object, hasServerDir?: boolean }>} [input.packageJsons]
  * @returns {{ frontend: string[], backend: string[], sharedLibs: string[] }}
  */
-export function classifyRoots({ cwd = '.', pnpmWorkspace = null, packageJsons = [] } = {}) {
-  void cwd
-  void pnpmWorkspace
+export function classifyRoots({
+  cwd = ".",
+  pnpmWorkspace = null,
+  packageJsons = [],
+} = {}) {
+  void cwd;
+  void pnpmWorkspace;
 
-  const frontend = []
-  const backend = []
-  const sharedLibs = []
+  const frontend = [];
+  const backend = [];
+  const sharedLibs = [];
 
   for (const entry of packageJsons ?? []) {
-    const dir = normalizeDir(entry?.dir)
+    const dir = normalizeDir(entry?.dir);
     if (!dir) {
-      continue
+      continue;
     }
 
-    const packageJson = entry?.packageJson ?? entry?.json ?? {}
-    const hasServerDir = Boolean(entry?.hasServerDir)
-    const depNames = collectDependencyNames(packageJson)
+    const packageJson = entry?.packageJson ?? entry?.json ?? {};
+    const hasServerDir = Boolean(entry?.hasServerDir);
+    const depNames = collectDependencyNames(packageJson);
 
-    const isFrontend = matchesSignature(depNames, frontendSignatures)
-    const isBackendByDeps = matchesSignature(depNames, backendSignatures)
-    const isBackend = isBackendByDeps || hasServerDir
+    const isFrontend = matchesSignature(depNames, frontendSignatures);
+    const isBackendByDeps = matchesSignature(depNames, backendSignatures);
+    const isBackend = isBackendByDeps || hasServerDir;
 
-    let classified = false
+    let classified = false;
 
     if (isFrontend) {
-      pushUnique(frontend, dir)
-      classified = true
+      pushUnique(frontend, dir);
+      classified = true;
     }
 
     if (isBackend) {
       // A frontend app that carries a `server/` directory contributes that nested
       // directory as the backend root; a standalone server package contributes
       // its own directory.
-      const backendRoot = hasServerDir ? joinRelative(dir, 'server') : dir
-      pushUnique(backend, backendRoot)
-      classified = true
+      const backendRoot = hasServerDir ? joinRelative(dir, "server") : dir;
+      pushUnique(backend, backendRoot);
+      classified = true;
     }
 
     if (!classified) {
       // Ambiguous signatures → fall back to path heuristics (OQ-6 step 3):
       // `apps/*` ⇒ frontend, `packages/*` ⇒ sharedLibs, otherwise sharedLibs
       // (a package with no app entry / build server).
-      if (isUnderTopDir(dir, 'apps')) {
-        pushUnique(frontend, dir)
+      if (isUnderTopDir(dir, "apps")) {
+        pushUnique(frontend, dir);
       } else {
-        pushUnique(sharedLibs, dir)
+        pushUnique(sharedLibs, dir);
       }
     }
   }
 
-  frontend.sort()
-  backend.sort()
-  sharedLibs.sort()
+  frontend.sort();
+  backend.sort();
+  sharedLibs.sort();
 
-  return { frontend, backend, sharedLibs }
+  return { frontend, backend, sharedLibs };
 }
 
 /**
@@ -141,51 +161,51 @@ export function classifyRoots({ cwd = '.', pnpmWorkspace = null, packageJsons = 
  * dependency. Returns workspace-relative glob strings, skipping `!`-exclusions.
  */
 export function parsePnpmWorkspacePackages(yamlText) {
-  if (typeof yamlText !== 'string' || yamlText.trim().length === 0) {
-    return []
+  if (typeof yamlText !== "string" || yamlText.trim().length === 0) {
+    return [];
   }
 
-  const packages = []
-  let inPackages = false
+  const packages = [];
+  let inPackages = false;
 
   for (const rawLine of yamlText.split(/\r?\n/)) {
-    const line = rawLine.replace(/\t/g, '  ')
-    const trimmed = line.trim()
+    const line = rawLine.replace(/\t/g, "  ");
+    const trimmed = line.trim();
 
-    if (trimmed === '' || trimmed.startsWith('#')) {
-      continue
+    if (trimmed === "" || trimmed.startsWith("#")) {
+      continue;
     }
 
     if (!inPackages) {
       if (/^packages\s*:/.test(trimmed)) {
-        inPackages = true
+        inPackages = true;
       }
-      continue
+      continue;
     }
 
-    const listItem = line.match(/^\s*-\s*(.+?)\s*$/)
+    const listItem = line.match(/^\s*-\s*(.+?)\s*$/);
     if (listItem) {
-      let value = listItem[1].trim().replace(/^['"]|['"]$/g, '')
-      if (value && !value.startsWith('!')) {
-        packages.push(value)
+      let value = listItem[1].trim().replace(/^['"]|['"]$/g, "");
+      if (value && !value.startsWith("!")) {
+        packages.push(value);
       }
-      continue
+      continue;
     }
 
     // A new non-indented key ends the `packages:` block.
     if (/^\S/.test(line)) {
-      inPackages = false
+      inPackages = false;
     }
   }
 
-  return packages
+  return packages;
 }
 
 function isDirectory(absPath) {
   try {
-    return fs.statSync(absPath).isDirectory()
+    return fs.statSync(absPath).isDirectory();
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -195,36 +215,36 @@ function isDirectory(absPath) {
  * match immediate child directories.
  */
 export function expandWorkspaceGlob(glob, cwd) {
-  const segments = normalizeDir(glob).split('/').filter(Boolean)
-  let candidates = ['']
+  const segments = normalizeDir(glob).split("/").filter(Boolean);
+  let candidates = [""];
 
   for (const segment of segments) {
-    const next = []
+    const next = [];
     for (const base of candidates) {
-      const absBase = path.join(cwd, base)
-      if (segment === '*' || segment === '**') {
-        let entries = []
+      const absBase = path.join(cwd, base);
+      if (segment === "*" || segment === "**") {
+        let entries = [];
         try {
-          entries = fs.readdirSync(absBase, { withFileTypes: true })
+          entries = fs.readdirSync(absBase, { withFileTypes: true });
         } catch {
-          entries = []
+          entries = [];
         }
         for (const entry of entries) {
-          if (entry.isDirectory() && !entry.name.startsWith('.')) {
-            next.push(base ? `${base}/${entry.name}` : entry.name)
+          if (entry.isDirectory() && !entry.name.startsWith(".")) {
+            next.push(base ? `${base}/${entry.name}` : entry.name);
           }
         }
       } else {
-        const candidate = base ? `${base}/${segment}` : segment
+        const candidate = base ? `${base}/${segment}` : segment;
         if (isDirectory(path.join(cwd, candidate))) {
-          next.push(candidate)
+          next.push(candidate);
         }
       }
     }
-    candidates = next
+    candidates = next;
   }
 
-  return candidates
+  return candidates;
 }
 
 /**
@@ -232,67 +252,69 @@ export function expandWorkspaceGlob(glob, cwd) {
  * object. Does NOT write any file.
  */
 export function detectFromDisk(cwd = process.cwd()) {
-  const workspacePath = path.join(cwd, 'pnpm-workspace.yaml')
+  const workspacePath = path.join(cwd, "pnpm-workspace.yaml");
 
-  let pnpmWorkspace = null
-  let globs = []
+  let pnpmWorkspace = null;
+  let globs = [];
   if (fs.existsSync(workspacePath)) {
-    pnpmWorkspace = fs.readFileSync(workspacePath, 'utf8')
-    globs = parsePnpmWorkspacePackages(pnpmWorkspace)
+    pnpmWorkspace = fs.readFileSync(workspacePath, "utf8");
+    globs = parsePnpmWorkspacePackages(pnpmWorkspace);
   }
 
   if (globs.length === 0) {
     // OQ-6 step 3 fallback when no workspace manifest is present.
-    globs = ['apps/*', 'packages/*']
+    globs = ["apps/*", "packages/*"];
   }
 
-  const dirs = new Set()
+  const dirs = new Set();
   for (const glob of globs) {
     for (const dir of expandWorkspaceGlob(glob, cwd)) {
-      dirs.add(dir)
+      dirs.add(dir);
     }
   }
 
-  const packageJsons = []
+  const packageJsons = [];
   for (const dir of dirs) {
-    const packageJsonPath = path.join(cwd, dir, 'package.json')
+    const packageJsonPath = path.join(cwd, dir, "package.json");
     if (!fs.existsSync(packageJsonPath)) {
-      continue
+      continue;
     }
-    let packageJson
+    let packageJson;
     try {
-      packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
+      packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
     } catch {
-      continue
+      continue;
     }
     packageJsons.push({
       dir,
       packageJson,
-      hasServerDir: isDirectory(path.join(cwd, dir, 'server')),
-    })
+      hasServerDir: isDirectory(path.join(cwd, dir, "server")),
+    });
   }
 
-  const roots = classifyRoots({ cwd: '.', pnpmWorkspace, packageJsons })
+  const roots = classifyRoots({ cwd: ".", pnpmWorkspace, packageJsons });
 
   return {
     $schemaVersion: 1,
-    baseRoot: '.',
+    baseRoot: ".",
     detectedAt: new Date().toISOString(),
     // `confirmedBy` stays null in the proposal; `/init` sets it after the Owner
     // confirms/corrects the detection and writes the file.
     confirmedBy: null,
-    workspaceManager: pnpmWorkspace ? 'pnpm' : 'unknown',
+    workspaceManager: pnpmWorkspace ? "pnpm" : "unknown",
     roots,
-  }
+  };
 }
 
 function main() {
-  const cwd = process.argv[2] ? path.resolve(process.argv[2]) : process.cwd()
-  const proposal = detectFromDisk(cwd)
-  process.stdout.write(`${JSON.stringify(proposal, null, 2)}\n`)
+  const cwd = process.argv[2] ? path.resolve(process.argv[2]) : process.cwd();
+  const proposal = detectFromDisk(cwd);
+  process.stdout.write(`${JSON.stringify(proposal, null, 2)}\n`);
 }
 
-const invokedDirectly = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+const invokedDirectly =
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (invokedDirectly) {
-  main()
+  main();
 }

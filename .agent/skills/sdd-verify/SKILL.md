@@ -104,11 +104,11 @@ icm_memory_store(
 
 > "TASK-YYYY-NNN verification: {RESULT}. What would you like to do?"
 
-| Option | When | Action |
-|--------|------|--------|
-| **Archive** | PASS — done | → `/sdd-archive` |
-| **Continue** | PASS but iterate | → `🔄 Sandbox Activo` |
-| **Fix + Re-verify** | FAIL/PARTIAL | → back to `/sdd-apply` |
-| **Cancel** | Abandon | → `❌ Cancelado` |
+| Option              | When             | Action                 |
+| ------------------- | ---------------- | ---------------------- |
+| **Archive**         | PASS — done      | → `/sdd-archive`       |
+| **Continue**        | PASS but iterate | → `🔄 Sandbox Activo`  |
+| **Fix + Re-verify** | FAIL/PARTIAL     | → back to `/sdd-apply` |
+| **Cancel**          | Abandon          | → `❌ Cancelado`       |
 
 **The Owner decides.** Supervisor does NOT auto-archive.

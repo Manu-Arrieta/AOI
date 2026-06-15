@@ -130,6 +130,7 @@ Proceed to **Step 5**.
 ### Step 4-EVOLVE: Add Compartment(s) to an Existing Sandbox
 
 1. **Confirm with the Owner** before mutating anything:
+
    > "Sandbox `{name}` already exists. This will ADD compartment(s) `{kind}:{surface}, …`,
    > MINOR-bump its constitution, and extend the manifest. `config.md` will NOT be
    > touched. Proceed?"
@@ -174,6 +175,7 @@ Proceed to **Step 5**.
 ### Step 5: Confirm
 
 - CREATE:
+
   > "Sandbox `{name}` created at constitution `v1.0.0` with compartment(s) `{kind}:{surface}, …`. Manifest validated and `.md` generated. Start prototyping — keep temporary behavior isolated from the integration path. When ready, `/sdd-verify` validates the manifest and plans migration."
 
 - EVOLVE:

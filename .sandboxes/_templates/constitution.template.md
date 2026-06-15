@@ -12,6 +12,7 @@ Added sections: all (initial creation)
 Removed sections: none
 Follow-up TODOs: none
 -->
+
 # Sandbox Constitution — {{SANDBOX_NAME}}
 
 ## Authority
@@ -41,6 +42,7 @@ copy of every compartment lives in `integration-manifest.json.compartments[]`;
 the blocks below mirror its governance.
 
 <!-- COMPARTMENT_GOVERNANCE_START -->
+
 ### {{COMPARTMENT_KIND}}:{{COMPARTMENT_SURFACE}} — {{COMPARTMENT_ID}}
 
 - Scope: {{COMPARTMENT_SCOPE}}

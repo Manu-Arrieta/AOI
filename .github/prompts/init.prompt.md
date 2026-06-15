@@ -82,16 +82,16 @@ Check `.specify/memory/constitution.md` exists:
 
 Check that all required agent files exist in both tools:
 
-| Agent | Copilot | Antigravity |
-|-------|---------|-------------|
-| Supervisor | `.github/agents/supervisor.agent.md` | `.agent/skills/agents/supervisor.md` |
-| Functional Analyst | `.github/agents/functional-analyst.agent.md` | `.agent/skills/agents/functional-analyst.md` |
-| Solution Architect | `.github/agents/solution-architect.agent.md` | `.agent/skills/agents/solution-architect.md` |
-| Frontend Developer | `.github/agents/frontend-developer.agent.md` | `.agent/skills/agents/frontend-developer.md` |
-| UX Designer | `.github/agents/ux-designer.agent.md` | `.agent/skills/agents/ux-designer.md` |
-| Documentation Analyst | `.github/agents/documentation-analyst.agent.md` | `.agent/skills/agents/documentation-analyst.md` |
+| Agent                  | Copilot                                          | Antigravity                                      |
+| ---------------------- | ------------------------------------------------ | ------------------------------------------------ |
+| Supervisor             | `.github/agents/supervisor.agent.md`             | `.agent/skills/agents/supervisor.md`             |
+| Functional Analyst     | `.github/agents/functional-analyst.agent.md`     | `.agent/skills/agents/functional-analyst.md`     |
+| Solution Architect     | `.github/agents/solution-architect.agent.md`     | `.agent/skills/agents/solution-architect.md`     |
+| Frontend Developer     | `.github/agents/frontend-developer.agent.md`     | `.agent/skills/agents/frontend-developer.md`     |
+| UX Designer            | `.github/agents/ux-designer.agent.md`            | `.agent/skills/agents/ux-designer.md`            |
+| Documentation Analyst  | `.github/agents/documentation-analyst.agent.md`  | `.agent/skills/agents/documentation-analyst.md`  |
 | Integration Specialist | `.github/agents/integration-specialist.agent.md` | `.agent/skills/agents/integration-specialist.md` |
-| Project Expert | `.github/agents/project-expert.agent.md` | `.agent/skills/agents/project-expert.md` |
+| Project Expert         | `.github/agents/project-expert.agent.md`         | `.agent/skills/agents/project-expert.md`         |
 
 Report any missing agents.
 

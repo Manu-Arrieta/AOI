@@ -17,3 +17,23 @@ coverage/
 !.exportsmemories/.gitkeep
 scaffold/.exportsmemories/*
 !scaffold/.exportsmemories/.gitkeep
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Agentic runtime trail — keep this bootstrapper pristine.
+# The product (prompts, agents, templates, constitution, scripts) stays tracked.
+# Only the operational trail generated while working with the ecosystem is ignored.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# SDD task artifacts — keep only the empty registry, ignore per-feature folders
+.tasks/*/
+
+# Real sandboxes — keep templates + registry, ignore generated sandbox dirs
+.sandboxes/*/
+!.sandboxes/_templates/
+
+# Memory-sync runtime snapshots (manifests + dynamic constitutions are generated)
+.specify/memory/versions/manifests/
+.specify/memory/versions/constitutions/
+
+# ICM local artifacts (the DB lives globally; guard any in-repo spillover)
+.icm/

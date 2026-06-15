@@ -12,6 +12,45 @@ dist/
 coverage/
 *.tsbuildinfo
 
+# ─────────────────────────────────────────────────────────────────────────────
+# AOI agentic infrastructure — local-only tooling.
+# Installed by AOI setup into this repo; do NOT commit it to the application repo.
+# Remove it entirely with AOI teardown. Files still live on disk — they are just
+# kept out of version control.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Copilot surface
+.github/agents/
+.github/hooks/
+.github/instructions/
+.github/prompts/
+.github/scripts/
+.github/copilot-instructions.md
+
+# Antigravity surface
+.agent/
+
+# Spec-kit (SDD) memory, skill registry, and resources
+.specify/
+.atl/
+.resources/
+
+# Agentic ops dashboard
+apps/agentic-ops-dashboard/
+
+# AOI tooling scripts
+scripts/sandbox/
+scripts/memory-sync/
+
+# Agent context manifests
+GEMINI.md
+AGENTS.md
+CLAUDE.md
+
+# Agentic runtime trail (SDD tasks, sandboxes, ICM local artifacts)
+.tasks/
+.sandboxes/
+.icm/
+
 # Exported memory bundle artifacts
-.exportsmemories/*
-!.exportsmemories/.gitkeep
+.exportsmemories/

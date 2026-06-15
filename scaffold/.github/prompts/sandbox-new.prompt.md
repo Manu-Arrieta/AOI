@@ -94,17 +94,20 @@ Produce **exactly** the FR-3 layout:
    # Sandbox: {name}
 
    ## Metadata
+
    - **Created**: {date}
    - **Owner**: {user}
    - **Related Task**: {TASK-ID or "None"}
    - **Status**: 🟢 Active
 
    ## Compartments (snapshot at creation — authoritative copy in manifest)
-   | id | kind | surface | integration-target |
-   | -- | ---- | ------- | ------------------ |
+
+   | id   | kind   | surface   | integration-target  |
+   | ---- | ------ | --------- | ------------------- |
    | {id} | {kind} | {surface} | {integrationTarget} |
 
    ## Rules
+
    1. This config is IMMUTABLE — evolution happens via `/sandbox-new` re-run.
    2. Governance lives in constitution.md; integration intent lives in the manifest.
    ```
@@ -131,9 +134,10 @@ Produce **exactly** the FR-3 layout:
 
    ```markdown
    # Changelog — {name}
-   | Version | Date | Change | Rationale |
-   | ------- | ---- | ------ | --------- |
-   | 1.0.0 | {date} | Initial creation ({kind}:{surface}, …) | {purpose} |
+
+   | Version | Date   | Change                                 | Rationale |
+   | ------- | ------ | -------------------------------------- | --------- |
+   | 1.0.0   | {date} | Initial creation ({kind}:{surface}, …) | {purpose} |
    ```
 
 5. **`exports/`** — empty directory.
@@ -240,6 +244,7 @@ Proceed to **Step 5**.
 ### Step 5: Confirm
 
 - CREATE:
+
   > "Sandbox `{name}` created at constitution `v1.0.0` with compartment(s)
   > `{kind}:{surface}, …`. Manifest validated and `.md` generated. Start
   > prototyping — keep temporary behavior isolated from the integration path. When

@@ -84,6 +84,7 @@ Base project = the AOI install dir (`baseRoot: "."`).
    ```
 
    `confirmedBy` stays null until confirmed. Never write from raw detector output.
+
 5. Refresh memoir: `icm memoir add-concept -m "{WORKSPACE}-architecture" -n "BaseProjectMap" -d "roots from .specify/memory/base-project.json; baseRoot=.; confirmedBy=<owner>" -l "type:map,domain:integration"`
 
 ### Step 9: Summary Checklist
