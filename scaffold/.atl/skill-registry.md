@@ -122,6 +122,22 @@ The Supervisor resolves shared skills at the start of each session:
 - **Trigger**: Domain questions, architecture queries, convention lookups
 - **Rules**: Always ICM recall before answering, never guess — cite sources, can handoff to other agents
 
+### Triage Specialist
+
+- **Copilot**: `.github/agents/triage-specialist.agent.md`
+- **Antigravity**: `.agent/skills/agents/triage-specialist.md`
+- **Role**: Transversal — First responder for bugs and business definition problems
+- **Trigger**: Owner reports a bug, unexpected behavior, or a business rule ambiguity/conflict
+- **Rules**: Always classify before diagnosing (Bug / Business Definition / Mixed), always ICM recall at start, always search past feedback before diagnosing, never fix code — diagnose and route, always record outcome in ICM under `{WORKSPACE}-triage`
+
+### Resource Analyst
+
+- **Copilot**: `.github/agents/resource-analyst.agent.md`
+- **Antigravity**: `.agent/skills/agents/resource-analyst.md`
+- **Role**: Transversal — Scans `.resources/`, internalizes all user stories and workflows into ICM, maps cross-story interactions in the `{WORKSPACE}-resources` memoir graph
+- **Trigger**: Owner adds or modifies resources in `.resources/`, or wants to refresh the ICM resource knowledge graph
+- **Rules**: Read-only on resource files, always verify constitution alignment, use `{WORKSPACE}-resources` memoir + `{WORKSPACE}-resources-catalog` topic, cross-links only with textual evidence, always recommend `/update-resource-governance-structure` if constitution is out of sync
+
 ---
 
 ## Workflows SDD
@@ -202,13 +218,14 @@ Boundaries:
 
 > These workflows manage shared infrastructure outside the core SDD chain.
 
-| Command                   | Copilot                                            | Antigravity                                     | Description                                  |
-| ------------------------- | -------------------------------------------------- | ----------------------------------------------- | -------------------------------------------- |
-| `/new-resource-folder`    | `.github/prompts/new-resource-folder.prompt.md`    | `.agent/skills/new-resource-folder/SKILL.md`    | Create governed folder inside `.resources/`  |
-| `/move-resource-folder`   | `.github/prompts/move-resource-folder.prompt.md`   | `.agent/skills/move-resource-folder/SKILL.md`   | Move governed folder inside `.resources/`    |
-| `/delete-resource-folder` | `.github/prompts/delete-resource-folder.prompt.md` | `.agent/skills/delete-resource-folder/SKILL.md` | Delete governed folder inside `.resources/`  |
-| `/export-memory-bundle`   | `.github/prompts/export-memory-bundle.prompt.md`   | `.agent/skills/export-memory-bundle/SKILL.md`   | Export governed memory bundle to `.exportsmemories/` |
-| `/import-memory-bundle`   | `.github/prompts/import-memory-bundle.prompt.md`   | `.agent/skills/import-memory-bundle/SKILL.md`   | Import bundle into a governed candidate version |
+| Command                                 | Copilot                                                         | Antigravity                                                  | Description                                  |
+| --------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------- |
+| `/new-resource-folder`                  | `.github/prompts/new-resource-folder.prompt.md`                 | `.agent/skills/new-resource-folder/SKILL.md`                 | Create governed folder inside `.resources/`  |
+| `/move-resource-folder`                 | `.github/prompts/move-resource-folder.prompt.md`                | `.agent/skills/move-resource-folder/SKILL.md`                | Move governed folder inside `.resources/`    |
+| `/delete-resource-folder`               | `.github/prompts/delete-resource-folder.prompt.md`              | `.agent/skills/delete-resource-folder/SKILL.md`              | Delete governed folder inside `.resources/`  |
+| `/export-memory-bundle`                 | `.github/prompts/export-memory-bundle.prompt.md`                | `.agent/skills/export-memory-bundle/SKILL.md`                | Export governed memory bundle to `.exportsmemories/` |
+| `/import-memory-bundle`                 | `.github/prompts/import-memory-bundle.prompt.md`                | `.agent/skills/import-memory-bundle/SKILL.md`                | Import bundle into a governed candidate version |
+| `/update-resource-governance-structure` | `.github/prompts/update-resource-governance-structure.prompt.md`| `.agent/skills/update-resource-governance-structure/SKILL.md`| Sync `.resources/constitution.md` with actual folder structure |
 
 ### ICM topic_keys per phase
 
@@ -222,6 +239,8 @@ Boundaries:
 | Session summaries       | `{WORKSPACE}-session-summaries`                          |
 | Services catalog        | `{WORKSPACE}-services-catalog`                           |
 | Errors resolved         | `{WORKSPACE}-errors-resolved`                            |
+| Triage log              | `{WORKSPACE}-triage`                                     |
+| Resources catalog       | `{WORKSPACE}-resources-catalog`                          |
 
 ---
 
@@ -247,6 +266,8 @@ Boundaries:
 | Integration Specialist | `icm-protocol.md` | —                     |
 | Documentation Analyst  | `icm-protocol.md` | —                     |
 | Project Expert         | `icm-protocol.md` | _(all domain skills)_ |
+| Triage Specialist      | `icm-protocol.md` | —                     |
+| Resource Analyst       | `icm-protocol.md` | —                     |
 
 ---
 

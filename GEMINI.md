@@ -57,6 +57,8 @@ ALL ICM topics and memoirs MUST use `{WORKSPACE}` prefix. See ICM Protocol v3 fo
 | Documentation Analyst  | `.agent/skills/agents/documentation-analyst.md`  | Archive                      |
 | Integration Specialist | `.agent/skills/agents/integration-specialist.md` | Verify                       |
 | Project Expert         | `.agent/skills/agents/project-expert.md`         | Domain Q&A — transversal     |
+| Triage Specialist      | `.agent/skills/agents/triage-specialist.md`      | Bug & Definition — transversal |
+| Resource Analyst       | `.agent/skills/agents/resource-analyst.md`       | Resources — transversal      |
 
 ## SDD Lifecycle (via spec-kit)
 
@@ -74,11 +76,12 @@ Spec-kit core commands: `/speckit.constitution`, `/speckit.specify`, `/speckit.c
 ## Support Workflows
 
 ```
-/new-resource-folder    → Create governed folder inside `.resources/`
-/move-resource-folder   → Move governed folder inside `.resources/`
-/delete-resource-folder → Delete governed folder inside `.resources/`
-/export-memory-bundle   → Export governed bundle inside `.exportsmemories/`
-/import-memory-bundle   → Import bundle into a governed candidate version
+/new-resource-folder                → Create governed folder inside `.resources/`
+/move-resource-folder               → Move governed folder inside `.resources/`
+/delete-resource-folder             → Delete governed folder inside `.resources/`
+/export-memory-bundle               → Export governed bundle inside `.exportsmemories/`
+/import-memory-bundle               → Import bundle into a governed candidate version
+/update-resource-governance-structure → Sync `.resources/constitution.md` with actual folder structure
 ```
 
 ## Dual-Sync Rule (MANDATORY)
@@ -96,7 +99,7 @@ Read and follow: `.agent/skills/_shared/model-selection.md`
 
 Para resumen rápido:
 
-- **Razonamiento Abstracto**: `Gemini 3.1 Pro (Preview)`
+- **Razonamiento Abstracto**: `Claude Opus 4.6`
 - **Implementación**: `GPT-5.4 xhigh`
 - **Fallback**: NUNCA decidir por defecto; avisar y dejar que el usuario elija.
 

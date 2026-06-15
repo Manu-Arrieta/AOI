@@ -327,17 +327,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\AOI\teardown.ps1
 
 ## Agentes
 
-| Agente                        | Fase SDD           | Archivo (Copilot)                  |
-| ----------------------------- | ------------------ | ---------------------------------- |
-| **@supervisor**               | Todas (orquestador) | `supervisor.agent.md`             |
-| **@functional-analyst**       | Explore, Specify   | `functional-analyst.agent.md`     |
-| **@solution-architect**       | Plan, Tasks        | `solution-architect.agent.md`     |
-| **@frontend-developer**       | Implement          | `frontend-developer.agent.md`     |
-| **@backend-developer**        | Implement          | `backend-developer.agent.md`      |
-| **@devops-engineer**          | Implement          | `devops-engineer.agent.md`        |
-| **@ux-designer**              | Implement          | `ux-designer.agent.md`            |
-| **@documentation-analyst**    | Archive            | `documentation-analyst.agent.md`  |
-| **@integration-specialist**   | Verify             | `integration-specialist.agent.md` |
+| Agente                        | Fase SDD                        | Archivo (Copilot)                  |
+| ----------------------------- | ------------------------------- | ---------------------------------- |
+| **@supervisor**               | Todas (orquestador)             | `supervisor.agent.md`              |
+| **@functional-analyst**       | Explore, Specify                | `functional-analyst.agent.md`      |
+| **@solution-architect**       | Plan, Tasks                     | `solution-architect.agent.md`      |
+| **@frontend-developer**       | Implement                       | `frontend-developer.agent.md`      |
+| **@backend-developer**        | Implement                       | `backend-developer.agent.md`       |
+| **@devops-engineer**          | Implement                       | `devops-engineer.agent.md`         |
+| **@ux-designer**              | Implement                       | `ux-designer.agent.md`             |
+| **@documentation-analyst**    | Archive                         | `documentation-analyst.agent.md`   |
+| **@integration-specialist**   | Verify                          | `integration-specialist.agent.md`  |
+| **@triage-specialist**        | Bug y Definición — transversal  | `triage-specialist.agent.md`       |
+| **@resource-analyst**         | Recursos — transversal          | `resource-analyst.agent.md`        |
 
 ---
 

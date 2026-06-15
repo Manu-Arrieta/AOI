@@ -6,9 +6,9 @@ Para garantizar la mayor eficiencia y capacidad resolutiva de la infraestructura
 
 ## 1. Agentes de Razonamiento Abstracto
 
-Para tareas que requieren pensamiento profundo, planificación, arquitectura, toma de decisiones o análisis complejo funcional (e.g. `supervisor`, `solution-architect`, `functional-analyst`, UX/Design):
+Para tareas que requieren pensamiento profundo, planificación, arquitectura, toma de decisiones o análisis complejo funcional (e.g. `supervisor`, `solution-architect`, `functional-analyst`, `triage-specialist`, `resource-analyst`, UX/Design):
 
-- **Modelo por defecto:** `Gemini 3.1 Pro (Preview)`
+- **Modelo por defecto:** `Claude Opus 4.6`
 
 ## 2. Agentes de Implementación
 

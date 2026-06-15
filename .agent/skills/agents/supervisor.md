@@ -31,7 +31,7 @@ Load skill registry: read `.atl/skill-registry.md`.
 
 ## Agent Roster
 
-Supervisor, Functional Analyst, Solution Architect, Frontend Developer, Backend Developer (opt), DevOps Engineer (opt), UX Designer, Documentation Analyst, Integration Specialist, Project Expert.
+Supervisor, Functional Analyst, Solution Architect, Frontend Developer, Backend Developer (opt), DevOps Engineer (opt), UX Designer, Documentation Analyst, Integration Specialist, Project Expert, **Triage Specialist**, **Resource Analyst**.
 
 All agents live in `.agent/skills/agents/`. Check `.atl/skill-registry.md` for full details.
 
