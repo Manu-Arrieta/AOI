@@ -99,7 +99,53 @@ Report any missing agents.
 
 Read `.atl/skill-registry.md` and update the `{WORKSPACE}` placeholders with the actual workspace name.
 
-### Step 8: Summary
+### Step 8: Base-Project Map (auto-detect + Owner confirm)
+
+The base project IS the AOI install directory (`baseRoot: "."`). Detect its
+framework roots, confirm with the Owner, then write the map.
+
+1. Run the detector to propose `roots` (it only prints a proposal — it never writes):
+
+   ```bash
+   node scripts/sandbox/detect-base-project.mjs
+   ```
+
+2. PRESENT the proposed `roots` (`frontend`, `backend`, `sharedLibs`) to the Owner
+   verbatim. Ask: "Are these base-project roots correct, or do you want to
+   add/remove/correct any path?"
+
+3. WAIT for the Owner to confirm or correct. Do NOT proceed on assumption.
+
+4. ONLY AFTER confirmation, write `.specify/memory/base-project.json` using the
+   confirmed roots and set `confirmedBy` to the Owner's identity (e.g. the
+   `{WORKSPACE}` user). Shape:
+
+   ```json
+   {
+     "$schemaVersion": 1,
+     "baseRoot": ".",
+     "detectedAt": "<ISO timestamp from the detector>",
+     "confirmedBy": "<owner>",
+     "workspaceManager": "pnpm",
+     "roots": { "frontend": [], "backend": [], "sharedLibs": [] }
+   }
+   ```
+
+   `confirmedBy` MUST stay unset/null until the Owner confirms. Never write the
+   file from the raw detector output without confirmation.
+
+5. Refresh the `BaseProjectMap` memoir concept so downstream agents resolve
+   integration targets against it:
+
+   ```
+   icm memoir add-concept -m "{WORKSPACE}-architecture" -n "BaseProjectMap" \
+     -d "Base-project roots (.specify/memory/base-project.json): frontend=<...>, backend=<...>, sharedLibs=<...>; baseRoot=. ; confirmedBy=<owner>" \
+     -l "type:map,domain:integration"
+   ```
+
+   (Use `icm_memoir_add_concept` / `icm_memoir_refine` when MCP tools are available.)
+
+### Step 9: Summary
 
 Present a checklist:
 
@@ -112,6 +158,7 @@ Present a checklist:
 ✅ Constitution: {found|missing}
 ✅ Agents: {N}/8 present
 ✅ Skill Registry: populated
+✅ Base-Project Map: {written after Owner confirm | skipped}
 ```
 
 Suggest next action: "Project is ready. Create your first task with `/sdd-new`."

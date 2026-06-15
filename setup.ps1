@@ -790,6 +790,31 @@ try { & $icmPath memoir link -m "$ProjectName-architecture" --from "hub-and-spok
 try { & $icmPath memoir link -m "$ProjectName-architecture" --from "dual-sync" --to "hub-and-spoke" -r related_to 2>$null } catch { }
 Write-Ok "Memoir: architecture graph bootstrapped"
 
+Write-Header "Phase 6: Base-Project Map"
+# Pre-seed a base-project roots PROPOSAL by running the detector. This NEVER
+# writes .specify/memory/base-project.json — the confirmed write happens in
+# /init after the Owner approves/corrects the proposal.
+$baseMapDetector = Join-Path $ProjectPath "scripts\sandbox\detect-base-project.mjs"
+$nodeCommand = Get-Command node -ErrorAction SilentlyContinue
+if ($nodeCommand -and (Test-Path -LiteralPath $baseMapDetector -PathType Leaf)) {
+    Write-Info "Detecting base-project roots (proposal only, not written)..."
+    try {
+        Push-Location $ProjectPath
+        $baseMapProposal = & $nodeCommand.Source $baseMapDetector 2>$null
+        Pop-Location
+        if ($LASTEXITCODE -eq 0 -and $baseMapProposal) {
+            $baseMapProposal | ForEach-Object { Write-Host $_ }
+            Write-Ok "Base-project map proposed — confirm + write it in /init"
+        } else {
+            Write-Warn "Base-project detector failed — run /init to detect + confirm the map"
+        }
+    } catch {
+        Write-Warn "Base-project detector failed — run /init to detect + confirm the map"
+    }
+} else {
+    Write-Warn "node or detector missing — base-project map will be detected in /init"
+}
+
 Write-Header "Installation Complete"
 Write-Host "  Project: $ProjectPath"
 Write-Host ""

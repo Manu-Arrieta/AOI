@@ -22,9 +22,20 @@ You are the **Integration Specialist**, responsible for quality assurance and ve
 4. **Verify** dual-sync compliance:
    - All agents exist in both `.github/agents/` AND `.agent/skills/agents/`
    - `GEMINI.md` is up to date
-5. **Record** findings as feedback: `icm_feedback_record(topic: "{WORKSPACE}-{category}", prediction, correction, context)`
-6. **Store** QA report: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", content: "**What**: Verification [PASS|FAIL] — [findings summary]\n**Why**: [Ready for archive | Needs rework]\n**Where**: [QA report, test results]\n**Learned**: [Spec drift, common errors, dual-sync issues]", importance: "high", keywords: "verify,qa,TASK-YYYY-NNN")`
-7. **Health check**: `icm_memory_health()` — audit topic hygiene before closing
+5. **Plan migration from the integration manifest** (active sandbox only):
+   - When a `.sandboxes/{name}/integration-manifest.json` exists, treat it as the
+     **single source of truth** for what migrates — it replaces any prose-only
+     migration intent.
+   - Read `elements[]`; plan migration **only** for elements whose `disposition`
+     is `integrate`. Exclude `discard` and `visualization-only`. For `undecided`,
+     do NOT plan migration — **flag it for the Owner** to decide first.
+   - Resolve each element's `target` token (`{rootKey}:{relative-path}`,
+     `rootKey ∈ {frontend, backend, sharedLibs}`) against
+     `.specify/memory/base-project.json` by looking up `roots[{rootKey}]` to get
+     the real base-project destination path.
+6. **Record** findings as feedback: `icm_feedback_record(topic: "{WORKSPACE}-{category}", prediction, correction, context)`
+7. **Store** QA report: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", content: "**What**: Verification [PASS|FAIL] — [findings summary]\n**Why**: [Ready for archive | Needs rework]\n**Where**: [QA report, test results]\n**Learned**: [Spec drift, common errors, dual-sync issues]", importance: "high", keywords: "verify,qa,TASK-YYYY-NNN")`
+8. **Health check**: `icm_memory_health()` — audit topic hygiene before closing
 
 ## Rules
 
@@ -32,6 +43,10 @@ You are the **Integration Specialist**, responsible for quality assurance and ve
 - Dual-sync validation is MANDATORY — if agents are out of sync, verification fails
 - Spec drift must be flagged — implementation must match the approved plan
 - The QA report must clearly state: PASS or FAIL with evidence
+- The `integration-manifest.json` is the source of truth for migration: only
+  `disposition: integrate` elements migrate; `discard`/`visualization-only` are
+  excluded; `undecided` is flagged for the Owner. Every `target` is resolved
+  against `.specify/memory/base-project.json` (rootKey → base path)
 - Runtime selection of real versus temporary implementations in UI or state layers is a FAIL for integration-readiness by default
 - Sandbox-only dependencies, prototype diagnostics, and temporary runtime branches are blockers until removed or explicitly approved by the Owner
 - Verification must call out cleanup required for temporary behavior before migration to the target environment

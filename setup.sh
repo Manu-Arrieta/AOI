@@ -529,6 +529,25 @@ icm memoir link -m "$PROJECT_NAME-architecture" \
 
 ok "Memoir: architecture graph bootstrapped"
 
+# ── Phase 6: Base-Project Map (pre-seed only) ─────────────────────────────
+header "Phase 6: Base-Project Map"
+
+# Pre-seed a base-project roots PROPOSAL by running the detector. This NEVER
+# writes .specify/memory/base-project.json — the confirmed write happens in
+# /init after the Owner approves/corrects the proposal.
+BASE_MAP_DETECTOR="$PROJECT_PATH/scripts/sandbox/detect-base-project.mjs"
+if command -v node &>/dev/null && [ -f "$BASE_MAP_DETECTOR" ]; then
+  info "Detecting base-project roots (proposal only, not written)..."
+  if BASE_MAP_PROPOSAL="$(cd "$PROJECT_PATH" && node "$BASE_MAP_DETECTOR" 2>/dev/null)"; then
+    echo "$BASE_MAP_PROPOSAL"
+    ok "Base-project map proposed — confirm + write it in /init"
+  else
+    warn "Base-project detector failed — run /init to detect + confirm the map"
+  fi
+else
+  warn "node or detector missing — base-project map will be detected in /init"
+fi
+
 # ── Done ─────────────────────────────────────────────────────────────────
 header "Installation Complete"
 

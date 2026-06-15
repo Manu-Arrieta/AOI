@@ -62,7 +62,31 @@ Check all 8 agent pairs exist (Copilot + Antigravity). Report missing.
 
 Update `.atl/skill-registry.md` with actual `{WORKSPACE}` name.
 
-### Step 8: Summary Checklist
+### Step 8: Base-Project Map (auto-detect + Owner confirm)
+
+Base project = the AOI install dir (`baseRoot: "."`).
+
+1. Run detector (proposal only, never writes): `node scripts/sandbox/detect-base-project.mjs`
+2. PRESENT the proposed `roots` (`frontend`, `backend`, `sharedLibs`) to the Owner.
+3. WAIT for confirmation/corrections — do NOT assume.
+4. ONLY AFTER confirmation, write `.specify/memory/base-project.json` with the
+   confirmed roots and `confirmedBy` set:
+
+   ```json
+   {
+     "$schemaVersion": 1,
+     "baseRoot": ".",
+     "detectedAt": "<ISO from detector>",
+     "confirmedBy": "<owner>",
+     "workspaceManager": "pnpm",
+     "roots": { "frontend": [], "backend": [], "sharedLibs": [] }
+   }
+   ```
+
+   `confirmedBy` stays null until confirmed. Never write from raw detector output.
+5. Refresh memoir: `icm memoir add-concept -m "{WORKSPACE}-architecture" -n "BaseProjectMap" -d "roots from .specify/memory/base-project.json; baseRoot=.; confirmedBy=<owner>" -l "type:map,domain:integration"`
+
+### Step 9: Summary Checklist
 
 ```
 ✅ Workspace: {name}
@@ -73,6 +97,7 @@ Update `.atl/skill-registry.md` with actual `{WORKSPACE}` name.
 ✅ Constitution: {status}
 ✅ Agents: {N}/8
 ✅ Skill Registry: populated
+✅ Base-Project Map: {written after Owner confirm | skipped}
 ```
 
 → "Ready. Start with `/sdd-new`."

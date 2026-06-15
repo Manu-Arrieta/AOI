@@ -1,18 +1,19 @@
 <!--
 Sync Impact Report
-Version change: 1.1.0 -> 1.2.0
+Version change: 1.2.0 -> 1.3.0
 Modified principles:
-- II. ICM-Centered Execution (expanded for version-aware memory resolution)
-- V. Verification Over Drift (expanded for rollback-safe memory version artifacts)
+- None
+Modified sections:
+- Operational Constraints (added bounded delegation to .sandboxes/{name}/constitution.md)
 Added sections:
 - None
 Removed sections:
 - None
 Templates requiring updates:
-- ✅ added: scaffold/.specify/memory/constitution.md
-- ✅ added: scaffold/.specify/memory/versions/
+- ✅ updated: scaffold/.specify/memory/constitution.md
+- ✅ added: .sandboxes/_templates/constitution.template.md (+ scaffold mirror)
 Follow-up TODOs:
-- Mirror version-aware memory workflows and shared ICM protocol rules across root and scaffold surfaces.
+- None
 -->
 # AOI Constitution
 
@@ -69,6 +70,12 @@ unverified drift degrades both this repository and every generated workspace.
 	unless this file explicitly delegates a bounded scope to it.
 - `.resources/constitution.md`, when present, governs only the `.resources/`
 	subtree and MUST NOT override rules defined by the top-level constitution.
+- `.sandboxes/{name}/constitution.md`, when present, governs only that single
+	sandbox subtree and MUST declare subordination to this top-level constitution;
+	it MUST NOT override top-level rules. It is a living, versioned document whose
+	only sanctioned mutation in this iteration is a MINOR bump triggered by adding
+	a compartment via a `/sandbox-new` re-run, accompanied by a Sync Impact Report
+	and a `changelog.md` entry. Any other mutation is drift.
 - `.specify/memory/versions/active.json`, when present, is the canonical source
 	of truth for the active memory version of each workspace managed under this
 	constitution.
@@ -121,4 +128,4 @@ unverified drift degrades both this repository and every generated workspace.
 	surfaces; reviewers MUST verify constitution alignment, dual-sync parity, and
 	validation evidence before approving completion.
 
-**Version**: 1.2.0 | **Ratified**: 2026-05-26 | **Last Amended**: 2026-05-27
+**Version**: 1.3.0 | **Ratified**: 2026-05-26 | **Last Amended**: 2026-06-15

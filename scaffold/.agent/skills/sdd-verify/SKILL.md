@@ -52,7 +52,31 @@ icm_memory_recall(query: "services discovered TASK-YYYY-NNN", topic: "{WORKSPACE
 
 If NO evidence → **automatic FAIL**: "Service Discovery Gate not completed during /sdd-new."
 
-### Step 5: ICM Memory Health Audit
+### Step 5: Sandbox Manifest Gate (active sandbox only)
+
+If the task has an **active sandbox** (`.sandboxes/{name}/` containing an
+`integration-manifest.json`), run the validator:
+
+```bash
+node scripts/sandbox/validate-manifest.mjs .sandboxes/{name}/integration-manifest.json
+```
+
+- **Non-zero exit → automatic FAIL gate** (verification cannot pass). Capture the
+  `stderr` message verbatim in the report. Same severity as the Resource Workflow
+  and Service Discovery FAIL gates.
+- **Exit 0 → continue.** Read `elements[]`; for each element with
+  `disposition = integrate` AND `status = pending`, emit one migration-plan line,
+  resolving its `target` token (`{rootKey}:{relative-path}`,
+  `rootKey ∈ {frontend, backend, sharedLibs}`) against
+  `.specify/memory/base-project.json` → `roots[{rootKey}]` for the real base path
+  (FR-10).
+- Other dispositions (`discard`, `visualization-only`, `undecided`) or other
+  statuses are excluded from the plan.
+
+No active sandbox → skip (not applicable, not a failure). Migration-plan lines
+feed the report (Step 7) and the Integration Specialist rules (Step 3).
+
+### Step 6: ICM Memory Health Audit
 
 ```
 icm_memory_health()
@@ -62,11 +86,11 @@ icm_memory_health()
 - Stale entries → flag
 - Missing critical topics → warn
 
-### Step 6: Produce Verify Report
+### Step 7: Produce Verify Report
 
-Write `.tasks/{feature-name}/TASK-YYYY-NNN/verify-report.md` with: Result (PASS/FAIL/PARTIAL), Spec Compliance table, Architecture Compliance, Quality Gates, Issues Found, Recommendation.
+Write `.tasks/{feature-name}/TASK-YYYY-NNN/verify-report.md` with: Result (PASS/FAIL/PARTIAL), Spec Compliance table, Architecture Compliance, Quality Gates (incl. Sandbox manifest valid — `validate-manifest.mjs` exit 0 when an active sandbox exists), Migration Plan (active sandbox only), Issues Found, Recommendation.
 
-### Step 7: ICM Persist
+### Step 8: ICM Persist
 
 ```
 icm_memory_store(
@@ -76,7 +100,7 @@ icm_memory_store(
 )
 ```
 
-### Step 8: Flexible Archive Gate — Owner Decision
+### Step 9: Flexible Archive Gate — Owner Decision
 
 > "TASK-YYYY-NNN verification: {RESULT}. What would you like to do?"
 

@@ -61,7 +61,37 @@ If NO evidence of service discovery → **automatic FAIL** with note:
 
 > "Service Discovery Gate was not completed during /sdd-new. This is a mandatory step."
 
-### Step 5: ICM Memory Health Audit
+### Step 5: Sandbox Manifest Gate (active sandbox only)
+
+If the task under verification has an **active sandbox** — a `.sandboxes/{name}/`
+directory that contains an `integration-manifest.json` — run the manifest
+validator:
+
+```bash
+node scripts/sandbox/validate-manifest.mjs .sandboxes/{name}/integration-manifest.json
+```
+
+- **Non-zero exit code → automatic FAIL gate.** Verification CANNOT pass. Capture
+  the validator's `stderr` message verbatim into the Verify Report as the failure
+  reason. This gate has the same severity as the Resource Workflow Semantics and
+  Service Discovery FAIL gates.
+- **Exit 0 → continue.** Then read the manifest `elements[]` and, for **each**
+  element whose `disposition` is `integrate` AND whose `status` is `pending`,
+  emit one **migration-plan line**. Resolve the element's `target` token —
+  written as `{rootKey}:{relative-path}` where `rootKey ∈ {frontend, backend,
+  sharedLibs}` — against `.specify/memory/base-project.json` by looking up
+  `roots[{rootKey}]` to produce the real base-project path (FR-10).
+  Example: `auth-form` with `target: "frontend:apps/agentic-ops-dashboard/app/components/AuthForm.vue"`
+  resolves `frontend` via `base-project.json.roots.frontend` → the concrete
+  destination path under the base project.
+- Elements with any other `disposition` (`discard`, `visualization-only`,
+  `undecided`) or any other `status` are **excluded** from the migration plan.
+
+If there is **no active sandbox**, skip this step — it is not applicable and is
+not a failure. The resulting migration-plan lines feed the Verify Report (Step 7)
+and the `@integration-specialist` rules from Step 3.
+
+### Step 6: ICM Memory Health Audit
 
 ```
 icm_memory_health()
@@ -72,7 +102,7 @@ Check for:
 - Stale entries → flag for review
 - Missing critical topics → warn
 
-### Step 6: Produce Verify Report
+### Step 7: Produce Verify Report
 
 Write `.tasks/{feature-name}/TASK-YYYY-NNN/verify-report.md`:
 
@@ -92,8 +122,14 @@ Write `.tasks/{feature-name}/TASK-YYYY-NNN/verify-report.md`:
 
 ## Quality Gates
 - [ ] Service Discovery completed (mandatory)
+- [ ] Sandbox manifest valid — `validate-manifest.mjs` exit 0 (if active sandbox)
 - [ ] ICM Memory Health OK
 - [ ] No orphan tasks in `tasks.md`
+
+## Migration Plan (active sandbox only)
+| Element | Disposition | Status | Resolved Target |
+|---------|-------------|--------|-----------------|
+| ... | integrate | pending | {base path resolved via base-project.json} |
 
 ## Issues Found
 {list or "None"}
@@ -102,7 +138,7 @@ Write `.tasks/{feature-name}/TASK-YYYY-NNN/verify-report.md`:
 {PASS → archive | FAIL → iterate | PARTIAL → owner decision}
 ```
 
-### Step 7: ICM Persist
+### Step 8: ICM Persist
 
 ```
 icm_memory_store(
@@ -112,7 +148,7 @@ icm_memory_store(
 )
 ```
 
-### Step 8: Flexible Archive Gate — Owner Decision
+### Step 9: Flexible Archive Gate — Owner Decision
 
 Present results to the Owner and offer choices:
 

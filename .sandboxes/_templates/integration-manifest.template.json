@@ -1,0 +1,7 @@
+{
+  "$schemaVersion": 1,
+  "sandbox": "{{SANDBOX_NAME}}",
+  "generatedAt": "{{GENERATED_AT}}",
+  "compartments": [],
+  "elements": []
+}

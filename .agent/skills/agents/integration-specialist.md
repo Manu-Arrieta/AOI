@@ -43,3 +43,18 @@ icm_feedback_record(topic: "{WORKSPACE}-{category}", predicted: "X", actual: "Y"
 - [ ] UI and state layers do not select between real and temporary implementations at runtime
 - [ ] Sandbox-only dependencies, prototype diagnostics, and temporary runtime branches were removed or explicitly approved by the Owner
 - [ ] Verification report includes cleanup required before migration when temporary behavior still exists
+
+## Integration Manifest (active sandbox)
+
+When a `.sandboxes/{name}/integration-manifest.json` exists, it is the **single
+source of truth** for what migrates — it replaces any prose-only migration intent.
+
+- Read `elements[]`; plan migration **only** for `disposition: integrate`.
+- Exclude `discard` and `visualization-only`. For `undecided`, do NOT plan
+  migration — **flag it for the Owner** to decide.
+- Resolve each element's `target` token (`{rootKey}:{relative-path}`,
+  `rootKey ∈ {frontend, backend, sharedLibs}`) against
+  `.specify/memory/base-project.json` → `roots[{rootKey}]` for the real
+  base-project destination path.
+- The `runtime-selection = FAIL` rule and the checklist blockers above remain in
+  force regardless of manifest contents.
