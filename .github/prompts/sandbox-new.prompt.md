@@ -1,6 +1,6 @@
 ---
 description: "Create an isolated sandbox environment for prototyping. Optional workflow."
-agent: supervisor
+mode: "agent"
 ---
 
 # /sandbox-new — Create Sandbox

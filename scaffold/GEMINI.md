@@ -59,6 +59,7 @@ ALL ICM topics and memoirs MUST use `{WORKSPACE}` prefix. See ICM Protocol v3 fo
 | Project Expert         | `.agent/skills/agents/project-expert.md`         | Domain Q&A — transversal     |
 | Triage Specialist      | `.agent/skills/agents/triage-specialist.md`      | Bug & Definition — transversal |
 | Resource Analyst       | `.agent/skills/agents/resource-analyst.md`       | Resources — transversal      |
+| Project Analyzer       | `.agent/skills/agents/project-analyzer.md`       | Analysis — transversal       |
 
 ## SDD Lifecycle (via spec-kit)
 

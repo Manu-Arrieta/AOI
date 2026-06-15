@@ -60,6 +60,11 @@ if [ -z "$1" ]; then
   for agent_file in "$COPILOT_DIR"/*.agent.md; do
     [ -f "$agent_file" ] || continue
     name=$(basename "$agent_file" .agent.md)
+    # spec-kit subagents (speckit.*) mirror Antigravity skills, not agents,
+    # so they are exempt from the agent dual-sync check.
+    case "$name" in
+      speckit.*) continue ;;
+    esac
     validate_agent "$name"
   done
   validate_reverse
