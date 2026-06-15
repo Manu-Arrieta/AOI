@@ -1,6 +1,6 @@
 # AOI Agentic Operational Infrastructure Runtime
 packages:
-  - apps/*
+  - aoi_apps/*
 allowBuilds:
   '@parcel/watcher': true
   esbuild: true

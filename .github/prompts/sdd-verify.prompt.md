@@ -81,7 +81,7 @@ node scripts/sandbox/validate-manifest.mjs .sandboxes/{name}/integration-manifes
   written as `{rootKey}:{relative-path}` where `rootKey ∈ {frontend, backend,
 sharedLibs}` — against `.specify/memory/base-project.json` by looking up
   `roots[{rootKey}]` to produce the real base-project path (FR-10).
-  Example: `auth-form` with `target: "frontend:apps/agentic-ops-dashboard/app/components/AuthForm.vue"`
+  Example: `auth-form` with `target: "frontend:aoi_apps/agentic-ops-dashboard/app/components/AuthForm.vue"`
   resolves `frontend` via `base-project.json.roots.frontend` → the concrete
   destination path under the base project.
 - Elements with any other `disposition` (`discard`, `visualization-only`,

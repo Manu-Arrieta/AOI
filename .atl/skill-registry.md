@@ -196,8 +196,8 @@ construction:
 ### Internal Dashboard Runtime
 
 The managed workspace also provisions an internal Nuxt runtime under
-`apps/agentic-ops-dashboard/`, mirrored in
-`scaffold/apps/agentic-ops-dashboard/`.
+`aoi_apps/agentic-ops-dashboard/`, mirrored in
+`scaffold/aoi_apps/agentic-ops-dashboard/`.
 
 Commands:
 

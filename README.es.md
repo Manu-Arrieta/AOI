@@ -189,8 +189,8 @@ Superficies del runtime:
 ```text
 package.json
 pnpm-workspace.yaml
-apps/agentic-ops-dashboard/
-scaffold/apps/agentic-ops-dashboard/
+aoi_apps/agentic-ops-dashboard/
+scaffold/aoi_apps/agentic-ops-dashboard/
 ```
 
 - El dashboard lee `.tasks/registry.md`, los directorios de artefactos de

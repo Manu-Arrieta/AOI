@@ -118,6 +118,29 @@ test('ambiguous package under apps/ falls back to frontend', () => {
   })
 })
 
+test("AOI's own aoi_apps packages are excluded from base-project roots", () => {
+  const roots = classifyRoots({
+    packageJsons: [
+      {
+        dir: 'aoi_apps/agentic-ops-dashboard',
+        packageJson: { dependencies: { nuxt: '4.0.0', vue: '3.5.0' } },
+        hasServerDir: true,
+      },
+      {
+        dir: 'apps/web',
+        packageJson: { dependencies: { nuxt: '4.0.0' } },
+        hasServerDir: false,
+      },
+    ],
+  })
+
+  assert.deepEqual(roots, {
+    frontend: ['apps/web'],
+    backend: [],
+    sharedLibs: [],
+  })
+})
+
 test('parsePnpmWorkspacePackages reads the packages list and skips exclusions', () => {
   const globs = parsePnpmWorkspacePackages(
     [
@@ -134,12 +157,12 @@ test('parsePnpmWorkspacePackages reads the packages list and skips exclusions', 
   assert.deepEqual(globs, ['apps/*', 'packages/*'])
 })
 
-test('expandWorkspaceGlob resolves apps/* against this repo', () => {
-  const dirs = expandWorkspaceGlob('apps/*', repoRoot)
-  assert.ok(dirs.includes('apps/agentic-ops-dashboard'), `expected apps/agentic-ops-dashboard in ${dirs.join(', ')}`)
+test('expandWorkspaceGlob resolves aoi_apps/* against this repo', () => {
+  const dirs = expandWorkspaceGlob('aoi_apps/*', repoRoot)
+  assert.ok(dirs.includes('aoi_apps/agentic-ops-dashboard'), `expected aoi_apps/agentic-ops-dashboard in ${dirs.join(', ')}`)
 })
 
-test('detectFromDisk proposes the AOI dashboard as the frontend root', () => {
+test('detectFromDisk excludes AOI\'s own aoi_apps from base-project roots', () => {
   const proposal = detectFromDisk(repoRoot)
 
   assert.equal(proposal.$schemaVersion, 1)
@@ -147,7 +170,7 @@ test('detectFromDisk proposes the AOI dashboard as the frontend root', () => {
   assert.equal(proposal.confirmedBy, null)
   assert.equal(proposal.workspaceManager, 'pnpm')
 
-  assert.deepEqual(proposal.roots.frontend, ['apps/agentic-ops-dashboard'])
-  assert.deepEqual(proposal.roots.backend, ['apps/agentic-ops-dashboard/server'])
+  assert.deepEqual(proposal.roots.frontend, [])
+  assert.deepEqual(proposal.roots.backend, [])
   assert.deepEqual(proposal.roots.sharedLibs, [])
 })

@@ -24,6 +24,11 @@ import { fileURLToPath } from 'node:url'
 export const frontendSignatures = new Set(['nuxt', 'vue', 'react', 'next', 'vite'])
 export const backendSignatures = new Set(['nitro', 'express', 'fastify', 'h3', 'nest', 'koa', 'hapi'])
 
+// AOI's own internal tooling roots. Packages under these directories are part of
+// the AOI ecosystem itself (e.g. the agentic-ops dashboard) and MUST never be
+// proposed as the downstream project's base-project roots.
+export const aoiInternalTopDirs = new Set(['aoi_apps'])
+
 function normalizeDir(dir) {
   return String(dir ?? '').replace(/\\/g, '/').replace(/\/+$/, '')
 }
@@ -70,6 +75,16 @@ function isUnderTopDir(dir, topDir) {
   return normalized === topDir || normalized.startsWith(`${topDir}/`)
 }
 
+// True when `dir` belongs to one of AOI's own internal tooling roots.
+function isAoiInternal(dir) {
+  for (const topDir of aoiInternalTopDirs) {
+    if (isUnderTopDir(dir, topDir)) {
+      return true
+    }
+  }
+  return false
+}
+
 /**
  * Classify workspace packages into base-project roots.
  *
@@ -90,6 +105,12 @@ export function classifyRoots({ cwd = '.', pnpmWorkspace = null, packageJsons = 
   for (const entry of packageJsons ?? []) {
     const dir = normalizeDir(entry?.dir)
     if (!dir) {
+      continue
+    }
+
+    // AOI's own apps (aoi_apps/*) are ecosystem tooling, never the downstream
+    // project's base-project roots — skip them entirely.
+    if (isAoiInternal(dir)) {
       continue
     }
 

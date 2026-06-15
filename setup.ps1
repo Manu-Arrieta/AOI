@@ -692,14 +692,14 @@ New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".atl") -Force | Out-
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".resources") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".resources\userstories") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".resources\workflows") -Force | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $ProjectPath "apps\agentic-ops-dashboard\app\components") -Force | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $ProjectPath "apps\agentic-ops-dashboard\app\pages") -Force | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $ProjectPath "apps\agentic-ops-dashboard\server\api") -Force | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $ProjectPath "apps\agentic-ops-dashboard\server\routes") -Force | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $ProjectPath "apps\agentic-ops-dashboard\server\utils") -Force | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $ProjectPath "apps\agentic-ops-dashboard\shared") -Force | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $ProjectPath "apps\agentic-ops-dashboard\test") -Force | Out-Null
-Write-Ok "Directories: .tasks/ .sandboxes/ .atl/ .resources/ apps/agentic-ops-dashboard/"
+New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\app\components") -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\app\pages") -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\server\api") -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\server\routes") -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\server\utils") -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\shared") -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\test") -Force | Out-Null
+Write-Ok "Directories: .tasks/ .sandboxes/ .atl/ .resources/ aoi_apps/agentic-ops-dashboard/"
 
 if (Test-Path -LiteralPath (Join-Path $ProjectPath "pnpm-workspace.yaml") -PathType Leaf) {
     $dashboardInstaller = Ensure-DashboardRuntimePrerequisites
@@ -845,9 +845,10 @@ Write-Host ""
 Write-Host "  Next steps:"
 Write-Host "    1. cd $ProjectPath"
 Write-Host "    2. code ."
-Write-Host "    3. Run /speckit.constitution in Copilot Chat"
-Write-Host "    4. Start your first cycle: /sdd-new"
+Write-Host "    3. Run /init in Copilot Chat (bootstrap ICM, directories, base-project map)"
+Write-Host "    4. (optional) Run /speckit.constitution to customize project rules"
+Write-Host "    5. Start your first cycle: /sdd-new"
 if (Test-Path -LiteralPath (Join-Path $ProjectPath "pnpm-workspace.yaml") -PathType Leaf) {
-    Write-Host "    5. Start the dashboard runtime: pnpm dev:dashboard"
+    Write-Host "    6. Start the dashboard runtime: pnpm dev:dashboard"
 }
 Write-Host ""

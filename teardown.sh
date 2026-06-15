@@ -50,7 +50,7 @@ printf "  .github/scripts/\n"
 printf "  .agent/\n"
 printf "  .specify/\n"
 printf "  .resources/\n"
-printf "  apps/agentic-ops-dashboard/\n"
+printf "  aoi_apps/agentic-ops-dashboard/\n"
 printf "  package.json        (if from AOI runtime)\n"
 printf "  pnpm-workspace.yaml (if from AOI runtime)\n"
 printf "  pnpm-lock.yaml      (if from AOI runtime)\n"
@@ -83,11 +83,11 @@ remove_dir() {
 remove_dir ".agent"
 remove_dir ".specify"
 remove_dir ".resources"
-remove_dir "apps/agentic-ops-dashboard"
+remove_dir "aoi_apps/agentic-ops-dashboard"
 
-if [ -d "$PROJECT_PATH/apps" ] && [ -z "$(ls -A "$PROJECT_PATH/apps" 2>/dev/null)" ]; then
-  rm -rf "$PROJECT_PATH/apps"
-  ok "Removed apps/ (was empty)"
+if [ -d "$PROJECT_PATH/aoi_apps" ] && [ -z "$(ls -A "$PROJECT_PATH/aoi_apps" 2>/dev/null)" ]; then
+  rm -rf "$PROJECT_PATH/aoi_apps"
+  ok "Removed aoi_apps/ (was empty)"
 fi
 
 # .github — only remove AOI subdirs, not the whole .github (may have workflows etc.)

@@ -62,7 +62,7 @@ Resultado esperado:
 2. En macOS/Linux corré `bash "/path/to/AOI/setup.sh" "/path/to/scratch-repo"`.
 3. En Windows corré `powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\AOI\setup.ps1" "C:\path\to\scratch-repo"`.
 4. Abrí el proyecto bootstrappeado en VS Code.
-5. Verificá que el proyecto ahora incluya superficies de AOI como `.github/agents/`, `.github/prompts/`, `.vscode/mcp.json`, `.specify/`, `.resources/`, el `package.json` del workspace y `apps/agentic-ops-dashboard/`.
+5. Verificá que el proyecto ahora incluya superficies de AOI como `.github/agents/`, `.github/prompts/`, `.vscode/mcp.json`, `.specify/`, `.resources/`, el `package.json` del workspace y `aoi_apps/agentic-ops-dashboard/`.
 6. Corré `/init` y después `/sdd-new` desde Copilot Chat.
 
 Resultado esperado:

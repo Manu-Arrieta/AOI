@@ -21,7 +21,7 @@ function baseManifest() {
         surface: "visual-ui",
         scope: [".sandboxes/auth-v2/ui"],
         stack: ["vue", "nuxt-ui"],
-        integrationTarget: "frontend:apps/agentic-ops-dashboard/app/components",
+        integrationTarget: "frontend:aoi_apps/agentic-ops-dashboard/app/components",
         chain: ["page/flow", "store/state", "service", "execution-client"],
         addedInConstitutionVersion: "1.0.0",
       },
@@ -31,7 +31,7 @@ function baseManifest() {
         surface: "swagger",
         scope: [".sandboxes/auth-v2/api"],
         stack: ["nitro"],
-        integrationTarget: "backend:apps/agentic-ops-dashboard/server",
+        integrationTarget: "backend:aoi_apps/agentic-ops-dashboard/server",
         chain: ["route/controller", "service", "repository", "data-client"],
         addedInConstitutionVersion: "1.1.0",
       },
@@ -44,7 +44,7 @@ function baseManifest() {
         kind: "component",
         disposition: "integrate",
         target:
-          "frontend:apps/agentic-ops-dashboard/app/components/AuthForm.vue",
+          "frontend:aoi_apps/agentic-ops-dashboard/app/components/AuthForm.vue",
         status: "pending",
         notes: "Replace mock submit with real service boundary on migration",
       },
@@ -155,7 +155,7 @@ test("rejects a path that escapes the sandbox subtree", () => {
 
 test("rejects a path outside the sandbox subtree", () => {
   const manifest = baseManifest();
-  manifest.elements[0].path = "apps/agentic-ops-dashboard/app/leak.vue";
+  manifest.elements[0].path = "aoi_apps/agentic-ops-dashboard/app/leak.vue";
   assert.throws(() => validateManifest(manifest), /must stay within/);
 });
 

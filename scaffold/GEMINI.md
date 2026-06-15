@@ -110,7 +110,7 @@ Para resumen rápido:
 | ---------------------- | --------------------------------------- |
 | Constitution           | `.specify/memory/constitution.md`       |
 | Resources Constitution | `.resources/constitution.md`            |
-| Dashboard Runtime      | `apps/agentic-ops-dashboard/`           |
+| Dashboard Runtime      | `aoi_apps/agentic-ops-dashboard/`       |
 | Export Bundles         | `.exportsmemories/`                     |
 | Task Registry          | `.tasks/registry.md`                    |
 | Skill Registry         | `.atl/skill-registry.md`                |

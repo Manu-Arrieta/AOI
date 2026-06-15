@@ -185,8 +185,8 @@ Runtime surfaces:
 ```text
 package.json
 pnpm-workspace.yaml
-apps/agentic-ops-dashboard/
-scaffold/apps/agentic-ops-dashboard/
+aoi_apps/agentic-ops-dashboard/
+scaffold/aoi_apps/agentic-ops-dashboard/
 ```
 
 - The dashboard reads `.tasks/registry.md`, task artifact directories, and the

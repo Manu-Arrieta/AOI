@@ -205,7 +205,7 @@ Write-Host "  .github/scripts/"
 Write-Host "  .agent/"
 Write-Host "  .specify/"
 Write-Host "  .resources/"
-Write-Host "  apps/agentic-ops-dashboard/"
+Write-Host "  aoi_apps/agentic-ops-dashboard/"
 Write-Host "  package.json        (if from AOI runtime)"
 Write-Host "  pnpm-workspace.yaml (if from AOI runtime)"
 Write-Host "  pnpm-lock.yaml      (if from AOI runtime)"
@@ -225,14 +225,14 @@ Write-Header "Removing Infrastructure"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".agent"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".specify"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".resources"
-Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath "apps\agentic-ops-dashboard"
+Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath "aoi_apps\agentic-ops-dashboard"
 
-$appsDir = Join-Path $ProjectPath "apps"
+$appsDir = Join-Path $ProjectPath "aoi_apps"
 if (Test-Path -LiteralPath $appsDir -PathType Container) {
     $remainingApps = Get-ChildItem -LiteralPath $appsDir -Force
     if (-not $remainingApps) {
         Remove-Item -LiteralPath $appsDir -Recurse -Force
-        Write-Ok "Removed apps/ (was empty)"
+        Write-Ok "Removed aoi_apps/ (was empty)"
     }
 }
 

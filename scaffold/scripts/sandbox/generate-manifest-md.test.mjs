@@ -25,7 +25,7 @@ function populatedManifest() {
         surface: 'visual-ui',
         scope: ['.sandboxes/auth-v2/ui'],
         stack: ['vue', 'nuxt-ui'],
-        integrationTarget: 'frontend:apps/agentic-ops-dashboard/app/components',
+        integrationTarget: 'frontend:aoi_apps/agentic-ops-dashboard/app/components',
         chain: ['page/flow', 'store/state', 'service', 'execution-client'],
         addedInConstitutionVersion: '1.0.0',
       },
@@ -35,7 +35,7 @@ function populatedManifest() {
         surface: 'swagger',
         scope: ['.sandboxes/auth-v2/api'],
         stack: ['nitro'],
-        integrationTarget: 'backend:apps/agentic-ops-dashboard/server',
+        integrationTarget: 'backend:aoi_apps/agentic-ops-dashboard/server',
         chain: ['route/controller', 'service', 'repository', 'data-client'],
         addedInConstitutionVersion: '1.1.0',
       },
@@ -47,7 +47,7 @@ function populatedManifest() {
         compartment: 'auth-ui',
         kind: 'component',
         disposition: 'integrate',
-        target: 'frontend:apps/agentic-ops-dashboard/app/components/AuthForm.vue',
+        target: 'frontend:aoi_apps/agentic-ops-dashboard/app/components/AuthForm.vue',
         status: 'pending',
         notes: '',
       },
@@ -67,7 +67,7 @@ function populatedManifest() {
         compartment: 'auth-api',
         kind: 'endpoint',
         disposition: 'integrate',
-        target: 'backend:apps/agentic-ops-dashboard/server/api/login.post.ts',
+        target: 'backend:aoi_apps/agentic-ops-dashboard/server/api/login.post.ts',
         status: 'migrated',
         notes: '',
       },
@@ -111,19 +111,19 @@ _Generated 2026-06-15T18:00:00.000Z — DO NOT EDIT (regenerated from JSON)._
 ## Compartments
 | id | kind | surface | integration-target |
 | -- | ---- | ------- | ------------------ |
-| auth-ui | frontend | visual-ui | frontend:apps/agentic-ops-dashboard/app/components |
-| auth-api | backend | swagger | backend:apps/agentic-ops-dashboard/server |
+| auth-ui | frontend | visual-ui | frontend:aoi_apps/agentic-ops-dashboard/app/components |
+| auth-api | backend | swagger | backend:aoi_apps/agentic-ops-dashboard/server |
 
 ## Elements — auth-ui
 | id | kind | disposition | status | target |
 | -- | ---- | ----------- | ------ | ------ |
-| auth-form | component | integrate | pending | frontend:apps/agentic-ops-dashboard/app/components/AuthForm.vue |
+| auth-form | component | integrate | pending | frontend:aoi_apps/agentic-ops-dashboard/app/components/AuthForm.vue |
 | auth-spinner | component | visualization-only | in-progress | visualization-only |
 
 ## Elements — auth-api
 | id | kind | disposition | status | target |
 | -- | ---- | ----------- | ------ | ------ |
-| login-endpoint | endpoint | integrate | migrated | backend:apps/agentic-ops-dashboard/server/api/login.post.ts |
+| login-endpoint | endpoint | integrate | migrated | backend:aoi_apps/agentic-ops-dashboard/server/api/login.post.ts |
 | debug-probe | endpoint | discard | discarded | — |
 | undecided-thing | schema | undecided | pending | — |
 `

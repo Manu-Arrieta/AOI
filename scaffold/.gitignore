@@ -36,7 +36,7 @@ coverage/
 .resources/
 
 # Agentic ops dashboard
-apps/agentic-ops-dashboard/
+aoi_apps/agentic-ops-dashboard/
 
 # AOI tooling scripts
 scripts/sandbox/
