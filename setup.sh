@@ -368,21 +368,47 @@ mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/shared"
 mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/test"
 ok "Directories: .tasks/ .sandboxes/ .atl/ .resources/ aoi_apps/agentic-ops-dashboard/"
 
-if [ -f "$PROJECT_PATH/pnpm-workspace.yaml" ]; then
+if [ -f "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/package.json" ]; then
   ensure_dashboard_runtime
-  info "Installing dashboard workspace dependencies..."
-  if command -v corepack &>/dev/null; then
-    corepack enable &>/dev/null || true
-    (cd "$PROJECT_PATH" && corepack pnpm install) && ok "Workspace dependencies installed (corepack pnpm)" || {
-      err "Workspace dependency install failed"
-      exit 1
-    }
+  info "Installing dashboard package dependencies..."
+  DASHBOARD_INSTALL_DIR="$PROJECT_PATH/aoi_apps/agentic-ops-dashboard"
+  DASHBOARD_INSTALL_LOG="$(mktemp)"
+
+  run_dashboard_install() {
+    if command -v corepack &>/dev/null; then
+      corepack enable &>/dev/null || true
+      (cd "$DASHBOARD_INSTALL_DIR" && corepack pnpm install)
+      return $?
+    fi
+
+    (cd "$DASHBOARD_INSTALL_DIR" && pnpm install)
+    return $?
+  }
+
+  if run_dashboard_install 2>&1 | tee "$DASHBOARD_INSTALL_LOG"; then
+    if command -v corepack &>/dev/null; then
+      ok "Dashboard dependencies installed (corepack pnpm)"
+    else
+      ok "Dashboard dependencies installed (pnpm)"
+    fi
   else
-    (cd "$PROJECT_PATH" && pnpm install) && ok "Workspace dependencies installed (pnpm)" || {
-      err "Workspace dependency install failed"
+    if grep -q "ERR_PNPM_IGNORED_BUILDS" "$DASHBOARD_INSTALL_LOG"; then
+      warn "pnpm blocked dependency build scripts; approving known builds and retrying..."
+      if (cd "$DASHBOARD_INSTALL_DIR" && pnpm approve-builds --all) && run_dashboard_install 2>&1 | tee "$DASHBOARD_INSTALL_LOG"; then
+        ok "Dashboard dependencies installed after approving build scripts"
+      else
+        err "Dashboard dependency install failed after approve-builds retry"
+        rm -f "$DASHBOARD_INSTALL_LOG"
+        exit 1
+      fi
+    else
+      err "Dashboard dependency install failed"
+      rm -f "$DASHBOARD_INSTALL_LOG"
       exit 1
-    }
+    fi
   fi
+
+  rm -f "$DASHBOARD_INSTALL_LOG"
 fi
 
 # Patch .vscode/settings.json — replace __LOCAL_BIN__ placeholder with real user home
@@ -563,7 +589,7 @@ echo "    1. cd $PROJECT_PATH && code ."
 echo "    2. Run /init in Copilot Chat (bootstrap ICM, directories, base-project map)"
 echo "    3. (optional) Run /speckit.constitution to customize project rules"
 echo "    4. Start your first cycle: /sdd-new"
-if [ -f "$PROJECT_PATH/pnpm-workspace.yaml" ]; then
-  echo "    5. Start the dashboard runtime: pnpm dev:dashboard"
+if [ -f "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/package.json" ]; then
+  echo "    5. Start the dashboard runtime: pnpm --dir aoi_apps/agentic-ops-dashboard dev"
 fi
 echo ""

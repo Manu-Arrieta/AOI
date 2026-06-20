@@ -205,10 +205,7 @@ Write-Host "  .github/scripts/"
 Write-Host "  .agent/"
 Write-Host "  .specify/"
 Write-Host "  .resources/"
-Write-Host "  aoi_apps/agentic-ops-dashboard/"
-Write-Host "  package.json        (if from AOI runtime)"
-Write-Host "  pnpm-workspace.yaml (if from AOI runtime)"
-Write-Host "  pnpm-lock.yaml      (if from AOI runtime)"
+Write-Host "  aoi_apps/agentic-ops-dashboard/ (including package.json, pnpm-lock.yaml, node_modules/)"
 Write-Host "  GEMINI.md"
 Write-Host "  AGENTS.md  (if from AOI)"
 Write-Host "  CLAUDE.md  (if from AOI)"
@@ -260,6 +257,7 @@ Remove-IaBaseFile -Root $ProjectPath -RelativePath "AGENTS.md" -Marker "RTK|icm"
 Remove-IaBaseFile -Root $ProjectPath -RelativePath "CLAUDE.md" -Marker "RTK|icm"
 Remove-IaBaseFile -Root $ProjectPath -RelativePath ".windsurfrules" -Marker "icm"
 
+# Legacy cleanup: older AOI installs created dashboard workspace files at repo root.
 $runtimePackage = Join-Path $ProjectPath "package.json"
 if (Test-Path -LiteralPath $runtimePackage -PathType Leaf) {
     $packageContent = Get-Content -LiteralPath $runtimePackage -Raw

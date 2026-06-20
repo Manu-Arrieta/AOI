@@ -701,24 +701,53 @@ New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\test") -Force | Out-Null
 Write-Ok "Directories: .tasks/ .sandboxes/ .atl/ .resources/ aoi_apps/agentic-ops-dashboard/"
 
-if (Test-Path -LiteralPath (Join-Path $ProjectPath "pnpm-workspace.yaml") -PathType Leaf) {
+if (Test-Path -LiteralPath (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\package.json") -PathType Leaf) {
     $dashboardInstaller = Ensure-DashboardRuntimePrerequisites
-    Write-Info "Installing dashboard workspace dependencies..."
+    Write-Info "Installing dashboard package dependencies..."
     $pnpmCommand = Get-Command pnpm -ErrorAction SilentlyContinue
     $corepackCommand = Get-Command corepack -ErrorAction SilentlyContinue
+    $dashboardInstallDir = Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard"
 
-    Push-Location $ProjectPath
-    try {
+    function Invoke-DashboardInstall {
         if ($dashboardInstaller -eq "corepack") {
             & $corepackCommand.Source enable | Out-Null
             & $corepackCommand.Source pnpm install
-            Write-Ok "Workspace dependencies installed (corepack pnpm)"
         } else {
             & $pnpmCommand.Source install
-            Write-Ok "Workspace dependencies installed (pnpm)"
+        }
+    }
+
+    Push-Location $dashboardInstallDir
+    try {
+        $installOutput = Invoke-DashboardInstall 2>&1
+
+        if ($LASTEXITCODE -eq 0) {
+            if ($dashboardInstaller -eq "corepack") {
+                Write-Ok "Dashboard dependencies installed (corepack pnpm)"
+            } else {
+                Write-Ok "Dashboard dependencies installed (pnpm)"
+            }
+        } else {
+            $joinedOutput = ($installOutput | ForEach-Object { $_.ToString() }) -join "`n"
+            if ($joinedOutput -match "ERR_PNPM_IGNORED_BUILDS") {
+                Write-Warn "pnpm blocked dependency build scripts; approving known builds and retrying..."
+                & $pnpmCommand.Source approve-builds --all
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Dashboard dependency install failed during approve-builds."
+                }
+
+                Invoke-DashboardInstall
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Dashboard dependency install failed after approve-builds retry."
+                }
+
+                Write-Ok "Dashboard dependencies installed after approving build scripts"
+            } else {
+                throw "Dashboard dependency install failed."
+            }
         }
     } catch {
-        throw "Workspace dependency install failed: $($_.Exception.Message)"
+        throw "Dashboard dependency install failed: $($_.Exception.Message)"
     } finally {
         Pop-Location
     }
@@ -848,7 +877,7 @@ Write-Host "    2. code ."
 Write-Host "    3. Run /init in Copilot Chat (bootstrap ICM, directories, base-project map)"
 Write-Host "    4. (optional) Run /speckit.constitution to customize project rules"
 Write-Host "    5. Start your first cycle: /sdd-new"
-if (Test-Path -LiteralPath (Join-Path $ProjectPath "pnpm-workspace.yaml") -PathType Leaf) {
-    Write-Host "    6. Start the dashboard runtime: pnpm dev:dashboard"
+if (Test-Path -LiteralPath (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\package.json") -PathType Leaf) {
+    Write-Host "    6. Start the dashboard runtime: pnpm --dir aoi_apps/agentic-ops-dashboard dev"
 }
 Write-Host ""

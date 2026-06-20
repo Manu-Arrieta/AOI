@@ -35,9 +35,9 @@ Then in VS Code Copilot Chat:
 Use AOI in one of two modes:
 
 1. **Install AOI into another project**
-	Run `setup.sh` or `setup.ps1` and point it at the target repository you want to bootstrap with the AOI stack.
+   Run `setup.sh` or `setup.ps1` and point it at the target repository you want to bootstrap with the AOI stack.
 2. **Work on AOI itself**
-	Open this repository, install the workspace dependencies, and use the internal dashboard plus the SDD prompts to evolve the template.
+   Open this repository, install the workspace dependencies, and use the internal dashboard plus the SDD prompts to evolve the template.
 
 Minimum prerequisites before the first run:
 
@@ -58,17 +58,22 @@ The published AOI repository starts clean: task registries are empty, no sandbox
 
 Release and validation artifacts:
 
-- [docs/releases/v0.1.0.md](docs/releases/v0.1.0.md) — first public template baseline notes.
-- [docs/verification/external-smoke-plan.md](docs/verification/external-smoke-plan.md) — external validation checklist for AOI as repo and bootstrapper.
+- [docs/internal/releases/v0.1.0.md](docs/internal/releases/v0.1.0.md) — first public template baseline notes.
+- [docs/internal/verification/external-smoke-plan.md](docs/internal/verification/external-smoke-plan.md) — external validation checklist for AOI as repo and bootstrapper.
+
+Documentation boundary:
+
+- `docs/internal/` contains AOI-maintainer documentation for the bootstrapper itself.
+- `scaffold/docs/` is reserved for documentation that should be installed into downstream projects.
 
 ## What Gets Installed
 
 ### Tools (in priority order)
 
-| Tool            | Purpose                             | macOS / Linux                             | Windows 11+                                                  |
-| --------------- | ----------------------------------- | ----------------------------------------- | ------------------------------------------------------------ |
-| **RTK**         | Token optimization (60-90% savings) | `brew install rtk`                        | GitHub release binary via `setup.ps1`                        |
-| **ICM**         | Persistent memory (4 methods)       | `brew tap rtk-ai/tap && brew install icm` | Official `install.ps1` via `setup.ps1`                       |
+| Tool            | Purpose                             | macOS / Linux                             | Windows 11+                                                   |
+| --------------- | ----------------------------------- | ----------------------------------------- | ------------------------------------------------------------- |
+| **RTK**         | Token optimization (60-90% savings) | `brew install rtk`                        | GitHub release binary via `setup.ps1`                         |
+| **ICM**         | Persistent memory (4 methods)       | `brew tap rtk-ai/tap && brew install icm` | Official `install.ps1` via `setup.ps1`                        |
 | **Specify CLI** | Spec-Driven Development lifecycle   | `uv tool install specify-cli`             | `winget install --id astral-sh.uv -e` + `uv tool install ...` |
 
 On Windows, AOI uses `winget` for `uv` when available. RTK does not currently document an official `winget` package, so `setup.ps1` installs the Windows release binary directly.
@@ -143,7 +148,7 @@ Built on [spec-kit](https://github.com/github/spec-kit). Our prompts orchestrate
 ↓
 /sdd-archive → Documentation + Close → @documentation-analyst
 
-````
+```
 
 Each phase has an **Owner approval gate** before advancing.
 
@@ -160,9 +165,9 @@ AOI now installs a governed `.resources/` subtree for reusable context:
 
 - `userstories/` stores reusable task-construction context.
 - `workflows/` stores component interaction definitions across one or many user
-	stories. These files are **not executable commands**.
+  stories. These files are **not executable commands**.
 - SDD workflows do **not** auto-read `.resources/`. A resource is used only if
-	the Owner explicitly links it during task construction.
+  the Owner explicitly links it during task construction.
 
 Resource structure is governed by:
 
@@ -177,38 +182,38 @@ Administrative commands:
 
 ## Internal Dashboard Runtime
 
-AOI now provisions an internal Nuxt workspace for real-time project
-operations visibility.
+AOI now provisions an internal self-contained Nuxt runtime package for
+real-time project operations visibility.
 
 Runtime surfaces:
 
 ```text
-package.json
-pnpm-workspace.yaml
 aoi_apps/agentic-ops-dashboard/
+aoi_apps/agentic-ops-dashboard/package.json
 scaffold/aoi_apps/agentic-ops-dashboard/
+scaffold/aoi_apps/agentic-ops-dashboard/package.json
 ```
 
 - The dashboard reads `.tasks/registry.md`, task artifact directories, and the
-	optional `.resources/` subtree as its authoritative workspace snapshot.
+  optional `.resources/` subtree as its authoritative workspace snapshot.
 - Explicit task-to-resource links are stored beside task artifacts in
-	`.tasks/{feature}/TASK-YYYY-NNN/relations.json`.
+  `.tasks/{feature}/TASK-YYYY-NNN/relations.json`.
 - Server-side writes are limited to governed `.resources/` mutations only.
 - The dashboard shell supports an explicit English/Spanish toggle and stores the
-	chosen locale locally so the same language returns on reload.
+  chosen locale locally so the same language returns on reload.
 - Translation is presentation-only: task identifiers, registry values, and raw
-	artifact preview payloads stay source-authored instead of being rewritten by
-	the UI.
+  artifact preview payloads stay source-authored instead of being rewritten by
+  the UI.
 - Realtime task changes preserve context inside the board: changed cards are
-	highlighted and status moves animate between workflow columns instead of
-	feeling like a full-surface refresh.
+  highlighted and status moves animate between workflow columns instead of
+  feeling like a full-surface refresh.
 
-Workspace commands:
+Runtime commands:
 
-- `pnpm dev:dashboard` — run the internal dashboard locally
-- `pnpm test:dashboard` — run the dashboard validation suite
-- `pnpm prepare:dashboard` — generate Nuxt types for the dashboard runtime
-- `pnpm build:dashboard` — build the dashboard for production smoke checks
+- `pnpm --dir aoi_apps/agentic-ops-dashboard dev` — run the internal dashboard locally
+- `pnpm --dir aoi_apps/agentic-ops-dashboard test` — run the dashboard validation suite
+- `pnpm --dir aoi_apps/agentic-ops-dashboard exec nuxt prepare` — generate Nuxt types for the dashboard runtime
+- `pnpm --dir aoi_apps/agentic-ops-dashboard build` — build the dashboard for production smoke checks
 
 ## Versioned Memory Governance
 
@@ -232,27 +237,27 @@ AOI now provisions a governed version store for operational memory state:
 ```
 
 - `.exportsmemories/` is the governed repository-local base directory for
-	exported portable memory bundles.
+  exported portable memory bundles.
 - `active.json` is the canonical pointer to the active and immediately
-	restorable memory version per workspace.
+  restorable memory version per workspace.
 - Each manifest records `sourceWorkspace`, `sourceVersionId`, selected scopes,
-	Owner context, and `retain` / `complement` / `discard` decisions.
+  Owner context, and `retain` / `complement` / `discard` decisions.
 - Bundle-sourced manifests also preserve `sourceTransport`, bundle provenance,
-	included and omitted scopes, and integrity metadata.
+  included and omitted scopes, and integrity metadata.
 - Each candidate or active version carries its own dynamic constitutional
-	snapshot for auditability and rollback safety.
+  snapshot for auditability and rollback safety.
 
 Governed workflows:
 
 - `/export-memory-bundle` — exports an explicit memory version into a governed
-	portable bundle inside `.exportsmemories/`.
+  portable bundle inside `.exportsmemories/`.
 - `/import-memory-bundle` — validates a portable bundle and prepares a governed
-	candidate version before any activation.
+  candidate version before any activation.
 - `/sync-workspace-memory` — prepares a candidate version from an explicit
-	source workspace and source version, then activates it only after Owner
-	approval.
+  source workspace and source version, then activates it only after Owner
+  approval.
 - `/rollback-workspace-memory` — restores the registered previous version with
-	an explicit rollback reason.
+  an explicit rollback reason.
 
 Deterministic script surface:
 
@@ -264,7 +269,7 @@ Deterministic script surface:
 - `scripts/memory-sync/rollback-version.mjs`
 - `pnpm test:memory-sync` — validate the version lifecycle with Node tests
 - `pnpm test:memory-sync:bundle` — validate the portable bundle contract,
-	export/import flow, and lifecycle preservation
+  export/import flow, and lifecycle preservation
 
 ## ICM — 4 Memory Methods
 
@@ -302,7 +307,7 @@ The `dual-sync.instructions.md` enforces this rule automatically. If agents dive
 ```bash
 # macOS / Linux
 bash "/path/to/AOI/teardown.sh" /path/to/my-project
-````
+```
 
 ```powershell
 # Windows 11+
@@ -311,19 +316,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\AOI\teardown.ps1
 
 ## Agents
 
-| Agent                       | SDD Phase                     | File (Copilot)                    |
-| --------------------------- | ----------------------------- | --------------------------------- |
-| **@supervisor**             | All (orchestrator)            | `supervisor.agent.md`             |
-| **@functional-analyst**     | Explore, Specify              | `functional-analyst.agent.md`     |
-| **@solution-architect**     | Plan, Tasks                   | `solution-architect.agent.md`     |
-| **@frontend-developer**     | Implement                     | `frontend-developer.agent.md`     |
-| **@backend-developer**      | Implement                     | `backend-developer.agent.md`      |
-| **@devops-engineer**        | Implement                     | `devops-engineer.agent.md`        |
-| **@ux-designer**            | Implement                     | `ux-designer.agent.md`            |
-| **@documentation-analyst**  | Archive                       | `documentation-analyst.agent.md`  |
-| **@integration-specialist** | Verify                        | `integration-specialist.agent.md` |
+| Agent                       | SDD Phase                      | File (Copilot)                    |
+| --------------------------- | ------------------------------ | --------------------------------- |
+| **@supervisor**             | All (orchestrator)             | `supervisor.agent.md`             |
+| **@functional-analyst**     | Explore, Specify               | `functional-analyst.agent.md`     |
+| **@solution-architect**     | Plan, Tasks                    | `solution-architect.agent.md`     |
+| **@frontend-developer**     | Implement                      | `frontend-developer.agent.md`     |
+| **@backend-developer**      | Implement                      | `backend-developer.agent.md`      |
+| **@devops-engineer**        | Implement                      | `devops-engineer.agent.md`        |
+| **@ux-designer**            | Implement                      | `ux-designer.agent.md`            |
+| **@documentation-analyst**  | Archive                        | `documentation-analyst.agent.md`  |
+| **@integration-specialist** | Verify                         | `integration-specialist.agent.md` |
 | **@triage-specialist**      | Bug & Definition — transversal | `triage-specialist.agent.md`      |
-| **@resource-analyst**       | Resources — transversal       | `resource-analyst.agent.md`       |
+| **@resource-analyst**       | Resources — transversal        | `resource-analyst.agent.md`       |
 
 ---
 

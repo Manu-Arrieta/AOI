@@ -201,31 +201,31 @@ The managed workspace also provisions an internal Nuxt runtime under
 
 Commands:
 
-- `pnpm dev:dashboard`
-- `pnpm test:dashboard`
-- `pnpm prepare:dashboard`
-- `pnpm build:dashboard`
+- `pnpm --dir aoi_apps/agentic-ops-dashboard dev`
+- `pnpm --dir aoi_apps/agentic-ops-dashboard test`
+- `pnpm --dir aoi_apps/agentic-ops-dashboard exec nuxt prepare`
+- `pnpm --dir aoi_apps/agentic-ops-dashboard build`
 
 Boundaries:
 
 - Reads `.tasks/registry.md`, task artifact directories, and optional
-	`.resources/` content.
+  `.resources/` content.
 - Uses `.tasks/{feature}/TASK-YYYY-NNN/relations.json` as the canonical explicit
-	task-to-resource relation record.
+  task-to-resource relation record.
 - Restricts writes to governed `.resources/` operations only.
 
 ## Support Workflows
 
 > These workflows manage shared infrastructure outside the core SDD chain.
 
-| Command                                 | Copilot                                                         | Antigravity                                                  | Description                                  |
-| --------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------- |
-| `/new-resource-folder`                  | `.github/prompts/new-resource-folder.prompt.md`                 | `.agent/skills/new-resource-folder/SKILL.md`                 | Create governed folder inside `.resources/`  |
-| `/move-resource-folder`                 | `.github/prompts/move-resource-folder.prompt.md`                | `.agent/skills/move-resource-folder/SKILL.md`                | Move governed folder inside `.resources/`    |
-| `/delete-resource-folder`               | `.github/prompts/delete-resource-folder.prompt.md`              | `.agent/skills/delete-resource-folder/SKILL.md`              | Delete governed folder inside `.resources/`  |
-| `/export-memory-bundle`                 | `.github/prompts/export-memory-bundle.prompt.md`                | `.agent/skills/export-memory-bundle/SKILL.md`                | Export governed memory bundle to `.exportsmemories/` |
-| `/import-memory-bundle`                 | `.github/prompts/import-memory-bundle.prompt.md`                | `.agent/skills/import-memory-bundle/SKILL.md`                | Import bundle into a governed candidate version |
-| `/update-resource-governance-structure` | `.github/prompts/update-resource-governance-structure.prompt.md`| `.agent/skills/update-resource-governance-structure/SKILL.md`| Sync `.resources/constitution.md` with actual folder structure |
+| Command                                 | Copilot                                                          | Antigravity                                                   | Description                                                    |
+| --------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------- |
+| `/new-resource-folder`                  | `.github/prompts/new-resource-folder.prompt.md`                  | `.agent/skills/new-resource-folder/SKILL.md`                  | Create governed folder inside `.resources/`                    |
+| `/move-resource-folder`                 | `.github/prompts/move-resource-folder.prompt.md`                 | `.agent/skills/move-resource-folder/SKILL.md`                 | Move governed folder inside `.resources/`                      |
+| `/delete-resource-folder`               | `.github/prompts/delete-resource-folder.prompt.md`               | `.agent/skills/delete-resource-folder/SKILL.md`               | Delete governed folder inside `.resources/`                    |
+| `/export-memory-bundle`                 | `.github/prompts/export-memory-bundle.prompt.md`                 | `.agent/skills/export-memory-bundle/SKILL.md`                 | Export governed memory bundle to `.exportsmemories/`           |
+| `/import-memory-bundle`                 | `.github/prompts/import-memory-bundle.prompt.md`                 | `.agent/skills/import-memory-bundle/SKILL.md`                 | Import bundle into a governed candidate version                |
+| `/update-resource-governance-structure` | `.github/prompts/update-resource-governance-structure.prompt.md` | `.agent/skills/update-resource-governance-structure/SKILL.md` | Sync `.resources/constitution.md` with actual folder structure |
 
 ### ICM topic_keys per phase
 

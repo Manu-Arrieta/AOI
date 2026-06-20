@@ -28,7 +28,8 @@ function populatedManifest() {
         surface: "visual-ui",
         scope: [".sandboxes/auth-v2/ui"],
         stack: ["vue", "nuxt-ui"],
-        integrationTarget: "frontend:aoi_apps/agentic-ops-dashboard/app/components",
+        integrationTarget:
+          "frontend:aoi_apps/agentic-ops-dashboard/app/components",
         chain: ["page/flow", "store/state", "service", "execution-client"],
         addedInConstitutionVersion: "1.0.0",
       },
@@ -71,7 +72,8 @@ function populatedManifest() {
         compartment: "auth-api",
         kind: "endpoint",
         disposition: "integrate",
-        target: "backend:aoi_apps/agentic-ops-dashboard/server/api/login.post.ts",
+        target:
+          "backend:aoi_apps/agentic-ops-dashboard/server/api/login.post.ts",
         status: "migrated",
         notes: "",
       },

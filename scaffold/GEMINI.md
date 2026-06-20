@@ -138,10 +138,10 @@ Para resumen rápido:
 
 Managed workspace commands:
 
-- `pnpm dev:dashboard`
-- `pnpm test:dashboard`
-- `pnpm prepare:dashboard`
-- `pnpm build:dashboard`
+- `pnpm --dir aoi_apps/agentic-ops-dashboard dev`
+- `pnpm --dir aoi_apps/agentic-ops-dashboard test`
+- `pnpm --dir aoi_apps/agentic-ops-dashboard exec nuxt prepare`
+- `pnpm --dir aoi_apps/agentic-ops-dashboard build`
 
 Runtime boundaries:
 

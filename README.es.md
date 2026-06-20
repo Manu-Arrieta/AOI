@@ -37,9 +37,9 @@ Luego, en el chat de Copilot dentro de VS Code:
 Podés usar AOI de dos maneras:
 
 1. **Instalar AOI dentro de otro proyecto**
-  Ejecutás `setup.sh` o `setup.ps1` y apuntás al repositorio destino que querés bootstrapear con el stack de AOI.
+   Ejecutás `setup.sh` o `setup.ps1` y apuntás al repositorio destino que querés bootstrapear con el stack de AOI.
 2. **Trabajar sobre AOI mismo**
-  Abrís este repositorio, instalás las dependencias del workspace y usás el dashboard interno junto con los prompts SDD para evolucionar la plantilla.
+   Abrís este repositorio, instalás las dependencias del workspace y usás el dashboard interno junto con los prompts SDD para evolucionar la plantilla.
 
 Prerrequisitos mínimos antes de la primera ejecución:
 
@@ -60,18 +60,23 @@ El repositorio público de AOI arranca limpio: los registries de tareas están v
 
 Artefactos de release y validación:
 
-- [docs/releases/v0.1.0.es.md](docs/releases/v0.1.0.es.md) — notas de la primera baseline pública de la plantilla.
-- [docs/verification/external-smoke-plan.es.md](docs/verification/external-smoke-plan.es.md) — checklist externa para validar AOI como repo y bootstrapper.
+- [docs/internal/releases/v0.1.0.es.md](docs/internal/releases/v0.1.0.es.md) — notas de la primera baseline pública de la plantilla.
+- [docs/internal/verification/external-smoke-plan.es.md](docs/internal/verification/external-smoke-plan.es.md) — checklist externa para validar AOI como repo y bootstrapper.
+
+Límite de documentación:
+
+- `docs/internal/` contiene la documentación de mantenimiento de AOI como bootstrapper.
+- `scaffold/docs/` queda reservado para la documentación que sí debe instalarse en proyectos downstream.
 
 ## Qué Se Instala
 
 ### Herramientas (en orden de prioridad)
 
-| Herramienta     | Propósito                           | macOS / Linux                             | Windows 11+                                                  |
-| --------------- | ----------------------------------- | ----------------------------------------- | ------------------------------------------------------------ |
-| **RTK**         | Optimización de tokens (60-90%)     | `brew install rtk`                        | Binario desde GitHub Releases vía `setup.ps1`                |
-| **ICM**         | Memoria persistente (4 métodos)     | `brew tap rtk-ai/tap && brew install icm` | `install.ps1` oficial vía `setup.ps1`                        |
-| **Specify CLI** | Ciclo de vida de Spec-Driven Development | `uv tool install specify-cli`         | `winget install --id astral-sh.uv -e` + `uv tool install ...` |
+| Herramienta     | Propósito                                | macOS / Linux                             | Windows 11+                                                   |
+| --------------- | ---------------------------------------- | ----------------------------------------- | ------------------------------------------------------------- |
+| **RTK**         | Optimización de tokens (60-90%)          | `brew install rtk`                        | Binario desde GitHub Releases vía `setup.ps1`                 |
+| **ICM**         | Memoria persistente (4 métodos)          | `brew tap rtk-ai/tap && brew install icm` | `install.ps1` oficial vía `setup.ps1`                         |
+| **Specify CLI** | Ciclo de vida de Spec-Driven Development | `uv tool install specify-cli`             | `winget install --id astral-sh.uv -e` + `uv tool install ...` |
 
 En Windows, AOI usa `winget` para `uv` cuando está disponible. RTK no
 documenta por ahora un paquete oficial para `winget`, así que `setup.ps1`
@@ -181,16 +186,16 @@ Comandos administrativos:
 
 ## Runtime Interno del Dashboard
 
-AOI ahora aprovisiona un workspace interno en Nuxt para visibilidad
+AOI ahora aprovisiona un paquete autocontenido en Nuxt para visibilidad
 operativa del proyecto en tiempo real.
 
 Superficies del runtime:
 
 ```text
-package.json
-pnpm-workspace.yaml
 aoi_apps/agentic-ops-dashboard/
+aoi_apps/agentic-ops-dashboard/package.json
 scaffold/aoi_apps/agentic-ops-dashboard/
+scaffold/aoi_apps/agentic-ops-dashboard/package.json
 ```
 
 - El dashboard lee `.tasks/registry.md`, los directorios de artefactos de
@@ -209,12 +214,12 @@ scaffold/aoi_apps/agentic-ops-dashboard/
   modificadas se resaltan y los cambios de estado se animan entre columnas sin
   dar sensación de refresco completo.
 
-Comandos del workspace:
+Comandos del runtime:
 
-- `pnpm dev:dashboard` — corre el dashboard interno localmente
-- `pnpm test:dashboard` — ejecuta la suite de validación del dashboard
-- `pnpm prepare:dashboard` — genera los tipos de Nuxt para el runtime
-- `pnpm build:dashboard` — compila el dashboard para chequeos de smoke
+- `pnpm --dir aoi_apps/agentic-ops-dashboard dev` — corre el dashboard interno localmente
+- `pnpm --dir aoi_apps/agentic-ops-dashboard test` — ejecuta la suite de validación del dashboard
+- `pnpm --dir aoi_apps/agentic-ops-dashboard exec nuxt prepare` — genera los tipos de Nuxt para el runtime
+- `pnpm --dir aoi_apps/agentic-ops-dashboard build` — compila el dashboard para chequeos de smoke
 
 ## Gobernanza de Memoria Versionada
 
@@ -279,12 +284,12 @@ Superficie determinística de scripts:
 Todos los agentes usan [ICM](https://github.com/rtk-ai/icm) con cuatro métodos
 complementarios:
 
-| Método                        | Qué hace                         | Cuándo                                     |
-| ---------------------------- | -------------------------------- | ------------------------------------------ |
-| **Memories** (episódica)     | Guardar/recuperar con decaimiento temporal | En cada fase: decisiones, progreso y contexto |
-| **Memoirs** (grafo de conocimiento) | Conceptos y relaciones permanentes | Decisiones de arquitectura, grafos de componentes |
-| **Feedback** (correcciones)  | Aprender de errores              | Fase de Verify, post-implementación        |
-| **Transcripts** (verbatim)   | Captura el replay crudo de la sesión | Fases de Explore y Archive              |
+| Método                              | Qué hace                                   | Cuándo                                            |
+| ----------------------------------- | ------------------------------------------ | ------------------------------------------------- |
+| **Memories** (episódica)            | Guardar/recuperar con decaimiento temporal | En cada fase: decisiones, progreso y contexto     |
+| **Memoirs** (grafo de conocimiento) | Conceptos y relaciones permanentes         | Decisiones de arquitectura, grafos de componentes |
+| **Feedback** (correcciones)         | Aprender de errores                        | Fase de Verify, post-implementación               |
+| **Transcripts** (verbatim)          | Captura el replay crudo de la sesión       | Fases de Explore y Archive                        |
 
 No se pierde contexto entre sesiones.
 
@@ -327,19 +332,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\AOI\teardown.ps1
 
 ## Agentes
 
-| Agente                        | Fase SDD                        | Archivo (Copilot)                  |
-| ----------------------------- | ------------------------------- | ---------------------------------- |
-| **@supervisor**               | Todas (orquestador)             | `supervisor.agent.md`              |
-| **@functional-analyst**       | Explore, Specify                | `functional-analyst.agent.md`      |
-| **@solution-architect**       | Plan, Tasks                     | `solution-architect.agent.md`      |
-| **@frontend-developer**       | Implement                       | `frontend-developer.agent.md`      |
-| **@backend-developer**        | Implement                       | `backend-developer.agent.md`       |
-| **@devops-engineer**          | Implement                       | `devops-engineer.agent.md`         |
-| **@ux-designer**              | Implement                       | `ux-designer.agent.md`             |
-| **@documentation-analyst**    | Archive                         | `documentation-analyst.agent.md`   |
-| **@integration-specialist**   | Verify                          | `integration-specialist.agent.md`  |
-| **@triage-specialist**        | Bug y Definición — transversal  | `triage-specialist.agent.md`       |
-| **@resource-analyst**         | Recursos — transversal          | `resource-analyst.agent.md`        |
+| Agente                      | Fase SDD                       | Archivo (Copilot)                 |
+| --------------------------- | ------------------------------ | --------------------------------- |
+| **@supervisor**             | Todas (orquestador)            | `supervisor.agent.md`             |
+| **@functional-analyst**     | Explore, Specify               | `functional-analyst.agent.md`     |
+| **@solution-architect**     | Plan, Tasks                    | `solution-architect.agent.md`     |
+| **@frontend-developer**     | Implement                      | `frontend-developer.agent.md`     |
+| **@backend-developer**      | Implement                      | `backend-developer.agent.md`      |
+| **@devops-engineer**        | Implement                      | `devops-engineer.agent.md`        |
+| **@ux-designer**            | Implement                      | `ux-designer.agent.md`            |
+| **@documentation-analyst**  | Archive                        | `documentation-analyst.agent.md`  |
+| **@integration-specialist** | Verify                         | `integration-specialist.agent.md` |
+| **@triage-specialist**      | Bug y Definición — transversal | `triage-specialist.agent.md`      |
+| **@resource-analyst**       | Recursos — transversal         | `resource-analyst.agent.md`       |
 
 ---
 

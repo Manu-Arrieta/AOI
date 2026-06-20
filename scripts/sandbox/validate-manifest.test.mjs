@@ -21,7 +21,8 @@ function baseManifest() {
         surface: "visual-ui",
         scope: [".sandboxes/auth-v2/ui"],
         stack: ["vue", "nuxt-ui"],
-        integrationTarget: "frontend:aoi_apps/agentic-ops-dashboard/app/components",
+        integrationTarget:
+          "frontend:aoi_apps/agentic-ops-dashboard/app/components",
         chain: ["page/flow", "store/state", "service", "execution-client"],
         addedInConstitutionVersion: "1.0.0",
       },
