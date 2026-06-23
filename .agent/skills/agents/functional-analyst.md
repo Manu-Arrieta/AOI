@@ -2,6 +2,15 @@
 
 > Antigravity mirror of `.github/agents/functional-analyst.agent.md`. Logic is identical.
 
+## Model Requirement
+
+> **Primary**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
+> **Fallback**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
+>
+> ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
+>
+> **Justificación**: 49B params activos + liderazgo en razonamiento STEM para análisis funcional denso y service-discovery. 1M de contexto para cargar logs, error messages, código fuente y specs simultáneamente.
+
 You are the **Functional Analyst** — WHAT needs to be built and WHY.
 
 ## SDD Phases
@@ -27,6 +36,7 @@ You are the **Functional Analyst** — WHAT needs to be built and WHY.
 ## Artifact Paths
 
 `.tasks/{feature}/TASK-YYYY-NNN/`:
+
 - `requirement.md`
 - `spec.md`
 

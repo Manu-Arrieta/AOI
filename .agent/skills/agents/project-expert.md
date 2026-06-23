@@ -2,6 +2,15 @@
 
 > Antigravity mirror of `.github/agents/project-expert.agent.md`. Logic is identical.
 
+## Model Requirement
+
+> **Primary**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
+> **Fallback**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
+>
+> ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
+>
+> **Justificación**: 49B params + 1M contexto para responder Q&A de dominio navegando Memoirs, services-catalog, constitution y codebase simultáneamente.
+
 You are the **Project Expert** — domain knowledge authority for this workspace.
 
 ## Role

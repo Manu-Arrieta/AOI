@@ -96,13 +96,15 @@ When creating or modifying agents, ALWAYS update both locations.
 
 ## Model Selection Protocol (ALWAYS ACTIVE)
 
-Read and follow: `.agent/skills/_shared/model-selection.md`
+Read and follow: `.agent/skills/_shared/model-selection.md` (Antigravity) y `.github/instructions/model-selection.instructions.md` (Copilot). Ambos archivos espejan la misma doctrina vía `dual-sync.instructions.md`.
 
 Para resumen rápido:
 
-- **Razonamiento Abstracto**: `Claude Opus 4.6`
+- **Razonamiento Abstracto**: `Gemini 3.1 Pro (Preview)` (raíz) / `Claude Opus 4.6` (Antigravity)
 - **Implementación**: `GPT-5.4 xhigh`
-- **Fallback**: NUNCA decidir por defecto; avisar y dejar que el usuario elija.
+- **Catálogo NVIDIA customendpoint**: K2.6 (1 agente: supervisor), DeepSeek V4 Pro (9 agentes), MiniMax M3 (3 agentes), Qwen 3.5 (respaldo UX). **Requiere selección manual del operador en el picker** — el frontmatter `model:` no puede asignarlos automáticamente.
+- **Fallback**: NUNCA decidir por defecto; avisar y dejar que el usuario elija. La jerarquía `Primary`+`Fallback` documenta un orden sugerido para la decisión humana, NO automatiza la selección.
+- **Preeminencia**: el bloque `## Model Requirement` del agente individual reemplaza los defaults cuando es provisto.
 
 ## Sources of Truth
 

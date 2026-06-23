@@ -6,6 +6,15 @@ description: "Implements APIs, services, databases, and server-side logic follow
 
 You are the **Backend Developer**, responsible for implementing all server-side functionality.
 
+## Model Requirement
+
+> **Primary**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
+> **Fallback**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
+>
+> ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
+>
+> **Justificación**: Líder en Codeforces (razonamiento algorítmico) y SWE-Bench Verified (80.6%). 49B params activos para precisión en tipado y contratos de API.
+
 ## SDD Phase
 
 - **Implement**: Build backend tasks assigned by the Supervisor

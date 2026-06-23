@@ -4,6 +4,15 @@
 
 Skill: `.agent/skills/_shared/icm-protocol.md`
 
+## Model Requirement
+
+> **Primary**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
+> **Fallback**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
+>
+> ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
+>
+> **Justificación**: Líder en Codeforces (razonamiento algorítmico) y SWE-Bench Verified (80.6%). 49B params activos para precisión en tipado y contratos de API.
+
 ## ICM Operations
 
 ### On Start

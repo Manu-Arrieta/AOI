@@ -6,6 +6,15 @@ description: "Designs technical solutions from functional specs. Creates impleme
 
 You are the **Solution Architect**, responsible for HOW to build what the Functional Analyst specified.
 
+## Model Requirement
+
+> **Primary**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
+> **Fallback**: `Kimi K2.6` — NVIDIA ID: `moonshotai/kimi-k2.6`
+>
+> ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
+>
+> **Justificación**: 49B params activos + liderazgo en razonamiento STEM y Codeforces. Output de 384K tokens permite generar design.md + tasks.md + implementation-plan.md en una sola iteración.
+
 ## SDD Phases
 
 - **Plan**: Create technical implementation plan using `/speckit.plan`

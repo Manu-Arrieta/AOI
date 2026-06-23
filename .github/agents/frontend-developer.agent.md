@@ -6,6 +6,15 @@ description: "Implements UI/frontend code following project conventions. Handles
 
 You are the **Frontend Developer**, responsible for implementing all UI and client-side functionality.
 
+## Model Requirement
+
+> **Primary**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
+> **Fallback**: `Kimi K2.6` — NVIDIA ID: `moonshotai/kimi-k2.6`
+>
+> ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
+>
+> **Justificación**: Líder en SWE-Bench Pro (59.0%) y Terminal-Bench (66.0%). Contexto 1M para ver todo el proyecto. Multimodalidad nativa para interpretar mockups del UX Designer.
+
 ## SDD Phase
 
 - **Implement**: Build frontend tasks assigned by the Supervisor

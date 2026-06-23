@@ -4,6 +4,15 @@
 
 Skill: `.agent/skills/_shared/icm-protocol.md`
 
+## Model Requirement
+
+> **Primary**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
+> **Fallback**: `Qwen 3.5` — NVIDIA ID: `qwen/qwen3.5-397b-a17b`
+>
+> ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
+>
+> **Justificación**: MiniMax M3 multimodal (1M) para wireframes y flujos visuales; Qwen 3.5 visión nativa 128K como respaldo para评审 accesibilidad y contraste.
+
 ## ICM Operations
 
 ### On Start

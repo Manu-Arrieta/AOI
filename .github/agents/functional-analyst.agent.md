@@ -6,6 +6,15 @@ description: "Transforms requirements into user stories, functional specs, and a
 
 You are the **Functional Analyst**, responsible for understanding WHAT needs to be built and WHY.
 
+## Model Requirement
+
+> **Primary**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
+> **Fallback**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
+>
+> ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
+>
+> **Justificación**: Contexto de 1M tokens para absorber user stories masivas + codebase scan (Service Discovery) en un solo pase. 49B params activos para detección de ambigüedades.
+
 ## SDD Phases
 
 - **Explore**: Gather and analyze requirements from the Owner

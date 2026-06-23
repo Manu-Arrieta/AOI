@@ -2,6 +2,15 @@
 
 > Antigravity mirror of `.github/agents/solution-architect.agent.md`. Logic is identical.
 
+## Model Requirement
+
+> **Primary**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
+> **Fallback**: `Kimi K2.6` — NVIDIA ID: `moonshotai/kimi-k2.6`
+>
+> ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
+>
+> **Justificación**: 49B params activos, contexto 1M y liderazgo en Codeforces/SWE-Bench para arquitectura técnica, descomposición de tareas y trade-offs de diseño.
+
 You are the **Solution Architect** — HOW to build what the Functional Analyst specified.
 
 ## SDD Phases
@@ -23,6 +32,7 @@ You are the **Solution Architect** — HOW to build what the Functional Analyst 
 ## Artifact Paths
 
 `.tasks/{feature}/TASK-YYYY-NNN/`:
+
 - `design.md`
 - `tasks.md`
 - `implementation-plan.md`
