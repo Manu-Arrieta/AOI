@@ -1876,6 +1876,138 @@ a {
   margin-top: 0.4rem;
 }
 
+.token-usage-copy,
+.token-usage-toggle-note,
+.token-usage-request-copy p,
+.token-usage-row-label small,
+.token-usage-row-value small {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.token-usage-toggle-note {
+  margin-top: 0.45rem;
+  font-size: 0.84rem;
+}
+
+.token-usage-shell,
+.token-usage-empty,
+.token-usage-request-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.token-usage-summary-grid {
+  margin-top: 0.25rem;
+}
+
+.token-usage-state {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.token-usage-section-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.token-usage-section {
+  padding: 1.15rem;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+}
+
+.token-usage-section-wide {
+  width: 100%;
+}
+
+.token-usage-section header,
+.token-usage-request-top,
+.token-usage-request-metrics,
+.token-usage-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.token-usage-section header {
+  margin-bottom: 0.9rem;
+}
+
+.token-usage-section h3,
+.token-usage-row-label strong,
+.token-usage-request-top strong {
+  margin: 0;
+}
+
+.token-usage-row {
+  padding: 0.8rem 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.token-usage-row:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.token-usage-row-value {
+  text-align: right;
+}
+
+.token-usage-request {
+  padding: 1rem 1.1rem;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+}
+
+.token-usage-request-top p {
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+}
+
+.token-usage-request-copy {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.8rem;
+}
+
+.token-usage-request-metrics {
+  margin-top: 0.9rem;
+}
+
+.token-usage-request-metrics article {
+  min-width: 0;
+  flex: 1 1 0;
+  padding: 0.8rem 0.9rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.token-usage-request-metrics span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.token-usage-request-metrics strong {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 1.05rem;
+  letter-spacing: -0.03em;
+}
+
 @media (max-width: 800px) {
   .ops-shell {
     width: min(100vw - 1.2rem, 100%);
@@ -1952,9 +2084,24 @@ a {
   .mini-header,
   .dialog-header,
   .resource-row,
-  .dialog-actions {
+  .dialog-actions,
+  .token-usage-section header,
+  .token-usage-request-top,
+  .token-usage-request-metrics,
+  .token-usage-row {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .token-usage-section-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .token-usage-state,
+  .token-usage-row-value {
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
   }
 
   .locale-switcher-shell,

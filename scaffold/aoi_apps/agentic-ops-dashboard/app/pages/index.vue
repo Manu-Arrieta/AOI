@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import { useLocale } from '../composables/useLocale'
 import { translateDashboardStatus, translateWorkspaceError } from '../utils/locales'
@@ -22,9 +22,18 @@ const {
   performResourceAction,
 } = useWorkspace()
 
+const {
+  summary: tokenUsageSummary,
+  isLoading: isTokenUsageLoading,
+  errorMessage: tokenUsageError,
+  initializeTokenObservability,
+  refreshTokenObservability,
+  setTokenObservabilityEnabled,
+} = useTokenObservability()
+
 const { locale, messages, setLocale } = useLocale()
 
-type WorkspaceView = 'tasks' | 'resources'
+type WorkspaceView = 'tasks' | 'resources' | 'metrics'
 
 const dialogMode = ref<'create' | 'move' | 'delete' | null>(null)
 const dialogAnchorPath = ref('.resources')
@@ -111,8 +120,24 @@ const workspaceViewItems = computed(() => [
     icon: 'i-lucide-folder-tree',
     badge: resourceRoots.value,
   },
+  {
+    label: messages.value.tokenMetrics.title,
+    value: 'metrics',
+    icon: 'i-lucide-chart-no-axes-column',
+    badge: tokenUsageSummary.value?.totals.requestCount ?? 0,
+  },
 ])
 const activeWorkspaceViewMeta = computed(() => {
+  if (activeWorkspaceView.value === 'metrics') {
+    return {
+      eyebrow: messages.value.tokenMetrics.eyebrow,
+      title: messages.value.tokenMetrics.title,
+      badge: tokenUsageSummary.value?.status === 'disabled'
+        ? messages.value.tokenMetrics.statusDisabled
+        : `${tokenUsageSummary.value?.totals.requestCount ?? 0} ${messages.value.tokenMetrics.requests}`,
+    }
+  }
+
   if (activeWorkspaceView.value === 'resources') {
     return {
       eyebrow: messages.value.resources.eyebrow,
@@ -127,6 +152,9 @@ const activeWorkspaceViewMeta = computed(() => {
     badge: `${workspaceCounts.value.tasks} ${messages.value.taskBoard.trackedTasks}`,
   }
 })
+const isActiveWorkspaceViewLoading = computed(() => (
+  activeWorkspaceView.value === 'metrics' ? isTokenUsageLoading.value : isLoading.value
+))
 const detailOperationalContext = computed(() => ({
   boardPulse: {
     activeRatio: activeTaskRatio.value,
@@ -145,6 +173,15 @@ const detailOperationalContext = computed(() => ({
 
 function setWorkspaceView(view: WorkspaceView) {
   activeWorkspaceView.value = view
+}
+
+async function handleActiveWorkspaceViewRefresh() {
+  if (activeWorkspaceView.value === 'metrics') {
+    await refreshTokenObservability()
+    return
+  }
+
+  await refreshWorkspace(true)
 }
 
 function openTaskDetailModal() {
@@ -181,6 +218,16 @@ async function handleResourceSubmit(payload: Record<string, string | boolean>) {
   await performResourceAction(dialogMode.value, payload)
   closeResourceDialog()
 }
+
+async function handleTokenObservabilityToggle(enabled: boolean) {
+  await setTokenObservabilityEnabled(enabled)
+}
+
+watch(activeWorkspaceView, (view) => {
+  if (view === 'metrics') {
+    void initializeTokenObservability()
+  }
+})
 </script>
 
 <template>
@@ -343,10 +390,10 @@ async function handleResourceSubmit(payload: Record<string, string | boolean>) {
               color="neutral"
               icon="i-lucide-refresh-cw"
               variant="solid"
-              :loading="isLoading"
-              @click="refreshWorkspace(true)"
+              :loading="isActiveWorkspaceViewLoading"
+              @click="handleActiveWorkspaceViewRefresh"
             >
-              {{ isLoading ? messages.common.refreshing : messages.common.refresh }}
+              {{ isActiveWorkspaceViewLoading ? messages.common.refreshing : messages.common.refresh }}
             </UButton>
           </div>
         </template>
@@ -386,12 +433,20 @@ async function handleResourceSubmit(payload: Record<string, string | boolean>) {
               />
 
               <ResourceExplorer
-                v-else
+                v-else-if="activeWorkspaceView === 'resources'"
                 :resources="snapshot?.resources ?? []"
                 :busy="isMutatingResources"
                 @create="openResourceDialog('create', $event)"
                 @move="openResourceDialog('move', $event)"
                 @delete="openResourceDialog('delete', $event)"
+              />
+
+              <TokenUsagePanel
+                v-else
+                :summary="tokenUsageSummary"
+                :loading="isTokenUsageLoading"
+                :error-message="tokenUsageError"
+                @toggle="handleTokenObservabilityToggle"
               />
             </div>
           </template>
