@@ -102,9 +102,35 @@ Para resumen rápido:
 
 - **Razonamiento Abstracto**: `Gemini 3.1 Pro (Preview)` (raíz) / `Claude Opus 4.6` (Antigravity)
 - **Implementación**: `GPT-5.4 xhigh`
-- **Catálogo NVIDIA customendpoint**: K2.6 (1 agente: supervisor), DeepSeek V4 Pro (9 agentes), MiniMax M3 (3 agentes), Qwen 3.5 (respaldo UX). **Requiere selección manual del operador en el picker** — el frontmatter `model:` no puede asignarlos automáticamente.
+- **Catálogo NVIDIA customendpoint**: K2.6 (1 agente: supervisor), DeepSeek V4 Pro (9 agentes), MiniMax M3 (3 agentes), Qwen 3.5 (respaldo UX). **Requiere configuración previa del operador** — ver §5 abajo.
 - **Fallback**: NUNCA decidir por defecto; avisar y dejar que el usuario elija. La jerarquía `Primary`+`Fallback` documenta un orden sugerido para la decisión humana, NO automatiza la selección.
 - **Preeminencia**: el bloque `## Model Requirement` del agente индивидуаль reemplaza los defaults cuando es provisto.
+
+### §5 — Customendpoint NVIDIA (paso opcional pero recomendado)
+
+> ⚠️ **Default si NO se configura**: AOI sigue funcionando con razonamiento abstracto Gemini 3.1 Pro Preview (raíz) / Claude Opus 4.6 (Antigravity) y GPT-5.4 xhigh para implementación. **El catálogo NVIDIA queda inerte hasta que el operador active el custom endpoint.**
+
+**Orden recomendado de configuración** (una vez por máquina del operador):
+
+1. **Tener API key de NVIDIA** (`https://integrate.api.nvidia.com/v1`). Configurar como variable de entorno o pegarla manualmente.
+2. **Configurar el custom endpoint en VS Code**:
+   - Archivo destino: `~/Library/Application Support/Code/User/ChatLanguageModel.json` (macOS), `~/.config/Code/User/ChatLanguageModel.json` (Linux), `%APPDATA%\Code\User\ChatLanguageModel.json` o `%APPDATA%\Roaming\Code\User\ChatLanguageModel.json` (Windows — ambas formas válidas; el helper prueba las dos secuencialmente).
+   - Formato (array JSON con 4 modelos: `minimaxai/minimax-m3`, `qwen/qwen3.5-397b-a17b`, `deepseek-ai/deepseek-v4-pro`, `moonshotai/kimi-k2.6`) — ver plantilla en `scaffold/.vscode/ChatLanguageModel.example.json` (trackeada, sin secret).
+   - **Reemplazar** el placeholder `"APIKEY-CONFIGURADA-PREVIAMENTE"` por tu API key real.
+3. **Reiniciar VS Code** para que los modelos aparezcan en el picker.
+4. **Seleccionar manualmente** el `Primary` (o `Fallback`) por agente antes de invocar — los frontmatter `model:` no pueden asignarlos automáticamente.
+
+**Forma automatizada**: `setup.sh` / `setup.ps1` ofrece Phase 1.5 que copia la plantilla al VS Code User dir del operador y recuerda reemplazar la API key. Es **opt-in** (`Y/n`), no-bloqueante, y se puede relanzar con `bash scripts/nvidia-vscode-setup.sh [--key <KEY>]` después.
+
+**Invocación manual**:
+
+```bash
+bash scripts/nvidia-vscode-setup.sh --dry-run      # preview sin copiar
+bash scripts/nvidia-vscode-setup.sh --yes --key <APIKEY>   # non-interactive
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/nvidia-vscode-setup.ps1 -Yes -ApiKey <KEY>
+```
+
+**Seguridad**: el archivo `ChatLanguageModel.json` con API key real **NUNCA** se commitea — `.gitignore` excluye `ChatLanguageModel.json` y mantiene tracked sólo `ChatLanguageModel.example.json`.
 
 ## Sources of Truth
 

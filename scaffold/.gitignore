@@ -54,3 +54,7 @@ CLAUDE.md
 
 # Exported memory bundle artifacts
 .exportsmemories/
+
+# NVIDIA customendpoint credentials — keep example tracked, ignore real keyfile
+.vscode/ChatLanguageModel.json
+!.vscode/ChatLanguageModel.example.json

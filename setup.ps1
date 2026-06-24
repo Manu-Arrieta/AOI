@@ -654,6 +654,28 @@ $null = Ensure-IcmAvailable
 Install-Uv
 Install-Specify
 
+Write-Header "Phase 1.5: NVIDIA customendpoint (opcional)"
+$nvidiaScript = Join-Path $PSScriptRoot "scripts/nvidia-vscode-setup.ps1"
+if (Test-Path $nvidiaScript) {
+    Write-Info "Detectando VS Code para configurar custom endpoint NVIDIA (Kimi K2.6, DeepSeek V4 Pro, MiniMax M3, Qwen 3.5)."
+    Write-Info "Presione Enter para ejecutar ahora, o 'n' + Enter para omitir (AOI seguirá funcionando con defaults vendor-copilot)."
+    $nvidiaChoice = Read-Host "▸ Configurar customendpoint NVIDIA? [Y/n]"
+    if ($nvidiaChoice -match '^[nN]([oO])?$') {
+        Write-Warn "Saltado por elección del operador. AOI continúa con defaults vendor-copilot (Gemini 3.1 Pro Preview / GPT-5.4 xhigh)."
+    } else {
+        try {
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $nvidiaScript
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warn "nvidia-vscode-setup.ps1 salió con código $LASTEXITCODE — el setup continúa. El operador puede correrlo manualmente tras finalizar."
+            }
+        } catch {
+            Write-Warn "No se pudo invocar nvidia-vscode-setup.ps1: $($_.Exception.Message) — el setup continúa."
+        }
+    }
+} else {
+    Write-Warn "scripts/nvidia-vscode-setup.ps1 no encontrado junto a setup.ps1 — saltando Phase 1.5"
+}
+
 Write-Header "Phase 2: Spec-Kit"
 Push-Location $ProjectPath
 try {

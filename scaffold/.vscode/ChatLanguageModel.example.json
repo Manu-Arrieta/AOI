@@ -1,0 +1,54 @@
+[
+  {
+    "name": "NVIDIA",
+    "vendor": "customendpoint",
+    "apiKey": "APIKEY-CONFIGURADA-PREVIAMENTE",
+    "apiType": "chat-completions",
+    "models": [
+      {
+        "id": "minimaxai/minimax-m3",
+        "name": "Minimax M3",
+        "url": "https://integrate.api.nvidia.com/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 8192
+      },
+      {
+        "id": "qwen/qwen3.5-397b-a17b",
+        "name": "Qwen 3.5",
+        "url": "https://integrate.api.nvidia.com/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 128000,
+        "maxOutputTokens": 16384
+      },
+      {
+        "id": "deepseek-ai/deepseek-v4-pro",
+        "name": "DeepSeek V4 Pro",
+        "url": "https://integrate.api.nvidia.com/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 16384
+      },
+      {
+        "id": "moonshotai/kimi-k2.6",
+        "name": "Kimi K2.6",
+        "url": "https://integrate.api.nvidia.com/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 256000,
+        "maxOutputTokens": 8192
+      }
+    ]
+  }
+]

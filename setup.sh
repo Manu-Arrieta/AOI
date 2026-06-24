@@ -313,6 +313,29 @@ require_icm
 install_uv
 install_specify || true
 
+# ── Phase 1.5: Optional NVIDIA customendpoint helper (non-blocking) ────────
+header "Phase 1.5: NVIDIA customendpoint (opcional)"
+
+if [[ -f "$SCRIPT_DIR/scripts/nvidia-vscode-setup.sh" ]]; then
+  info "Detectando VS Code para configurar custom endpoint NVIDIA (Kimi K2.6, DeepSeek V4 Pro, MiniMax M3, Qwen 3.5)"
+  info "Presione Enter para ejecutar ahora, o 'n' + Enter para omitir (AOI seguirá funcionando con defaults vendor-copilot)."
+  printf "${YELLOW}▸${NC} Configurar customendpoint NVIDIA? [Y/n]: "
+  read -r NVIDIA_CHOICE
+  case "$NVIDIA_CHOICE" in
+    n|N|no|NO)
+      warn "Saltado por elección del operador. AOI continúa con defaults vendor-copilot (Gemini 3.1 Pro Preview / GPT-5.4 xhigh)."
+      ;;
+    *)
+      bash "$SCRIPT_DIR/scripts/nvidia-vscode-setup.sh" || {
+        ret=$?
+        warn "nvidia-vscode-setup.sh salió con código $ret — el setup continúa. El operador puede correrlo manualmente tras finalizar."
+      }
+      ;;
+  esac
+else
+  warn "scripts/nvidia-vscode-setup.sh no encontrado junto a setup.sh — saltando Phase 1.5"
+fi
+
 # ── Phase 2: Initialize Spec-Kit ──────────────────────────────────────────
 header "Phase 2: Spec-Kit"
 

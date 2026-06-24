@@ -42,6 +42,39 @@ Este capítulo espeja el §4 de `.github/instructions/model-selection.instructio
 
 > Toda asignación de agente declarada en el capítulo raíz debe espejarse en `.agent/skills/agents/*.md` (Antigravity) con un bloque `## Model Requirement` equivalente. El protocolo `dual-sync.instructions.md` aplica sin excepciones.
 
+## 5. Customendpoint NVIDIA — Setup opcional (espejo del §5 raíz)
+
+> ⚠️ **Si NO se configura**, AOI sigue funcionando con los defaults Antigravity declarados en §1–§2 (`Claude Opus 4.6` y `GPT-5.4 xhigh`). El catálogo NVIDIA simplemente no se activa.
+
+Este capítulo espeja el §5 de `.github/instructions/model-selection.instructions.md` (raíz Copilot). El detalle completo de:
+
+- **Ubicaciones del VS Code User dir** (macOS / Linux / Windows; Windows con dos formas equivalentes `%APPDATA%\Code\User` y `%APPDATA%\Roaming\Code\User` — mismo directorio físico en 99% de los casos)
+- **Formato del archivo** ``ChatLanguageModel.json` con los 4 modelos NVIDIA
+- **Forma automatizada** vía `scripts/nvidia-vscode-setup.{sh,ps1}` durante Phase 1.5
+- **Forma manual** de copia y reemplazo de API key
+- **Reglas de seguridad** (gitignore excluye la keyfile real)
+
+…vive en el raíz. Este archivo Antigravity **no lo redefine** — sólo lo referencia para mantener paridad. El operador siempre debe:
+
+1. **Tener API key NVIDIA** activa (`https://integrate.api.nvidia.com/`).
+2. **Copiar** `scaffold/.vscode/ChatLanguageModel.example.json` al VS Code User dir con `apiKey` reemplazado por la API key real.
+3. **Reiniciar VS Code**.
+4. **Elegir manualmente** en el picker el `Primary` (o `Fallback`) documentado en el bloque `## Model Requirement` del agente invocado.
+
+Forma automatizada disponible:
+
+```bash
+# macOS / Linux
+bash scripts/nvidia-vscode-setup.sh --dry-run           # preview
+bash scripts/nvidia-vscode-setup.sh --yes --key <KEY>   # non-interactive
+
+# Windows
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/nvidia-vscode-setup.ps1 -DryRun
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/nvidia-vscode-setup.ps1 -Yes -ApiKey <KEY>
+```
+
+La regla §3 (detener y notificar al Owner, NUNCA elegir por defecto) **siempre** tiene prioridad sobre la jerarquía `Primary`+`Fallback` — incluso después de configurar el customendpoint, AOI no elige modelo por sí solo.
+
 ### Fuente
 
 Catálogo basado en la [Recomendación Consolidada del Benchmark](../../Benchmark/model-reference/consolidated-recommendation.md), cruzando evaluaciones de Gemini, Grok y GPT con análisis propio de Claude Opus.

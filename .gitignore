@@ -13,7 +13,11 @@ coverage/
 *.tsbuildinfo
 
 # Exported memory bundle artifacts
-.exportsmemories/*
+.exportsmemories/
+
+# NVIDIA customendpoint credentials — keep example tracked, ignore real keyfile
+.vscode/ChatLanguageModel.json
+!.vscode/ChatLanguageModel.example.json*
 !.exportsmemories/.gitkeep
 scaffold/.exportsmemories/*
 !scaffold/.exportsmemories/.gitkeep
