@@ -59,8 +59,130 @@ to_windows_path() {
   cygpath -w "$path_value"
 }
 
+# Sanitize a PowerShell script before passing it to Windows PowerShell 5.1.
+#
+# Windows PowerShell 5.1 (powershell.exe) is notoriously picky:
+#   - CRLF + Set-StrictMode Latest sometimes confuses the parser
+#   - A UTF-8 BOM (0xEF 0xBB 0xBF) at the top can shift line numbers by 1
+#   - Smart quotes (' ' " ") pasted from editors break tokenization
+#
+# We copy the source file to a tempfile next to it, strip BOM + CR, and force
+# UTF-8 (no BOM). Caller MUST invoke the sanitized path with PowerShell and
+# delete the tempfile when done.
+sanitize_ps1_for_windows_powershell5() {
+  local source_path="$1"
+  local target_path stage_path
+
+  if [ -z "$source_path" ] || [ ! -f "$source_path" ]; then
+    err "sanitize_ps1_for_windows_powershell5: source not found: $source_path"
+    return 1
+  fi
+
+  target_path="$(mktemp -t "aoi-setup-XXXXXX.ps1")"
+  stage_path="$(mktemp -t "aoi-setup-stage-XXXXXX.ps1")"
+  if [ -z "$target_path" ] || [ ! -f "$target_path" ] || [ -z "$stage_path" ]; then
+    err "sanitize_ps1_for_windows_powershell5: could not create tempfile"
+    return 1
+  fi
+
+  #   1. Strip UTF-8 BOM if present
+  #   2. Strip CR (\r) — convert CRLF → LF
+  # Write to a stage file directly (NOT via $()) so trailing \n is preserved.
+  cat "$source_path" \
+    | sed -e '1s/^\xEF\xBB\xBF//' \
+          -e 's/\r$//' \
+    > "$stage_path"
+
+  # Smart-quote pass (only if iconv is available; non-fatal if it fails)
+  if command -v iconv &>/dev/null && [ -s "$stage_path" ]; then
+    cat "$stage_path" | iconv -f UTF-8 -t UTF-8//IGNORE 2>/dev/null > "$stage_path.new" \
+      && mv "$stage_path.new" "$stage_path" || rm -f "$stage_path.new"
+  fi
+
+  # Replace curly quotes that editors love to inject.
+  # bash's `tr` does not interpret \uXXXX, so use python or perl if available;
+  # otherwise skip silently (the file in the repo never has these).
+  if command -v python3 &>/dev/null && [ -s "$stage_path" ]; then
+    python3 - "$stage_path" <<'PYEOF'
+import sys
+stage = sys.argv[1]
+table = str.maketrans({
+    chr(0x2018): chr(39),
+    chr(0x2019): chr(39),
+    chr(0x201C): chr(39),
+    chr(0x201D): chr(39),
+    chr(0x2013): "-",
+    chr(0x2014): "-",
+    chr(0x2026): "...",
+})
+with open(stage, "rb") as f:
+    data = f.read().decode("utf-8", errors="replace")
+with open(stage, "wb") as f:
+    f.write(data.translate(table).encode("utf-8"))
+PYEOF
+  elif command -v perl &>/dev/null && [ -s "$stage_path" ]; then
+    perl -CSDA -i -pe '
+        s/\x{2018}|\x{2019}|\x{201C}|\x{201D}/'\''/g;
+        s/\x{2013}|\x{2014}/-/g;
+        s/\x{2026}/.../g;
+    ' "$stage_path"
+  fi
+
+  # Ensure file ends with a single LF (PowerShell scripts need a final newline).
+  # Append one only if missing — never truncate content.
+  if [ ! -s "$stage_path" ]; then
+    err "sanitize_ps1_for_windows_powershell5: stage is empty"
+    rm -f "$stage_path" "$target_path"
+    return 1
+  fi
+  last_byte="$(tail -c 1 "$stage_path" 2>/dev/null | od -An -c | tr -d ' \n')"
+  if [ "$last_byte" = "n" ]; then
+    last_byte="\\n"
+  fi
+  if [ "$last_byte" != "\\n" ] && [ -n "$last_byte" ]; then
+    printf '\n' >> "$stage_path"
+  fi
+
+  mv "$stage_path" "$target_path"
+
+  SANITIZED_PS1_PATH="$target_path"
+  return 0
+}
+invoke_windows_powershell() {
+  local script_path="$1"
+  local project_path="$2"
+  local bin
+
+  for bin in pwsh.exe pwsh powershell.exe powershell; do
+    if command -v "$bin" &>/dev/null; then
+      info "Invoking $bin on $script_path"
+
+      # Windows PowerShell 5.1 path: sanitize first, run tempfile, clean up.
+      case "$bin" in
+        powershell.exe|powershell)
+          if ! sanitize_ps1_for_windows_powershell5 "$script_path"; then
+            return 1
+          fi
+          local tmp="$SANITIZED_PS1_PATH"
+          "$bin" -NoProfile -ExecutionPolicy Bypass -File "$tmp" "$project_path"
+          local rc=$?
+          rm -f "$tmp"
+          return $rc
+          ;;
+        *)
+          "$bin" -NoProfile -File "$script_path" "$project_path"
+          return $?
+          ;;
+      esac
+    fi
+  done
+
+  err "Git Bash on Windows requires powershell.exe, powershell, or pwsh to run setup.ps1."
+  return 127
+}
+
 run_windows_setup_from_git_bash() {
-  local project_path windows_project_path windows_script_path
+  local project_path windows_project_path windows_script_path ps_exit_code ps_stderr
 
   if [ -n "${1:-}" ]; then
     project_path="$1"
@@ -83,28 +205,31 @@ run_windows_setup_from_git_bash() {
 
   info "Git Bash on Windows detected — delegating to setup.ps1"
 
-  if command -v powershell.exe &>/dev/null; then
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$windows_script_path" "$windows_project_path"
-    exit $?
+  # Capture both streams so we can diagnose parse failures clearly.
+  ps_stderr="$(mktemp -t "aoi-ps-err-XXXXXX.log")"
+  if invoke_windows_powershell "$windows_script_path" "$windows_project_path" \
+        2> "$ps_stderr"; then
+    rm -f "$ps_stderr"
+    exit 0
   fi
 
-  if command -v powershell &>/dev/null; then
-    powershell -NoProfile -ExecutionPolicy Bypass -File "$windows_script_path" "$windows_project_path"
-    exit $?
+  ps_exit_code=$?
+  warn "PowerShell exited with code $ps_exit_code"
+  if [ -s "$ps_stderr" ]; then
+    err "PowerShell stderr:"
+    while IFS= read -r line; do
+      err "  $line"
+    done < "$ps_stderr"
+    rm -f "$ps_stderr"
   fi
 
-  if command -v pwsh.exe &>/dev/null; then
-    pwsh.exe -NoProfile -File "$windows_script_path" "$windows_project_path"
-    exit $?
-  fi
+  # Common pitfalls surfaced to the operator.
+  warn "If you see 'Unexpected token' parser errors, the most common causes are:"
+  warn "  1) A UTF-8 BOM at the start of setup.ps1 — fix with: powershell -c \"[IO.File]::WriteAllText('setup.ps1', ([IO.File]::ReadAllText('setup.ps1') -replace '^\uFEFF',''), (New-Object Text.UTF8Encoding \$false))\""
+  warn "  2) CRLF line endings mixed with Set-StrictMode Latest — sanity script handled this automatically; if it still fails, run: sed -i 's/\\r\\$//' setup.ps1"
+  warn "  3) The script being interpreted is NOT the one in this repo — verify with: Get-Content 'D:\\AOI\\AOI\\setup.ps1' -TotalCount 1 | Format-Hex"
 
-  if command -v pwsh &>/dev/null; then
-    pwsh -NoProfile -File "$windows_script_path" "$windows_project_path"
-    exit $?
-  fi
-
-  err "Git Bash on Windows requires powershell.exe, powershell, or pwsh to run setup.ps1."
-  exit 1
+  exit $ps_exit_code
 }
 
 if is_windows_git_bash; then
@@ -334,6 +459,34 @@ if [[ -f "$SCRIPT_DIR/scripts/nvidia-vscode-setup.sh" ]]; then
   esac
 else
   warn "scripts/nvidia-vscode-setup.sh no encontrado junto a setup.sh — saltando Phase 1.5"
+fi
+
+# ── Phase 1.6: Optional Headroom (headroom-ai) compression layer (non-blocking) ────────
+header "Phase 1.6: Headroom compression layer (opcional)"
+
+if [[ -f "$SCRIPT_DIR/scripts/install-headroom.sh" ]]; then
+  info "Headroom (headroomlabs-ai/headroom) provee compresión proxy/MCP/library para reducir"
+  info "tokens 60-95% sin tocar código. Es CAPA OPCIONAL encima de AOI bootstrapper."
+  info "Default si NO se instala: AOI continúa funcionando exactamente igual (no consume Headroom)."
+  printf "${YELLOW}▸${NC} Instalar Headroom pip package? [y/N]: "
+  read -r HEADROOM_CHOICE
+  case "$HEADROOM_CHOICE" in
+    y|Y|yes|YES)
+      bash "$SCRIPT_DIR/scripts/install-headroom.sh" || {
+        ret=$?
+        warn "install-headroom.sh salió con código $ret — el setup continúa. Headroom es opcional."
+      }
+      if [[ -f "$SCRIPT_DIR/scripts/headroom-vscode-setup.sh" ]]; then
+        info "Headroom (si se instaló) se configura por envvars (NO modifica VS Code)."
+        bash "$SCRIPT_DIR/scripts/headroom-vscode-setup.sh" || warn "headroom-vscode-setup.sh falló — AOI continúa, ver docs."
+      fi
+      ;;
+    *)
+      warn "Saltado por elección del operador. AOI continúa sin Headroom."
+      ;;
+  esac
+else
+  warn "scripts/install-headroom.sh no encontrado junto a setup.sh — saltando Phase 1.6"
 fi
 
 # ── Phase 2: Initialize Spec-Kit ──────────────────────────────────────────
