@@ -132,6 +132,65 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/nvidia-vscode-setup.
 
 **Seguridad**: el archivo `ChatLanguageModel.json` con API key real **NUNCA** se commitea — `.gitignore` excluye `ChatLanguageModel.json` y mantiene tracked sólo `ChatLanguageModel.example.json`.
 
+### §6 — Capa opcional de compresión Headroom (ortogonal a §5)
+
+> ⚠️ **Default si NO se activa**: AOI sigue funcionando con defaults vendor-copilot. Headroom es una capa **OPCIONAL** encima de AOI bootstrapper. NO se auto-activa.
+
+**Qué es Headroom**: proxy/compresor local que reduce tokens 60-95%. Se planta entre el agente y el LLM:
+
+```
+Tu agente
+   ↓
+Headroom proxy (opcional, localhost:8787)  ← comprime
+   ↓
+NVIDIA custom endpoint (opcional)            ← elige modelo
+   ↓
+Modelo LLM responde
+```
+
+> Las tres capas (AOI bootstrap, Headroom, NVIDIA) son **independientes y componibles**.
+
+**Forma automatizada**: `setup.sh` / `setup.ps1` ofrece **Phase 1.6** después de Phase 1.5 (NVIDIA). Es **opt-in** (`y/N`, default N), no-bloqueante, y se puede relanzar después con `bash scripts/install-headroom.sh`.
+
+```bash
+# macOS / Linux (firma AOI preferida: uv → pipx → pip)
+bash scripts/install-headroom.sh
+bash scripts/install-headroom.sh --method uv --extras all --yes
+bash scripts/install-headroom.sh --dry-run      # preview sin instalar
+
+# Windows
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-headroom.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-headroom.ps1 -Method uv -Extras all -Yes
+
+# Helper envvars (NO modifica shell rc automáticamente)
+bash scripts/headroom-vscode-setup.sh                   # plan completo
+bash scripts/headroom-vscode-setup.sh --emit-zsh        # snippet zsh al stdout (pipeable a ~/.zshrc)
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/headroom-vscode-setup.ps1 -EmitPowerShell
+```
+
+**Modos de uso post-install**:
+
+```bash
+headroom proxy --port 8787                    # proxy OpenAI-compatible
+headroom wrap copilot --subscription -- --model gpt-4o    # wrappear Copilot CLI
+from headroom import compress                 # library Python
+headroom mcp install                          # server MCP nativo
+```
+
+**AVISO IMPORTANTE — `headroom learn`**:
+
+> ⚠️ `headroom learn --apply` puede escribir sobre `GEMINI.md`, `AGENTS.md`, `CLAUDE.md` (los 3 archivos AOI-managed raíz) sin awareness AOI.
+>
+> - **NO** se auto-corre desde el bootstrapper AOI.
+> - **Recomendación**: usar `headroom learn --dry-run` primero, revisar el diff propuesto con `git diff`.
+> - **Si hace cambios no aprobados**: `git checkout -- GEMINI.md AGENTS.md CLAUDE.md` los descarta.
+>
+> Headroom es decisión del operador; AOI no se hace cargo del conflicto. Risk mitigado por diseño: docs + warning + dry-run policy.
+
+**Relación con §5 NVIDIA**: ortogonales y combinables. Ambas son opcionales con default seguro.
+
+---
+
 ## Sources of Truth
 
 | Resource               | Path                                    |

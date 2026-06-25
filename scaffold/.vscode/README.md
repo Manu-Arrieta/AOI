@@ -13,10 +13,10 @@ MiniMax M3, Qwen 3.5).
 
 ## Archivos
 
-| Archivo                           | Estado    | Función                                                                                                     |
-| :-------------------------------- | :-------- | :----------------------------------------------------------------------------------------------------------- |
-| `ChatLanguageModel.example.json`  | **tracked** | Plantilla con `apiKey` placeholder `APIKEY-CONFIGURADA-PREVIAMENTE`. **NO contiene secret real.**         |
-| `ChatLanguageModel.json`          | **ignorado** | (si lo creás localmente con tu API key real, debe estar en `.gitignore` del downstream / scaffold).     |
+| Archivo                          | Estado       | Función                                                                                             |
+| :------------------------------- | :----------- | :-------------------------------------------------------------------------------------------------- |
+| `ChatLanguageModel.example.json` | **tracked**  | Plantilla con `apiKey` placeholder `APIKEY-CONFIGURADA-PREVIAMENTE`. **NO contiene secret real.**   |
+| `ChatLanguageModel.json`         | **ignorado** | (si lo creás localmente con tu API key real, debe estar en `.gitignore` del downstream / scaffold). |
 
 ## Pasos para activarlo (una vez, en tu máquina)
 
@@ -63,11 +63,11 @@ Copy-Item .vscode/ChatLanguageModel.example.json "$env:APPDATA\Roaming\Code\User
 
 > 📍 **Resumen de VS Code User dir por plataforma** (el script helper `nvidia-vscode-setup.{sh,ps1}` resuelve automáticamente probando todas las alternativas):
 >
-> | Plataforma | Path canónico                                     | Forma expandida alternativa (Windows)                                |
-> | :--------- | :------------------------------------------------ | :------------------------------------------------------------------- |
-> | macOS      | `~/Library/Application Support/Code/User/`        | —                                                                   |
-> | Linux      | `~/.config/Code/User/`                            | —                                                                   |
-> | Windows    | `%APPDATA%\Code\User\`                            | `%APPDATA%\Roaming\Code\User\` (≡ mismo dir en 99% de los casos)     |
+> | Plataforma | Path canónico                              | Forma expandida alternativa (Windows)                            |
+> | :--------- | :----------------------------------------- | :--------------------------------------------------------------- |
+> | macOS      | `~/Library/Application Support/Code/User/` | —                                                                |
+> | Linux      | `~/.config/Code/User/`                     | —                                                                |
+> | Windows    | `%APPDATA%\Code\User\`                     | `%APPDATA%\Roaming\Code\User\` (≡ mismo dir en 99% de los casos) |
 >
 > El script PowerShell prueba **ambas formas** y resuelve a la primera que exista (mismo patrón fallback que `aoi_apps/agentic-ops-dashboard/server/utils/token-observability/collect-copilot-token-usage.ts`).
 

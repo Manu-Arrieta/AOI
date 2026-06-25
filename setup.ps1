@@ -676,6 +676,38 @@ if (Test-Path $nvidiaScript) {
     Write-Warn "scripts/nvidia-vscode-setup.ps1 no encontrado junto a setup.ps1 — saltando Phase 1.5"
 }
 
+Write-Header "Phase 1.6: Headroom compression layer (opcional)"
+$headroomInstall = Join-Path $PSScriptRoot "scripts/install-headroom.ps1"
+$headroomPreview = Join-Path $PSScriptRoot "scripts/headroom-vscode-setup.ps1"
+if (Test-Path $headroomInstall) {
+    Write-Info "Headroom (headroomlabs-ai/headroom) provee compresión proxy/MCP/library para reducir 60-95% tokens."
+    Write-Info "Es CAPA OPCIONAL encima de AOI bootstrapper. NO se auto-activa."
+    Write-Info "Si no se instala, AOI continúa funcionando exactamente igual. Default: y/N → N."
+    $headroomChoice = Read-Host "▸ Instalar Headroom y mostrar plan de activación? [y/N]"
+    if ($headroomChoice -match '^[yY]([eE][sS])?$') {
+        try {
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $headroomInstall -Yes
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warn "install-headroom.ps1 salió con código $LASTEXITCODE — Headroom es opcional. Setup continúa."
+            }
+        } catch {
+            Write-Warn "No se pudo invocar install-headroom.ps1: $($_.Exception.Message) — el setup continúa."
+        }
+        if (Test-Path $headroomPreview) {
+            Write-Info "Headroom (si se instaló) se configura por envvars (NO modifica VS Code ChatLanguageModel.json)."
+            try {
+                & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $headroomPreview
+            } catch {
+                Write-Warn "headroom-vscode-setup.ps1 falló — AOI continúa. Operador puede correrlo manualmente."
+            }
+        }
+    } else {
+        Write-Warn "Saltado por elección del operador. AOI continúa sin Headroom."
+    }
+} else {
+    Write-Warn "scripts/install-headroom.ps1 no encontrado junto a setup.ps1 — saltando Phase 1.6"
+}
+
 Write-Header "Phase 2: Spec-Kit"
 Push-Location $ProjectPath
 try {
