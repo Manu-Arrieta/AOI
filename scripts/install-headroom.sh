@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
-# scripts/install-headroom.sh — Optional Headroom (headroom-ai) installation.
+# scripts/install-headroom.sh — Mandatory Headroom (headroom-ai) installation.
 #
 # Detects the preferred Python package manager in priority order matching the
 # rest of the AOI bootstrapper (uv → pipx → pip), with brew as an optional alt
 # on macOS. Default-installs on Apple-Silicon / Linux x86_64 / Windows-AMD64
 # via pre-built wheels; warns and offers build-from-source fallback for Intel
 # macOS where no prebuilt wheel is published.
+#
+# Headroom is mandatory in AOI; the AOI setup runs this script non-interactively
+# with --yes. Direct invocations still work for repair/update/dry-run.
 #
 # Invocations:
 #   bash scripts/install-headroom.sh                         # interactive
@@ -160,7 +163,7 @@ choose_method() {
 }
 
 # ── Main ────────────────────────────────────────────────────────────────────────
-header "AOI Headroom installer (opcional)"
+header "AOI Headroom installer (obligatorio)"
 info "Paquete target: ${PKG}[${EXTRAS}]"
 
 ARCH="$(detect_arch)"

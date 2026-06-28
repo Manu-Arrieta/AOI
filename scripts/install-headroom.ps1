@@ -1,4 +1,4 @@
-# scripts/install-headroom.ps1 — Optional Headroom (headroom-ai) installation (Windows).
+# scripts/install-headroom.ps1 — Mandatory Headroom (headroom-ai) installation (Windows).
 #
 # Detects preferred Python package manager in priority order (uv → pipx → pip).
 # Defaults to prebuilt wheel where available; on Intel/legacy Windows builds the
@@ -111,7 +111,7 @@ function Choose-Method {
 }
 
 # ── Main ────────────────────────────────────────────────────────────────────────
-Header "AOI Headroom installer (opcional)"
+Header "AOI Headroom installer (obligatorio)"
 Info "Paquete target: $Pkg[$ExtrasSpec]"
 
 $arch = DetectArch
@@ -164,7 +164,7 @@ try {
 
 if ($installerError) {
   Err "La instalación de Headroom falló: $installerError"
-  Err "Headroom es opcional — AOI continúa sin él. Ver [red/firewall/MsVC/Rust toolchain] e intente de nuevo."
+  Err "Headroom es obligatorio. Ver [red/firewall/MsVC/Rust toolchain] e intente de nuevo."
   exit 3
 }
 
