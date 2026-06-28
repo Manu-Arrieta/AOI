@@ -56,6 +56,102 @@ function Write-Utf8File {
     [System.IO.File]::WriteAllText($Path, $Content, $encoding)
 }
 
+function Invoke-WindowsPowerShellFile {
+    param(
+        [string]$ScriptPath,
+        [string[]]$Arguments = @()
+    )
+
+    if (-not (Test-Path -LiteralPath $ScriptPath -PathType Leaf)) {
+        throw "Script not found: $ScriptPath"
+    }
+
+    $scriptDir = Split-Path -Parent $ScriptPath
+    $scriptName = [System.IO.Path]::GetFileNameWithoutExtension($ScriptPath)
+    $tempScriptPath = Join-Path $scriptDir ("aoi-$scriptName-$([System.Guid]::NewGuid().ToString('N').Substring(0, 6)).ps1")
+    $powershellPath = Get-ExecutablePath -Name "powershell.exe" -Candidates @(
+        (Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe")
+    )
+
+    if (-not $powershellPath) {
+        $powershellPath = Get-ExecutablePath -Name "powershell"
+    }
+
+    if (-not $powershellPath) {
+        throw "Windows PowerShell executable not found."
+    }
+
+    try {
+        $content = [System.IO.File]::ReadAllText($ScriptPath)
+        $content = $content.TrimStart([char]0xFEFF)
+        $content = $content -replace "`r`n", "`n"
+        $content = $content -replace "`r", "`n"
+
+        $encoding = New-Object System.Text.UTF8Encoding($true)
+        [System.IO.File]::WriteAllText($tempScriptPath, $content, $encoding)
+
+        $childOutput = & $powershellPath -NoProfile -ExecutionPolicy Bypass -File $tempScriptPath @Arguments 2>&1
+        $childExitCode = $LASTEXITCODE
+
+        foreach ($line in $childOutput) {
+            Write-Host $line
+        }
+
+        return $childExitCode
+    } finally {
+        Remove-Item -LiteralPath $tempScriptPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function Invoke-ProcessWithCapture {
+    param(
+        [string]$FilePath,
+        [string[]]$Arguments = @(),
+        [string]$WorkingDirectory = ""
+    )
+
+    $stdoutPath = [System.IO.Path]::GetTempFileName()
+    $stderrPath = [System.IO.Path]::GetTempFileName()
+
+    try {
+        $startInfo = @{
+            FilePath = $FilePath
+            ArgumentList = $Arguments
+            Wait = $true
+            PassThru = $true
+            NoNewWindow = $true
+            RedirectStandardOutput = $stdoutPath
+            RedirectStandardError = $stderrPath
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
+            $startInfo["WorkingDirectory"] = $WorkingDirectory
+        }
+
+        $process = Start-Process @startInfo
+        $stdoutLines = @()
+        $stderrLines = @()
+
+        if ((Get-Item -LiteralPath $stdoutPath).Length -gt 0) {
+            $stdoutLines = @(Get-Content -LiteralPath $stdoutPath)
+        }
+
+        if ((Get-Item -LiteralPath $stderrPath).Length -gt 0) {
+            $stderrLines = @(Get-Content -LiteralPath $stderrPath)
+        }
+
+        return [pscustomobject]@{
+            ExitCode = $process.ExitCode
+            Stdout = $stdoutLines
+            Stderr = $stderrLines
+            CombinedOutput = @($stdoutLines + $stderrLines)
+        }
+    } finally {
+        Remove-Item -LiteralPath $stdoutPath -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $stderrPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Expand-UserPath {
     param([string]$PathValue)
 
@@ -124,13 +220,26 @@ function Get-ExecutablePath {
         [string[]]$Candidates = @()
     )
 
-    $command = Get-Command $Name -ErrorAction SilentlyContinue
+    $command = Get-Command $Name -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($command) {
-        if ($command.Path) {
-            return $command.Path
-        }
-        if ($command.Source) {
-            return $command.Source
+        foreach ($propertyName in @("Path", "Definition", "Source")) {
+            $property = $command.PSObject.Properties[$propertyName]
+            if (-not $property) {
+                continue
+            }
+
+            $value = [string]$property.Value
+            if ([string]::IsNullOrWhiteSpace($value)) {
+                continue
+            }
+
+            if ($propertyName -in @("Path", "Definition") -and (Test-Path -LiteralPath $value)) {
+                return $value
+            }
+
+            if ($propertyName -eq "Source") {
+                return $value
+            }
         }
     }
 
@@ -351,27 +460,27 @@ function Ensure-DashboardRuntimePrerequisites {
     $requiredNodeVersion = [version]'20.19.0'
     $requiredPnpmVersion = [version]'11.3.0'
 
-    $nodeCommand = Get-Command node -ErrorAction SilentlyContinue
-    if (-not $nodeCommand) {
+    $nodePath = Get-ExecutablePath -Name "node"
+    if (-not $nodePath) {
         throw "Dashboard runtime is mandatory. Node >=20.19.0 is required."
     }
 
-    $nodeVersion = ConvertTo-Version -VersionText ((& $nodeCommand.Source -p "process.versions.node" 2>$null) | Select-Object -First 1)
+    $nodeVersion = ConvertTo-Version -VersionText ((& $nodePath -p "process.versions.node" 2>$null) | Select-Object -First 1)
     if (-not $nodeVersion -or $nodeVersion -lt $requiredNodeVersion) {
         throw "Dashboard runtime requires Node >=20.19.0."
     }
 
-    $corepackCommand = Get-Command corepack -ErrorAction SilentlyContinue
-    if ($corepackCommand) {
+    $corepackPath = Get-ExecutablePath -Name "corepack"
+    if ($corepackPath) {
         return "corepack"
     }
 
-    $pnpmCommand = Get-Command pnpm -ErrorAction SilentlyContinue
-    if (-not $pnpmCommand) {
+    $pnpmPath = Get-ExecutablePath -Name "pnpm"
+    if (-not $pnpmPath) {
         throw "Dashboard runtime is mandatory. Install pnpm@11.3.0 or provide corepack before running setup.ps1."
     }
 
-    $pnpmVersion = ConvertTo-Version -VersionText ($pnpmCommand | ForEach-Object { & $_.Source --version 2>$null } | Select-Object -First 1)
+    $pnpmVersion = ConvertTo-Version -VersionText ((& $pnpmPath --version 2>$null) | Select-Object -First 1)
     if (-not $pnpmVersion -or $pnpmVersion -lt $requiredPnpmVersion) {
         throw "Dashboard runtime requires pnpm >=11.3.0 when corepack is unavailable."
     }
@@ -419,7 +528,7 @@ function Copy-ScaffoldMissing {
     )
 
     Get-ChildItem -LiteralPath $From -Force -Recurse | ForEach-Object {
-        $relativePath = $_.FullName.Substring($From.Length).TrimStart('\\', '/')
+        $relativePath = $_.FullName.Substring($From.Length).TrimStart('\', '/')
         if (-not $relativePath) {
             return
         }
@@ -664,9 +773,9 @@ if (Test-Path $nvidiaScript) {
         Write-Warn "Saltado por elección del operador. AOI continúa con defaults vendor-copilot (Gemini 3.1 Pro Preview / GPT-5.4 xhigh)."
     } else {
         try {
-            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $nvidiaScript
-            if ($LASTEXITCODE -ne 0) {
-                Write-Warn "nvidia-vscode-setup.ps1 salió con código $LASTEXITCODE — el setup continúa. El operador puede correrlo manualmente tras finalizar."
+            $nvidiaExitCode = Invoke-WindowsPowerShellFile -ScriptPath $nvidiaScript
+            if ($nvidiaExitCode -ne 0) {
+                Write-Warn "nvidia-vscode-setup.ps1 salió con código $nvidiaExitCode — el setup continúa. El operador puede correrlo manualmente tras finalizar."
             }
         } catch {
             Write-Warn "No se pudo invocar nvidia-vscode-setup.ps1: $($_.Exception.Message) — el setup continúa."
@@ -676,37 +785,32 @@ if (Test-Path $nvidiaScript) {
     Write-Warn "scripts/nvidia-vscode-setup.ps1 no encontrado junto a setup.ps1 — saltando Phase 1.5"
 }
 
-Write-Header "Phase 1.6: Headroom compression layer (opcional)"
+Write-Header "Phase 1.6: Headroom compression layer (obligatorio)"
 $headroomInstall = Join-Path $PSScriptRoot "scripts/install-headroom.ps1"
 $headroomPreview = Join-Path $PSScriptRoot "scripts/headroom-vscode-setup.ps1"
 if (Test-Path $headroomInstall) {
     Write-Info "Headroom (headroomlabs-ai/headroom) provee compresión proxy/MCP/library para reducir 60-95% tokens."
-    Write-Info "Es CAPA OPCIONAL encima de AOI bootstrapper. NO se auto-activa."
-    Write-Info "Si no se instala, AOI continúa funcionando exactamente igual. Default: y/N → N."
-    $headroomChoice = Read-Host "▸ Instalar Headroom y mostrar plan de activación? [y/N]"
-    if ($headroomChoice -match '^[yY]([eE][sS])?$') {
-        try {
-            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $headroomInstall -Yes
-            if ($LASTEXITCODE -ne 0) {
-                Write-Warn "install-headroom.ps1 salió con código $LASTEXITCODE — Headroom es opcional. Setup continúa."
-            }
-        } catch {
-            Write-Warn "No se pudo invocar install-headroom.ps1: $($_.Exception.Message) — el setup continúa."
+    Write-Info "Es CAPA OBLIGATORIA del AOI bootstrapper. La instalación corre sin prompts."
+    Write-Info "Si falla, el setup aborta (AOI requiere Headroom operativo)."
+    $headroomInstallExitCode = Invoke-WindowsPowerShellFile -ScriptPath $headroomInstall -Arguments @("-Yes")
+    if ($headroomInstallExitCode -ne 0) {
+        Write-Err "install-headroom.ps1 salió con código $headroomInstallExitCode. Headroom es obligatorio — setup aborta."
+        exit $headroomInstallExitCode
+    }
+    if (Test-Path $headroomPreview) {
+        Write-Info "Headroom se configura por envvars (NO modifica VS Code ChatLanguageModel.json)."
+        $headroomPreviewExitCode = Invoke-WindowsPowerShellFile -ScriptPath $headroomPreview
+        if ($headroomPreviewExitCode -ne 0) {
+            Write-Err "headroom-vscode-setup.ps1 salió con código $headroomPreviewExitCode. Headroom es obligatorio — setup aborta."
+            exit $headroomPreviewExitCode
         }
-        if (Test-Path $headroomPreview) {
-            Write-Info "Headroom (si se instaló) se configura por envvars (NO modifica VS Code ChatLanguageModel.json)."
-            try {
-                & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $headroomPreview
-            } catch {
-                Write-Warn "headroom-vscode-setup.ps1 falló — AOI continúa. Operador puede correrlo manualmente."
-            }
-        }
-    } else {
-        Write-Warn "Saltado por elección del operador. AOI continúa sin Headroom."
     }
 } else {
-    Write-Warn "scripts/install-headroom.ps1 no encontrado junto a setup.ps1 — saltando Phase 1.6"
+    Write-Err "scripts/install-headroom.ps1 no encontrado junto a setup.ps1."
+    Write-Err "Headroom es obligatorio — el setup no puede continuar."
+    exit 1
 }
+Write-Info "Headroom instalado y configurado."
 
 Write-Header "Phase 2: Spec-Kit"
 Push-Location $ProjectPath
@@ -758,52 +862,59 @@ Write-Ok "Directories: .tasks/ .sandboxes/ .atl/ .resources/ aoi_apps/agentic-op
 if (Test-Path -LiteralPath (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\package.json") -PathType Leaf) {
     $dashboardInstaller = Ensure-DashboardRuntimePrerequisites
     Write-Info "Installing dashboard package dependencies..."
-    $pnpmCommand = Get-Command pnpm -ErrorAction SilentlyContinue
-    $corepackCommand = Get-Command corepack -ErrorAction SilentlyContinue
+    $pnpmPath = Get-ExecutablePath -Name "pnpm"
+    $corepackPath = Get-ExecutablePath -Name "corepack"
     $dashboardInstallDir = Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard"
 
     function Invoke-DashboardInstall {
         if ($dashboardInstaller -eq "corepack") {
-            & $corepackCommand.Source enable | Out-Null
-            & $corepackCommand.Source pnpm install
+            $enableResult = Invoke-ProcessWithCapture -FilePath $corepackPath -Arguments @("enable") -WorkingDirectory $dashboardInstallDir
+            if ($enableResult.ExitCode -ne 0) {
+                return $enableResult
+            }
+
+            return Invoke-ProcessWithCapture -FilePath $corepackPath -Arguments @("pnpm", "install") -WorkingDirectory $dashboardInstallDir
         } else {
-            & $pnpmCommand.Source install
+            return Invoke-ProcessWithCapture -FilePath $pnpmPath -Arguments @("install") -WorkingDirectory $dashboardInstallDir
         }
     }
 
-    Push-Location $dashboardInstallDir
     try {
-        $installOutput = Invoke-DashboardInstall 2>&1
+        $installResult = Invoke-DashboardInstall
 
-        if ($LASTEXITCODE -eq 0) {
+        if ($installResult.ExitCode -eq 0) {
             if ($dashboardInstaller -eq "corepack") {
                 Write-Ok "Dashboard dependencies installed (corepack pnpm)"
             } else {
                 Write-Ok "Dashboard dependencies installed (pnpm)"
             }
         } else {
-            $joinedOutput = ($installOutput | ForEach-Object { $_.ToString() }) -join "`n"
+            $joinedOutput = ($installResult.CombinedOutput | Select-Object -Last 80) -join "`n"
             if ($joinedOutput -match "ERR_PNPM_IGNORED_BUILDS") {
                 Write-Warn "pnpm blocked dependency build scripts; approving known builds and retrying..."
-                & $pnpmCommand.Source approve-builds --all
-                if ($LASTEXITCODE -ne 0) {
-                    throw "Dashboard dependency install failed during approve-builds."
+                $approveBuildsResult = Invoke-ProcessWithCapture -FilePath $pnpmPath -Arguments @("approve-builds", "--all") -WorkingDirectory $dashboardInstallDir
+                if ($approveBuildsResult.ExitCode -ne 0) {
+                    $approveBuildsOutput = ($approveBuildsResult.CombinedOutput | Select-Object -Last 40) -join "`n"
+                    throw "Dashboard dependency install failed during approve-builds.`n$approveBuildsOutput"
                 }
 
-                Invoke-DashboardInstall
-                if ($LASTEXITCODE -ne 0) {
-                    throw "Dashboard dependency install failed after approve-builds retry."
+                $retryResult = Invoke-DashboardInstall
+                if ($retryResult.ExitCode -ne 0) {
+                    $retryOutput = ($retryResult.CombinedOutput | Select-Object -Last 80) -join "`n"
+                    throw "Dashboard dependency install failed after approve-builds retry.`n$retryOutput"
                 }
 
                 Write-Ok "Dashboard dependencies installed after approving build scripts"
             } else {
-                throw "Dashboard dependency install failed."
+                if ([string]::IsNullOrWhiteSpace($joinedOutput)) {
+                    $joinedOutput = "No process output captured."
+                }
+
+                throw "Dashboard dependency install failed.`n$joinedOutput"
             }
         }
     } catch {
         throw "Dashboard dependency install failed: $($_.Exception.Message)"
-    } finally {
-        Pop-Location
     }
 }
 
@@ -878,12 +989,12 @@ Write-Header "Phase 6: Base-Project Map"
 # writes .specify/memory/base-project.json — the confirmed write happens in
 # /init after the Owner approves/corrects the proposal.
 $baseMapDetector = Join-Path $ProjectPath "scripts\sandbox\detect-base-project.mjs"
-$nodeCommand = Get-Command node -ErrorAction SilentlyContinue
-if ($nodeCommand -and (Test-Path -LiteralPath $baseMapDetector -PathType Leaf)) {
+$nodePath = Get-ExecutablePath -Name "node"
+if ($nodePath -and (Test-Path -LiteralPath $baseMapDetector -PathType Leaf)) {
     Write-Info "Detecting base-project roots (proposal only, not written)..."
     try {
         Push-Location $ProjectPath
-        $baseMapProposal = & $nodeCommand.Source $baseMapDetector 2>$null
+        $baseMapProposal = & $nodePath $baseMapDetector 2>$null
         Pop-Location
         if ($LASTEXITCODE -eq 0 -and $baseMapProposal) {
             $baseMapProposal | ForEach-Object { Write-Host $_ }

@@ -64,22 +64,24 @@ to_windows_path() {
 # Windows PowerShell 5.1 (powershell.exe) is notoriously picky:
 #   - CRLF + Set-StrictMode Latest sometimes confuses the parser
 #   - A UTF-8 BOM (0xEF 0xBB 0xBF) at the top can shift line numbers by 1
+#   - BOM-less UTF-8 can be decoded with the active ANSI code page
 #   - Smart quotes (' ' " ") pasted from editors break tokenization
 #
 # We copy the source file to a tempfile next to it, strip BOM + CR, and force
-# UTF-8 (no BOM). Caller MUST invoke the sanitized path with PowerShell and
+# UTF-8 with BOM. Caller MUST invoke the sanitized path with PowerShell and
 # delete the tempfile when done.
 sanitize_ps1_for_windows_powershell5() {
   local source_path="$1"
-  local target_path stage_path
+  local source_dir target_path stage_path
 
   if [ -z "$source_path" ] || [ ! -f "$source_path" ]; then
     err "sanitize_ps1_for_windows_powershell5: source not found: $source_path"
     return 1
   fi
 
-  target_path="$(mktemp -t "aoi-setup-XXXXXX.ps1")"
-  stage_path="$(mktemp -t "aoi-setup-stage-XXXXXX.ps1")"
+  source_dir="$(cd "$(dirname "$source_path")" && pwd)"
+  target_path="$(mktemp "$source_dir/aoi-setup-XXXXXX.ps1")"
+  stage_path="$(mktemp "$source_dir/aoi-setup-stage-XXXXXX.ps1")"
   if [ -z "$target_path" ] || [ ! -f "$target_path" ] || [ -z "$stage_path" ]; then
     err "sanitize_ps1_for_windows_powershell5: could not create tempfile"
     return 1
@@ -102,7 +104,7 @@ sanitize_ps1_for_windows_powershell5() {
   # Replace curly quotes that editors love to inject.
   # bash's `tr` does not interpret \uXXXX, so use python or perl if available;
   # otherwise skip silently (the file in the repo never has these).
-  if command -v python3 &>/dev/null && [ -s "$stage_path" ]; then
+  if command -v python3 &>/dev/null && python3 -V >/dev/null 2>&1 && [ -s "$stage_path" ]; then
     python3 - "$stage_path" <<'PYEOF'
 import sys
 stage = sys.argv[1]
@@ -143,34 +145,52 @@ PYEOF
     printf '\n' >> "$stage_path"
   fi
 
-  mv "$stage_path" "$target_path"
+  # Windows PowerShell 5.1 treats UTF-8 without BOM as ANSI, which corrupts
+  # non-ASCII tokens and can surface false parser errors.
+  if ! {
+    printf '\357\273\277' > "$target_path"
+    cat "$stage_path" >> "$target_path"
+  }; then
+    err "sanitize_ps1_for_windows_powershell5: could not write BOM-safe tempfile"
+    rm -f "$stage_path" "$target_path"
+    return 1
+  fi
+
+  rm -f "$stage_path"
 
   SANITIZED_PS1_PATH="$target_path"
   return 0
 }
 invoke_windows_powershell() {
-  local script_path="$1"
-  local project_path="$2"
+  local posix_script_path="$1"
+  local windows_script_path="$2"
+  local windows_project_path="$3"
   local bin
 
   for bin in pwsh.exe pwsh powershell.exe powershell; do
     if command -v "$bin" &>/dev/null; then
-      info "Invoking $bin on $script_path"
+      info "Invoking $bin on $windows_script_path"
 
       # Windows PowerShell 5.1 path: sanitize first, run tempfile, clean up.
       case "$bin" in
         powershell.exe|powershell)
-          if ! sanitize_ps1_for_windows_powershell5 "$script_path"; then
+          if ! sanitize_ps1_for_windows_powershell5 "$posix_script_path"; then
             return 1
           fi
-          local tmp="$SANITIZED_PS1_PATH"
-          "$bin" -NoProfile -ExecutionPolicy Bypass -File "$tmp" "$project_path"
+          local tmp_posix="$SANITIZED_PS1_PATH"
+          local tmp_windows
+          if ! tmp_windows="$(to_windows_path "$tmp_posix")"; then
+            rm -f "$tmp_posix"
+            err "Could not convert sanitized setup.ps1 path for Windows PowerShell: $tmp_posix"
+            return 1
+          fi
+          "$bin" -NoProfile -ExecutionPolicy Bypass -File "$tmp_windows" "$windows_project_path"
           local rc=$?
-          rm -f "$tmp"
+          rm -f "$tmp_posix"
           return $rc
           ;;
         *)
-          "$bin" -NoProfile -File "$script_path" "$project_path"
+          "$bin" -NoProfile -File "$windows_script_path" "$windows_project_path"
           return $?
           ;;
       esac
@@ -182,7 +202,7 @@ invoke_windows_powershell() {
 }
 
 run_windows_setup_from_git_bash() {
-  local project_path windows_project_path windows_script_path ps_exit_code ps_stderr
+  local project_path posix_script_path windows_project_path windows_script_path ps_exit_code ps_stderr saw_parser_error
 
   if [ -n "${1:-}" ]; then
     project_path="$1"
@@ -193,7 +213,9 @@ run_windows_setup_from_git_bash() {
 
   project_path="$(eval echo "$project_path")"
 
-  if ! windows_script_path="$(to_windows_path "$SCRIPT_DIR/setup.ps1")"; then
+  posix_script_path="$SCRIPT_DIR/setup.ps1"
+
+  if ! windows_script_path="$(to_windows_path "$posix_script_path")"; then
     err "Git Bash on Windows requires cygpath to delegate to setup.ps1."
     exit 1
   fi
@@ -207,15 +229,20 @@ run_windows_setup_from_git_bash() {
 
   # Capture both streams so we can diagnose parse failures clearly.
   ps_stderr="$(mktemp -t "aoi-ps-err-XXXXXX.log")"
-  if invoke_windows_powershell "$windows_script_path" "$windows_project_path" \
-        2> "$ps_stderr"; then
+  invoke_windows_powershell "$posix_script_path" "$windows_script_path" "$windows_project_path" \
+      2> "$ps_stderr"
+  ps_exit_code=$?
+  if [ "$ps_exit_code" -eq 0 ]; then
     rm -f "$ps_stderr"
     exit 0
   fi
 
-  ps_exit_code=$?
+  saw_parser_error=0
   warn "PowerShell exited with code $ps_exit_code"
   if [ -s "$ps_stderr" ]; then
+    if grep -qiE 'Unexpected token|ParserError' "$ps_stderr"; then
+      saw_parser_error=1
+    fi
     err "PowerShell stderr:"
     while IFS= read -r line; do
       err "  $line"
@@ -223,11 +250,15 @@ run_windows_setup_from_git_bash() {
     rm -f "$ps_stderr"
   fi
 
-  # Common pitfalls surfaced to the operator.
-  warn "If you see 'Unexpected token' parser errors, the most common causes are:"
-  warn "  1) A UTF-8 BOM at the start of setup.ps1 — fix with: powershell -c \"[IO.File]::WriteAllText('setup.ps1', ([IO.File]::ReadAllText('setup.ps1') -replace '^\uFEFF',''), (New-Object Text.UTF8Encoding \$false))\""
-  warn "  2) CRLF line endings mixed with Set-StrictMode Latest — sanity script handled this automatically; if it still fails, run: sed -i 's/\\r\\$//' setup.ps1"
-  warn "  3) The script being interpreted is NOT the one in this repo — verify with: Get-Content 'D:\\AOI\\AOI\\setup.ps1' -TotalCount 1 | Format-Hex"
+  if [ "$saw_parser_error" -eq 1 ]; then
+    # Common parser pitfalls surfaced to the operator.
+    warn "If you see 'Unexpected token' parser errors, the most common causes are:"
+    warn "  1) A UTF-8 BOM at the start of setup.ps1 — from Git Bash run: powershell -NoProfile -Command '\$utf8NoBom = New-Object Text.UTF8Encoding(\$false); [IO.File]::WriteAllText(\"setup.ps1\", ([IO.File]::ReadAllText(\"setup.ps1\") -replace \"^\\uFEFF\",\"\"), \$utf8NoBom)'"
+    warn "  2) CRLF line endings mixed with Set-StrictMode Latest — sanity script handled this automatically; if it still fails, run: sed -i 's/\r$//' setup.ps1"
+    warn "  3) The script being interpreted is NOT the one in this repo — verify from Git Bash with: powershell -NoProfile -Command \"Get-Content -Path 'D:\\AOI\\AOI\\setup.ps1' -TotalCount 1 | Format-Hex\""
+  else
+    warn "PowerShell failed before setup.ps1 completed. Copy the 'PowerShell stderr:' lines shown above and rerun with the current setup.sh if you want a narrower diagnosis."
+  fi
 
   exit $ps_exit_code
 }
@@ -461,32 +492,104 @@ else
   warn "scripts/nvidia-vscode-setup.sh no encontrado junto a setup.sh — saltando Phase 1.5"
 fi
 
-# ── Phase 1.6: Optional Headroom (headroom-ai) compression layer (non-blocking) ────────
-header "Phase 1.6: Headroom compression layer (opcional)"
+# ── Phase 1.6: Headroom (headroom-ai) compression layer (MANDATORY) ────────
+header "Phase 1.6: Headroom compression layer (obligatorio)"
 
 if [[ -f "$SCRIPT_DIR/scripts/install-headroom.sh" ]]; then
   info "Headroom (headroomlabs-ai/headroom) provee compresión proxy/MCP/library para reducir"
-  info "tokens 60-95% sin tocar código. Es CAPA OPCIONAL encima de AOI bootstrapper."
-  info "Default si NO se instala: AOI continúa funcionando exactamente igual (no consume Headroom)."
-  printf "${YELLOW}▸${NC} Instalar Headroom pip package? [y/N]: "
-  read -r HEADROOM_CHOICE
-  case "$HEADROOM_CHOICE" in
-    y|Y|yes|YES)
-      bash "$SCRIPT_DIR/scripts/install-headroom.sh" || {
-        ret=$?
-        warn "install-headroom.sh salió con código $ret — el setup continúa. Headroom es opcional."
-      }
-      if [[ -f "$SCRIPT_DIR/scripts/headroom-vscode-setup.sh" ]]; then
-        info "Headroom (si se instaló) se configura por envvars (NO modifica VS Code)."
-        bash "$SCRIPT_DIR/scripts/headroom-vscode-setup.sh" || warn "headroom-vscode-setup.sh falló — AOI continúa, ver docs."
-      fi
-      ;;
-    *)
-      warn "Saltado por elección del operador. AOI continúa sin Headroom."
-      ;;
-  esac
+  info "tokens 60-95% sin tocar código. Es CAPA OBLIGATORIA de AOI bootstrapper."
+  info "AOI requiere Headroom. Si la instalación falla, el setup aborta."
+  bash "$SCRIPT_DIR/scripts/install-headroom.sh" --yes || {
+    ret=$?
+    err "install-headroom.sh salió con código $ret. Headroom es obligatorio — el setup no puede continuar."
+    exit $ret
+  }
+  if [[ -f "$SCRIPT_DIR/scripts/headroom-vscode-setup.sh" ]]; then
+    info "Headroom se configura por envvars (NO modifica VS Code)."
+    bash "$SCRIPT_DIR/scripts/headroom-vscode-setup.sh" || {
+      ret=$?
+      err "headroom-vscode-setup.sh falló con código $ret. Headroom es obligatorio — el setup no puede continuar."
+      exit $ret
+    }
+  fi
+  ok "Headroom instalado y configurado ($(headroom --version 2>/dev/null || echo 'version check pending'))"
 else
-  warn "scripts/install-headroom.sh no encontrado junto a setup.sh — saltando Phase 1.6"
+  err "scripts/install-headroom.sh no encontrado junto a setup.sh."
+  err "Headroom es obligatorio — el setup no puede continuar."
+  exit 1
+fi
+
+# ── Phase 1.7: AOI Headroom integration (wrapper + managed-files guard) ────────
+header "Phase 1.7: AOI Headroom integration (obligatorio)"
+
+# Install the mandatory Copilot CLI wrapper into the target project, and the
+# pre-commit guard that blocks `headroom learn` overwriting AOI-managed files.
+# Without these, Headroom is installed but the SDD agent pipeline can bypass it,
+# which violates the mandatory policy.
+
+WRAP_SRC="$SCRIPT_DIR/scripts/aoi-headroom-wrap.sh"
+GUARD_SRC="$SCRIPT_DIR/.githooks/pre-commit-aoi-guard.sh"
+
+if [[ ! -f "$WRAP_SRC" || ! -f "$GUARD_SRC" ]]; then
+  err "AOI Headroom integration assets missing in installer. Setup cannot complete."
+  exit 1
+fi
+
+mkdir -p "$PROJECT_PATH/scripts"
+mkdir -p "$PROJECT_PATH/.githooks"
+
+cp "$WRAP_SRC" "$PROJECT_PATH/scripts/aoi-headroom-wrap.sh"
+chmod +x "$PROJECT_PATH/scripts/aoi-headroom-wrap.sh"
+ok "Installed aoi-headroom-wrap.sh → PROJECT/scripts/"
+
+cp "$GUARD_SRC" "$PROJECT_PATH/.githooks/pre-commit-aoi-guard.sh"
+chmod +x "$PROJECT_PATH/.githooks/pre-commit-aoi-guard.sh"
+ok "Installed pre-commit-aoi-guard.sh → PROJECT/.githooks/"
+
+# Register an shim that forces any `aoi-copilot` invoker through the wrapper.
+# This is the seam SDD agents use instead of calling `copilot` directly.
+mkdir -p "$PROJECT_PATH/scripts/bin"
+cat > "$PROJECT_PATH/scripts/bin/aoi-copilot" <<'EOF_SHIM'
+#!/usr/bin/env bash
+# AOI Copilot shim — routes to aoi-headroom-wrap.sh so the call leaves via
+# `headroom wrap copilot --subscription`. Bypassing AOI mandatory policy here
+# is forbidden; the wrapper refuses to run when `headroom` is missing.
+exec bash "$(dirname "$0")/../aoi-headroom-wrap.sh" "$@"
+EOF_SHIM
+chmod +x "$PROJECT_PATH/scripts/bin/aoi-copilot"
+ok "Installed aoi-copilot shim → PROJECT/scripts/bin/"
+
+# Wire up a project-local pre-commit hook chain to include the AOI guard unless
+# the project intentionally wants to opt out. We respect any pre-existing
+# pre-commit with a chain that calls our guard first.
+PROJECT_GITHOOK="$PROJECT_PATH/.git/hooks/pre-commit"
+if [[ -d "$PROJECT_PATH/.git" ]]; then
+  if [[ -f "$PROJECT_GITHOOK" ]]; then
+    if ! grep -q "pre-commit-aoi-guard.sh" "$PROJECT_GITHOOK"; then
+      cp "$PROJECT_GITHOOK" "$PROJECT_GITHOOK.aoi-bak"
+      cat > "$PROJECT_GITHOOK" <<'EOF_PRECOMMIT'
+#!/usr/bin/env bash
+# AOI bootstrap chain: run guard first, then delegate to project pre-commit.
+SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
+bash "$SELF_DIR/../../.githooks/pre-commit-aoi-guard.sh" "$@" || exit $?
+if [ -f "$SELF_DIR/pre-commit.aoi-bak" ]; then
+  exec bash "$SELF_DIR/pre-commit.aoi-bak" "$@"
+fi
+exit 0
+EOF_PRECOMMIT
+      chmod +x "$PROJECT_GITHOOK"
+      ok "Chained AOI guard into existing pre-commit hook"
+    else
+      ok "AOI guard already chained into pre-commit (skipped)"
+    fi
+  else
+    cp "$GUARD_SRC" "$PROJECT_GITHOOK"
+    chmod +x "$PROJECT_GITHOOK"
+    ok "Installed AOI pre-commit guard → .git/hooks/pre-commit"
+  fi
+else
+  info "Target project is not a git repo — AOI guard will activate once 'git init' runs."
+  info "    When ready, run: ln -sf ../../.githooks/pre-commit-aoi-guard.sh .git/hooks/pre-commit"
 fi
 
 # ── Phase 2: Initialize Spec-Kit ──────────────────────────────────────────
