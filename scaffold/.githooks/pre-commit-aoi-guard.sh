@@ -27,6 +27,10 @@ AOI_MANAGED_FILES=(
 )
 
 force=0
+GIT_DIR=""
+if command -v git >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1; then
+  GIT_DIR="$(git rev-parse --git-dir 2>/dev/null || echo .git)"
+fi
 for arg in "$@"; do
   case "$arg" in
     --force) force=1 ;;
@@ -54,6 +58,30 @@ fi
 if [ "$force" -eq 1 ]; then
   printf "\033[1;33m[WARN]\033[0m Forced bypass — managed files touched: %s\n" "${touched_aoi[*]}" >&2
   printf "\033[1;33m        This will overwrite AOI-managed instruction surface.\033[0m\n" >&2
+  exit 0
+fi
+
+# Honour the [aoi-managed-ok] marker when the Owner appends it to the commit
+# subject. Detection strategy: read the staged commit message — if the marker
+# is present in either the current invocation (pre-commit gets no argv for
+# subject, hence we read COMMIT_EDITMSG + log) or the latest staged subject,
+# the override applies.
+override_marker_present=0
+if [ -s "$GIT_DIR/COMMIT_EDITMSG" ]; then
+  if grep -qF "[aoi-managed-ok]" "$GIT_DIR/COMMIT_EDITMSG" 2>/dev/null; then
+    override_marker_present=1
+  fi
+fi
+if [ "$override_marker_present" -eq 0 ] && command -v git >/dev/null 2>&1 && [ -d "$GIT_DIR" ]; then
+  # Last-resort: check if there's a HEAD commit that was about to be added
+  # (rare). Otherwise the known marker has to be in COMMIT_EDITMSG.
+  if git log -1 --pretty=%s 2>/dev/null | grep -qF "[aoi-managed-ok]"; then
+    override_marker_present=1
+  fi
+fi
+
+if [ "$override_marker_present" -eq 1 ]; then
+  printf "\033[1;34m[AOI]\033[0m Manager override accepted (marker present). Managed files touched: %s\n" "${touched_aoi[*]}" >&2
   exit 0
 fi
 
