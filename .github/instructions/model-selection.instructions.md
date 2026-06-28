@@ -217,9 +217,9 @@ Tras configurar el customendpoint:
 - El operador **DEBE** elegir manualmente en el picker el `Primary` (o `Fallback`) deseado **antes** de invocar al agente.
 - El campo `model:` del frontmatter **NO** puede autoasignar modelos NVIDIA. Por lo tanto, la regla §3 ("Detener y notificar") se aplica si el picker no contiene el modelo configurado para el agente.
 
-## 6. Capa opcional de compresión — Headroom (headroomlabs-ai/headroom)
+## 6. Capa obligatoria de compresión — Headroom (headroomlabs-ai/headroom)
 
-> ⚠️ **Si NO se activa, AOI sigue funcionando con defaults vendor-copilot** (`Gemini 3.1 Pro (Preview)` y `GPT-5.4 xhigh`). Esta sección habilita una capa **adicional y ortogonal** de compresión de contexto cuando el operador quiere reducir tokens 60-95%.
+> ✅ **Default AOI**: Headroom es una capa **OBLIGATORIA** del bootstrapper. La Phase 1.6 de `setup.sh` / `setup.ps1` corre sin prompt y aborta el setup si la instalación no se completa. Esta sección documenta cómo opera, no se decide.
 
 ### 6.1 ¿Qué es Headroom y cómo se relaciona con AOI?
 
@@ -228,31 +228,27 @@ Headroom es **un proxy/compresor/MCP local** que se planta entre el agente y el 
 | Capa                      | Aporte                                            | Cómo se relaciona con AOI                                                                                                                                            |
 | ------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Shell token-opt           | `rtk` (shipping AOI)                              | RTK está dentro de Headroom (Headroom incluye RTK como dependencia y comprime todo lo downstream de RTK)                                                             |
-| Governancia / spec-driven | AOI bootstrapper (RTK + ICM + Spec-Kit + agentes) | AOI provee la infraestructura agentic; Headroom es una herramienta opcional de la que AOI se beneficia                                                               |
-| Context compression       | **Headroom**                                      | AOI bootstrapper lo instala opcionalmente (Phase 1.6) pero **NO** lo activa por default — el operador decide cuándo corre `headroom proxy` o `headroom wrap copilot` |
+| Governancia / spec-driven | AOI bootstrapper (RTK + ICM + Spec-Kit + agentes) | AOI provee la infraestructura agentic; Headroom es una herramienta obligatoria de la que AOI se provee                                                              |
+| Context compression       | **Headroom**                                      | AOI bootstrapper instala Headroom de forma bloqueante en Phase 1.6. Si la instalación falla, el setup aborta.                                                          |
 
 > Headroom **NO** es competidor de AOI. Es ortogonal: AOI bootstrap, Headroom optimiza tokens.
 
-### 6.2 Fase 1.6 (opcional) en setup
+### 6.2 Fase 1.6 (obligatoria, bloqueante) en setup
 
-Al instalar AOI por primera vez via `setup.sh` (macOS/Linux) o `setup.ps1` (Windows), una nueva **Phase 1.6** pregunta al operador si quiere instalar Headroom:
+Al instalar AOI por primera vez via `setup.sh` (macOS/Linux) o `setup.ps1` (Windows), una **Phase 1.6** ejecuta la instalación de Headroom sin prompts:
 
 ```text
-═══ Phase 1.6: Headroom compression layer (opcional) ═══
+═══ Phase 1.6: Headroom compression layer (obligatorio) ═══
 
 ▸ Headroom (headroomlabs-ai/headroom) provee compresión proxy/MCP/library
-   para reducir 60-95% tokens. Es CAPA OPCIONAL encima de AOI bootstrapper.
-   NO se auto-activa.
-▸ Si no se instala, AOI continúa funcionando exactamente igual.
-▸ ¿Instalar Headroom pip package? [y/N]:
+   para reducir 60-95% tokens. Es CAPA OBLIGATORIA de AOI bootstrapper.
+   AOI requiere Headroom. Si la instalación falla, el setup aborta.
 ```
-
-Si el operador responde `y`:
 
 1. `scripts/install-headroom.sh` (o `.ps1` en Windows) detecta el package manager preferido (precedencia AOI: `uv` → `pipx` → `pip`).
 2. Instala `headroom-ai[all]` (o extras específicas).
-3. Si falla el install, AOI continúa con `warn` no-bloqueante (Headroom es opcional).
-4. `scripts/headroom-vscode-setup.sh` (o `.ps1`) imprime un plan de envvars al operador. **NO** modifica archivos del operador (`~/.zshrc`, `~/.bashrc`, `$PROFILE`) ni VS Code — esos son deciciones del operador.
+3. Si el install falla, el setup **aborta** (Headroom es obligatorio).
+4. `scripts/headroom-vscode-setup.sh` (o `.ps1`) imprime el plan de envvars. **NO** modifica archivos del operador (`~/.zshrc`, `~/.bashrc`, `$PROFILE`) ni VS Code — esos son del operador.
 
 ### 6.3 Modos de uso (post-install)
 
@@ -308,13 +304,31 @@ AOI **exactly tracks** los tres archivos en la raíz del repo (`GEMINI.md`, `AGE
 
 | Aspecto                   | §5 NVIDIA                                                       | §6 Headroom                                              |
 | ------------------------- | --------------------------------------------------------------- | -------------------------------------------------------- |
-| Activación                | VS Code picker manual                                           | Operador debe invocar `headroom proxy` / `headroom wrap` |
+| Activación                | VS Code picker manual                                           | AOI setup bloqueante (Phase 1.6); operador decide `headroom proxy` / `headroom wrap` |
 | Archivo tocado            | `~/.config/Code/User/ChatLanguageModel.json` (VS Code User dir) | Solo envvars (operador)                                  |
 | Configuration persistence | Una vez aplicado, persiste en VS Code                           | Operador decide si persiste en shell rc / $PROFILE       |
-| Default si NO se activa   | AOI sigue funcionando con defaults vendor-copilot               | AOI sigue funcionando con defaults vendor-copilot        |
+| Default si NO se activa   | AOI sigue funcionando con defaults vendor-copilot               | Setup aborta; AOI requiere Headroom operativo            |
 | Compatibilidad            | Vendor `copilot` (nativo VS Code)                               | Custom local-first (no toca VS Code)                     |
 
-> **§5 y §6 son ORTOGONALES**: el operador puede activar cualquiera, ambas, o ninguna. Ambas son opcionales y tienen default seguro (sistema sigue funcionando si no se aplican).
+> **§5 es opcional; §6 es obligatorio**. §5 (NVIDIA) la decide el operador; §6 (Headroom) la decide el bootstrapper. Ambas coexistentes sin conflicto.
+
+### 6.7 Fase 1.7 (obligatoria) — Integración AOI ↔ Headroom
+
+Para que la obligatoriedad sea real y no solo a nivel de instalación, el setup añade **Phase 1.7** que instala dos activos críticos:
+
+| Activo                                 | Ruta                                      | Función                                                                                                  |
+| -------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `aoi-headroom-wrap.sh` (+ `.ps1`)      | `scripts/aoi-headroom-wrap.{sh,ps1}`      | Wrapper que rechaza invocaciones si `headroom` falta en PATH y reejecuta `headroom wrap copilot --subscription`. Es el único punto de invocación de Copilot CLI permitido por la política AOI. |
+| `aoi-copilot` shim                     | `scripts/bin/aoi-copilot`                 | Shim binario que enruta cualquier llamada estilo "copilot" hacia el wrapper. SDD agents usan este shim en lugar del comando nativo. |
+| `pre-commit-aoi-guard.sh`              | `.githooks/pre-commit-aoi-guard.sh`       | Pre-commit hook que **bloquea** cualquier cambio en `GEMINI.md`, `AGENTS.md` o `CLAUDE.md` sin el marker `[aoi-managed-ok]`. Impide que `headroom learn --apply` (u otra herramienta externa) pise la superficie AOI-managed. |
+
+**Reglas para SDD agents**:
+
+1. **Nunca** invocar `copilot` directamente — siempre vía `bash scripts/aoi-headroom-wrap.sh` (o PowerShell `.ps1`). El shim `aoi-copilot` es azucar sintáctico.
+2. **Nunca** ejecutar `headroom learn --apply` en sesiones AOI activas. Si el operador lo hace contra su propio repo, el pre-commit guard lo aborta.
+3. **Operación normal**: `bash scripts/aoi-headroom-wrap.sh --model gpt-4o "" "Tu prompt"`. Envía vía `headroom wrap copilot --subscription --model gpt-4o "" "Tu prompt"`.
+
+**Aviso a Operador**: el guard puede sobreescribirse con `bash .githooks/pre-commit-aoi-guard.sh --force` (rechazado por convención). Si necesitás validar diff sobre AOI-managed, agregá `[aoi-managed-ok]` al subject del commit después de revisar manualmente.
 
 ### 6.7 Compatibilidad del modelo mental entre capas
 
@@ -323,7 +337,7 @@ AOI bootstrapper ya tiene **13 agentes** con bloques `## Model Requirement` que 
 ```
 Output de agente AOI
     ↓
-Headroom proxy (opcional) comprime tokens
+Headroom proxy (obligatorio) comprime tokens
     ↓
 NVIDIA custom endpoint (opcional) entrega al modelo elegido
     ↓

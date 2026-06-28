@@ -75,18 +75,18 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/nvidia-vscode-setup.
 
 La regla §3 (detener y notificar al Owner, NUNCA elegir por defecto) **siempre** tiene prioridad sobre la jerarquía `Primary`+`Fallback` — incluso después de configurar el customendpoint, AOI no elige modelo por sí solo.
 
-## 6. Capa opcional de compresión — Headroom (espejo del §6 raíz)
+## 6. Capa obligatoria de compresión — Headroom (espejo del §6 raíz)
 
-> ⚠️ **Si NO se activa, AOI sigue funcionando con defaults vendor-copilot.** Esta sección habilita una capa **adicional y ortogonal** de compresión de contexto.
+> ✅ **Headroom es OBLIGATORIO** en AOI. La Phase 1.6 de `setup.sh` / `setup.ps1` corre sin prompt y bloquea el setup si la instalación no se completa. Complementa los defaults vendor-copilot con una capa adicional de compresión 60-95%.
 
 Este capítulo espeja el §6 de `.github/instructions/model-selection.instructions.md` (raíz Copilot). El detalle completo de:
 
 - **Qué es Headroom** vs AOI (AOI bootstrap, Headroom optimiza tokens — ortogonales)
-- **Phase 1.6 en setup** (prompt Y/n default N, install via `uv` → `pipx` → `pip`, dry-run support)
+- **Phase 1.6 (bloqueante) en setup**, sin prompt `Y/n`, install via `uv` → `pipx` → `pip`, dry-run support
 - **Modos de uso**: `headroom proxy`, `headroom wrap copilot`, library, MCP
 - **Variables de entorno**: `HEADROOM_HOST`, `HEADROOM_PORT`, `HEADROOM_PROXY_PORT`, `GITHUB_COPILOT_TOKEN`, `HEADROOM_OUTPUT_SHAPER`, `HEADROOM_TLS_STRICT`, etc.
 - ⚠️ **Política `headroom learn` vs archivos AOI-managed**: warning instalado, NO auto-ejecución, mitigaciones futuras
-- **Compatibility matrix** con §5 NVIDIA: ortogonales, ambas opcionales, default seguro sin config
+- **Compatibility matrix** con §5 NVIDIA: §6 obligatoria, §5 opcional, default seguro sin config NVIDIA
 - Compatibility con 13 agentes AOI (Pre-Headroom → Provider vía NVIDIA)
 
 …vive en el raíz. Este archivo Antigravity **no lo redefine** — sólo lo referencia para mantener paridad.

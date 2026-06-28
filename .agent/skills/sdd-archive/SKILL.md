@@ -23,6 +23,8 @@ icm_memory_recall(query: "context", topic: "{WORKSPACE}-context")
 icm_memory_recall(query: "verify report", topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN")
 ```
 
+> **Headroom mandatory policy.** Any Copilot CLI invocation in this workspace MUST be routed through `bash scripts/aoi-headroom-wrap.sh` (or the `aoi-copilot` shim) so the call exits via `headroom wrap copilot --subscription`. The wrapper refuses to run when `headroom` is missing.
+
 ### Step 2: Start Transcript (Verbatim)
 
 ```
