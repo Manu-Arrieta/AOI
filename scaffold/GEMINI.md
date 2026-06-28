@@ -132,16 +132,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/nvidia-vscode-setup.
 
 **Seguridad**: el archivo `ChatLanguageModel.json` con API key real **NUNCA** se commitea — `.gitignore` excluye `ChatLanguageModel.json` y mantiene tracked sólo `ChatLanguageModel.example.json`.
 
-### §6 — Capa opcional de compresión Headroom (ortogonal a §5)
+### §6 — Capa de compresión Headroom (ortogonal a §5, OBLIGATORIA)
 
-> ⚠️ **Default si NO se activa**: AOI sigue funcionando con defaults vendor-copilot. Headroom es una capa **OPCIONAL** encima de AOI bootstrapper. NO se auto-activa.
+> ⚠️ **Default si NO se activa**: AOI **aborta el setup**. Headroom es una capa **OBLIGATORIA** del AOI bootstrapper. La Phase 1.6 de `setup.sh` / `setup.ps1` corre sin prompt y falla si la instalación no se completa.
 
 **Qué es Headroom**: proxy/compresor local que reduce tokens 60-95%. Se planta entre el agente y el LLM:
 
 ```
 Tu agente
    ↓
-Headroom proxy (opcional, localhost:8787)  ← comprime
+Headroom proxy (obligatorio, localhost:8787)  ← comprime
    ↓
 NVIDIA custom endpoint (opcional)            ← elige modelo
    ↓
@@ -150,7 +150,7 @@ Modelo LLM responde
 
 > Las tres capas (AOI bootstrap, Headroom, NVIDIA) son **independientes y componibles**.
 
-**Forma automatizada**: `setup.sh` / `setup.ps1` ofrece **Phase 1.6** después de Phase 1.5 (NVIDIA). Es **opt-in** (`y/N`, default N), no-bloqueante, y se puede relanzar después con `bash scripts/install-headroom.sh`.
+**Forma automatizada (bloqueante)**: `setup.sh` / `setup.ps1` ejecuta **Phase 1.6** después de Phase 1.5 (NVIDIA). Es **obligatoria** (sin prompt), bloqueante, y aborta si la instalación falla.
 
 ```bash
 # macOS / Linux (firma AOI preferida: uv → pipx → pip)

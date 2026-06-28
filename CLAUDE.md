@@ -30,3 +30,14 @@ icm health                                # topic hygiene audit
 icm topics                                # list all topics
 ```
 <!-- icm:end -->
+
+<!-- headroom:start -->
+## Headroom — MANDATORY context compression layer
+
+This project requires `headroom` (headroomlabs-ai/headroom) installed and configured. Headroom is the mandatory token-compression layer of the AOI bootstrapper.
+
+- Phase 1.6 of `setup.sh` / `setup.ps1` installs Headroom non-interactively. Setup aborts if it fails.
+- All sessions and agents run with `HEADROOM_HOST`, `HEADROOM_PORT`, `HEADROOM_PROXY_PORT` exported.
+- Verify `headroom --version` resolves in PATH before executing any LLM-bound command.
+- Do NOT modify this section: it is governed by AOI bootstrap policy.
+<!-- headroom:end -->

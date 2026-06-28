@@ -74,11 +74,12 @@ Documentation boundary:
 | --------------- | ----------------------------------- | ----------------------------------------- | ------------------------------------------------------------- |
 | **RTK**         | Token optimization (60-90% savings) | `brew install rtk`                        | GitHub release binary via `setup.ps1`                         |
 | **ICM**         | Persistent memory (4 methods)       | `brew tap rtk-ai/tap && brew install icm` | Official `install.ps1` via `setup.ps1`                        |
+| **Headroom**    | Mandatory compression layer (60-95%) | `bash scripts/install-headroom.sh --yes` | `powershell scripts/install-headroom.ps1 -Yes`                |
 | **Specify CLI** | Spec-Driven Development lifecycle   | `uv tool install specify-cli`             | `winget install --id astral-sh.uv -e` + `uv tool install ...` |
 
 On Windows, AOI uses `winget` for `uv` when available. RTK does not currently document an official `winget` package, so `setup.ps1` installs the Windows release binary directly.
 
-`ICM` is mandatory: setup now fails if it cannot verify a working `icm` command. `RTK` remains recommended but non-blocking: if its install fails, AOI continues and hooks simply pass commands through until `rtk` is available again.
+`ICM` and `Headroom` are mandatory: setup now fails if it cannot verify a working `icm` or `headroom` command. `RTK` remains recommended but non-blocking: if its install fails, AOI continues and hooks simply pass commands through until `rtk` is available again.
 
 The dashboard runtime is mandatory too. Setup no longer skips dashboard bootstrap: it now fails unless Node `>=20.19.0` and either `corepack` or `pnpm@11.3.0` are available before dependency installation.
 
