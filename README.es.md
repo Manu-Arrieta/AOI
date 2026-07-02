@@ -72,13 +72,13 @@ Límite de documentación:
 
 ### Herramientas (en orden de prioridad)
 
-| Herramienta     | Propósito                                | macOS / Linux                             | Windows 11+                                                   |
-| --------------- | ---------------------------------------- | ----------------------------------------- | ------------------------------------------------------------- |
-| **RTK**         | Optimización de tokens (60-90%)          | `brew install rtk`                        | Binario desde GitHub Releases vía `setup.ps1`                 |
-| **ICM**         | Memoria persistente (4 métodos)          | `brew tap rtk-ai/tap && brew install icm` | `install.ps1` oficial vía `setup.ps1`                         |
-| **Headroom**    | Capa obligatoria de compresión (60-95%)  | `bash scripts/install-headroom.sh --yes`  | `powershell scripts/install-headroom.ps1 -Yes`               |
-| **Codebase Memory MCP** | Inteligencia estructural de código / grafo | `bash scripts/install-codebase-memory.sh --yes` | `powershell scripts/install-codebase-memory.ps1 -Yes`        |
-| **Specify CLI** | Ciclo de vida de Spec-Driven Development | `uv tool install specify-cli`             | `winget install --id astral-sh.uv -e` + `uv tool install ...` |
+| Herramienta             | Propósito                                  | macOS / Linux                                   | Windows 11+                                                   |
+| ----------------------- | ------------------------------------------ | ----------------------------------------------- | ------------------------------------------------------------- |
+| **RTK**                 | Optimización de tokens (60-90%)            | `brew install rtk`                              | Binario desde GitHub Releases vía `setup.ps1`                 |
+| **ICM**                 | Memoria persistente (4 métodos)            | `brew tap rtk-ai/tap && brew install icm`       | `install.ps1` oficial vía `setup.ps1`                         |
+| **Headroom**            | Capa obligatoria de compresión (60-95%)    | `bash scripts/install-headroom.sh --yes`        | `powershell scripts/install-headroom.ps1 -Yes`                |
+| **Codebase Memory MCP** | Inteligencia estructural de código / grafo | `bash scripts/install-codebase-memory.sh --yes` | `powershell scripts/install-codebase-memory.ps1 -Yes`         |
+| **Specify CLI**         | Ciclo de vida de Spec-Driven Development   | `uv tool install specify-cli`                   | `winget install --id astral-sh.uv -e` + `uv tool install ...` |
 
 En Windows, AOI usa `winget` para `uv` cuando está disponible. RTK no
 documenta por ahora un paquete oficial para `winget`, así que `setup.ps1`

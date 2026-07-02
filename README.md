@@ -70,13 +70,13 @@ Documentation boundary:
 
 ### Tools (in priority order)
 
-| Tool            | Purpose                             | macOS / Linux                             | Windows 11+                                                   |
-| --------------- | ----------------------------------- | ----------------------------------------- | ------------------------------------------------------------- |
-| **RTK**         | Token optimization (60-90% savings) | `brew install rtk`                        | GitHub release binary via `setup.ps1`                         |
-| **ICM**         | Persistent memory (4 methods)       | `brew tap rtk-ai/tap && brew install icm` | Official `install.ps1` via `setup.ps1`                        |
-| **Headroom**    | Mandatory compression layer (60-95%) | `bash scripts/install-headroom.sh --yes` | `powershell scripts/install-headroom.ps1 -Yes`                |
+| Tool                    | Purpose                                   | macOS / Linux                                   | Windows 11+                                                   |
+| ----------------------- | ----------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------- |
+| **RTK**                 | Token optimization (60-90% savings)       | `brew install rtk`                              | GitHub release binary via `setup.ps1`                         |
+| **ICM**                 | Persistent memory (4 methods)             | `brew tap rtk-ai/tap && brew install icm`       | Official `install.ps1` via `setup.ps1`                        |
+| **Headroom**            | Mandatory compression layer (60-95%)      | `bash scripts/install-headroom.sh --yes`        | `powershell scripts/install-headroom.ps1 -Yes`                |
 | **Codebase Memory MCP** | Structural code intelligence / code graph | `bash scripts/install-codebase-memory.sh --yes` | `powershell scripts/install-codebase-memory.ps1 -Yes`         |
-| **Specify CLI** | Spec-Driven Development lifecycle   | `uv tool install specify-cli`             | `winget install --id astral-sh.uv -e` + `uv tool install ...` |
+| **Specify CLI**         | Spec-Driven Development lifecycle         | `uv tool install specify-cli`                   | `winget install --id astral-sh.uv -e` + `uv tool install ...` |
 
 On Windows, AOI uses `winget` for `uv` when available. RTK does not currently document an official `winget` package, so `setup.ps1` installs the Windows release binary directly.
 
