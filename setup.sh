@@ -362,6 +362,24 @@ require_icm() {
   exit 1
 }
 
+get_codebase_memory_path() {
+  local resolved_path
+
+  resolved_path="$(command -v codebase-memory-mcp 2>/dev/null || true)"
+  if [[ -n "$resolved_path" ]]; then
+    printf '%s' "$resolved_path"
+    return 0
+  fi
+
+  resolved_path="$HOME/.local/bin/codebase-memory-mcp"
+  if [[ -x "$resolved_path" ]]; then
+    printf '%s' "$resolved_path"
+    return 0
+  fi
+
+  return 1
+}
+
 install_specify() {
   if command -v specify &>/dev/null; then
     ok "Specify CLI $(specify version 2>/dev/null || echo 'installed')"
@@ -592,6 +610,31 @@ else
   info "    When ready, run: ln -sf ../../.githooks/pre-commit-aoi-guard.sh .git/hooks/pre-commit"
 fi
 
+# ── Phase 1.8: codebase-memory-mcp (OPTIONAL, workspace-local only) ─────────
+header "Phase 1.8: Codebase Memory MCP (opcional)"
+
+if [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then
+  info "codebase-memory-mcp indexa el repo en un knowledge graph local para reducir"
+  info "exploración file-by-file. AOI lo instala con --skip-config para NO tocar"
+  info "AGENTS/GEMINI del operador y registra el MCP sólo en el workspace actual."
+  printf "${YELLOW}▸${NC} Instalar codebase-memory-mcp? [Y/n]: "
+  read -r CBM_CHOICE
+  case "$CBM_CHOICE" in
+    n|N|no|NO)
+      warn "codebase-memory-mcp omitido. AOI continúa con ICM/Headroom/RTK normales."
+      ;;
+    *)
+      bash "$SCRIPT_DIR/scripts/install-codebase-memory.sh" --yes || {
+        ret=$?
+        warn "install-codebase-memory.sh salió con código $ret — el setup continúa."
+        warn "El operador puede reintentar luego; el MCP workspace-local quedará en ICM only."
+      }
+      ;;
+  esac
+else
+  warn "scripts/install-codebase-memory.sh no encontrado junto a setup.sh — saltando Phase 1.8"
+fi
+
 # ── Phase 2: Initialize Spec-Kit ──────────────────────────────────────────
 header "Phase 2: Spec-Kit"
 
@@ -757,7 +800,26 @@ EOF
 fi
 
 VSCODE_MCP="$PROJECT_PATH/.vscode/mcp.json"
-cat > "$VSCODE_MCP" <<'EOF'
+CBM_BIN="$(get_codebase_memory_path || true)"
+if [[ -n "$CBM_BIN" ]]; then
+  cat > "$VSCODE_MCP" <<EOF
+{
+  "servers": {
+    "icm": {
+      "type": "stdio",
+      "command": "bash",
+      "args": ["\${workspaceFolder}/.github/scripts/icm-serve.sh"]
+    },
+    "codebase-memory-mcp": {
+      "type": "stdio",
+      "command": "$CBM_BIN"
+    }
+  }
+}
+EOF
+  ok "Workspace MCP configured in .vscode/mcp.json (ICM + codebase-memory-mcp)"
+else
+  cat > "$VSCODE_MCP" <<'EOF'
 {
   "servers": {
     "icm": {
@@ -768,7 +830,8 @@ cat > "$VSCODE_MCP" <<'EOF'
   }
 }
 EOF
-ok "Workspace MCP configured in .vscode/mcp.json"
+  ok "Workspace MCP configured in .vscode/mcp.json (ICM only)"
+fi
 
 # ── Phase 4: Configure Tools ────────────────────────────────────────────
 header "Phase 4: Tool Configuration"
@@ -790,6 +853,9 @@ fi
 # ICM — workspace MCP is local; remaining init modes enrich the toolchain
 require_icm
 ok "ICM → Workspace MCP registered (.vscode/mcp.json)"
+if [[ -n "$(get_codebase_memory_path || true)" ]]; then
+  ok "codebase-memory-mcp → Workspace MCP registered (.vscode/mcp.json)"
+fi
 icm init --mode hook 2>/dev/null && ok "ICM → Hooks installed (auto-extraction)" || warn "ICM hooks skipped"
 icm init --mode skill 2>/dev/null && ok "ICM → Skills installed" || warn "ICM skills skipped"
 icm init --mode cli 2>/dev/null && ok "ICM → CLI instructions" || warn "ICM CLI instructions skipped"
@@ -861,6 +927,12 @@ echo ""
 echo "  Tools installed:"
 command -v rtk     &>/dev/null && echo "    ✓ RTK   $(rtk --version 2>/dev/null || echo '')" || echo "    ✗ RTK"
 command -v icm     &>/dev/null && echo "    ✓ ICM   $(icm --version 2>/dev/null || echo '')" || echo "    ✗ ICM"
+CBM_BIN="$(get_codebase_memory_path || true)"
+if [[ -n "$CBM_BIN" ]]; then
+  echo "    ✓ Codebase Memory MCP   $($CBM_BIN --version 2>/dev/null || echo '')"
+else
+  echo "    ○ Codebase Memory MCP   optional / not installed"
+fi
 command -v specify &>/dev/null && echo "    ✓ Specify CLI" || echo "    ✗ Specify CLI"
 echo ""
 echo "  Next steps:"

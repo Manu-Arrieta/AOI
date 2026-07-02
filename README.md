@@ -75,11 +75,14 @@ Documentation boundary:
 | **RTK**         | Token optimization (60-90% savings) | `brew install rtk`                        | GitHub release binary via `setup.ps1`                         |
 | **ICM**         | Persistent memory (4 methods)       | `brew tap rtk-ai/tap && brew install icm` | Official `install.ps1` via `setup.ps1`                        |
 | **Headroom**    | Mandatory compression layer (60-95%) | `bash scripts/install-headroom.sh --yes` | `powershell scripts/install-headroom.ps1 -Yes`                |
+| **Codebase Memory MCP** | Structural code intelligence / code graph | `bash scripts/install-codebase-memory.sh --yes` | `powershell scripts/install-codebase-memory.ps1 -Yes`         |
 | **Specify CLI** | Spec-Driven Development lifecycle   | `uv tool install specify-cli`             | `winget install --id astral-sh.uv -e` + `uv tool install ...` |
 
 On Windows, AOI uses `winget` for `uv` when available. RTK does not currently document an official `winget` package, so `setup.ps1` installs the Windows release binary directly.
 
 `ICM` and `Headroom` are mandatory: setup now fails if it cannot verify a working `icm` or `headroom` command. `RTK` remains recommended but non-blocking: if its install fails, AOI continues and hooks simply pass commands through until `rtk` is available again.
+
+`Codebase Memory MCP` is optional. AOI installs it in safe mode with upstream `--skip-config`, so the binary lands on the machine but AGENTS/GEMINI files under the operator home stay untouched. When the binary is present, AOI registers it only in the project-local `.vscode/mcp.json`.
 
 The dashboard runtime is mandatory too. Setup no longer skips dashboard bootstrap: it now fails unless Node `>=20.19.0` and either `corepack` or `pnpm@11.3.0` are available before dependency installation.
 
@@ -89,7 +92,7 @@ The dashboard runtime is mandatory too. Setup no longer skips dashboard bootstra
 
 .vscode/
 ├── settings.json # Workspace terminal setup for tool resolution
-└── mcp.json # Workspace-local ICM MCP registration
+└── mcp.json # Workspace-local MCP registration (ICM required, codebase-memory-mcp optional)
 
 .resources/
 ├── constitution.md # Local contract for the resources subtree

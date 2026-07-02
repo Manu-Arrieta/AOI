@@ -338,6 +338,45 @@ AOI bootstrapper ya tiene **13 agentes** con bloques `## Model Requirement` que 
 Output de agente AOI
     ↓
 Headroom proxy (obligatorio) comprime tokens
+
+## 7. Protocolo de descubrimiento de código — codebase-memory-mcp (opcional)
+
+> ✅ **Si está instalado**, `codebase-memory-mcp` es la vía preferida para exploración estructural de código. AOI lo registra sólo a nivel workspace en `.vscode/mcp.json`; no debe auto-configurar archivos globales del operador.
+
+### 7.1 Qué problema resuelve
+
+Cuando el agente explora el codebase archivo por archivo (`grep` + `read` repetidos), el costo de tokens y tool-calls sube innecesariamente. `codebase-memory-mcp` indexa el repo en un knowledge graph local y responde preguntas estructurales con menos contexto.
+
+### 7.2 Cuándo usarlo primero
+
+Si el servidor MCP `codebase-memory-mcp` está disponible en el workspace, el agente **DEBE preferirlo** para:
+
+1. Encontrar funciones, clases, routes o symbols por patrón
+2. Trazar quién llama a una función o qué llama esa función
+3. Pedir un resumen de arquitectura o hotspots del repo
+4. Hacer queries estructurales donde `grep` sería ruidoso
+
+### 7.3 Orden de preferencia
+
+1. `search_graph` — ubicar funciones, clases, routes, variables por patrón
+2. `trace_path` — seguir call chains inbound/outbound
+3. `get_code_snippet` — leer el source exacto del symbol ya encontrado
+4. `query_graph` — consultas Cypher complejas
+5. `get_architecture` — overview del codebase
+6. `search_code` o `grep` — sólo para literales, mensajes, configs o fallback
+
+### 7.4 Cuándo NO alcanza y hay que volver a grep/read
+
+`grep` / lectura directa siguen siendo correctos para:
+
+- string literals
+- mensajes de error
+- archivos no código o config
+- casos donde el índice todavía no existe o está desactualizado
+
+### 7.5 Regla operativa
+
+Si el repo aún no fue indexado, el primer paso es `index_repository`. Si `codebase-memory-mcp` no está presente en `.vscode/mcp.json`, esta sección no aplica y el agente vuelve al flujo normal de búsqueda local.
     ↓
 NVIDIA custom endpoint (opcional) entrega al modelo elegido
     ↓

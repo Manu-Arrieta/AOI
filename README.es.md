@@ -77,6 +77,7 @@ Límite de documentación:
 | **RTK**         | Optimización de tokens (60-90%)          | `brew install rtk`                        | Binario desde GitHub Releases vía `setup.ps1`                 |
 | **ICM**         | Memoria persistente (4 métodos)          | `brew tap rtk-ai/tap && brew install icm` | `install.ps1` oficial vía `setup.ps1`                         |
 | **Headroom**    | Capa obligatoria de compresión (60-95%)  | `bash scripts/install-headroom.sh --yes`  | `powershell scripts/install-headroom.ps1 -Yes`               |
+| **Codebase Memory MCP** | Inteligencia estructural de código / grafo | `bash scripts/install-codebase-memory.sh --yes` | `powershell scripts/install-codebase-memory.ps1 -Yes`        |
 | **Specify CLI** | Ciclo de vida de Spec-Driven Development | `uv tool install specify-cli`             | `winget install --id astral-sh.uv -e` + `uv tool install ...` |
 
 En Windows, AOI usa `winget` para `uv` cuando está disponible. RTK no
@@ -85,6 +86,8 @@ instala directamente el binario de Windows.
 
 `ICM` y `Headroom` son obligatorios: el setup aborta si no puede verificar un comando `icm` o `headroom` operativos. `RTK` sigue siendo recomendado pero no bloqueante: si su instalación falla, AOI continúa y los hooks dejan pasar los comandos sin filtrar hasta que `rtk` vuelva a estar disponible.
 
+`Codebase Memory MCP` es opcional. AOI lo instala en modo seguro con `--skip-config`, así que el binario queda disponible pero los archivos AGENTS/GEMINI del home del operador no se tocan. Si el binario está presente, AOI lo registra sólo en el `.vscode/mcp.json` local del proyecto.
+
 El runtime del dashboard también es obligatorio. El setup ya no saltea su bootstrap: ahora falla si antes de instalar dependencias no tiene Node `>=20.19.0` y `corepack` o `pnpm@11.3.0` disponibles.
 
 ### Scaffold (copiado a tu proyecto)
@@ -92,7 +95,7 @@ El runtime del dashboard también es obligatorio. El setup ya no saltea su boots
 ```text
 .vscode/
 ├── settings.json # Configuración de terminal del workspace para resolver herramientas
-└── mcp.json # Registro MCP local de ICM para el workspace
+└── mcp.json # Registro MCP local del workspace (ICM obligatorio, codebase-memory-mcp opcional)
 
 .resources/
 ├── constitution.md # Contrato local del subárbol de recursos

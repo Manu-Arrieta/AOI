@@ -279,6 +279,13 @@ function Get-SpecifyPath {
     )
 }
 
+function Get-CodebaseMemoryPath {
+    return Get-ExecutablePath -Name "codebase-memory-mcp" -Candidates @(
+        (Join-Path $env:LOCALAPPDATA "Programs\codebase-memory-mcp\codebase-memory-mcp.exe"),
+        (Join-Path $LocalBinDir "codebase-memory-mcp.exe")
+    )
+}
+
 function Get-CommandOutput {
     param(
         [string]$BinaryPath,
@@ -711,24 +718,38 @@ function Set-WorkspaceMcpConfig {
     param([string]$TargetProjectPath)
 
     $mcpPath = Join-Path $TargetProjectPath ".vscode\mcp.json"
-    $mcpConfig = @{
-        servers = @{
-            icm = @{
-                type = "stdio"
-                command = "powershell"
-                args = @(
-                    "-NoProfile",
-                    "-ExecutionPolicy",
-                    "Bypass",
-                    "-File",
-                    '${workspaceFolder}\.github\scripts\icm-serve.ps1'
-                )
-            }
+    $servers = @{
+        icm = @{
+            type = "stdio"
+            command = "powershell"
+            args = @(
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                '${workspaceFolder}\.github\scripts\icm-serve.ps1'
+            )
         }
     }
 
+    $cbmPath = Get-CodebaseMemoryPath
+    if ($cbmPath) {
+        $servers["codebase-memory-mcp"] = @{
+            type = "stdio"
+            command = $cbmPath
+        }
+    }
+
+    $mcpConfig = @{
+        servers = $servers
+    }
+
     Write-JsonObject -Path $mcpPath -Object $mcpConfig
-    Write-Ok "Workspace MCP configured in .vscode/mcp.json for Windows"
+    if ($cbmPath) {
+        Write-Ok "Workspace MCP configured in .vscode/mcp.json for Windows (ICM + codebase-memory-mcp)"
+    } else {
+        Write-Ok "Workspace MCP configured in .vscode/mcp.json for Windows (ICM only)"
+    }
 }
 
 if (-not $ProjectPath) {
@@ -811,6 +832,29 @@ if (Test-Path $headroomInstall) {
     exit 1
 }
 Write-Info "Headroom instalado y configurado."
+
+Write-Header "Phase 1.8: Codebase Memory MCP (opcional)"
+$codebaseMemoryInstall = Join-Path $PSScriptRoot "scripts/install-codebase-memory.ps1"
+if (Test-Path $codebaseMemoryInstall) {
+    Write-Info "codebase-memory-mcp indexa el repo en un knowledge graph local para reducir exploración file-by-file."
+    Write-Info "AOI lo instala en modo binario-only (--skip-config) y registra el MCP solo en el workspace actual."
+    $cbmChoice = Read-Host "▸ Instalar codebase-memory-mcp? [Y/n]"
+    if ($cbmChoice -match '^[nN]([oO])?$') {
+        Write-Warn "codebase-memory-mcp omitido. AOI continúa con ICM/Headroom/RTK normales."
+    } else {
+        try {
+            $cbmExitCode = Invoke-WindowsPowerShellFile -ScriptPath $codebaseMemoryInstall -Arguments @("-Yes")
+            if ($cbmExitCode -ne 0) {
+                Write-Warn "install-codebase-memory.ps1 salió con código $cbmExitCode — el setup continúa."
+                Write-Warn "El operador puede reintentar luego; el MCP workspace-local quedará en ICM only."
+            }
+        } catch {
+            Write-Warn "No se pudo invocar install-codebase-memory.ps1: $($_.Exception.Message) — el setup continúa."
+        }
+    }
+} else {
+    Write-Warn "scripts/install-codebase-memory.ps1 no encontrado junto a setup.ps1 — saltando Phase 1.8"
+}
 
 Write-Header "Phase 2: Spec-Kit"
 Push-Location $ProjectPath
@@ -934,6 +978,10 @@ try {
 
     $icmPath = Ensure-IcmAvailable
     Write-Ok "ICM → Workspace MCP registered (.vscode/mcp.json)"
+    $cbmPath = Get-CodebaseMemoryPath
+    if ($cbmPath) {
+        Write-Ok "codebase-memory-mcp → Workspace MCP registered (.vscode/mcp.json)"
+    }
 
     try {
         & $icmPath init --mode hook 2>$null
@@ -1026,6 +1074,13 @@ if ($icmPath) {
     Write-Host "    ✓ ICM   $(Get-CommandOutput -BinaryPath $icmPath -Arguments @("--version"))"
 } else {
     Write-Host "    ✗ ICM"
+}
+
+$cbmPath = Get-CodebaseMemoryPath
+if ($cbmPath) {
+    Write-Host "    ✓ Codebase Memory MCP   $(Get-CommandOutput -BinaryPath $cbmPath -Arguments @("--version"))"
+} else {
+    Write-Host "    ○ Codebase Memory MCP   optional / not installed"
 }
 
 $specifyPath = Get-SpecifyPath

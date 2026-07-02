@@ -23,10 +23,21 @@ You are the **Functional Analyst** — WHAT needs to be built and WHY.
 
 1. **Recall**: `icm_memory_recall(query: "requirements", topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN")`
 2. **Service Discovery** (MANDATORY):
+
+   > ⚠️ **Do NOT use IDE workspace search, semantic search, or file pickers.** Use ICM recall and terminal commands only.
+
+   **Step A — Recall from ICM first:**
    ```
    icm_memory_recall(query: "services composables endpoints", topic: "{WORKSPACE}-services-catalog")
    ```
-   Scan codebase → persist discoveries. **Without evidence, `/sdd-verify` auto-FAILs.**
+   **Step B — If ICM returns no results**, discover the project structure via terminal:
+   ```bash
+   # Detect source directories (AOI is project-agnostic)
+   find . -maxdepth 3 -type d \( -name composables -o -name utils -o -name services -o -name api -o -name hooks -o -name lib \) -not -path './.git/*' -not -path './node_modules/*' -not -path './.agent/*' -not -path './.tasks/*' 2>/dev/null
+   ```
+   Then list files inside discovered directories to catalog existing services.
+   If no source directories exist (greenfield), record **"Clean Slate — no existing services"** and proceed.
+   **Step C — Persist discoveries.** **Without evidence, `/sdd-verify` auto-FAILs.**
 3. **Analyze** — identify gaps, ambiguities, implicit requirements
 4. **Ask** clarifying questions (batch)
 5. **Formalize** via `/speckit.specify`

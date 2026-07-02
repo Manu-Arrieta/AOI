@@ -41,3 +41,17 @@ This project requires `headroom` (headroomlabs-ai/headroom) installed and config
 - Verify `headroom --version` resolves in PATH before executing any LLM-bound command.
 - Do NOT modify this section: it is governed by AOI bootstrap policy.
 <!-- headroom:end -->
+
+## Code Discovery Protocol (optional, when `codebase-memory-mcp` is present)
+
+If the workspace registers `codebase-memory-mcp` in `.vscode/mcp.json`, prefer graph-based discovery before broad `grep` plus file-by-file reads.
+
+Priority order:
+1. `search_graph`
+2. `trace_path`
+3. `get_code_snippet`
+4. `query_graph`
+5. `get_architecture`
+6. `search_code` or `grep` only for literals, configs, non-code files, or fallback
+
+If the project is not indexed yet, run `index_repository` first. If the MCP server is absent, use the normal local search flow.

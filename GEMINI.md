@@ -189,6 +189,21 @@ headroom mcp install                          # server MCP nativo
 
 **Relación con §5 NVIDIA**: ortogonales y combinables. Ambas son opcionales con default seguro.
 
+### §7 — Code Discovery Protocol (opcional, cuando `codebase-memory-mcp` está presente)
+
+Si el workspace tiene registrado `codebase-memory-mcp` en `.vscode/mcp.json`, el agente **DEBE preferir sus graph tools** antes de explorar código con `grep`/lectura archivo por archivo.
+
+Orden de preferencia:
+
+1. `search_graph`
+2. `trace_path`
+3. `get_code_snippet`
+4. `query_graph`
+5. `get_architecture`
+6. `search_code` o `grep` sólo para literales, configs, non-code files o fallback
+
+Si el proyecto no está indexado todavía, correr `index_repository` primero. Si el servidor no está presente, volver al flujo normal de búsqueda local.
+
 ---
 
 ## Sources of Truth

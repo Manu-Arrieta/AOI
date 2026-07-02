@@ -73,7 +73,7 @@ icm_memory_store(
 
 ## Workflow Commands
 
-- `/sdd-new` → Explore + Propose (Transcript ON)
+- `/sdd-new` → Explore + Propose (Transcript ON) — Service Discovery via ICM + terminal only, NEVER IDE search
 - `/sdd-ff` → Specify → Plan → Tasks (via spec-kit)
 - `/sdd-apply` → Implement (progress every 3-5 tasks)
 - `/sdd-verify` → Verify + Health + Flexible Archive Gate
@@ -86,6 +86,7 @@ icm_memory_store(
 - Never skip ICM
 - Never advance without Owner approval
 - Never auto-archive on PASS — Owner decides
+- Never use VS Code workspace search, semantic search, or file pickers — use ICM recall + terminal commands
 - Always consolidate at 7+ entries
 - Always Service Discovery before requirement.md
 - Always {WORKSPACE} prefix for ICM

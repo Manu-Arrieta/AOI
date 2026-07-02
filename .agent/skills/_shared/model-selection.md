@@ -95,6 +95,18 @@ Este capítulo espeja el §6 de `.github/instructions/model-selection.instructio
 
 La regla §3 (detener y notificar al Owner, NUNCA elegir por defecto) **siempre** tiene prioridad sobre cualquier configuración de Headroom + NVIDIA. AOI no elige modelo ni capa de compresión por sí solo — el operador decide cada activación manualmente.
 
+## 7. Protocolo de descubrimiento de código — codebase-memory-mcp (espejo del §7 raíz)
+
+> ✅ **Si está instalado**, `codebase-memory-mcp` pasa a ser la vía preferida para exploración estructural de código. AOI lo registra sólo a nivel workspace en `.vscode/mcp.json`; no debe auto-configurar archivos globales del operador.
+
+Este capítulo espeja el §7 de `.github/instructions/model-selection.instructions.md` (raíz Copilot). La doctrina es:
+
+1. **Preferir** `search_graph`, `trace_path`, `get_code_snippet`, `query_graph`, `get_architecture`
+2. Usar `grep` / `read` directo sólo para literales, configs, non-code files o fallback
+3. Si el repo no está indexado todavía, correr `index_repository` primero
+
+Regla operativa: si `codebase-memory-mcp` no está disponible en el workspace, esta sección no aplica y el agente vuelve al flujo normal de búsqueda local.
+
 ### Mirror Obligatorio (general — aplica a TODA la doctrina)
 
 > Todo bloque de doctrina declarado en el raíz (NVIDIA §5, Headroom §6, defaults §1-§2, fallback §3) debe espejarse en `.agent/skills/_shared/model-selection.md` (Antigravity) sin divergencia. El protocolo `dual-sync.instructions.md` aplica sin excepciones. Si encontrás drift entre este archivo y el raíz, abrí un issue con tag `dual-sync-drift` antes de continuar.
