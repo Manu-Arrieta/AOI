@@ -76,17 +76,29 @@ Límite de documentación:
 | ----------------------- | ------------------------------------------ | ----------------------------------------------- | ------------------------------------------------------------- |
 | **RTK**                 | Optimización de tokens (60-90%)            | `brew install rtk`                              | Binario desde GitHub Releases vía `setup.ps1`                 |
 | **ICM**                 | Memoria persistente (4 métodos)            | `brew tap rtk-ai/tap && brew install icm`       | `install.ps1` oficial vía `setup.ps1`                         |
-| **Headroom**            | Capa obligatoria de compresión (60-95%)    | `bash scripts/install-headroom.sh --yes`        | `powershell scripts/install-headroom.ps1 -Yes`                |
-| **Codebase Memory MCP** | Inteligencia estructural de código / grafo | `bash scripts/install-codebase-memory.sh --yes` | `powershell scripts/install-codebase-memory.ps1 -Yes`         |
+| **Headroom**            | Capa de compresión CLI (60-95%)           | `bash scripts/install-headroom.sh --yes`        | `powershell scripts/install-headroom.ps1 -Yes`                |
+| **Codebase Memory MCP** | Inteligencia estructural de código / grafo | `bash scripts/install-codebase-memory.sh --ui --yes` | `powershell scripts/install-codebase-memory.ps1 -Yes -Variant ui`         |
 | **Specify CLI**         | Ciclo de vida de Spec-Driven Development   | `uv tool install specify-cli`                   | `winget install --id astral-sh.uv -e` + `uv tool install ...` |
 
 En Windows, AOI usa `winget` para `uv` cuando está disponible. RTK no
 documenta por ahora un paquete oficial para `winget`, así que `setup.ps1`
 instala directamente el binario de Windows.
 
-`ICM` y `Headroom` son obligatorios: el setup aborta si no puede verificar un comando `icm` o `headroom` operativos. `RTK` sigue siendo recomendado pero no bloqueante: si su instalación falla, AOI continúa y los hooks dejan pasar los comandos sin filtrar hasta que `rtk` vuelva a estar disponible.
+`ICM` es obligatorio: el setup aborta si no puede verificar un comando `icm` operativo. `RTK` y `Headroom` son recomendados pero no bloqueantes: si su instalación falla, AOI continúa.
+
+`Headroom` comprime contexto para agentes basados en CLI (Claude Code, Codex, `gh copilot`). **No** intercepta el tráfico de VS Code Copilot Chat — esa extensión llama directamente a la API de GitHub. El ahorro de tokens en VS Code Chat proviene de **RTK** (filtrado de salida de terminal) y **Codebase Memory MCP** (120× menos tokens en exploración de código).
 
 `Codebase Memory MCP` es opcional. AOI lo instala en modo seguro con `--skip-config`, así que el binario queda disponible pero los archivos AGENTS/GEMINI del home del operador no se tocan. Si el binario está presente, AOI lo registra sólo en el `.vscode/mcp.json` local del proyecto.
+
+El setup ofrece dos variantes durante la Phase 1.8:
+
+- **`standard`** — sólo el binario, sin visualización de grafo.
+- **`ui`** (recomendado) — incluye la visualización 3D interactiva del grafo en `http://localhost:9749`, disponible cada vez que VS Code tiene el servidor MCP conectado.
+
+Tras una instalación exitosa, el setup activa automáticamente:
+- `auto_index true` — watcher nativo de git que re-indexa de forma incremental ante cualquier cambio.
+- `ui true` + `port 9749` — visualización HTTP del grafo habilitada al iniciar la próxima sesión de VS Code.
+- `index_repository` inicial en background — el proyecto queda indexado antes de la primera sesión de agente.
 
 El runtime del dashboard también es obligatorio. El setup ya no saltea su bootstrap: ahora falla si antes de instalar dependencias no tiene Node `>=20.19.0` y `corepack` o `pnpm@11.3.0` disponibles.
 
@@ -96,6 +108,9 @@ El runtime del dashboard también es obligatorio. El setup ya no saltea su boots
 .vscode/
 ├── settings.json # Configuración de terminal del workspace para resolver herramientas
 └── mcp.json # Registro MCP local del workspace (ICM obligatorio, codebase-memory-mcp opcional)
+
+.githooks/
+└── pre-commit-aoi-guard.sh  # Bloquea headroom learn para que no sobreescriba archivos gestionados por AOI
 
 .resources/
 ├── constitution.md # Contrato local del subárbol de recursos
@@ -137,6 +152,21 @@ GEMINI.md # Instrucciones raíz de Antigravity
 ├── _shared/model-selection.md # Política obligatoria de selección de modelo
 └── agents/ # 11 espejos de agentes para Antigravity
 ```
+
+## Protocolo de Descubrimiento de Código
+
+Cuando `codebase-memory-mcp` está registrado en `.vscode/mcp.json`, los agentes prefieren automáticamente sus herramientas de grafo sobre `grep` amplio o lecturas archivo por archivo:
+
+| Prioridad | Herramienta | Caso de uso |
+|---|---|---|
+| 1 | `search_graph` | Encontrar funciones, clases, routes por patrón |
+| 2 | `trace_path` | Seguir call chains inbound/outbound |
+| 3 | `get_code_snippet` | Leer el source exacto de un símbolo ya encontrado |
+| 4 | `query_graph` | Queries estructurales complejas tipo Cypher |
+| 5 | `get_architecture` | Overview del codebase: lenguajes, hotspots, clusters |
+| 6 | `grep` / lectura directa | Literales, configs, non-code files, o fallback |
+
+Si el proyecto todavía no está indexado, llamar `index_repository` primero. Si el servidor MCP no está presente, se aplica el flujo normal de búsqueda local.
 
 ## Ciclo de Vida SDD
 

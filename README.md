@@ -74,15 +74,24 @@ Documentation boundary:
 | ----------------------- | ----------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------- |
 | **RTK**                 | Token optimization (60-90% savings)       | `brew install rtk`                              | GitHub release binary via `setup.ps1`                         |
 | **ICM**                 | Persistent memory (4 methods)             | `brew tap rtk-ai/tap && brew install icm`       | Official `install.ps1` via `setup.ps1`                        |
-| **Headroom**            | Mandatory compression layer (60-95%)      | `bash scripts/install-headroom.sh --yes`        | `powershell scripts/install-headroom.ps1 -Yes`                |
-| **Codebase Memory MCP** | Structural code intelligence / code graph | `bash scripts/install-codebase-memory.sh --yes` | `powershell scripts/install-codebase-memory.ps1 -Yes`         |
+| **Headroom**            | CLI compression layer (60-95%)            | `bash scripts/install-headroom.sh --yes`        | `powershell scripts/install-headroom.ps1 -Yes`                |
+| **Codebase Memory MCP** | Structural code intelligence / code graph | `bash scripts/install-codebase-memory.sh --ui --yes` | `powershell scripts/install-codebase-memory.ps1 -Yes -Variant ui`         |
 | **Specify CLI**         | Spec-Driven Development lifecycle         | `uv tool install specify-cli`                   | `winget install --id astral-sh.uv -e` + `uv tool install ...` |
 
 On Windows, AOI uses `winget` for `uv` when available. RTK does not currently document an official `winget` package, so `setup.ps1` installs the Windows release binary directly.
 
-`ICM` and `Headroom` are mandatory: setup now fails if it cannot verify a working `icm` or `headroom` command. `RTK` remains recommended but non-blocking: if its install fails, AOI continues and hooks simply pass commands through until `rtk` is available again.
+`ICM` is mandatory: setup fails if it cannot verify a working `icm` command. `RTK` and `Headroom` are recommended but non-blocking: if their install fails, AOI continues.
+
+`Headroom` compresses context for CLI-based agents (Claude Code, Codex, `gh copilot`). It does **not** intercept VS Code Copilot Chat traffic — that extension calls GitHub's API directly. Token savings for VS Code Chat come from **RTK** (terminal output filtering) and **Codebase Memory MCP** (120× fewer tokens in code exploration).
 
 `Codebase Memory MCP` is optional. AOI installs it in safe mode with upstream `--skip-config`, so the binary lands on the machine but AGENTS/GEMINI files under the operator home stay untouched. When the binary is present, AOI registers it only in the project-local `.vscode/mcp.json`.
+
+Setup offers two variants during Phase 1.8:
+
+- **`standard`** — binary only, no graph visualization UI.
+- **`ui`** (recommended) — includes the embedded 3D graph visualization at `http://localhost:9749`, available whenever VS Code has the MCP server connected.
+
+A `post-commit` hook is also installed as an explicit backup re-indexer alongside the native watcher.
 
 The dashboard runtime is mandatory too. Setup no longer skips dashboard bootstrap: it now fails unless Node `>=20.19.0` and either `corepack` or `pnpm@11.3.0` are available before dependency installation.
 
@@ -93,6 +102,9 @@ The dashboard runtime is mandatory too. Setup no longer skips dashboard bootstra
 .vscode/
 ├── settings.json # Workspace terminal setup for tool resolution
 └── mcp.json # Workspace-local MCP registration (ICM required, codebase-memory-mcp optional)
+
+.githooks/
+└── pre-commit-aoi-guard.sh  # Blocks headroom learn from overwriting AOI-managed files
 
 .resources/
 ├── constitution.md # Local contract for the resources subtree
@@ -135,6 +147,21 @@ GEMINI.md # Antigravity root instructions
 └── agents/ # 11 Antigravity agent mirrors
 
 ```
+
+## Code Discovery Protocol
+
+When `codebase-memory-mcp` is registered in `.vscode/mcp.json`, agents automatically prefer its graph tools over broad grep or file-by-file reads:
+
+| Priority | Tool | Use case |
+|---|---|---|
+| 1 | `search_graph` | Find functions, classes, routes by pattern |
+| 2 | `trace_path` | Follow call chains inbound/outbound |
+| 3 | `get_code_snippet` | Read exact source of an already-found symbol |
+| 4 | `query_graph` | Complex Cypher-like structural queries |
+| 5 | `get_architecture` | Codebase overview: languages, hotspots, clusters |
+| 6 | `grep` / `read` | Literals, config files, non-code files, or fallback |
+
+If the project is not indexed yet, call `index_repository` first. If the MCP server is absent, the normal local search flow applies.
 
 ## SDD Lifecycle
 

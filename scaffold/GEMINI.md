@@ -132,39 +132,34 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/nvidia-vscode-setup.
 
 **Seguridad**: el archivo `ChatLanguageModel.json` con API key real **NUNCA** se commitea — `.gitignore` excluye `ChatLanguageModel.json` y mantiene tracked sólo `ChatLanguageModel.example.json`.
 
-### §6 — Capa de compresión Headroom (ortogonal a §5, OBLIGATORIA)
+### §6 — Capa de compresión Headroom (ortogonal a §5, opcional)
 
-> ⚠️ **Default si NO se activa**: AOI **aborta el setup**. Headroom es una capa **OBLIGATORIA** del AOI bootstrapper. La Phase 1.6 de `setup.sh` / `setup.ps1` corre sin prompt y falla si la instalación no se completa.
+> ℹ️ **Scope real**: Headroom comprime contexto para agentes **CLI** (Claude Code, Codex, `gh copilot`). **No intercepta VS Code Copilot Chat** — esa extensión llama directamente a la API de GitHub fuera del alcance del proxy. El ahorro de tokens en VS Code Chat proviene de **RTK** + **codebase-memory-mcp**.
 
-**Qué es Headroom**: proxy/compresor local que reduce tokens 60-95%. Se planta entre el agente y el LLM:
+**Qué es Headroom**: proxy/compresor local que reduce tokens 60-95% en flujos CLI. Se planta entre el agente CLI y el LLM:
 
 ```
-Tu agente
+Agente CLI (Claude Code / Codex / gh copilot)
    ↓
-Headroom proxy (obligatorio, localhost:8787)  ← comprime
-   ↓
-NVIDIA custom endpoint (opcional)            ← elige modelo
+Headroom proxy (opcional, localhost:8787)  ← comprime
    ↓
 Modelo LLM responde
 ```
 
 > Las tres capas (AOI bootstrap, Headroom, NVIDIA) son **independientes y componibles**.
 
-**Forma automatizada (bloqueante)**: `setup.sh` / `setup.ps1` ejecuta **Phase 1.6** después de Phase 1.5 (NVIDIA). Es **obligatoria** (sin prompt), bloqueante, y aborta si la instalación falla.
+**Forma de instalación (Phase 1.6 — opcional, con prompt)**: `setup.sh` / `setup.ps1` pregunta al operador. Si la instalación falla, el setup continúa sin Headroom.
 
 ```bash
-# macOS / Linux (firma AOI preferida: uv → pipx → pip)
-bash scripts/install-headroom.sh
-bash scripts/install-headroom.sh --method uv --extras all --yes
+# macOS / Linux
+bash scripts/install-headroom.sh --yes
 bash scripts/install-headroom.sh --dry-run      # preview sin instalar
 
 # Windows
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-headroom.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-headroom.ps1 -Method uv -Extras all -Yes
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-headroom.ps1 -Yes
 
-# Helper envvars (NO modifica shell rc automáticamente)
-bash scripts/headroom-vscode-setup.sh                   # plan completo
-bash scripts/headroom-vscode-setup.sh --emit-zsh        # snippet zsh al stdout (pipeable a ~/.zshrc)
+# Helper envvars
+bash scripts/headroom-vscode-setup.sh --emit-zsh        # snippet zsh
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/headroom-vscode-setup.ps1 -EmitPowerShell
 ```
 
@@ -184,10 +179,8 @@ headroom mcp install                          # server MCP nativo
 > - **NO** se auto-corre desde el bootstrapper AOI.
 > - **Recomendación**: usar `headroom learn --dry-run` primero, revisar el diff propuesto con `git diff`.
 > - **Si hace cambios no aprobados**: `git checkout -- GEMINI.md AGENTS.md CLAUDE.md` los descarta.
->
-> Headroom es decisión del operador; AOI no se hace cargo del conflicto. Risk mitigado por diseño: docs + warning + dry-run policy.
 
-**Relación con §5 NVIDIA**: ortogonales y combinables. Ambas son opcionales con default seguro.
+**Relación con §5 NVIDIA**: ortogonales y combinables. Ambas opcionales con default seguro.
 
 ### §7 — Code Discovery Protocol (opcional, cuando `codebase-memory-mcp` está presente)
 

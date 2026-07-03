@@ -806,32 +806,42 @@ if (Test-Path $nvidiaScript) {
     Write-Warn "scripts/nvidia-vscode-setup.ps1 no encontrado junto a setup.ps1 — saltando Phase 1.5"
 }
 
-Write-Header "Phase 1.6: Headroom compression layer (obligatorio)"
+Write-Header "Phase 1.6: Headroom compression layer (opcional)"
 $headroomInstall = Join-Path $PSScriptRoot "scripts/install-headroom.ps1"
 $headroomPreview = Join-Path $PSScriptRoot "scripts/headroom-vscode-setup.ps1"
 if (Test-Path $headroomInstall) {
-    Write-Info "Headroom (headroomlabs-ai/headroom) provee compresión proxy/MCP/library para reducir 60-95% tokens."
-    Write-Info "Es CAPA OBLIGATORIA del AOI bootstrapper. La instalación corre sin prompts."
-    Write-Info "Si falla, el setup aborta (AOI requiere Headroom operativo)."
-    $headroomInstallExitCode = Invoke-WindowsPowerShellFile -ScriptPath $headroomInstall -Arguments @("-Yes")
-    if ($headroomInstallExitCode -ne 0) {
-        Write-Err "install-headroom.ps1 salió con código $headroomInstallExitCode. Headroom es obligatorio — setup aborta."
-        exit $headroomInstallExitCode
-    }
-    if (Test-Path $headroomPreview) {
-        Write-Info "Headroom se configura por envvars (NO modifica VS Code ChatLanguageModel.json)."
-        $headroomPreviewExitCode = Invoke-WindowsPowerShellFile -ScriptPath $headroomPreview
-        if ($headroomPreviewExitCode -ne 0) {
-            Write-Err "headroom-vscode-setup.ps1 salió con código $headroomPreviewExitCode. Headroom es obligatorio — setup aborta."
-            exit $headroomPreviewExitCode
+    Write-Info "Headroom (headroomlabs-ai/headroom) provee compresión proxy/MCP/library para reducir 60-95% tokens en flujos CLI."
+    Write-Info "NO intercepta VS Code Copilot Chat (extensión nativa). Para ese contexto el ahorro viene de RTK + codebase-memory-mcp."
+    $headroomChoice = Read-Host "▸ Instalar Headroom? [Y/n]"
+    if ($headroomChoice -match '^[nN]([oO])?$') {
+        Write-Warn "Headroom omitido. AOI continúa sin capa de compresión CLI."
+    } else {
+        try {
+            $headroomInstallExitCode = Invoke-WindowsPowerShellFile -ScriptPath $headroomInstall -Arguments @("-Yes")
+            if ($headroomInstallExitCode -ne 0) {
+                Write-Warn "install-headroom.ps1 salió con código $headroomInstallExitCode — el setup continúa sin Headroom."
+                Write-Warn "El operador puede reintentar luego: powershell scripts/install-headroom.ps1 -Yes"
+            } else {
+                if (Test-Path $headroomPreview) {
+                    Write-Info "Headroom se configura por envvars (NO modifica VS Code ChatLanguageModel.json)."
+                    try {
+                        $headroomPreviewExitCode = Invoke-WindowsPowerShellFile -ScriptPath $headroomPreview
+                        if ($headroomPreviewExitCode -ne 0) {
+                            Write-Warn "headroom-vscode-setup.ps1 falló — el setup continúa. Configurá las envvars manualmente."
+                        }
+                    } catch {
+                        Write-Warn "No se pudo invocar headroom-vscode-setup.ps1: $($_.Exception.Message) — el setup continúa."
+                    }
+                }
+                Write-Ok "Headroom instalado y configurado."
+            }
+        } catch {
+            Write-Warn "No se pudo invocar install-headroom.ps1: $($_.Exception.Message) — el setup continúa sin Headroom."
         }
     }
 } else {
-    Write-Err "scripts/install-headroom.ps1 no encontrado junto a setup.ps1."
-    Write-Err "Headroom es obligatorio — el setup no puede continuar."
-    exit 1
+    Write-Warn "scripts/install-headroom.ps1 no encontrado junto a setup.ps1 — saltando Phase 1.6"
 }
-Write-Info "Headroom instalado y configurado."
 
 Write-Header "Phase 1.8: Codebase Memory MCP (opcional)"
 $codebaseMemoryInstall = Join-Path $PSScriptRoot "scripts/install-codebase-memory.ps1"
@@ -842,17 +852,26 @@ if (Test-Path $codebaseMemoryInstall) {
     if ($cbmChoice -match '^[nN]([oO])?$') {
         Write-Warn "codebase-memory-mcp omitido. AOI continúa con ICM/Headroom/RTK normales."
     } else {
+        Write-Info "Variante UI incluye grafo 3D interactivo en http://localhost:9749"
+        $cbmUiChoice = Read-Host "▸ Instalar variante con UI (recomendado)? [Y/n]"
+        $cbmVariantArgs = if ($cbmUiChoice -match '^[nN]([oO])?$') { @("-Yes", "-Variant", "standard") } else { @("-Yes", "-Variant", "ui") }
+        $cbmWithUi = $cbmVariantArgs -notcontains "standard"
         try {
-            $cbmExitCode = Invoke-WindowsPowerShellFile -ScriptPath $codebaseMemoryInstall -Arguments @("-Yes")
+            $cbmExitCode = Invoke-WindowsPowerShellFile -ScriptPath $codebaseMemoryInstall -Arguments $cbmVariantArgs
             if ($cbmExitCode -ne 0) {
                 Write-Warn "install-codebase-memory.ps1 salió con código $cbmExitCode — el setup continúa."
                 Write-Warn "El operador puede reintentar luego; el MCP workspace-local quedará en ICM only."
             } else {
-                # Initial index — Start-Job so it's non-blocking. The hook handles subsequent commits.
+                # Post-install config: enable auto_index (native git watcher) and UI
                 $cbmBinInit = Get-CodebaseMemoryPath
                 if ($cbmBinInit) {
+                    try { & $cbmBinInit config set auto_index true 2>$null; Write-Ok "codebase-memory-mcp: auto_index activado (watcher nativo de git)" } catch {}
+                    if ($cbmWithUi) {
+                        try { & $cbmBinInit config set ui true 2>$null; Write-Ok "codebase-memory-mcp: UI activada en http://localhost:9749" } catch {}
+                        try { & $cbmBinInit config set port 9749 2>$null } catch {}
+                    }
+                    # Initial index — Start-Job so it's non-blocking. auto_index handles subsequent changes.
                     Write-Info "Indexando el repo por primera vez en background (codebase-memory-mcp)..."
-                    $repoPathJson = $ProjectPath -replace '\\', '\\\\'
                     Start-Job -ScriptBlock {
                         param($bin, $repoPath, $log)
                         & $bin cli index_repository "{`"repo_path`": `"$repoPath`"}" >> $log 2>&1
@@ -894,32 +913,6 @@ try {
     }
 } finally {
     Pop-Location
-}
-
-# Wire post-commit hook for codebase-memory-mcp auto-reindex (optional, skips silently)
-$cbmHookSrc = Join-Path $ScriptDir ".githooks\post-commit-codebase-index.sh"
-$projectPostCommit = Join-Path $ProjectPath ".git\hooks\post-commit"
-if ((Test-Path -LiteralPath $cbmHookSrc -PathType Leaf) -and (Test-Path -LiteralPath (Join-Path $ProjectPath ".git") -PathType Container)) {
-    $cbmHookDest = Join-Path $ProjectPath ".githooks\post-commit-codebase-index.sh"
-    Copy-Item -LiteralPath $cbmHookSrc -Destination $cbmHookDest -Force
-    if (Test-Path -LiteralPath $projectPostCommit -PathType Leaf) {
-        $existing = Get-Content $projectPostCommit -Raw -ErrorAction SilentlyContinue
-        if ($existing -notmatch 'post-commit-codebase-index') {
-            Rename-Item -LiteralPath $projectPostCommit -NewName "post-commit.aoi-bak" -Force
-            $chain = @'`n#!/usr/bin/env sh`n# AOI post-commit chain: re-index codebase-memory-mcp, then delegate.`nSELF_DIR="$(cd "$(dirname "$0")" && pwd)"
-bash "$SELF_DIR/../../.githooks/post-commit-codebase-index.sh" "$@"
-if [ -f "$SELF_DIR/post-commit.aoi-bak" ]; then exec bash "$SELF_DIR/post-commit.aoi-bak" "$@"; fi
-exit 0`n'@
-            Set-Content -LiteralPath $projectPostCommit -Value $chain -Encoding UTF8
-            Write-Ok "Chained codebase-memory-mcp auto-reindex into existing post-commit hook"
-        } else {
-            Write-Ok "codebase-memory-mcp post-commit already chained (skipped)"
-        }
-    } else {
-        $hookContent = "#!/usr/bin/env sh`n# AOI: re-index codebase-memory-mcp on commit (background, non-blocking)`nSELF_DIR=`"`$(cd `"`$(dirname `"`$0`")`" && pwd)`"`nbash `"`$SELF_DIR/../../.githooks/post-commit-codebase-index.sh`" `"`$@`"`nexit 0"
-        Set-Content -LiteralPath $projectPostCommit -Value $hookContent -Encoding UTF8
-        Write-Ok "Installed codebase-memory-mcp post-commit auto-reindex → .git/hooks/post-commit"
-    }
 }
 
 Write-Header "Phase 3: Agentic Infrastructure"
