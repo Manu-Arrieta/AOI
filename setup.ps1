@@ -847,6 +847,18 @@ if (Test-Path $codebaseMemoryInstall) {
             if ($cbmExitCode -ne 0) {
                 Write-Warn "install-codebase-memory.ps1 salió con código $cbmExitCode — el setup continúa."
                 Write-Warn "El operador puede reintentar luego; el MCP workspace-local quedará en ICM only."
+            } else {
+                # Initial index — Start-Job so it's non-blocking. The hook handles subsequent commits.
+                $cbmBinInit = Get-CodebaseMemoryPath
+                if ($cbmBinInit) {
+                    Write-Info "Indexando el repo por primera vez en background (codebase-memory-mcp)..."
+                    $repoPathJson = $ProjectPath -replace '\\', '\\\\'
+                    Start-Job -ScriptBlock {
+                        param($bin, $repoPath, $log)
+                        & $bin cli index_repository "{`"repo_path`": `"$repoPath`"}" >> $log 2>&1
+                    } -ArgumentList $cbmBinInit, $ProjectPath, "$env:TEMP\codebase-memory-mcp-index.log" | Out-Null
+                    Write-Ok "Index inicial lanzado en background → $env:TEMP\codebase-memory-mcp-index.log"
+                }
             }
         } catch {
             Write-Warn "No se pudo invocar install-codebase-memory.ps1: $($_.Exception.Message) — el setup continúa."
@@ -882,6 +894,32 @@ try {
     }
 } finally {
     Pop-Location
+}
+
+# Wire post-commit hook for codebase-memory-mcp auto-reindex (optional, skips silently)
+$cbmHookSrc = Join-Path $ScriptDir ".githooks\post-commit-codebase-index.sh"
+$projectPostCommit = Join-Path $ProjectPath ".git\hooks\post-commit"
+if ((Test-Path -LiteralPath $cbmHookSrc -PathType Leaf) -and (Test-Path -LiteralPath (Join-Path $ProjectPath ".git") -PathType Container)) {
+    $cbmHookDest = Join-Path $ProjectPath ".githooks\post-commit-codebase-index.sh"
+    Copy-Item -LiteralPath $cbmHookSrc -Destination $cbmHookDest -Force
+    if (Test-Path -LiteralPath $projectPostCommit -PathType Leaf) {
+        $existing = Get-Content $projectPostCommit -Raw -ErrorAction SilentlyContinue
+        if ($existing -notmatch 'post-commit-codebase-index') {
+            Rename-Item -LiteralPath $projectPostCommit -NewName "post-commit.aoi-bak" -Force
+            $chain = @'`n#!/usr/bin/env sh`n# AOI post-commit chain: re-index codebase-memory-mcp, then delegate.`nSELF_DIR="$(cd "$(dirname "$0")" && pwd)"
+bash "$SELF_DIR/../../.githooks/post-commit-codebase-index.sh" "$@"
+if [ -f "$SELF_DIR/post-commit.aoi-bak" ]; then exec bash "$SELF_DIR/post-commit.aoi-bak" "$@"; fi
+exit 0`n'@
+            Set-Content -LiteralPath $projectPostCommit -Value $chain -Encoding UTF8
+            Write-Ok "Chained codebase-memory-mcp auto-reindex into existing post-commit hook"
+        } else {
+            Write-Ok "codebase-memory-mcp post-commit already chained (skipped)"
+        }
+    } else {
+        $hookContent = "#!/usr/bin/env sh`n# AOI: re-index codebase-memory-mcp on commit (background, non-blocking)`nSELF_DIR=`"`$(cd `"`$(dirname `"`$0`")`" && pwd)`"`nbash `"`$SELF_DIR/../../.githooks/post-commit-codebase-index.sh`" `"`$@`"`nexit 0"
+        Set-Content -LiteralPath $projectPostCommit -Value $hookContent -Encoding UTF8
+        Write-Ok "Installed codebase-memory-mcp post-commit auto-reindex → .git/hooks/post-commit"
+    }
 }
 
 Write-Header "Phase 3: Agentic Infrastructure"

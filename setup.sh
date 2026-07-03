@@ -610,6 +610,37 @@ else
   info "    When ready, run: ln -sf ../../.githooks/pre-commit-aoi-guard.sh .git/hooks/pre-commit"
 fi
 
+# Wire post-commit hook for codebase-memory-mcp auto-reindex (optional, skips silently if not installed)
+CBM_HOOK_SRC="$SCRIPT_DIR/.githooks/post-commit-codebase-index.sh"
+PROJECT_POST_COMMIT="$PROJECT_PATH/.git/hooks/post-commit"
+if [[ -f "$CBM_HOOK_SRC" && -d "$PROJECT_PATH/.git" ]]; then
+  cp "$CBM_HOOK_SRC" "$PROJECT_PATH/.githooks/post-commit-codebase-index.sh"
+  chmod +x "$PROJECT_PATH/.githooks/post-commit-codebase-index.sh"
+  if [[ -f "$PROJECT_POST_COMMIT" ]]; then
+    if ! grep -q "post-commit-codebase-index.sh" "$PROJECT_POST_COMMIT"; then
+      cp "$PROJECT_POST_COMMIT" "$PROJECT_POST_COMMIT.aoi-bak"
+      cat > "$PROJECT_POST_COMMIT" <<'EOF_POSTCOMMIT'
+#!/usr/bin/env bash
+# AOI post-commit chain: re-index codebase-memory-mcp, then delegate.
+SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
+bash "$SELF_DIR/../../.githooks/post-commit-codebase-index.sh" "$@"
+if [ -f "$SELF_DIR/post-commit.aoi-bak" ]; then
+  exec bash "$SELF_DIR/post-commit.aoi-bak" "$@"
+fi
+exit 0
+EOF_POSTCOMMIT
+      chmod +x "$PROJECT_POST_COMMIT"
+      ok "Chained codebase-memory-mcp auto-reindex into existing post-commit hook"
+    else
+      ok "codebase-memory-mcp post-commit already chained (skipped)"
+    fi
+  else
+    ln -sf "../../.githooks/post-commit-codebase-index.sh" "$PROJECT_POST_COMMIT"
+    chmod +x "$PROJECT_PATH/.githooks/post-commit-codebase-index.sh"
+    ok "Installed codebase-memory-mcp post-commit auto-reindex → .git/hooks/post-commit"
+  fi
+fi
+
 # ── Phase 1.8: codebase-memory-mcp (OPTIONAL, workspace-local only) ─────────
 header "Phase 1.8: Codebase Memory MCP (opcional)"
 
@@ -629,6 +660,14 @@ if [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then
         warn "install-codebase-memory.sh salió con código $ret — el setup continúa."
         warn "El operador puede reintentar luego; el MCP workspace-local quedará en ICM only."
       }
+      # Initial index — runs in background, non-blocking. The hook handles subsequent commits.
+      CBM_BIN_INIT="$(command -v codebase-memory-mcp 2>/dev/null || true)"
+      if [[ -n "$CBM_BIN_INIT" ]]; then
+        info "Indexando el repo por primera vez en background (codebase-memory-mcp)..."
+        "$CBM_BIN_INIT" cli index_repository "{\"repo_path\": \"$PROJECT_PATH\"}" \
+          >> /tmp/codebase-memory-mcp-index.log 2>&1 &
+        ok "Index inicial lanzado en background → /tmp/codebase-memory-mcp-index.log"
+      fi
       ;;
   esac
 else
