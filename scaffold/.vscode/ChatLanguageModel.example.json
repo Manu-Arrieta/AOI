@@ -47,7 +47,7 @@
         "thinking": true,
         "vision": true,
         "maxInputTokens": 256000,
-        "maxOutputTokens": 8192
+        "maxOutputTokens": 16384
       },
       {
         "id": "minimaxai/minimax-m3",
@@ -58,7 +58,7 @@
         "thinking": true,
         "vision": true,
         "maxInputTokens": 1000000,
-        "maxOutputTokens": 8192
+        "maxOutputTokens": 16384
       }
     ]
   }
