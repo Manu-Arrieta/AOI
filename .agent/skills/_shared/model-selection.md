@@ -32,7 +32,34 @@ Si el modelo designado para el perfil del agente **no se encuentra disponible** 
 
 ## 4. Modelos Externos Recomendados (Espejo del capítulo raíz)
 
-Este capítulo espeja el §4 de `.github/instructions/model-selection.instructions.md` (raíz Copilot). El catálogo NVIDIA completo, la tabla de asignación por agente, la distribución y la regla de selección manual del operador vivem allí. Este archivo Antigravity **no redefine** el catálogo — sólo lo referencia para mantener paridad.
+Este capítulo espeja el §4 de `.github/instructions/model-selection.instructions.md` (raíz Copilot). El catálogo NVIDIA completo, la tabla de asignación por agente, la distribución y la regla de selección manual del operador viven allí. Este archivo Antigravity **no redefine** el catálogo — sólo lo referencia para mantener paridad.
+
+### Asignación por Agente (Mirror — actualizado Julio 2026)
+
+> 📊 **Fuente**: Benchmark interno 7 modelos × 3 tests SDD — Julio 2026.
+
+| Agente                    | Modelo Primario     | Modelo de Respaldo |
+| :------------------------ | :------------------ | :----------------- |
+| `@supervisor`             | **GLM 5.2**         | Kimi K2.6          |
+| `@functional-analyst`     | **Qwen 3.5**        | GLM 5.2            |
+| `@solution-architect`     | **DeepSeek V4 Pro** | Qwen 3.5           |
+| `@frontend-developer`     | **GLM 5.2**         | Qwen 3.5           |
+| `@backend-developer`      | **DeepSeek V4 Pro** | Qwen 3.5           |
+| `@devops-engineer`        | **GLM 5.2**         | DeepSeek V4 Pro    |
+| `@ux-designer`            | **Qwen 3.5**        | GLM 5.2            |
+| `@integration-specialist` | **DeepSeek V4 Pro** | GLM 5.2            |
+| `@documentation-analyst`  | **GLM 5.2**         | Qwen 3.5           |
+| `@triage-specialist`      | **DeepSeek V4 Pro** | Kimi K2.6          |
+| `@resource-analyst`       | **GLM 5.2**         | Qwen 3.5           |
+| `@project-analyzer`       | **DeepSeek V4 Pro** | Qwen 3.5           |
+| `@project-expert`         | **GLM 5.2**         | DeepSeek V4 Pro    |
+
+### Modelos Descartados
+
+| Modelo | Razón |
+| :----- | :---- |
+| Nemotron Ultra | ❌ Tool calling falla incluso con `tool_choice:"required"` |
+| DeepSeek V4 Flash | ❌ ResourceExhausted constante — re-test pendiente |
 
 ### Regla de selección manual (CRÍTICA — refuerzo de la regla §3)
 

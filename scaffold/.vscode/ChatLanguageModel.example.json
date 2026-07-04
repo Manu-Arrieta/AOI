@@ -6,25 +6,14 @@
     "apiType": "chat-completions",
     "models": [
       {
-        "id": "minimaxai/minimax-m3",
-        "name": "Minimax M3",
+        "id": "z-ai/glm-5.2",
+        "name": "GLM 5.2",
         "url": "https://integrate.api.nvidia.com/v1",
         "toolCalling": true,
         "streaming": true,
-        "thinking": true,
+        "thinking": false,
         "vision": true,
         "maxInputTokens": 1000000,
-        "maxOutputTokens": 8192
-      },
-      {
-        "id": "qwen/qwen3.5-397b-a17b",
-        "name": "Qwen 3.5",
-        "url": "https://integrate.api.nvidia.com/v1",
-        "toolCalling": true,
-        "streaming": true,
-        "thinking": true,
-        "vision": true,
-        "maxInputTokens": 128000,
         "maxOutputTokens": 16384
       },
       {
@@ -39,6 +28,17 @@
         "maxOutputTokens": 16384
       },
       {
+        "id": "qwen/qwen3.5-397b-a17b",
+        "name": "Qwen 3.5",
+        "url": "https://integrate.api.nvidia.com/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 128000,
+        "maxOutputTokens": 16384
+      },
+      {
         "id": "moonshotai/kimi-k2.6",
         "name": "Kimi K2.6",
         "url": "https://integrate.api.nvidia.com/v1",
@@ -47,6 +47,17 @@
         "thinking": true,
         "vision": true,
         "maxInputTokens": 256000,
+        "maxOutputTokens": 8192
+      },
+      {
+        "id": "minimaxai/minimax-m3",
+        "name": "Minimax M3",
+        "url": "https://integrate.api.nvidia.com/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 1000000,
         "maxOutputTokens": 8192
       }
     ]

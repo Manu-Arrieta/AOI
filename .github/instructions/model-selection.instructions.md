@@ -32,37 +32,52 @@ Para escenarios donde se requiere capacidad técnica especializada (código agé
 
 ### Modelos Disponibles
 
-| Modelo          | ID NVIDIA                     | Contexto | Output Max | Fortaleza                           |
-| :-------------- | :---------------------------- | :------- | :--------- | :---------------------------------- |
-| Kimi K2.6       | `moonshotai/kimi-k2.6`        | 256K     | 8,192      | Agent Swarm (orquestación)          |
-| DeepSeek V4 Pro | `deepseek-ai/deepseek-v4-pro` | 1M       | 16,384     | Razonamiento STEM + contexto masivo |
-| MiniMax M3      | `minimaxai/minimax-m3`        | 1M       | 8,192      | SWE-Bench Pro 59% + multimodal      |
-| Qwen 3.5        | `qwen/qwen3.5-397b-a17b`      | 128K     | 16,384     | Visión nativa (respaldo UX)         |
+| Modelo          | ID NVIDIA                     | Contexto | Output Max | Fortaleza                                         | Benchmark |
+| :-------------- | :---------------------------- | :------- | :--------- | :------------------------------------------------ | :-------- |
+| GLM 5.2         | `z-ai/glm-5.2`                | 1M       | 16,384     | **Mejor velocidad del catálogo (3.5s)** — 84% calidad | ⭐ Nuevo  |
+| DeepSeek V4 Pro | `deepseek-ai/deepseek-v4-pro` | 1M       | 16,384     | Máxima calidad (94.3%) — razonamiento STEM denso  | ✅ Validado |
+| Qwen 3.5        | `qwen/qwen3.5-397b-a17b`      | 128K     | 16,384     | Mejor requirement.md (95/100) — análisis funcional | ✅ Validado |
+| Kimi K2.6       | `moonshotai/kimi-k2.6`        | 256K     | 8,192      | Rápido (7.5s) pero propenso a CoT loops           | ⚠️ Fallback |
+| MiniMax M3      | `minimaxai/minimax-m3`        | 1M       | 8,192      | Calidad variable — timeouts frecuentes bajo carga | ⚠️ Reserva |
+| Nemotron Ultra  | `nvidia/nemotron-3-ultra-550b-a55b` | 128K | 16,384  | Sin tool calling — no apto para orquestación      | ❌ No usar |
+| DeepSeek V4 Flash | `deepseek-ai/deepseek-v4-flash` | 1M   | 16,384     | ResourceExhausted frecuente — no evaluable        | ❌ No usar |
+
+> 📊 **Fuente**: Benchmark interno 7 modelos × 3 tests AOI SDD (Functional Analyst, Backend Developer, Triage Specialist) — Julio 2026. Ver `.exportsmemories/` o `/Users/equinox/Desktop/nvidia-bench/reports/`.
 
 ### Asignación por Agente
 
-| Agente                    | Modelo Primario     | Modelo de Respaldo |
-| :------------------------ | :------------------ | :----------------- |
-| `@supervisor`             | **Kimi K2.6**       | DeepSeek V4 Pro    |
-| `@functional-analyst`     | **DeepSeek V4 Pro** | MiniMax M3         |
-| `@solution-architect`     | **DeepSeek V4 Pro** | Kimi K2.6          |
-| `@frontend-developer`     | **MiniMax M3**      | Kimi K2.6          |
-| `@backend-developer`      | **DeepSeek V4 Pro** | MiniMax M3         |
-| `@devops-engineer`        | **MiniMax M3**      | DeepSeek V4 Pro    |
-| `@ux-designer`            | **MiniMax M3**      | Qwen 3.5           |
-| `@integration-specialist` | **DeepSeek V4 Pro** | MiniMax M3         |
-| `@documentation-analyst`  | **DeepSeek V4 Pro** | MiniMax M3         |
-| `@triage-specialist`      | **DeepSeek V4 Pro** | Kimi K2.6          |
-| `@resource-analyst`       | **DeepSeek V4 Pro** | MiniMax M3         |
-| `@project-analyzer`       | **DeepSeek V4 Pro** | MiniMax M3         |
-| `@project-expert`         | **DeepSeek V4 Pro** | MiniMax M3         |
+> ⚡ **Criterio GLM 5.2**: Asignado como Primary en tareas donde latencia < calidad máxima. A 3.5s, GLM es 18× más rápido que DeepSeek V4 Pro (64s) con 84% de su calidad. Ideal para agentes interactivos y de flujo rápido.
+
+| Agente                    | Modelo Primario     | Modelo de Respaldo | Criterio de asignación |
+| :------------------------ | :------------------ | :----------------- | :--------------------- |
+| `@supervisor`             | **GLM 5.2**         | Kimi K2.6          | Velocidad crítica para orquestación (3.5s) |
+| `@functional-analyst`     | **Qwen 3.5**        | GLM 5.2            | Mejor requirement.md del benchmark (95/100) |
+| `@solution-architect`     | **DeepSeek V4 Pro** | Qwen 3.5           | Requiere razonamiento arquitectónico profundo |
+| `@frontend-developer`     | **GLM 5.2**         | Qwen 3.5           | Iteración UI rápida — calidad 84% suficiente |
+| `@backend-developer`      | **DeepSeek V4 Pro** | Qwen 3.5           | Mejor código TS/API del benchmark (95/100) |
+| `@devops-engineer`        | **GLM 5.2**         | DeepSeek V4 Pro    | Infra/scripting no requiere máxima profundidad |
+| `@ux-designer`            | **Qwen 3.5**        | GLM 5.2            | Buena redacción estructurada para diseño |
+| `@integration-specialist` | **DeepSeek V4 Pro** | GLM 5.2            | Verificación requiere razonamiento profundo |
+| `@documentation-analyst`  | **GLM 5.2**         | Qwen 3.5           | Docs rápidas — GLM estable, MiniMax tenía timeouts |
+| `@triage-specialist`      | **DeepSeek V4 Pro** | Kimi K2.6          | Mejor diagnóstico del benchmark (98/100); Kimi 90/100 rápido |
+| `@resource-analyst`       | **GLM 5.2**         | Qwen 3.5           | Análisis de recursos — velocidad sobre profundidad |
+| `@project-analyzer`       | **DeepSeek V4 Pro** | Qwen 3.5           | Análisis profundo — calidad máxima requerida |
+| `@project-expert`         | **GLM 5.2**         | DeepSeek V4 Pro    | Q&A interactivo — respuestas rápidas (3.5s) |
 
 ### Distribución
 
-- **DeepSeek V4 Pro**: 9 agentes (workhorse del ciclo SDD)
-- **MiniMax M3**: 3 agentes (coding agéntico + multimodalidad)
-- **Kimi K2.6**: 1 agente (orquestación multi-agente)
-- **Qwen 3.5**: 0 primarios, respaldo UX
+- **GLM 5.2**: 6 agentes (velocidad + interactividad — latencia-sensitive)
+- **DeepSeek V4 Pro**: 4 agentes (razonamiento profundo — calidad crítica)
+- **Qwen 3.5**: 2 agentes (análisis funcional + UX)
+- **Kimi K2.6**: 0 primarios, fallback de Supervisor y Triage
+- **MiniMax M3**: en reserva — usar solo si GLM 5.2 no disponible en picker
+
+### Modelos Descartados del Catálogo Activo
+
+| Modelo | Razón | Estado |
+| :----- | :---- | :----- |
+| Nemotron Ultra | Tool calling falla incluso con `tool_choice:"required"` — inutilizable para agentes AOI | ❌ Excluido |
+| DeepSeek V4 Flash | ResourceExhausted constante (rate limit del endpoint) — no evaluable | ❌ Excluido (re-test pendiente) |
 
 ### Regla de selección manual (CRÍTICA — refuerzo de la regla §3)
 
