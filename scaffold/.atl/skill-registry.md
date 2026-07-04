@@ -138,6 +138,18 @@ The Supervisor resolves shared skills at the start of each session:
 - **Trigger**: Owner adds or modifies resources in `.resources/`, or wants to refresh the ICM resource knowledge graph
 - **Rules**: Read-only on resource files, always verify constitution alignment, use `{WORKSPACE}-resources` memoir + `{WORKSPACE}-resources-catalog` topic, cross-links only with textual evidence, always recommend `/update-resource-governance-structure` if constitution is out of sync
 
+### Speckit Git Skills (Extension)
+
+> Git integration skills from the `spec-kit` git extension. Each skill has a Copilot agent (`.github/agents/`) and an Antigravity skill (`.agent/skills/`).
+
+| Skill | Copilot | Antigravity | Description |
+| --- | --- | --- | --- |
+| `speckit.git.commit` | `.github/agents/speckit.git.commit.agent.md` | `.agent/skills/speckit-git-commit/SKILL.md` | Auto-commit after Spec Kit commands |
+| `speckit.git.feature` | `.github/agents/speckit.git.feature.agent.md` | `.agent/skills/speckit-git-feature/SKILL.md` | Create feature branch (sequential/timestamp) |
+| `speckit.git.initialize` | `.github/agents/speckit.git.initialize.agent.md` | `.agent/skills/speckit-git-initialize/SKILL.md` | Initialize Git repo with initial commit |
+| `speckit.git.remote` | `.github/agents/speckit.git.remote.agent.md` | `.agent/skills/speckit-git-remote/SKILL.md` | Detect Git remote URL for GitHub integration |
+| `speckit.git.validate` | `.github/agents/speckit.git.validate.agent.md` | `.agent/skills/speckit-git-validate/SKILL.md` | Validate feature branch naming conventions |
+
 ---
 
 ## Workflows SDD
@@ -282,10 +294,21 @@ Boundaries:
 
 ## Model Assignment
 
-| Agent                   | Preferred Model                |
-| ----------------------- | ------------------------------ |
-| Supervisor              | TBD — configure in frontmatter |
-| _(configure per agent)_ | TBD                            |
+> Models are configured in each agent's `## Model Requirement` section.
+> If the NVIDIA custom endpoint is not configured, the IDE's active model is used instead.
 
-> Models are configured in the `model:` frontmatter of each `.agent.md`.
-> If unavailable, Copilot falls back to the IDE's active model.
+| Agent                  | Primary                | Fallback               |
+| ---------------------- | ---------------------- | ---------------------- |
+| Supervisor             | Kimi K2.6              | DeepSeek V4 Pro        |
+| Functional Analyst     | DeepSeek V4 Pro        | MiniMax M3             |
+| Solution Architect     | DeepSeek V4 Pro        | Kimi K2.6              |
+| Frontend Developer     | MiniMax M3             | Kimi K2.6              |
+| Backend Developer      | DeepSeek V4 Pro        | MiniMax M3             |
+| DevOps Engineer        | MiniMax M3             | DeepSeek V4 Pro        |
+| UX Designer            | MiniMax M3             | Qwen 3.5               |
+| Documentation Analyst  | DeepSeek V4 Pro        | MiniMax M3             |
+| Integration Specialist | DeepSeek V4 Pro        | MiniMax M3             |
+| Project Expert         | DeepSeek V4 Pro        | MiniMax M3             |
+| Triage Specialist      | DeepSeek V4 Pro        | Kimi K2.6              |
+| Resource Analyst       | DeepSeek V4 Pro        | MiniMax M3             |
+| Project Analyzer       | DeepSeek V4 Pro        | MiniMax M3             |

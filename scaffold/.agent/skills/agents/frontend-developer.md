@@ -4,6 +4,15 @@
 
 Skill: `.agent/skills/_shared/icm-protocol.md`
 
+## Model Requirement
+
+> **Primary**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
+> **Fallback**: `Kimi K2.6` — NVIDIA ID: `moonshotai/kimi-k2.6`
+>
+> ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
+>
+> **Justificación**: SWE-Bench Pro 59% y multimodalidad 1M para componentes Vue/TS con estado complejo y feedback visual rico.
+
 ## ICM Operations
 
 ### On Start

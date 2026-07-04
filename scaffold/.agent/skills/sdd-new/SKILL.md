@@ -24,6 +24,8 @@ icm_memoir_search(memoir: "{WORKSPACE}-architecture", query: "current architectu
 icm_feedback_search(query: "requirements specification")
 ```
 
+> **Headroom mandatory policy.** Any Copilot CLI invocation in this workspace MUST be routed through `bash scripts/aoi-headroom-wrap.sh` (or the `aoi-copilot` shim) so the call exits via `headroom wrap copilot --subscription`. Direct `copilot` invocations are forbidden by AOI bootstrap. The wrapper refuses to run when `headroom` is missing.
+
 ### Step 2: Start Transcript (Verbatim)
 
 ```

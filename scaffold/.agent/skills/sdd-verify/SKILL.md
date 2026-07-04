@@ -23,6 +23,8 @@ icm_memory_recall(query: "context conventions", topic: "{WORKSPACE}-context")
 icm_memory_recall(query: "implementation complete", topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN")
 ```
 
+> **Headroom mandatory policy.** Any Copilot CLI invocation in this workspace MUST be routed through `bash scripts/aoi-headroom-wrap.sh` (or the `aoi-copilot` shim) so the call exits via `headroom wrap copilot --subscription`. The wrapper refuses to run when `headroom` is missing.
+
 ### Step 2: Identify Task + Load Artifacts
 
 1. Validate in `.tasks/registry.md` with status `✅ Implementado`
@@ -104,11 +106,11 @@ icm_memory_store(
 
 > "TASK-YYYY-NNN verification: {RESULT}. What would you like to do?"
 
-| Option | When | Action |
-|--------|------|--------|
-| **Archive** | PASS — done | → `/sdd-archive` |
-| **Continue** | PASS but iterate | → `🔄 Sandbox Activo` |
-| **Fix + Re-verify** | FAIL/PARTIAL | → back to `/sdd-apply` |
-| **Cancel** | Abandon | → `❌ Cancelado` |
+| Option              | When             | Action                 |
+| ------------------- | ---------------- | ---------------------- |
+| **Archive**         | PASS — done      | → `/sdd-archive`       |
+| **Continue**        | PASS but iterate | → `🔄 Sandbox Activo`  |
+| **Fix + Re-verify** | FAIL/PARTIAL     | → back to `/sdd-apply` |
+| **Cancel**          | Abandon          | → `❌ Cancelado`       |
 
 **The Owner decides.** Supervisor does NOT auto-archive.

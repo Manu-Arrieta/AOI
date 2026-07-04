@@ -3,6 +3,15 @@
 > Antigravity mirror of `.github/agents/supervisor.agent.md`. Logic is identical.
 > Skill: `.agent/skills/_shared/icm-protocol.md` (ALWAYS loaded)
 
+## Model Requirement
+
+> **Primary**: `Kimi K2.6` — NVIDIA ID: `moonshotai/kimi-k2.6`
+> **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
+>
+> ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
+>
+> **Justificación**: Agent Swarm (300 sub-agents, 4000 pasos) diseñado para orquestación multi-agente — exactamente el patrón Hub-and-Spoke de AOI.
+
 ## Session Start — MANDATORY
 
 ```bash
@@ -18,16 +27,16 @@ Load skill registry: read `.atl/skill-registry.md`.
 
 ## SDD Lifecycle Routing
 
-| Phase        | Command                 | Agent                   | Deliverable               | Artifact Path                                     |
-| ------------ | ----------------------- | ----------------------- | ------------------------- | ------------------------------------------------- |
-| Constitution | `/speckit.constitution` | Supervisor              | `.specify/memory/constitution.md` | —                                                 |
-| Explore      | `/sdd-new`              | functional-analyst      | Proposal                  | `.tasks/{feature}/TASK-YYYY-NNN/proposal.md`      |
-| Specify      | `/speckit.specify`      | functional-analyst      | spec.md                   | `.tasks/{feature}/TASK-YYYY-NNN/spec.md`          |
-| Plan         | `/speckit.plan`         | solution-architect      | design.md                 | `.tasks/{feature}/TASK-YYYY-NNN/design.md`        |
-| Tasks        | `/speckit.tasks`        | solution-architect      | tasks.md                  | `.tasks/{feature}/TASK-YYYY-NNN/tasks.md`         |
-| Implement    | `/speckit.implement`    | frontend/backend/devops | Code                      | `.tasks/{feature}/TASK-YYYY-NNN/iterations/`      |
-| Verify       | `/sdd-verify`           | integration-specialist  | verify-report.md          | `.tasks/{feature}/TASK-YYYY-NNN/verify-report.md` |
-| Archive      | `/sdd-archive`          | documentation-analyst   | archive-report.md         | `.tasks/{feature}/TASK-YYYY-NNN/archive-report.md`|
+| Phase        | Command                 | Agent                   | Deliverable                       | Artifact Path                                      |
+| ------------ | ----------------------- | ----------------------- | --------------------------------- | -------------------------------------------------- |
+| Constitution | `/speckit.constitution` | Supervisor              | `.specify/memory/constitution.md` | —                                                  |
+| Explore      | `/sdd-new`              | functional-analyst      | Proposal                          | `.tasks/{feature}/TASK-YYYY-NNN/proposal.md`       |
+| Specify      | `/speckit.specify`      | functional-analyst      | spec.md                           | `.tasks/{feature}/TASK-YYYY-NNN/spec.md`           |
+| Plan         | `/speckit.plan`         | solution-architect      | design.md                         | `.tasks/{feature}/TASK-YYYY-NNN/design.md`         |
+| Tasks        | `/speckit.tasks`        | solution-architect      | tasks.md                          | `.tasks/{feature}/TASK-YYYY-NNN/tasks.md`          |
+| Implement    | `/speckit.implement`    | frontend/backend/devops | Code                              | `.tasks/{feature}/TASK-YYYY-NNN/iterations/`       |
+| Verify       | `/sdd-verify`           | integration-specialist  | verify-report.md                  | `.tasks/{feature}/TASK-YYYY-NNN/verify-report.md`  |
+| Archive      | `/sdd-archive`          | documentation-analyst   | archive-report.md                 | `.tasks/{feature}/TASK-YYYY-NNN/archive-report.md` |
 
 ## Agent Roster
 
@@ -64,7 +73,7 @@ icm_memory_store(
 
 ## Workflow Commands
 
-- `/sdd-new` → Explore + Propose (Transcript ON)
+- `/sdd-new` → Explore + Propose (Transcript ON) — Service Discovery via ICM + terminal only, NEVER IDE search
 - `/sdd-ff` → Specify → Plan → Tasks (via spec-kit)
 - `/sdd-apply` → Implement (progress every 3-5 tasks)
 - `/sdd-verify` → Verify + Health + Flexible Archive Gate
@@ -77,6 +86,7 @@ icm_memory_store(
 - Never skip ICM
 - Never advance without Owner approval
 - Never auto-archive on PASS — Owner decides
+- Never use VS Code workspace search, semantic search, or file pickers — use ICM recall + terminal commands
 - Always consolidate at 7+ entries
 - Always Service Discovery before requirement.md
 - Always {WORKSPACE} prefix for ICM

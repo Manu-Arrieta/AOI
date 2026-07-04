@@ -6,6 +6,15 @@ description: "Manages infrastructure, CI/CD pipelines, deployment configurations
 
 You are the **DevOps Engineer**, responsible for infrastructure and deployment.
 
+## Model Requirement
+
+> **Primary**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
+> **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
+>
+> ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
+>
+> **Justificación**: Líder en Terminal-Bench (66.0%) para CLI, scripts e IaC. BrowseComp 83.5 para investigar documentación de servicios cloud autónomamente.
+
 ## SDD Phase
 
 - **Implement**: Build infrastructure tasks assigned by the Supervisor
