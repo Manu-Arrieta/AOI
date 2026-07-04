@@ -148,6 +148,76 @@ GEMINI.md # Antigravity root instructions
 
 ```
 
+## Core Tooling Architecture: Integration, Roles, and Lifecycle
+
+AOI orchestrates a complex developer-agent ecosystem. Rather than running in isolation, each tool (RTK, ICM, Headroom, Codebase Memory MCP) has a specific role, direct integration points with the workspace, and acts during distinct stages of the Spec-Driven Development (SDD) lifecycle.
+
+```mermaid
+flowchart TD
+    subgraph SDD Lifecycle
+        New["/sdd-new (Explore & Specify)"] --> FF["/sdd-ff (Plan & Tasks)"]
+        FF --> Apply["/sdd-apply (Implement)"]
+        Apply --> Verify["/sdd-verify (Verify / QA)"]
+        Verify --> Archive["/sdd-archive (Archive & Close)"]
+    end
+
+    subgraph Core Tools
+        Codebase["Codebase Memory MCP<br/>(Structural graph intelligence)"]
+        ICM[("ICM<br/>(Persistent memory)")]
+        RTK["RTK<br/>(Token filter & optimizer)"]
+        Headroom["Headroom<br/>(CLI compression proxy)"]
+    end
+
+    %% Tool to Lifecycle connections
+    Codebase -.->|1. Query structure| New
+    ICM <-->|2. Recall/Store context| New
+    ICM <-->|3. Record spec & plans| FF
+    RTK -.->|4. Filter test/build output| Apply
+    RTK -.->|5. Filter verification runs| Verify
+    ICM <-->|6. Record verification feedback| Verify
+    ICM -->|7. Persist transcripts & close| Archive
+    Headroom -.->|Compress context| Apply
+```
+
+### 1. RTK (Token Output Optimizer)
+* **Core Role:** Optimizes the token window of LLM agents by filtering, compressing, and pruning verbose terminal outputs (such as build logs, long test progress bars, npm/pip install noise, and linters). It typically achieves **60% to 90% token savings** on long executions.
+* **Technical Integration:**
+  - Placed directly in the workspace terminal shell path (via `setup.sh` / `setup.ps1`).
+  - Integrated via command prefixes in the system instructions (`GEMINI.md` and `.github/instructions/`).
+  - **Mandatory Usage rule:** Every tool-driven command executed by the AI must be prefixed with `rtk` (e.g., `rtk npm run test`, `rtk git status`).
+* **Lifecycle Role:**
+  - **Implement (`/sdd-apply`) & Verify (`/sdd-verify`):** Extremely active here. When developers or agents run builds, compiler checks, or test suites, RTK compresses the output before it returns to the agent's context, preventing context-window bloat and lowering token costs.
+
+### 2. ICM (Intelligent Context Manager - Persistent Memory)
+* **Core Role:** Solves "agent amnesia" by persisting semantic memories, memoirs (knowledge graphs), corrections (feedback), and raw session transcripts across separate conversation turns and between different agents.
+* **Technical Integration:**
+  - Invoked through the `icm` CLI wrapper.
+  - Automatically recalled on startup via `icm recall-context` and stored via `icm store` hook commands.
+  - Topics and memoirs are scoped using the `{WORKSPACE}` name as a prefix to avoid cross-project pollution.
+* **Lifecycle Role:**
+  - **Explore (`/sdd-new`):** Calls `icm recall` to retrieve previous learnings or user preferences. Initiates transcripts for verbatim replay.
+  - **Specify / Plan (`/sdd-ff`):** Stores structural design decisions (`decisions-{project}`) and system constraints.
+  - **Verify (`/sdd-verify`):** Collects user feedback or corrections and stores them under the `errors-resolved` or `preferences` topics so the agent learns from mistakes.
+  - **Archive (`/sdd-archive`):** Triggers a final transcript backup and saves a high-level summary of the completed feature context.
+
+### 3. Headroom (CLI Compression Proxy)
+* **Core Role:** Acts as an OpenAI-compatible local API proxy that compresses prompt inputs and outputs specifically for CLI-based agents (like Claude Code, Codex, or GitHub Copilot CLI), achieving up to 95% token savings.
+* **Technical Integration:**
+  - Runs as a background proxy on `localhost:8787` (configured during installation).
+  - Terminal agents have their `OPENAI_BASE_URL` or equivalent environment variable routed through this local proxy.
+  - Integrates the `.githooks/pre-commit-aoi-guard.sh` hook to prevent `headroom learn --apply` from silently overwriting core configuration files like `GEMINI.md` or `AGENTS.md`.
+* **Lifecycle Role:**
+  - **Transversal:** Runs silently in the background of any terminal execution or manual CLI interaction, independent of VS Code Copilot Chat.
+
+### 4. Codebase Memory MCP (Code Graph Intelligence)
+* **Core Role:** Builds a structural, queryable graph representation of the codebase. Instead of relying on full-text search (`grep`), it allows agents to navigate semantic relationships (e.g., finding where a class is instantiated, tracing function calls, or extracting specific code symbols).
+* **Technical Integration:**
+  - Registered locally in the project workspace's `.vscode/mcp.json`.
+  - Exposes custom MCP tools (`search_graph`, `trace_path`, `get_code_snippet`, `query_graph`, `get_architecture`).
+  - Maintains index state using a `post-commit` Git hook to automatically re-index on git commits.
+* **Lifecycle Role:**
+  - **Explore (`/sdd-new`) & Plan (`/sdd-ff`):** Used during the initial assessment of a codebase or feature request to map files, trace data flows, and determine dependencies before generating the specification (`spec.md`) and implementation plan (`implementation_plan.md`).
+
 ## Code Discovery Protocol
 
 When `codebase-memory-mcp` is registered in `.vscode/mcp.json`, agents automatically prefer its graph tools over broad grep or file-by-file reads:
