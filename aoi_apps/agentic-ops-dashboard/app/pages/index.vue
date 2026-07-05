@@ -322,7 +322,10 @@ watch(activeWorkspaceView, (view) => {
         :title="messages.landing.workspace.dashboardTitle"
       >
         <template #leading>
-          <UBadge color="neutral" variant="soft">{{ messages.landing.workspace.badge }}</UBadge>
+          <UBadge color="neutral" variant="soft">
+            <UIcon name="i-lucide-folder" style="margin-right: 0.3em;" />
+            {{ snapshot?.workspaceName || messages.landing.workspace.badge }}
+          </UBadge>
         </template>
 
         <template #right>

@@ -33,6 +33,79 @@ type BoardLaneView = {
 const { messages } = useLocale()
 const laneCollapsePreferences = ref<Partial<Record<TaskBoardLaneId, TaskBoardLaneCollapsePreference>>>({})
 
+// --- Filters & Sorting ---
+const selectedFeatureFilter = ref<string>('all')
+const selectedRelationFilter = ref<string>('all')
+const dateFilter = ref<string>('newest')
+
+const uniqueFeatures = computed(() => {
+  const set = new Set<string>()
+  props.tasks.forEach(task => {
+    if (task.feature) set.add(task.feature)
+  })
+  return ['all', ...Array.from(set)]
+})
+
+const featureItems = computed(() => uniqueFeatures.value.map(f => ({
+  label: f === 'all' ? messages.value.common.allFeatures : f,
+  value: f
+})))
+
+const uniqueRelations = computed(() => {
+  const set = new Set<string>()
+  props.tasks.forEach(task => {
+    task.relationReferences?.forEach(ref => {
+      if (ref.path) set.add(ref.path)
+    })
+  })
+  return ['all', ...Array.from(set)]
+})
+
+const relationItems = computed(() => uniqueRelations.value.map(r => ({
+  label: r === 'all' ? messages.value.common.allRelations : r.replace(/^\.resources\//, ''),
+  value: r
+})))
+
+const dateItems = computed(() => [
+  { label: messages.value.common.newest, value: 'newest' },
+  { label: messages.value.common.oldest, value: 'oldest' },
+  { label: messages.value.common.today, value: 'today' },
+  { label: messages.value.common.thisWeek, value: 'week' }
+])
+
+const filteredTasks = computed(() => {
+  let list = [...props.tasks]
+
+  // 1. Feature Filter
+  if (selectedFeatureFilter.value !== 'all') {
+    list = list.filter(t => t.feature === selectedFeatureFilter.value)
+  }
+
+  // 2. Relation/Resource Filter
+  if (selectedRelationFilter.value !== 'all') {
+    list = list.filter(t => t.relationReferences?.some(r => r.path === selectedRelationFilter.value))
+  }
+
+  // 3. Date Range & Sorting
+  const parseDate = (d: string) => d ? new Date(d).getTime() : 0
+
+  if (dateFilter.value === 'today') {
+    const today = new Date().toDateString()
+    list = list.filter(t => t.created && new Date(t.created).toDateString() === today)
+  } else if (dateFilter.value === 'week') {
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+    list = list.filter(t => parseDate(t.created) >= oneWeekAgo)
+  }
+
+  if (dateFilter.value === 'oldest') {
+    list.sort((a, b) => parseDate(a.created) - parseDate(b.created))
+  } else {
+    list.sort((a, b) => parseDate(b.created) - parseDate(a.created))
+  }
+
+  return list
+})
+
 const boardLanes = computed<BoardLaneView[]>(() => {
   const laneMeta: Record<TaskBoardLaneId, { label: string; copy: string; symbol: string }> = {
     exploring:      { label: messages.value.taskBoard.exploringLane,      copy: messages.value.taskBoard.exploringCopy,      symbol: '🔍' },
@@ -49,7 +122,7 @@ const boardLanes = computed<BoardLaneView[]>(() => {
   return taskBoardLaneOrder.map((laneId) => ({
     id: laneId,
     ...laneMeta[laneId],
-    tasks: props.tasks.filter((task) => resolveTaskBoardLane(task.status) === laneId),
+    tasks: filteredTasks.value.filter((task) => resolveTaskBoardLane(task.status) === laneId),
   }))
 })
 
@@ -100,6 +173,37 @@ function toggleLane(lane: BoardLaneView) {
     <div class="task-board-meta">
       <UBadge color="neutral" variant="soft">{{ messages.taskBoard.boardMode }}</UBadge>
       <p>{{ messages.taskBoard.boardCopy }}</p>
+    </div>
+
+    <!-- Tablero Filters -->
+    <div class="task-board-filters">
+      <div class="filter-group">
+        <span class="filter-label">{{ messages.common.filterByFeature }}</span>
+        <USelect
+          v-model="selectedFeatureFilter"
+          :items="featureItems"
+          class="filter-select w-44"
+          size="sm"
+        />
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">{{ messages.common.filterByRelation }}</span>
+        <USelect
+          v-model="selectedRelationFilter"
+          :items="relationItems"
+          class="filter-select w-56"
+          size="sm"
+        />
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">{{ messages.common.sortByDate }}</span>
+        <USelect
+          v-model="dateFilter"
+          :items="dateItems"
+          class="filter-select w-44"
+          size="sm"
+        />
+      </div>
     </div>
 
     <p v-if="props.loading && !props.tasks.length" class="panel-empty">
