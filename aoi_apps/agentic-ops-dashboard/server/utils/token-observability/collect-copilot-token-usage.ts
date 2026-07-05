@@ -160,6 +160,7 @@ function aggregateRequests(requests: CopilotTokenRequestRecord[]) {
   const byModel = new Map<string, TokenUsageAggregateRow>()
   const byAgent = new Map<string, TokenUsageAggregateRow>()
   const byPrompt = new Map<string, TokenUsageAggregateRow>()
+  const byTask = new Map<string, TokenUsageAggregateRow>()
   const byTool = new Map<string, TokenUsageToolAggregateRow>()
 
   for (const request of requests) {
@@ -184,6 +185,11 @@ function aggregateRequests(requests: CopilotTokenRequestRecord[]) {
     addRequestTotals(promptRow, request)
     byPrompt.set(promptKey, promptRow)
 
+    const taskKey = request.taskId ?? 'unattributed'
+    const taskRow = byTask.get(taskKey) ?? createAggregateRow(taskKey, request.taskId ?? 'Unattributed')
+    addRequestTotals(taskRow, request)
+    byTask.set(taskKey, taskRow)
+
     for (const tool of request.tools) {
       const toolRow = byTool.get(tool.toolName) ?? {
         key: tool.toolName,
@@ -206,6 +212,7 @@ function aggregateRequests(requests: CopilotTokenRequestRecord[]) {
     byModel: sortAggregateRows([...byModel.values()]),
     byAgent: sortAggregateRows([...byAgent.values()]),
     byPrompt: sortAggregateRows([...byPrompt.values()]),
+    byTask: sortAggregateRows([...byTask.values()]),
     byTool: [...byTool.values()].sort((left, right) => {
       const leftTotal = left.inputTokens + left.outputTokens
       const rightTotal = right.inputTokens + right.outputTokens
@@ -324,6 +331,7 @@ export async function collectCopilotTokenUsageSummary(
       byModel: [],
       byAgent: [],
       byPrompt: [],
+      byTask: [],
       byTool: [],
       recentRequests: [],
       warnings: [],
@@ -379,6 +387,7 @@ export async function collectCopilotTokenUsageSummary(
     byModel: aggregates.byModel,
     byAgent: aggregates.byAgent,
     byPrompt: aggregates.byPrompt,
+    byTask: aggregates.byTask,
     byTool: aggregates.byTool,
     recentRequests: [...retainedRequests]
       .sort((left, right) => right.timestamp.localeCompare(left.timestamp))

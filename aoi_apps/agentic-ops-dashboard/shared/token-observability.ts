@@ -48,6 +48,7 @@ export interface TokenUsageSummary {
   byModel: TokenUsageAggregateRow[]
   byAgent: TokenUsageAggregateRow[]
   byPrompt: TokenUsageAggregateRow[]
+  byTask: TokenUsageAggregateRow[]
   byTool: TokenUsageToolAggregateRow[]
   recentRequests: CopilotTokenRequestRecord[]
   warnings: string[]

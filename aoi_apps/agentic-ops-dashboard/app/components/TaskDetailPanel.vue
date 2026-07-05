@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
+import type { TokenUsageAggregateRow } from '~/shared/token-observability'
 import type { TaskRecord } from '~/shared/types'
 
 import { useLocale } from '../composables/useLocale'
@@ -10,6 +11,7 @@ const props = defineProps<{
   task: TaskRecord | null
   loading: boolean
   featureStatus: string | null
+  taskTokenStats: TokenUsageAggregateRow | null
   operationalContext: {
     boardPulse: {
       activeRatio: number
@@ -28,9 +30,7 @@ const props = defineProps<{
 }>()
 
 const { locale, messages } = useLocale()
-const artifactGridStyle = {
-  '--task-artifact-max-count': '11',
-}
+const artifactGridStyle = { '--task-artifact-max-count': '11' }
 
 const selectedArtifactPath = ref<string | null>(null)
 const activeDetailSection = ref<'relations' | 'artifacts'>('relations')
@@ -39,7 +39,7 @@ watch(
   () => props.task?.id,
   () => {
     activeDetailSection.value = 'relations'
-    selectedArtifactPath.value = props.task?.artifacts.find((artifact) => artifact.kind === 'file')?.path
+    selectedArtifactPath.value = props.task?.artifacts.find((a) => a.kind === 'file')?.path
       ?? props.task?.artifacts[0]?.path
       ?? null
   },
@@ -47,15 +47,11 @@ watch(
 )
 
 const selectedArtifact = computed(
-  () => props.task?.artifacts.find((artifact) => artifact.path === selectedArtifactPath.value) ?? null,
+  () => props.task?.artifacts.find((a) => a.path === selectedArtifactPath.value) ?? null,
 )
-const taskStatusLabel = computed(() => {
-  if (!props.task) {
-    return null
-  }
-
-  return translateDashboardStatus(props.task.status, locale.value)
-})
+const taskStatusLabel = computed(() =>
+  props.task ? translateDashboardStatus(props.task.status, locale.value) : null,
+)
 const detailTabs = computed(() => [
   {
     label: messages.value.relationsPanel.title,
@@ -76,28 +72,40 @@ const signalStatus = computed(() => ({
     ? messages.value.detail.listening
     : messages.value.detail.standby,
 }))
+
+const tokenCards = computed(() => {
+  const t = props.taskTokenStats
+  if (!t) return null
+  return [
+    { label: messages.value.tokenMetrics.requests,     value: t.requestCount,           icon: 'i-lucide-activity' },
+    { label: messages.value.tokenMetrics.inputTokens,  value: t.inputTokens,            icon: 'i-lucide-arrow-down-to-line' },
+    { label: messages.value.tokenMetrics.outputTokens, value: t.outputTokens,           icon: 'i-lucide-arrow-up-from-line' },
+    { label: messages.value.tokenMetrics.cachedTokens, value: t.cachedTokens,           icon: 'i-lucide-database-zap' },
+  ]
+})
+
+function formatNumber(value: number) {
+  return new Intl.NumberFormat().format(value)
+}
 </script>
 
 <template>
-  <UCard
-    class="surface-panel detail-panel"
-    variant="subtle"
-    :ui="{ header: 'p-0 sm:p-0', body: 'px-0 pt-4 pb-0 sm:px-0 sm:pt-4 sm:pb-0' }"
-  >
-    <template #header>
-      <header class="panel-header">
-        <div>
-          <p class="eyebrow">{{ messages.detail.eyebrow }}</p>
-          <h2>{{ task?.title ?? messages.detail.selectTask }}</h2>
-        </div>
-        <UBadge color="neutral" variant="outline">{{ featureStatus ?? messages.detail.noFeatureStatus }}</UBadge>
-      </header>
-    </template>
+  <div class="surface-panel detail-panel">
+    <header class="panel-header">
+      <div>
+        <p class="eyebrow">{{ messages.detail.eyebrow }}</p>
+        <h2>{{ task?.title ?? messages.detail.selectTask }}</h2>
+      </div>
+      <UBadge color="neutral" variant="outline">
+        {{ featureStatus ?? messages.detail.noFeatureStatus }}
+      </UBadge>
+    </header>
 
     <p v-if="loading" class="panel-empty">{{ messages.detail.refreshing }}</p>
     <p v-else-if="!task" class="panel-empty">{{ messages.detail.empty }}</p>
 
     <div v-else class="detail-stack">
+      <!-- Information section -->
       <section class="detail-information-section">
         <div class="detail-section-header">
           <div>
@@ -126,13 +134,16 @@ const signalStatus = computed(() => ({
           </article>
         </section>
 
+        <!-- Operational context -->
         <section class="detail-operational-context">
           <div class="detail-context-topline">
             <div>
               <p class="eyebrow">{{ messages.detail.contextEyebrow }}</p>
               <h4>{{ messages.detail.contextTitle }}</h4>
             </div>
-            <UBadge color="neutral" variant="soft" :icon="signalStatus.icon">{{ signalStatus.label }}</UBadge>
+            <UBadge color="neutral" variant="soft" :icon="signalStatus.icon">
+              {{ signalStatus.label }}
+            </UBadge>
           </div>
 
           <div class="detail-context-grid">
@@ -143,6 +154,11 @@ const signalStatus = computed(() => ({
                 {{ operationalContext.boardPulse.activeTasks }} {{ messages.hero.activeTasks }}
                 / {{ operationalContext.boardPulse.totalTasks }} {{ messages.taskBoard.trackedTasks }}
               </p>
+              <UProgress
+                color="neutral"
+                size="xs"
+                :model-value="operationalContext.boardPulse.activeRatio"
+              />
             </article>
 
             <article class="detail-context-card">
@@ -159,6 +175,28 @@ const signalStatus = computed(() => ({
           </div>
         </section>
 
+        <!-- Token Usage mini-section -->
+        <section v-if="tokenCards" class="detail-token-section">
+          <div class="detail-context-topline">
+            <div>
+              <p class="eyebrow">{{ messages.tokenMetrics.taskTokenEyebrow }}</p>
+              <h4>{{ messages.tokenMetrics.taskTokenTitle }}</h4>
+            </div>
+            <UBadge color="neutral" variant="outline">
+              {{ task.id }}
+            </UBadge>
+          </div>
+          <div class="detail-token-grid">
+            <article v-for="card in tokenCards" :key="card.label" class="detail-token-card">
+              <span>
+                <UIcon :name="card.icon" style="vertical-align:middle;margin-right:0.3em;" />
+                {{ card.label }}
+              </span>
+              <strong>{{ formatNumber(card.value) }}</strong>
+            </article>
+          </div>
+        </section>
+
         <UAlert
           v-if="task.warnings.length"
           color="warning"
@@ -169,6 +207,7 @@ const signalStatus = computed(() => ({
         />
       </section>
 
+      <!-- Functions section -->
       <section class="detail-function-section">
         <UDashboardToolbar class="detail-toolbar">
           <template #left>
@@ -177,7 +216,6 @@ const signalStatus = computed(() => ({
               <strong>{{ messages.detail.operationsTitle }}</strong>
             </div>
           </template>
-
           <template #right>
             <UTabs
               v-model="activeDetailSection"
@@ -203,5 +241,5 @@ const signalStatus = computed(() => ({
         </div>
       </section>
     </div>
-  </UCard>
+  </div>
 </template>

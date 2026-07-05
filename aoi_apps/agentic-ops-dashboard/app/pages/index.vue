@@ -35,76 +35,55 @@ const { locale, messages, setLocale } = useLocale()
 
 type WorkspaceView = 'tasks' | 'resources' | 'metrics'
 
-const dialogMode = ref<'create' | 'move' | 'delete' | null>(null)
+const dialogMode       = ref<'create' | 'move' | 'delete' | null>(null)
 const dialogAnchorPath = ref('.resources')
-const activeWorkspaceView = ref<WorkspaceView>('tasks')
-const isTaskDetailModalOpen = ref(false)
+const activeWorkspaceView    = ref<WorkspaceView>('tasks')
+const isTaskDetailModalOpen  = ref(false)
 
 await initializeWorkspace()
 
+/* ── Computed ──────────────────────────────────────────────── */
 const featureHighlights = computed(() => snapshot.value?.features.slice(0, 3) ?? [])
-const translatedFeatureHighlights = computed(() => featureHighlights.value.map((feature) => ({
-  ...feature,
-  statusLabel: translateDashboardStatus(feature.status, locale.value),
-})))
-const selectedFeatureStatus = computed(() => {
-  if (!selectedFeature.value) {
-    return null
-  }
-
-  return translateDashboardStatus(selectedFeature.value.status, locale.value)
-})
+const translatedFeatureHighlights = computed(() =>
+  featureHighlights.value.map((f) => ({
+    ...f,
+    statusLabel: translateDashboardStatus(f.status, locale.value),
+  })),
+)
+const selectedFeatureStatus = computed(() =>
+  selectedFeature.value ? translateDashboardStatus(selectedFeature.value.status, locale.value) : null,
+)
 const liveSignal = computed(() => {
-  if (!lastEvent.value) {
-    return messages.value.hero.streamWaiting
-  }
-
-  if (lastEvent.value.changedPath) {
-    return `${lastEvent.value.reason} · ${lastEvent.value.changedPath}`
-  }
-
+  if (!lastEvent.value) return messages.value.hero.streamWaiting
+  if (lastEvent.value.changedPath) return `${lastEvent.value.reason} · ${lastEvent.value.changedPath}`
   return `${lastEvent.value.reason} · ${messages.value.hero.streamConnected}`
 })
-const translatedErrorMessage = computed(() => {
-  if (!errorMessage.value) {
-    return null
-  }
-
-  return translateWorkspaceError(errorMessage.value, locale.value)
-})
+const translatedErrorMessage = computed(() =>
+  errorMessage.value ? translateWorkspaceError(errorMessage.value, locale.value) : null,
+)
 const localeItems = computed(() => [
-  {
-    label: messages.value.common.english,
-    value: 'en',
-    icon: 'i-lucide-languages',
-  },
-  {
-    label: messages.value.common.spanish,
-    value: 'es',
-    icon: 'i-lucide-languages',
-  },
+  { label: messages.value.common.english, value: 'en', icon: 'i-lucide-languages' },
+  { label: messages.value.common.spanish, value: 'es', icon: 'i-lucide-languages' },
 ])
 const localeSelection = computed({
   get: () => locale.value,
   set: (value: string | number) => setLocale(value === 'es' ? 'es' : 'en'),
 })
-const workspaceCounts = computed(() => counts.value)
-const activeTaskRatio = computed(() => {
-  if (!workspaceCounts.value.tasks) {
-    return 0
-  }
-
+const workspaceCounts   = computed(() => counts.value)
+const activeTaskRatio   = computed(() => {
+  if (!workspaceCounts.value.tasks) return 0
   return Math.round((workspaceCounts.value.activeTasks / workspaceCounts.value.tasks) * 100)
 })
-const resourceRoots = computed(() => snapshot.value?.resources.length ?? 0)
-const workstreamItems = computed(() => translatedFeatureHighlights.value.slice(0, 4))
-const heroTelemetry = computed(() => [
-  { label: messages.value.hero.features, value: String(workspaceCounts.value.features) },
-  { label: messages.value.hero.tasks, value: String(workspaceCounts.value.tasks) },
-  { label: messages.value.landing.hero.governed, value: String(resourceRoots.value) },
+const resourceRoots     = computed(() => snapshot.value?.resources.length ?? 0)
+const workstreamItems   = computed(() => translatedFeatureHighlights.value.slice(0, 4))
+const heroTelemetry     = computed(() => [
+  { label: messages.value.hero.features, value: String(workspaceCounts.value.features), icon: 'i-lucide-layers' },
+  { label: messages.value.hero.tasks,    value: String(workspaceCounts.value.tasks),    icon: 'i-lucide-list-todo' },
+  { label: messages.value.landing.hero.governed, value: String(resourceRoots.value),   icon: 'i-lucide-database' },
   {
     label: messages.value.landing.numbers.selectedTask,
     value: selectedTask.value?.id ?? messages.value.landing.numbers.noSelection,
+    icon:  'i-lucide-crosshair',
   },
 ])
 const workspaceViewItems = computed(() => [
@@ -131,46 +110,52 @@ const activeWorkspaceViewMeta = computed(() => {
   if (activeWorkspaceView.value === 'metrics') {
     return {
       eyebrow: messages.value.tokenMetrics.eyebrow,
-      title: messages.value.tokenMetrics.title,
-      badge: tokenUsageSummary.value?.status === 'disabled'
+      title:   messages.value.tokenMetrics.title,
+      badge:   tokenUsageSummary.value?.status === 'disabled'
         ? messages.value.tokenMetrics.statusDisabled
         : `${tokenUsageSummary.value?.totals.requestCount ?? 0} ${messages.value.tokenMetrics.requests}`,
     }
   }
-
   if (activeWorkspaceView.value === 'resources') {
     return {
       eyebrow: messages.value.resources.eyebrow,
-      title: messages.value.resources.title,
-      badge: `${resourceRoots.value} ${messages.value.landing.numbers.governedRoots}`,
+      title:   messages.value.resources.title,
+      badge:   `${resourceRoots.value} ${messages.value.landing.numbers.governedRoots}`,
     }
   }
-
   return {
     eyebrow: messages.value.taskBoard.eyebrow,
-    title: messages.value.taskBoard.title,
-    badge: `${workspaceCounts.value.tasks} ${messages.value.taskBoard.trackedTasks}`,
+    title:   messages.value.taskBoard.title,
+    badge:   `${workspaceCounts.value.tasks} ${messages.value.taskBoard.trackedTasks}`,
   }
 })
-const isActiveWorkspaceViewLoading = computed(() => (
-  activeWorkspaceView.value === 'metrics' ? isTokenUsageLoading.value : isLoading.value
-))
+const isActiveWorkspaceViewLoading = computed(() =>
+  activeWorkspaceView.value === 'metrics' ? isTokenUsageLoading.value : isLoading.value,
+)
 const detailOperationalContext = computed(() => ({
   boardPulse: {
-    activeRatio: activeTaskRatio.value,
-    activeTasks: workspaceCounts.value.activeTasks,
-    totalTasks: workspaceCounts.value.tasks,
+    activeRatio:  activeTaskRatio.value,
+    activeTasks:  workspaceCounts.value.activeTasks,
+    totalTasks:   workspaceCounts.value.tasks,
   },
   resourceState: {
-    rootCount: resourceRoots.value,
+    rootCount:   resourceRoots.value,
     statusLabel: isMutatingResources.value ? messages.value.resources.busy : messages.value.resources.ready,
   },
   realtimeSignal: {
     isListening: Boolean(lastEvent.value),
-    message: liveSignal.value,
+    message:     liveSignal.value,
   },
 }))
 
+// Per-task token stats: look up the selected task in byTask breakdown
+const taskTokenStats = computed(() => {
+  const taskId = selectedTask.value?.id
+  if (!taskId || !tokenUsageSummary.value?.byTask) return null
+  return tokenUsageSummary.value.byTask.find((row) => row.key === taskId) ?? null
+})
+
+/* ── Handlers ──────────────────────────────────────────────── */
 function setWorkspaceView(view: WorkspaceView) {
   activeWorkspaceView.value = view
 }
@@ -180,15 +165,11 @@ async function handleActiveWorkspaceViewRefresh() {
     await refreshTokenObservability()
     return
   }
-
   await refreshWorkspace(true)
 }
 
 function openTaskDetailModal() {
-  if (!selectedTask.value) {
-    return
-  }
-
+  if (!selectedTask.value) return
   isTaskDetailModalOpen.value = true
 }
 
@@ -197,7 +178,7 @@ function closeTaskDetailModal() {
 }
 
 function openResourceDialog(mode: 'create' | 'move' | 'delete', path: string) {
-  dialogMode.value = mode
+  dialogMode.value       = mode
   dialogAnchorPath.value = path
 }
 
@@ -211,10 +192,7 @@ function handleTaskSelection(taskId: string) {
 }
 
 async function handleResourceSubmit(payload: Record<string, string | boolean>) {
-  if (!dialogMode.value) {
-    return
-  }
-
+  if (!dialogMode.value) return
   await performResourceAction(dialogMode.value, payload)
   closeResourceDialog()
 }
@@ -224,51 +202,48 @@ async function handleTokenObservabilityToggle(enabled: boolean) {
 }
 
 watch(activeWorkspaceView, (view) => {
-  if (view === 'metrics') {
-    void initializeTokenObservability()
-  }
+  if (view === 'metrics') void initializeTokenObservability()
 })
 </script>
 
 <template>
   <main class="ops-shell">
+    <!-- ── Hero ─────────────────────────────────────────────── -->
     <section class="landing-shell">
-      <UCard
-        class="landing-hero-card"
-        variant="subtle"
-        :ui="{ header: 'p-0 sm:p-0', body: 'p-0 sm:p-0' }"
-      >
-        <template #header>
-          <div class="landing-hero-bar">
-            <div class="landing-badge-row">
-              <UBadge color="neutral" variant="soft">{{ messages.landing.hero.badge }}</UBadge>
-              <span class="landing-release-chip">{{ messages.landing.workspace.badge }}</span>
-            </div>
-            <div class="locale-switcher-shell">
-              <span class="locale-label">{{ messages.common.language }}</span>
-              <UTabs
-                v-model="localeSelection"
-                color="neutral"
-                size="sm"
-                variant="link"
-                :content="false"
-                :items="localeItems"
-                class="locale-tabs"
-              />
-            </div>
+      <div class="landing-hero-card">
+        <!-- Top bar -->
+        <div class="landing-hero-bar">
+          <div class="landing-badge-row">
+            <UBadge color="neutral" variant="soft">
+              <UIcon name="i-lucide-cpu" style="margin-right: 0.3em;" />
+              {{ messages.landing.hero.badge }}
+            </UBadge>
+            <span class="landing-release-chip">{{ messages.landing.workspace.badge }}</span>
           </div>
-        </template>
+          <div class="locale-switcher-shell">
+            <span class="locale-label">{{ messages.common.language }}</span>
+            <UTabs
+              v-model="localeSelection"
+              color="neutral"
+              size="sm"
+              variant="link"
+              :content="false"
+              :items="localeItems"
+              class="locale-tabs"
+            />
+          </div>
+        </div>
 
+        <!-- Hero grid -->
         <div class="landing-hero-grid">
+          <!-- Left: copy -->
           <div class="landing-copy-column">
             <div>
               <p class="eyebrow">{{ messages.landing.workspace.eyebrow }}</p>
               <h1 class="landing-title">{{ messages.landing.workspace.dashboardTitle }}</h1>
             </div>
 
-            <p class="landing-copy">
-              {{ messages.landing.workspace.copy }}
-            </p>
+            <p class="landing-copy">{{ messages.landing.workspace.copy }}</p>
 
             <div v-if="workstreamItems.length" class="landing-workstream-row">
               <span class="landing-workstream-label">{{ messages.landing.trust.workstreams }}</span>
@@ -286,6 +261,7 @@ watch(activeWorkspaceView, (view) => {
             </div>
           </div>
 
+          <!-- Right: stats + signal -->
           <div class="dashboard-overview-side">
             <div class="dashboard-overview-stats">
               <div
@@ -293,36 +269,39 @@ watch(activeWorkspaceView, (view) => {
                 :key="item.label"
                 class="overview-stat-card"
               >
-                <span>{{ item.label }}</span>
+                <span>
+                  <UIcon :name="item.icon" style="vertical-align: middle; margin-right: 0.3em;" />
+                  {{ item.label }}
+                </span>
                 <strong>{{ item.value }}</strong>
               </div>
             </div>
 
-            <UCard
-              class="overview-signal-card"
-              variant="soft"
-              :ui="{ body: 'p-0 sm:p-0' }"
-            >
+            <div class="overview-signal-card">
               <div class="overview-signal-head">
                 <div>
                   <p class="overview-card-label">{{ messages.landing.capabilities.streamEyebrow }}</p>
-                  <strong>{{ lastEvent ? messages.landing.capabilities.live : messages.landing.capabilities.standby }}</strong>
+                  <strong>
+                    {{ lastEvent ? messages.landing.capabilities.live : messages.landing.capabilities.standby }}
+                  </strong>
                 </div>
-                <UBadge color="neutral" variant="outline">{{ selectedFeatureStatus ?? messages.detail.noFeatureStatus }}</UBadge>
+                <UBadge color="neutral" variant="outline">
+                  {{ selectedFeatureStatus ?? messages.detail.noFeatureStatus }}
+                </UBadge>
               </div>
 
               <p>{{ liveSignal }}</p>
               <UProgress
                 color="neutral"
-                size="sm"
+                size="xs"
                 status
                 :model-value="activeTaskRatio"
               />
               <small>{{ messages.landing.hero.baseline }}</small>
-            </UCard>
+            </div>
           </div>
         </div>
-      </UCard>
+      </div>
 
       <UAlert
         v-if="translatedErrorMessage"
@@ -332,10 +311,11 @@ watch(activeWorkspaceView, (view) => {
         variant="subtle"
         :description="translatedErrorMessage"
       />
-
     </section>
 
+    <!-- ── Workspace dashboard ───────────────────────────────── -->
     <section class="workspace-dashboard-shell">
+      <!-- Main navbar -->
       <UDashboardNavbar
         class="workspace-dashboard-navbar"
         icon="i-lucide-layout-dashboard"
@@ -351,6 +331,7 @@ watch(activeWorkspaceView, (view) => {
             color="neutral"
             variant="outline"
             icon="i-lucide-panel-right-open"
+            size="sm"
             @click="openTaskDetailModal"
           >
             {{ messages.landing.workspace.currentTask }} · {{ selectedTask.id }}
@@ -364,6 +345,7 @@ watch(activeWorkspaceView, (view) => {
         </template>
       </UDashboardNavbar>
 
+      <!-- Toolbar -->
       <UDashboardToolbar class="workspace-dashboard-toolbar">
         <template #left>
           <div class="workspace-toolbar-copy">
@@ -390,6 +372,7 @@ watch(activeWorkspaceView, (view) => {
               color="neutral"
               icon="i-lucide-refresh-cw"
               variant="solid"
+              size="sm"
               :loading="isActiveWorkspaceViewLoading"
               @click="handleActiveWorkspaceViewRefresh"
             >
@@ -399,6 +382,7 @@ watch(activeWorkspaceView, (view) => {
         </template>
       </UDashboardToolbar>
 
+      <!-- Stage -->
       <UDashboardGroup
         class="workspace-stage-layout"
         as="section"
@@ -414,7 +398,6 @@ watch(activeWorkspaceView, (view) => {
               <template #leading>
                 <UBadge color="neutral" variant="soft">{{ activeWorkspaceViewMeta.eyebrow }}</UBadge>
               </template>
-
               <template #right>
                 <UBadge color="neutral" variant="outline">{{ activeWorkspaceViewMeta.badge }}</UBadge>
               </template>
@@ -453,6 +436,7 @@ watch(activeWorkspaceView, (view) => {
         </UDashboardPanel>
       </UDashboardGroup>
 
+      <!-- Task detail modal -->
       <UModal
         v-model:open="isTaskDetailModalOpen"
         scrollable
@@ -461,8 +445,8 @@ watch(activeWorkspaceView, (view) => {
         :ui="{
           content: 'w-[calc(100vw-2rem)] max-w-7xl rounded-[28px]',
           header: 'min-h-0 px-4 py-4 sm:px-6',
-          body: 'p-4 sm:p-6',
-          footer: 'justify-end px-4 pb-4 sm:px-6 sm:pb-6'
+          body: 'p-0',
+          footer: 'justify-end px-4 pb-4 sm:px-6 sm:pb-6',
         }"
       >
         <template #body>
@@ -470,18 +454,20 @@ watch(activeWorkspaceView, (view) => {
             :task="selectedTask"
             :loading="isTaskLoading"
             :feature-status="selectedFeatureStatus"
+            :task-token-stats="taskTokenStats"
             :operational-context="detailOperationalContext"
           />
         </template>
 
         <template #footer="{ close }">
-          <UButton color="neutral" variant="outline" @click="close(); closeTaskDetailModal()">
+          <UButton color="neutral" variant="ghost" @click="close(); closeTaskDetailModal()">
             {{ messages.common.close }}
           </UButton>
         </template>
       </UModal>
     </section>
 
+    <!-- Resource action dialog -->
     <ResourceActionDialog
       :open="Boolean(dialogMode)"
       :mode="dialogMode"

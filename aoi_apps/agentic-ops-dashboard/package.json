@@ -16,7 +16,7 @@
     "prepare": "nuxt prepare"
   },
   "dependencies": {
-    "@nuxt/ui": "4.8.0",
+    "@nuxt/ui": "4.9.0",
     "chokidar": "5.0.0",
     "gray-matter": "4.0.3",
     "nuxt": "4.4.6",
