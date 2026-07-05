@@ -55,21 +55,18 @@ const isSubmitDisabled = computed(() => {
   
   if (props.mode === 'create') {
     return !form.folderName.trim().length || 
-           !form.purpose.trim().length || 
-           !form.relatedTaskId.trim().length
+           !form.purpose.trim().length
   }
   
   if (props.mode === 'move') {
     return !form.sourcePath.trim().length || 
            !form.destinationPath.trim().length || 
-           !form.reason.trim().length || 
-           !form.relatedTaskId.trim().length
+           !form.reason.trim().length
   }
   
   // delete
   return !form.targetPath.trim().length || 
          !form.reason.trim().length || 
-         !form.relatedTaskId.trim().length || 
          !form.confirmed
 })
 
@@ -92,32 +89,32 @@ watch(
 function submit() {
   if (!props.mode) return
 
+  const payload: Record<string, string | boolean> = {}
+
+  if (form.relatedTaskId.trim().length) {
+    payload.relatedTaskId = form.relatedTaskId.trim()
+  }
+
   if (props.mode === 'create') {
-    emit('submit', {
-      folderName: form.folderName,
-      parentPath: form.parentPath,
-      purpose: form.purpose,
-      relatedTaskId: form.relatedTaskId,
-    })
+    payload.folderName = form.folderName
+    payload.parentPath = form.parentPath
+    payload.purpose = form.purpose
+    emit('submit', payload)
     return
   }
 
   if (props.mode === 'move') {
-    emit('submit', {
-      sourcePath: form.sourcePath,
-      destinationPath: form.destinationPath,
-      reason: form.reason,
-      relatedTaskId: form.relatedTaskId,
-    })
+    payload.sourcePath = form.sourcePath
+    payload.destinationPath = form.destinationPath
+    payload.reason = form.reason
+    emit('submit', payload)
     return
   }
 
-  emit('submit', {
-    targetPath: form.targetPath,
-    reason: form.reason,
-    relatedTaskId: form.relatedTaskId,
-    confirmed: form.confirmed,
-  })
+  payload.targetPath = form.targetPath
+  payload.reason = form.reason
+  payload.confirmed = form.confirmed
+  emit('submit', payload)
 }
 </script>
 
