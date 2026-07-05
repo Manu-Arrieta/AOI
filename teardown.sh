@@ -53,7 +53,8 @@ printf "  .resources/\n"
 printf "  aoi_apps/agentic-ops-dashboard/ (including package.json, pnpm-lock.yaml, node_modules/)\n"
 printf "  GEMINI.md\n"
 printf "  AGENTS.md  (if from AOI)\n"
-printf "  CLAUDE.md  (if from AOI)\n\n"
+printf "  CLAUDE.md  (if from AOI)\n"
+printf "  .conf/     (configuration snapshot)\n\n"
 printf "${BOLD}Confirm? [y/N] ${NC}"
 read -r CONFIRM
 
@@ -80,6 +81,7 @@ remove_dir() {
 remove_dir ".agent"
 remove_dir ".specify"
 remove_dir ".resources"
+remove_dir ".conf"
 remove_dir "aoi_apps/agentic-ops-dashboard"
 
 if [ -d "$PROJECT_PATH/aoi_apps" ] && [ -z "$(ls -A "$PROJECT_PATH/aoi_apps" 2>/dev/null)" ]; then

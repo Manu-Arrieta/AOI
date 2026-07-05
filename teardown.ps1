@@ -209,6 +209,7 @@ Write-Host "  aoi_apps/agentic-ops-dashboard/ (including package.json, pnpm-lock
 Write-Host "  GEMINI.md"
 Write-Host "  AGENTS.md  (if from AOI)"
 Write-Host "  CLAUDE.md  (if from AOI)"
+Write-Host "  .conf/     (configuration snapshot)"
 Write-Host ""
 
 $confirm = Read-Host "Confirm? [y/N]"
@@ -222,6 +223,7 @@ Write-Header "Removing Infrastructure"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".agent"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".specify"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".resources"
+Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".conf"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath "aoi_apps\agentic-ops-dashboard"
 
 $appsDir = Join-Path $ProjectPath "aoi_apps"

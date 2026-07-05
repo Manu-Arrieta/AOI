@@ -682,22 +682,135 @@ header "Phase 3: Agentic Infrastructure"
 
 cd "$PROJECT_PATH"
 
-# Copy scaffold using rsync (merge, don't destroy existing files)
-if command -v rsync &>/dev/null; then
-  rsync -a --ignore-existing "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
-  ok "Scaffold merged (rsync)"
-else
-  # Fallback: cp with directory creation
-  cd "$SCAFFOLD_DIR"
-  find . -type f | while read -r file; do
-    target="$PROJECT_PATH/$file"
-    if [ ! -f "$target" ]; then
-      mkdir -p "$(dirname "$target")"
-      cp "$file" "$target"
+CONF_SCRIPTS_DIR="$SCRIPT_DIR/scripts/conf"
+IS_REINSTALL=0
+REINSTALL_STATS_UPDATED=0
+REINSTALL_STATS_CONFLICTS=0
+REINSTALL_STATS_NEW=0
+REINSTALL_STATS_SKIPPED=0
+
+if [ -f "$PROJECT_PATH/.conf/manifest.json" ]; then
+  IS_REINSTALL=1
+  info "Detected previous installation (.conf/manifest.json) — entering REINSTALL mode"
+
+  # ── 3a: Smart merge for non-aoi_apps files ──────────────────────────────
+  if [ -f "$CONF_SCRIPTS_DIR/compare-install.sh" ]; then
+    COMPARE_OUTPUT="$(bash "$CONF_SCRIPTS_DIR/compare-install.sh" \
+      "$SCAFFOLD_DIR" \
+      "$PROJECT_PATH/.conf/checksums.json" \
+      "$PROJECT_PATH" 2>/dev/null || echo '{}')"
+
+    # Parse comparison results using python3 (mandatory dependency via ICM)
+    if command -v python3 &>/dev/null; then
+      eval "$(python3 -c "
+import json, sys, shlex
+data = json.loads('''$COMPARE_OUTPUT''')
+auto = data.get('auto_update', [])
+conflicts = data.get('conflict', [])
+new = data.get('new', [])
+skip = data.get('skip', [])
+print(f'REINSTALL_STATS_UPDATED={len(auto)}')
+print(f'REINSTALL_STATS_CONFLICTS={len(conflicts)}')
+print(f'REINSTALL_STATS_NEW={len(new)}')
+print(f'REINSTALL_STATS_SKIPPED={len(skip)}')
+# Emit file lists as newline-separated temp files
+import tempfile, os
+td = tempfile.mkdtemp()
+for name, lst in [('auto_update', auto), ('conflict', conflicts), ('new', new)]:
+    with open(os.path.join(td, name), 'w') as f:
+        f.write('\n'.join(lst))
+print(f'COMPARE_TMPDIR={td}')
+" 2>/dev/null)"
+
+      # Apply auto-updates (scaffold changed, user did NOT modify)
+      if [ -f "$COMPARE_TMPDIR/auto_update" ] && [ -s "$COMPARE_TMPDIR/auto_update" ]; then
+        while IFS= read -r rel_file; do
+          [ -z "$rel_file" ] && continue
+          mkdir -p "$(dirname "$PROJECT_PATH/$rel_file")"
+          cp "$SCAFFOLD_DIR/$rel_file" "$PROJECT_PATH/$rel_file"
+        done < "$COMPARE_TMPDIR/auto_update"
+        ok "Auto-updated $REINSTALL_STATS_UPDATED file(s) (scaffold changed, user untouched)"
+      fi
+
+      # Copy new files (exist in scaffold but not in previous install)
+      if [ -f "$COMPARE_TMPDIR/new" ] && [ -s "$COMPARE_TMPDIR/new" ]; then
+        while IFS= read -r rel_file; do
+          [ -z "$rel_file" ] && continue
+          mkdir -p "$(dirname "$PROJECT_PATH/$rel_file")"
+          cp "$SCAFFOLD_DIR/$rel_file" "$PROJECT_PATH/$rel_file"
+        done < "$COMPARE_TMPDIR/new"
+        ok "Installed $REINSTALL_STATS_NEW new file(s)"
+      fi
+
+      # Report conflicts (both scaffold and user modified)
+      if [ -f "$COMPARE_TMPDIR/conflict" ] && [ -s "$COMPARE_TMPDIR/conflict" ]; then
+        mkdir -p "$PROJECT_PATH/.conf/conflicts"
+        while IFS= read -r rel_file; do
+          [ -z "$rel_file" ] && continue
+          mkdir -p "$(dirname "$PROJECT_PATH/.conf/conflicts/$rel_file")"
+          cp "$SCAFFOLD_DIR/$rel_file" "$PROJECT_PATH/.conf/conflicts/$rel_file"
+        done < "$COMPARE_TMPDIR/conflict"
+        warn "Found $REINSTALL_STATS_CONFLICTS conflict(s) — new versions saved to .conf/conflicts/"
+        warn "Review and manually merge: ls .conf/conflicts/"
+      fi
+
+      if [ "$REINSTALL_STATS_SKIPPED" -gt 0 ]; then
+        ok "Skipped $REINSTALL_STATS_SKIPPED unchanged file(s)"
+      fi
+
+      rm -rf "$COMPARE_TMPDIR"
+    else
+      warn "python3 not available for smart merge — falling back to rsync --ignore-existing"
+      if command -v rsync &>/dev/null; then
+        rsync -a --ignore-existing --exclude='aoi_apps/' "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
+      fi
     fi
-  done
-  cd "$PROJECT_PATH"
-  ok "Scaffold merged (cp)"
+  else
+    warn "compare-install.sh not found — falling back to rsync --ignore-existing"
+    if command -v rsync &>/dev/null; then
+      rsync -a --ignore-existing --exclude='aoi_apps/' "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
+    fi
+  fi
+
+  # ── 3b: Full replace aoi_apps/ (native AOI apps always use latest) ─────
+  if [ -d "$SCAFFOLD_DIR/aoi_apps" ]; then
+    info "Replacing aoi_apps/ with latest scaffold version..."
+    # Preserve node_modules to avoid full reinstall if deps unchanged
+    AOI_APPS_NM=""
+    if [ -d "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/node_modules" ]; then
+      AOI_APPS_NM="$(mktemp -d)"
+      mv "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/node_modules" "$AOI_APPS_NM/"
+    fi
+    rm -rf "$PROJECT_PATH/aoi_apps"
+    cp -R "$SCAFFOLD_DIR/aoi_apps" "$PROJECT_PATH/aoi_apps"
+    # Restore node_modules if we preserved them
+    if [ -n "$AOI_APPS_NM" ] && [ -d "$AOI_APPS_NM/node_modules" ]; then
+      mv "$AOI_APPS_NM/node_modules" "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/"
+      rm -rf "$AOI_APPS_NM"
+    fi
+    ok "aoi_apps/ replaced with latest scaffold version"
+  fi
+
+  ok "Reinstall merge complete"
+
+else
+  # ── Fresh install: original behavior ────────────────────────────────────
+  if command -v rsync &>/dev/null; then
+    rsync -a --ignore-existing "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
+    ok "Scaffold merged (rsync)"
+  else
+    # Fallback: cp with directory creation
+    cd "$SCAFFOLD_DIR"
+    find . -type f | while read -r file; do
+      target="$PROJECT_PATH/$file"
+      if [ ! -f "$target" ]; then
+        mkdir -p "$(dirname "$target")"
+        cp "$file" "$target"
+      fi
+    done
+    cd "$PROJECT_PATH"
+    ok "Scaffold merged (cp)"
+  fi
 fi
 
 # Ensure required directories exist (rsync may skip empty dirs)
@@ -943,6 +1056,44 @@ if command -v node &>/dev/null && [ -f "$BASE_MAP_DETECTOR" ]; then
   fi
 else
   warn "node or detector missing — base-project map will be detected in /init"
+fi
+
+# ── Phase 7: Persist Configuration Snapshot (.conf/) ──────────────────────
+header "Phase 7: Configuration Snapshot"
+
+CONF_SNAPSHOT_SCRIPT="$SCRIPT_DIR/scripts/conf/snapshot-conf.sh"
+
+if [ -f "$CONF_SNAPSHOT_SCRIPT" ]; then
+  CONF_ACTION="install"
+  if [ "$IS_REINSTALL" -eq 1 ]; then
+    CONF_ACTION="reinstall"
+  fi
+
+  bash "$CONF_SNAPSHOT_SCRIPT" "$SCAFFOLD_DIR" "$PROJECT_PATH" "$CONF_ACTION" "0.1.x" && \
+    ok "Configuration snapshot persisted to .conf/" || \
+    warn "Configuration snapshot failed — smart reinstall may not work on next run"
+
+  # On reinstall, update manifest.updated_at and append detailed stats to history
+  if [ "$IS_REINSTALL" -eq 1 ] && [ -f "$PROJECT_PATH/.conf/manifest.json" ]; then
+    NOW_TS="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    if command -v python3 &>/dev/null; then
+      python3 -c "
+import json
+with open('$PROJECT_PATH/.conf/manifest.json') as f:
+    m = json.load(f)
+m['updated_at'] = '$NOW_TS'
+with open('$PROJECT_PATH/.conf/manifest.json', 'w') as f:
+    json.dump(m, f, indent=2)
+    f.write('\n')
+" 2>/dev/null && ok "Manifest updated_at refreshed"
+    fi
+    # Append detailed reinstall stats
+    echo "{\"action\":\"reinstall\",\"at\":\"$NOW_TS\",\"aoi_version\":\"0.1.x\",\"files_updated\":$REINSTALL_STATS_UPDATED,\"files_kept\":$REINSTALL_STATS_SKIPPED,\"conflicts\":$REINSTALL_STATS_CONFLICTS,\"new_files\":$REINSTALL_STATS_NEW}" \
+      >> "$PROJECT_PATH/.conf/history.jsonl"
+    ok "Reinstall stats recorded in .conf/history.jsonl"
+  fi
+else
+  warn "snapshot-conf.sh not found — .conf/ will not be generated"
 fi
 
 # ── Done ─────────────────────────────────────────────────────────────────
