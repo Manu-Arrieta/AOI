@@ -29,14 +29,14 @@ export default defineNuxtConfig({
   },
   ui: {
     fonts: false,
-    colorMode: true,
+    colorMode: false,
     experimental: {
       componentDetection: true,
     },
   },
   colorMode: {
-    preference: 'dark',
-    fallback: 'dark',
+    preference: 'light',
+    fallback: 'light',
   },
   typescript: {
     strict: true,
