@@ -1,8 +1,11 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+/* Force Tailwind dark variant to class-based only — system dark preference ignored */
+@variant dark (&:where(.dark, .dark *));
+
 :root {
-  color-scheme: light;
+  color-scheme: light only;
   --canvas: #f4f7fb;
   --ink: #0f172a;
   --muted: #5d6880;

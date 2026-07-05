@@ -10,6 +10,10 @@ export default defineNuxtConfig({
     enabled: true,
   },
   css: ['~/assets/styles/main.css'],
+  colorMode: {
+    preference: 'light',
+    fallback: 'light',
+  },
   ui: {
     fonts: false,
     colorMode: false,
