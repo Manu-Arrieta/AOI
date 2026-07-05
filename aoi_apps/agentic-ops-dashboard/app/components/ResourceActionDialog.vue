@@ -52,9 +52,25 @@ const modeIcon = computed(() => {
 
 const isSubmitDisabled = computed(() => {
   if (!props.mode || props.pending) return true
-  if (props.mode === 'create') return !form.folderName.trim().length
-  if (props.mode === 'move')   return !form.sourcePath.trim().length || !form.destinationPath.trim().length
-  return !form.targetPath.trim().length || !form.confirmed
+  
+  if (props.mode === 'create') {
+    return !form.folderName.trim().length || 
+           !form.purpose.trim().length || 
+           !form.relatedTaskId.trim().length
+  }
+  
+  if (props.mode === 'move') {
+    return !form.sourcePath.trim().length || 
+           !form.destinationPath.trim().length || 
+           !form.reason.trim().length || 
+           !form.relatedTaskId.trim().length
+  }
+  
+  // delete
+  return !form.targetPath.trim().length || 
+         !form.reason.trim().length || 
+         !form.relatedTaskId.trim().length || 
+         !form.confirmed
 })
 
 watch(

@@ -30,71 +30,67 @@ const form = reactive({
 })
 
 const title = computed(() => {
-  if (props.mode === 'create') {
-    return messages.value.resourceDialog.createTitle
-  }
-
-  if (props.mode === 'move') {
-    return messages.value.resourceDialog.moveTitle
-  }
-
-  if (props.mode === 'delete') {
-    return messages.value.resourceDialog.deleteTitle
-  }
-
+  if (props.mode === 'create') return messages.value.resourceDialog.createTitle
+  if (props.mode === 'move')   return messages.value.resourceDialog.moveTitle
+  if (props.mode === 'delete') return messages.value.resourceDialog.deleteTitle
   return messages.value.resourceDialog.resourceAction
 })
+
 const description = computed(() => {
-  if (props.mode === 'create') {
-    return `${messages.value.resourceDialog.parentPath}: ${props.anchorPath}`
-  }
-
-  if (props.mode === 'move') {
-    return `${messages.value.resourceDialog.sourcePath}: ${props.anchorPath}`
-  }
-
-  if (props.mode === 'delete') {
-    return `${messages.value.resourceDialog.targetPath}: ${props.anchorPath}`
-  }
-
+  if (props.mode === 'create') return `${messages.value.resourceDialog.parentPath}: ${props.anchorPath}`
+  if (props.mode === 'move')   return `${messages.value.resourceDialog.sourcePath}: ${props.anchorPath}`
+  if (props.mode === 'delete') return `${messages.value.resourceDialog.targetPath}: ${props.anchorPath}`
   return props.anchorPath
 })
+
+const modeIcon = computed(() => {
+  if (props.mode === 'create') return 'i-lucide-folder-plus'
+  if (props.mode === 'move')   return 'i-lucide-arrow-right-left'
+  if (props.mode === 'delete') return 'i-lucide-trash-2'
+  return 'i-lucide-settings'
+})
+
 const isSubmitDisabled = computed(() => {
-  if (!props.mode || props.pending) {
-    return true
-  }
-
+  if (!props.mode || props.pending) return true
+  
   if (props.mode === 'create') {
-    return !form.folderName.trim().length
+    return !form.folderName.trim().length || 
+           !form.purpose.trim().length || 
+           !form.relatedTaskId.trim().length
   }
-
+  
   if (props.mode === 'move') {
-    return !form.sourcePath.trim().length || !form.destinationPath.trim().length
+    return !form.sourcePath.trim().length || 
+           !form.destinationPath.trim().length || 
+           !form.reason.trim().length || 
+           !form.relatedTaskId.trim().length
   }
-
-  return !form.targetPath.trim().length || !form.confirmed
+  
+  // delete
+  return !form.targetPath.trim().length || 
+         !form.reason.trim().length || 
+         !form.relatedTaskId.trim().length || 
+         !form.confirmed
 })
 
 watch(
   () => [props.mode, props.anchorPath, props.open],
   () => {
-    form.folderName = ''
-    form.parentPath = props.anchorPath || '.resources'
-    form.purpose = ''
-    form.sourcePath = props.anchorPath || '.resources'
+    form.folderName      = ''
+    form.parentPath      = props.anchorPath || '.resources'
+    form.purpose         = ''
+    form.sourcePath      = props.anchorPath || '.resources'
     form.destinationPath = props.anchorPath || '.resources'
-    form.reason = ''
-    form.targetPath = props.anchorPath || '.resources'
-    form.relatedTaskId = ''
-    form.confirmed = false
+    form.reason          = ''
+    form.targetPath      = props.anchorPath || '.resources'
+    form.relatedTaskId   = ''
+    form.confirmed       = false
   },
   { immediate: true },
 )
 
 function submit() {
-  if (!props.mode) {
-    return
-  }
+  if (!props.mode) return
 
   if (props.mode === 'create') {
     emit('submit', {
@@ -132,13 +128,26 @@ function submit() {
     :description="description"
     :dismissible="!pending"
     :title="title"
+    :ui="{
+      content: 'max-w-lg rounded-[24px]',
+      header: 'px-5 py-4',
+      body: 'px-5 pb-1',
+      footer: 'px-5 pb-5',
+    }"
     @update:open="(nextOpen) => { if (!nextOpen) emit('close') }"
   >
+    <template #title>
+      <div class="dialog-title-row">
+        <UIcon :name="modeIcon" class="dialog-title-icon" />
+        <span>{{ title }}</span>
+      </div>
+    </template>
+
     <template #body>
       <div class="dialog-form-shell">
         <UAlert
           v-if="mode === 'delete'"
-          color="warning"
+          color="error"
           icon="i-lucide-triangle-alert"
           variant="subtle"
           :description="messages.resourceDialog.confirmDelete"
@@ -150,7 +159,12 @@ function submit() {
               <UInput v-model="form.parentPath" class="w-full" />
             </UFormField>
             <UFormField :label="messages.resourceDialog.folderName" name="folder-name">
-              <UInput v-model="form.folderName" class="w-full" :placeholder="messages.resourceDialog.folderPlaceholder" />
+              <UInput
+                v-model="form.folderName"
+                class="w-full"
+                :placeholder="messages.resourceDialog.folderPlaceholder"
+                autofocus
+              />
             </UFormField>
             <UFormField :label="messages.resourceDialog.purpose" name="purpose">
               <UTextarea v-model="form.purpose" class="w-full" :rows="3" />
@@ -162,7 +176,7 @@ function submit() {
               <UInput v-model="form.sourcePath" class="w-full" />
             </UFormField>
             <UFormField :label="messages.resourceDialog.destinationPath" name="destination-path">
-              <UInput v-model="form.destinationPath" class="w-full" />
+              <UInput v-model="form.destinationPath" class="w-full" autofocus />
             </UFormField>
             <UFormField :label="messages.resourceDialog.reason" name="reason">
               <UTextarea v-model="form.reason" class="w-full" :rows="3" />
@@ -176,7 +190,6 @@ function submit() {
             <UFormField :label="messages.resourceDialog.reason" name="delete-reason">
               <UTextarea v-model="form.reason" class="w-full" :rows="3" />
             </UFormField>
-
             <div class="dialog-checkbox-row">
               <UCheckbox v-model="form.confirmed" :aria-label="messages.resourceDialog.confirmDelete" />
               <span>{{ messages.resourceDialog.confirmDelete }}</span>
@@ -184,7 +197,11 @@ function submit() {
           </template>
 
           <UFormField :label="messages.resourceDialog.relatedTaskId" name="related-task-id">
-            <UInput v-model="form.relatedTaskId" class="w-full" :placeholder="messages.resourceDialog.taskPlaceholder" />
+            <UInput
+              v-model="form.relatedTaskId"
+              class="w-full"
+              :placeholder="messages.resourceDialog.taskPlaceholder"
+            />
           </UFormField>
         </form>
       </div>
@@ -192,7 +209,7 @@ function submit() {
 
     <template #footer>
       <div class="dialog-actions">
-        <UButton color="neutral" variant="outline" :disabled="pending" @click="emit('close')">
+        <UButton color="neutral" variant="ghost" :disabled="pending" @click="emit('close')">
           {{ messages.common.cancel }}
         </UButton>
         <UButton
@@ -201,6 +218,7 @@ function submit() {
           type="submit"
           :disabled="isSubmitDisabled"
           :loading="pending"
+          :icon="modeIcon"
         >
           {{ pending ? messages.common.working : messages.common.apply }}
         </UButton>
