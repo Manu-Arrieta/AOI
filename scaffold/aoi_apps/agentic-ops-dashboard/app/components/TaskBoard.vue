@@ -87,20 +87,45 @@ const filteredTasks = computed(() => {
   }
 
   // 3. Date Range & Sorting
-  const parseDate = (d: string) => d ? new Date(d).getTime() : 0
+  const parseLocalDate = (dateStr: string) => {
+    if (!dateStr) return null
+    const parts = dateStr.split('-')
+    if (parts.length !== 3) return null
+    const year = parseInt(parts[0], 10)
+    const month = parseInt(parts[1], 10) - 1
+    const day = parseInt(parts[2], 10)
+    return new Date(year, month, day)
+  }
+
+  const getLocalDateString = (date: Date = new Date()) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
 
   if (dateFilter.value === 'today') {
-    const today = new Date().toDateString()
-    list = list.filter(t => t.created && new Date(t.created).toDateString() === today)
+    const todayStr = getLocalDateString()
+    list = list.filter(t => t.created && t.created === todayStr)
   } else if (dateFilter.value === 'week') {
-    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
-    list = list.filter(t => parseDate(t.created) >= oneWeekAgo)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const oneWeekAgo = today.getTime() - 7 * 24 * 60 * 60 * 1000
+    list = list.filter(t => {
+      const d = parseLocalDate(t.created)
+      return d && d.getTime() >= oneWeekAgo
+    })
+  }
+
+  const getMs = (dateStr: string) => {
+    const d = parseLocalDate(dateStr)
+    return d ? d.getTime() : 0
   }
 
   if (dateFilter.value === 'oldest') {
-    list.sort((a, b) => parseDate(a.created) - parseDate(b.created))
+    list.sort((a, b) => getMs(a.created) - getMs(b.created))
   } else {
-    list.sort((a, b) => parseDate(b.created) - parseDate(a.created))
+    list.sort((a, b) => getMs(b.created) - getMs(a.created))
   }
 
   return list
