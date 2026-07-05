@@ -213,6 +213,9 @@ Si el proyecto no está indexado todavía, correr `index_repository` primero. Si
 | ICM Protocol           | `.agent/skills/_shared/icm-protocol.md` |
 | Task Artifacts         | `.tasks/{feature}/TASK-YYYY-NNN/`       |
 | Sandbox Config         | `.sandboxes/{name}/config.md`           |
+| Install Config         | `.conf/manifest.json`                   |
+| Install Checksums      | `.conf/checksums.json`                  |
+| Install History        | `.conf/history.jsonl`                   |
 
 ## Task Structure
 

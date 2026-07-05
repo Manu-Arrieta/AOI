@@ -159,6 +159,27 @@ Present a checklist:
 ✅ Agents: {N}/8 present
 ✅ Skill Registry: populated
 ✅ Base-Project Map: {written after Owner confirm | skipped}
+✅ Configuration Snapshot: {synced | created | skipped}
 ```
+
+### Step 10: Sync Configuration Snapshot (.conf/)
+
+If `.conf/manifest.json` exists (created by `setup.sh`), verify that any changes made during `/init` are reflected in the snapshot:
+
+1. **Constitution changed**: If constitution was modified/created during init:
+   ```bash
+   # Update constitution snapshot
+   cp .specify/memory/constitution.md .conf/snapshots/constitutions/memory-constitution.md 2>/dev/null || true
+   cp .resources/constitution.md .conf/snapshots/constitutions/resources-constitution.md 2>/dev/null || true
+   ```
+
+2. **Update checksum** for changed files using `shasum -a 256`
+
+3. **Append to history**:
+   ```jsonl
+   {"action":"init_sync","at":"<ISO>","files_synced":["list of changed files"]}
+   ```
+
+4. If `.conf/` does NOT exist, warn: "Configuration snapshot missing. Run `setup.sh` to generate it."
 
 Suggest next action: "Project is ready. Create your first task with `/sdd-new`."

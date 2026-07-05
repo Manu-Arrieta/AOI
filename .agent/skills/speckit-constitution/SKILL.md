@@ -101,7 +101,26 @@ Follow this execution flow:
 
 7. Write the completed constitution back to `.specify/memory/constitution.md` (overwrite).
 
-8. Output a final summary to the user with:
+8. Sync `.conf/` configuration snapshot (if present):
+   - If `.conf/manifest.json` exists:
+     ```bash
+     # Update constitution snapshot
+     cp .specify/memory/constitution.md .conf/snapshots/constitutions/memory-constitution.md 2>/dev/null || true
+     # Update checksum for the constitution
+     CONST_HASH="$(shasum -a 256 .specify/memory/constitution.md | cut -d' ' -f1)"
+     # Append to history
+     echo "{\"action\":\"constitution_update\",\"at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"file\":\".specify/memory/constitution.md\",\"trigger\":\"speckit.constitution\"}" >> .conf/history.jsonl
+     ```
+   - If `.conf/checksums.json` exists, update the constitution entry using python3:
+     ```python
+     import json
+     with open('.conf/checksums.json') as f: data = json.load(f)
+     data['files']['.specify/memory/constitution.md'] = f'sha256:{CONST_HASH}'
+     with open('.conf/checksums.json', 'w') as f: json.dump(data, f, indent=2); f.write('\n')
+     ```
+   - If `.conf/` does NOT exist, skip silently (setup.sh has not been run yet).
+
+9. Output a final summary to the user with:
    - New version and bump rationale.
    - Any files flagged for manual follow-up.
    - Suggested commit message (e.g., `docs: amend constitution to vX.Y.Z (principle additions + governance update)`).

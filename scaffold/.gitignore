@@ -58,3 +58,6 @@ CLAUDE.md
 # NVIDIA customendpoint credentials — keep example tracked, ignore real keyfile
 .vscode/ChatLanguageModel.json
 !.vscode/ChatLanguageModel.example.json
+
+# AOI configuration snapshots (system-generated, local state)
+.conf/

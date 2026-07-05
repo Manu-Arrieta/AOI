@@ -41,3 +41,6 @@ scaffold/.exportsmemories/*
 
 # ICM local artifacts (the DB lives globally; guard any in-repo spillover)
 .icm/
+
+# AOI configuration snapshots (system-generated, local state)
+/.conf/
