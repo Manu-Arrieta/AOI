@@ -62,7 +62,8 @@ function resolveResourcePath(workspaceRoot: string, inputPath: string): { absolu
   }
 }
 
-function assertFolderMutationAllowed(relativePath: string) {
+/** Blocks moves/deletes where the PATH ITSELF is a protected default folder. */
+function assertFolderSourceAllowed(relativePath: string) {
   if (relativePath === '.resources/constitution.md') {
     throw new ResourceOperationError('constitution.md cannot be mutated by resource folder operations.', 403)
   }
@@ -70,6 +71,22 @@ function assertFolderMutationAllowed(relativePath: string) {
   if (protectedFolders.has(relativePath)) {
     throw new ResourceOperationError('Default managed folders cannot be moved or deleted.', 403)
   }
+}
+
+/**
+ * Blocks move DESTINATIONS that are default-managed structural folders.
+ * `.resources` itself is allowed as a destination (moving a child to the root level).
+ */
+function assertFolderDestinationAllowed(relativePath: string) {
+  const blockedDestinations = new Set(['.resources/constitution.md', '.resources/userstories', '.resources/workflows'])
+  if (blockedDestinations.has(relativePath)) {
+    throw new ResourceOperationError('Cannot move a folder into a protected managed directory.', 403)
+  }
+}
+
+/** @deprecated Use assertFolderSourceAllowed or assertFolderDestinationAllowed instead. */
+function assertFolderMutationAllowed(relativePath: string) {
+  assertFolderSourceAllowed(relativePath)
 }
 
 function parseManagedFolderEntries(constitution: string): Map<string, string> {
@@ -182,8 +199,8 @@ export async function moveResourceFolder(
   const source = resolveResourcePath(workspaceRoot, input.sourcePath)
   const destination = resolveResourcePath(workspaceRoot, input.destinationPath)
 
-  assertFolderMutationAllowed(source.relativePath)
-  assertFolderMutationAllowed(destination.relativePath)
+  assertFolderSourceAllowed(source.relativePath)
+  assertFolderDestinationAllowed(destination.relativePath)
 
   if (!existsSync(source.absolutePath)) {
     throw new ResourceOperationError('The source folder does not exist.', 404)

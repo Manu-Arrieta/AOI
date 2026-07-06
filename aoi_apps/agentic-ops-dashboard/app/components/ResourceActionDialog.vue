@@ -190,7 +190,11 @@ function submit() {
 
   if (props.mode === 'move') {
     payload.sourcePath = form.sourcePath
-    payload.destinationPath = form.destinationPath
+    // form.destinationPath holds the selected PARENT folder from UTree.
+    // The server expects the FINAL path (parent/folderName), not just the parent.
+    const sourceBasename = form.sourcePath.split('/').pop() ?? form.sourcePath
+    const parentDir = form.destinationPath.replace(/\/$/, '')
+    payload.destinationPath = `${parentDir}/${sourceBasename}`
     payload.reason = form.reason
     emit('submit', payload)
     return
