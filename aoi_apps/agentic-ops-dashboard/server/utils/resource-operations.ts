@@ -17,20 +17,17 @@ const createPayloadSchema = z.object({
   folderName: z.string().min(1).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   parentPath: z.string().min(1).default('.resources'),
   purpose: z.string().min(1),
-  relatedTaskId: z.string().min(1).optional(),
 })
 
 const movePayloadSchema = z.object({
   sourcePath: z.string().min(1),
   destinationPath: z.string().min(1),
   reason: z.string().min(1),
-  relatedTaskId: z.string().min(1).optional(),
 })
 
 const deletePayloadSchema = z.object({
   targetPath: z.string().min(1),
   reason: z.string().min(1),
-  relatedTaskId: z.string().min(1).optional(),
   confirmed: z.literal(true),
 })
 
@@ -166,7 +163,7 @@ export async function createResourceFolder(
   })
 
   await persistChange(
-    `## Resources Structure Update\n**Operation**: create\n**Path**: ${target.relativePath}\n**Purpose**: ${input.purpose}\n**Related Task**: ${input.relatedTaskId ?? 'None'}`,
+    `## Resources Structure Update\n**Operation**: create\n**Path**: ${target.relativePath}\n**Purpose**: ${input.purpose}`,
     ['resources', 'dashboard', 'create'],
   )
 
@@ -208,7 +205,7 @@ export async function moveResourceFolder(
   })
 
   await persistChange(
-    `## Resources Structure Update\n**Operation**: move\n**From**: ${source.relativePath}\n**To**: ${destination.relativePath}\n**Reason**: ${input.reason}\n**Related Task**: ${input.relatedTaskId ?? 'None'}`,
+    `## Resources Structure Update\n**Operation**: move\n**From**: ${source.relativePath}\n**To**: ${destination.relativePath}\n**Reason**: ${input.reason}`,
     ['resources', 'dashboard', 'move'],
   )
 
@@ -239,7 +236,7 @@ export async function deleteResourceFolder(
   })
 
   await persistChange(
-    `## Resources Structure Update\n**Operation**: delete\n**Path**: ${target.relativePath}\n**Reason**: ${input.reason}\n**Related Task**: ${input.relatedTaskId ?? 'None'}`,
+    `## Resources Structure Update\n**Operation**: delete\n**Path**: ${target.relativePath}\n**Reason**: ${input.reason}`,
     ['resources', 'dashboard', 'delete'],
   )
 

@@ -25,7 +25,7 @@ const form = reactive({
   destinationPath: '',
   reason: '',
   targetPath: '',
-  relatedTaskId: '',
+
   confirmed: false,
 })
 
@@ -80,7 +80,7 @@ watch(
     form.destinationPath = props.anchorPath || '.resources'
     form.reason          = ''
     form.targetPath      = props.anchorPath || '.resources'
-    form.relatedTaskId   = ''
+
     form.confirmed       = false
   },
   { immediate: true },
@@ -90,10 +90,6 @@ function submit() {
   if (!props.mode) return
 
   const payload: Record<string, string | boolean> = {}
-
-  if (form.relatedTaskId.trim().length) {
-    payload.relatedTaskId = form.relatedTaskId.trim()
-  }
 
   if (props.mode === 'create') {
     payload.folderName = form.folderName
@@ -193,13 +189,7 @@ function submit() {
             </div>
           </template>
 
-          <UFormField :label="messages.resourceDialog.relatedTaskId" name="related-task-id">
-            <UInput
-              v-model="form.relatedTaskId"
-              class="w-full"
-              :placeholder="messages.resourceDialog.taskPlaceholder"
-            />
-          </UFormField>
+
         </form>
       </div>
     </template>

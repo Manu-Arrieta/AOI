@@ -6,7 +6,6 @@ import { deleteResourceFolder, ResourceOperationError } from '../../utils/resour
 const payloadSchema = z.object({
   targetPath: z.string().min(1),
   reason: z.string().min(1),
-  relatedTaskId: z.string().min(1).optional(),
   confirmed: z.literal(true),
 })
 

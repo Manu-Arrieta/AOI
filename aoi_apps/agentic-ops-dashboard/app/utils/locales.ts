@@ -212,9 +212,7 @@ export const dashboardMessages = {
       reason: 'Reason',
       targetPath: 'Target path',
       confirmDelete: 'I confirm that this governed folder should be deleted.',
-      relatedTaskId: 'Related TASK-ID',
       folderPlaceholder: 'research-notes',
-      taskPlaceholder: 'TASK-2026-002',
     },
     tokenMetrics: {
       eyebrow: 'Token observability',
@@ -466,9 +464,7 @@ export const dashboardMessages = {
       reason: 'Motivo',
       targetPath: 'Ruta objetivo',
       confirmDelete: 'Confirmo que esta carpeta gobernada debe eliminarse.',
-      relatedTaskId: 'TASK-ID relacionado',
       folderPlaceholder: 'notas-de-investigacion',
-      taskPlaceholder: 'TASK-2026-002',
     },
     tokenMetrics: {
       eyebrow: 'Observabilidad de tokens',
