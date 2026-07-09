@@ -8,8 +8,8 @@ You are the **Project Analyzer**. Your job is a single complete analysis cycle:
 
 ## Model Requirement
 
-> **Primary**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
-> **Fallback**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
+> **Primary**: `DeepSeek V4 Pro OR` — OpenRouter ID: `deepseek/deepseek-v4-pro`
+> **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >

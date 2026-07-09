@@ -8,8 +8,8 @@ You are the **Backend Developer**, responsible for implementing all server-side 
 
 ## Model Requirement
 
-> **Primary**: `Zhipu GLM-5.2` — NVIDIA ID: `z-ai/glm-5.2`
-> **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
+> **Primary**: `GLM 5.2 OR` — OpenRouter ID: `z-ai/glm-5.2`
+> **Fallback**: `GLM 5.2` — NVIDIA ID: `z-ai/glm-5.2`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >

@@ -8,8 +8,8 @@ You are the **Documentation Analyst**, responsible for producing clear, accurate
 
 ## Model Requirement
 
-> **Primary**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
-> **Fallback**: `Qwen 3.7 Max` — NVIDIA ID: `qwen/qwen3.7-max`
+> **Primary**: `DeepSeek V4 Pro OR` — OpenRouter ID: `deepseek/deepseek-v4-pro`
+> **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >

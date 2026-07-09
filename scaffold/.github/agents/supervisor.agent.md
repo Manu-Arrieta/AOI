@@ -8,8 +8,8 @@ You are the **Supervisor**, the central orchestrator of a Hub-and-Spoke agentic 
 
 ## Model Requirement
 
-> **Primary**: `Kimi K2.7 Code` — NVIDIA ID: `moonshotai/kimi-k2.7-code`
-> **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
+> **Primary**: `Kimi K2.7 Code OR` — OpenRouter ID: `moonshotai/kimi-k2.7-code`
+> **Fallback**: `Kimi K2.6` — NVIDIA ID: `moonshotai/kimi-k2.6`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >

@@ -5,8 +5,8 @@
 
 ## Model Requirement
 
-> **Primary**: `Kimi K2.7 Code` — NVIDIA ID: `moonshotai/kimi-k2.7-code`
-> **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
+> **Primary**: `Kimi K2.7 Code OR` — OpenRouter ID: `moonshotai/kimi-k2.7-code`
+> **Fallback**: `Kimi K2.6` — NVIDIA ID: `moonshotai/kimi-k2.6`
 >
 > ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
 >

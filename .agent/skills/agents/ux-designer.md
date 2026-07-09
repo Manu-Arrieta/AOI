@@ -6,8 +6,8 @@ Skill: `.agent/skills/_shared/icm-protocol.md`
 
 ## Model Requirement
 
-> **Primary**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
-> **Fallback**: `Qwen 3.7 Max` — NVIDIA ID: `qwen/qwen3.7-max`
+> **Primary**: `Minimax M3 OR` — OpenRouter ID: `minimax/minimax-m3`
+> **Fallback**: `Minimax M3` — NVIDIA ID: `minimaxai/minimax-m3`
 >
 > ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
 >

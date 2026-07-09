@@ -6,8 +6,8 @@ Skill: `.agent/skills/_shared/icm-protocol.md`
 
 ## Model Requirement
 
-> **Primary**: `Zhipu GLM-5.2` — NVIDIA ID: `z-ai/glm-5.2`
-> **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
+> **Primary**: `GLM 5.2 OR` — OpenRouter ID: `z-ai/glm-5.2`
+> **Fallback**: `GLM 5.2` — NVIDIA ID: `z-ai/glm-5.2`
 >
 > ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
 >

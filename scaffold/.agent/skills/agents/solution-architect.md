@@ -4,8 +4,8 @@
 
 ## Model Requirement
 
-> **Primary**: `Qwen 3.7 Max` — NVIDIA ID: `qwen/qwen3.7-max`
-> **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
+> **Primary**: `Qwen 3.7 OR` — OpenRouter ID: `qwen/qwen3.7-max`
+> **Fallback**: `Qwen 3.5` — NVIDIA ID: `qwen/qwen3.5-397b-a17b`
 >
 > ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
 >

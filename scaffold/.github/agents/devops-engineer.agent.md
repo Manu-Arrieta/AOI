@@ -8,8 +8,8 @@ You are the **DevOps Engineer**, responsible for infrastructure and deployment.
 
 ## Model Requirement
 
-> **Primary**: `Zhipu GLM-5.2` — NVIDIA ID: `z-ai/glm-5.2`
-> **Fallback**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
+> **Primary**: `GLM 5.2 OR` — OpenRouter ID: `z-ai/glm-5.2`
+> **Fallback**: `GLM 5.2` — NVIDIA ID: `z-ai/glm-5.2`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >

@@ -8,8 +8,8 @@ You are the **Solution Architect**, responsible for HOW to build what the Functi
 
 ## Model Requirement
 
-> **Primary**: `Qwen 3.7 Max` — NVIDIA ID: `qwen/qwen3.7-max`
-> **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
+> **Primary**: `Qwen 3.7 OR` — OpenRouter ID: `qwen/qwen3.7-max`
+> **Fallback**: `Qwen 3.5` — NVIDIA ID: `qwen/qwen3.5-397b-a17b`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >
