@@ -35,6 +35,22 @@ icm health                                # topic hygiene audit
 icm topics                                # list all topics
 ```
 
+### MCP Tool Activation
+
+At the start of every session, ensure the following MCP tool groups are ENABLED:
+
+```
+activate_knowledge_graph_management_tools   # ICM memoir_*, memory_extract_patterns, learn
+activate_long_term_memory_management_tools  # ICM memory_*, feedback_* (if available)
+activate_project_management_tools           # codebase-memory index/status
+activate_feedback_management_tools          # ICM feedback_record/search/stats
+activate_transcript_management_tools        # ICM transcript_start/record/search/show
+activate_memory_consolidation_tools         # ICM memory_consolidate, memory_forget_topic
+activate_code_analysis_and_search_tools     # codebase-memory search_graph/code/trace_path/query_graph
+```
+
+Without this activation, the `memoir_*`, `memory_*`, `codebase-memo_*` tools will appear "disabled". Activate them BEFORE calling any ICM or codebase operation.
+
 <!-- icm:end -->
 
 <!-- headroom:start -->

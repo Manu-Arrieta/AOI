@@ -35,6 +35,22 @@ Use all four throughout SDD phases. Use `icm` for CLI fallback.
 
 Auto-extraction hooks handle automatic recall/extraction. You STILL must explicitly store decisions, architecture, and phase completions.
 
+### MCP Tool Activation (Antigravity)
+
+At the start of every session, ensure these MCP tool groups are ENABLED:
+
+```
+activate_knowledge_graph_management_tools   # ICM memoir_*, memory_extract_patterns, learn
+activate_long_term_memory_management_tools  # ICM memory_*, feedback_*
+activate_project_management_tools           # codebase-memory index/status
+activate_feedback_management_tools          # ICM feedback_record/search/stats
+activate_transcript_management_tools        # ICM transcript_start/record/search/show
+activate_memory_consolidation_tools         # ICM memory_consolidate, memory_forget_topic
+activate_code_analysis_and_search_tools     # codebase-memory search_graph/code/trace_path/query_graph
+```
+
+Without this activation, the `memoir_*`, `memory_*`, `codebase-memo_*` tools will appear "disabled". Activate them BEFORE any ICM or codebase operation.
+
 ## Workspace Detection
 
 ```bash

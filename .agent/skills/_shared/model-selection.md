@@ -6,21 +6,41 @@ Para garantizar la mayor eficiencia y capacidad resolutiva de la infraestructura
 
 ## 1. Agentes de Razonamiento Abstracto
 
-Para tareas que requieren pensamiento profundo, planificación, arquitectura, toma de decisiones o análisis complejo funcional (e.g. `supervisor`, `solution-architect`, `functional-analyst`, `triage-specialist`, `resource-analyst`, UX/Design):
+Para tareas de pensamiento profundo, planificación, arquitectura, toma de decisiones o análisis complejo funcional (e.g. `supervisor`, `solution-architect`, `functional-analyst`, `triage-specialist`, `resource-analyst`, `integration-specialist`, `documentation-analyst`, `project-analyzer`, `project-expert`, UX/Design):
 
-- **Modelo por defecto:** `DeepSeek V4 Pro` (raíz) / `Qwen 3.7 Max` (Antigravity)
-
-> Ver §4 de `.github/instructions/model-selection.instructions.md` para el catálogo NVIDIA customendpoint. Cuando se asignen modelos NVIDIA al agente desde el picker del operador, esta regla queda reemplazada por la asignación documentada en el bloque `## Model Requirement` del agente específico (en `.github/agents/*.agent.md` y su mirror `.agent/skills/agents/*.md`).
+- **Modelo por defecto:** `DeepSeek V4 Pro`
 
 ## 2. Agentes de Implementación
 
-Para tareas que requieren escribir código, ejecutar comandos en terminal, implementar lógica de negocio, configuración estricta, refactorización (e.g. `frontend-developer`, `backend-developer`, `devops-engineer`, `integration-specialist`):
+Para tareas de escritura de código, ejecución de comandos, implementación de lógica de negocio, configuración estricta, refactorización (e.g. `frontend-developer`, `backend-developer`, `devops-engineer`):
 
 - **Modelo por defecto:** `GLM-5.2`
 
-> Misma regla de preeminencia: si el operador eligió un NVIDIA customendpoint en el picker, esa selección prima sobre el default declarado arriba.
+## 3. Regla de Preeminencia (CRÍTICA)
 
-## 3. Fallback (Contingencia)
+> Cuando un agente declara un bloque `## Model Requirement` en su archivo `.agent.md` (Copilot) o `.agent/skills/agents/*.md` (Antigravity), la asignación documentada en ese bloque **reemplaza** el default genérico de las categorías §1 y §2. Si el bloque `## Model Requirement` del agente especifica un `Primary` + `Fallback`, esa jerarquía es la fuente de verdad para ESE agente.
+>
+> **El operador DEBE seleccionar el modelo `Primary` en el picker de la plataforma antes de invocar al agente.** Los modelos custom no se asignan automáticamente via frontmatter ni via parámetros de `runSubagent`. Si el `Primary` no está disponible, el operador DEBE elegir el `Fallback` manualmente.
+
+## 4. Asignación por Agente (tabla canónica)
+
+| Agente | Primary | OpenRouter ID | Fallback | NVIDIA ID | Categoría |
+|---|---|---|---|---|---|
+| `supervisor` | `Kimi K2.7 Code OR` | `moonshotai/kimi-k2.7-code` | `Kimi K2.6` | `moonshotai/kimi-k2.6` | Razonamiento |
+| `solution-architect` | `Qwen 3.7 OR` | `qwen/qwen3.7-max` | `Qwen 3.5` | `qwen/qwen3.5-397b-a17b` | Razonamiento |
+| `functional-analyst` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
+| `triage-specialist` | `Qwen 3.7 OR` | `qwen/qwen3.7-max` | `Qwen 3.5` | `qwen/qwen3.5-397b-a17b` | Razonamiento |
+| `integration-specialist` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
+| `documentation-analyst` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
+| `project-analyzer` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
+| `project-expert` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
+| `resource-analyst` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
+| `ux-designer` | `Minimax M3 OR` | `minimax/minimax-m3` | `Minimax M3` | `minimaxai/minimax-m3` | Razonamiento |
+| `frontend-developer` | `GLM 5.2 OR` | `z-ai/glm-5.2` | `GLM 5.2` | `z-ai/glm-5.2` | Implementación |
+| `backend-developer` | `GLM 5.2 OR` | `z-ai/glm-5.2` | `GLM 5.2` | `z-ai/glm-5.2` | Implementación |
+| `devops-engineer` | `GLM 5.2 OR` | `z-ai/glm-5.2` | `GLM 5.2` | `z-ai/glm-5.2` | Implementación |
+
+## 5. Fallback (Contingencia)
 
 Si el modelo designado para el perfil del agente **no se encuentra disponible** o la plataforma no permite su acceso instantáneo:
 
@@ -30,53 +50,9 @@ Si el modelo designado para el perfil del agente **no se encuentra disponible** 
 
 > Esta regla aplica incluso cuando existe un jerarquía de `Primary` + `Fallback` configurada para el agente: AOI **nunca** elige un modelo alternativo por cuenta propia. La jerarquía de respaldo sólo describe un orden sugerido para la decisión humana.
 
-## 4. Modelos Externos Recomendados (Espejo del capítulo raíz)
+## 6. Mirror Obligatorio (Dual-Sync)
 
-Este capítulo espeja el §4 de `.github/instructions/model-selection.instructions.md` (raíz Copilot). El catálogo NVIDIA completo, la tabla de asignación por agente, la distribución y la regla de selección manual del operador viven allí. Este archivo Antigravity **no redefine** el catálogo — sólo lo referencia para mantener paridad.
-
-### Asignación por Agente (Mirror — actualizado Julio 2026)
-
-> 📊 **Fuente**: Benchmark interno 7 modelos × 3 tests SDD — Julio 2026.
-
-| Agente                    | Modelo Primario     | Modelo de Respaldo |
-| :------------------------ | :------------------ | :----------------- |
-| `@supervisor`             | **GLM 5.2**         | Kimi K2.7 Code          |
-| `@functional-analyst`     | **Qwen 3.7 Max**        | GLM 5.2            |
-| `@solution-architect`     | **DeepSeek V4 Pro** | Qwen 3.7 Max           |
-| `@frontend-developer`     | **GLM 5.2**         | Qwen 3.7 Max           |
-| `@backend-developer`      | **DeepSeek V4 Pro** | Qwen 3.7 Max           |
-| `@devops-engineer`        | **GLM 5.2**         | DeepSeek V4 Pro    |
-| `@ux-designer`            | **Qwen 3.7 Max**        | GLM 5.2            |
-| `@integration-specialist` | **DeepSeek V4 Pro** | GLM 5.2            |
-| `@documentation-analyst`  | **GLM 5.2**         | Qwen 3.7 Max           |
-| `@triage-specialist`      | **DeepSeek V4 Pro** | Kimi K2.7 Code          |
-| `@resource-analyst`       | **GLM 5.2**         | Qwen 3.7 Max           |
-| `@project-analyzer`       | **DeepSeek V4 Pro** | Qwen 3.7 Max           |
-| `@project-expert`         | **GLM 5.2**         | DeepSeek V4 Pro    |
-
-### Modelos Descartados
-
-| Modelo | Razón |
-| :----- | :---- |
-| Nemotron Ultra | ❌ Tool calling falla incluso con `tool_choice:"required"` |
-| DeepSeek V4 Flash | ❌ ResourceExhausted constante — re-test pendiente |
-
-### Regla de selección manual (CRÍTICA — refuerzo de la regla §3)
-
-> Cuando el operador seleccione un agente, **debe** abrir el picker de modelos y elegir el `Primary` configurado en el bloque `## Model Requirement` del agente. Si el `Primary` no está disponible, **debe** elegir el `Fallback`. **Si ambos están ausentes** o el operador no completa la selección antes de la invocación, se aplica la regla §3: detener y notificar.
-
-### Mirror Obligatorio
-
-> Toda asignación de agente declarada en el capítulo raíz debe espejarse en `.agent/skills/agents/*.md` (Antigravity) con un bloque `## Model Requirement` equivalente. El protocolo `dual-sync.instructions.md` aplica sin excepciones.
-
-
-### Nota de Riesgo — Qwen 3.7 Max (Propietario)
-
-> ⚠️ **Qwen 3.7 Max** es un modelo propietario cerrado de Alibaba Cloud. No permite self-hosting ni inspección de pesos.
-> Esto entra en tensión con el Principio II (Tool-Agnostic) de la constitución AOI.
->
-> **Mitigación**: Todos los agentes que usan Qwen 3.7 Max como Primary tienen `DeepSeek V4 Pro` (open-weight, MIT) como Fallback.
-> Si Alibaba cambia disponibilidad o pricing, el operador puede migrar inmediatamente a DeepSeek sin pérdida funcional significativa.
+> Este archivo es el mirror Antigravity de `.github/instructions/model-selection.instructions.md` (raíz Copilot). Ambos archivos deben mantenerse idénticos en su sección normativa y tabla de asignación. El protocolo `dual-sync.instructions.md` aplica sin excepciones.
 
 ## 5. Customendpoint NVIDIA — Setup opcional (espejo del §5 raíz)
 
