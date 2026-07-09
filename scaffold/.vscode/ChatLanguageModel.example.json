@@ -11,10 +11,15 @@
         "url": "https://openrouter.ai/api/v1",
         "toolCalling": true,
         "streaming": true,
+        "vision": false,
         "thinking": true,
-        "vision": true,
-        "maxInputTokens": 1000000,
-        "maxOutputTokens": 16384
+        "supportsReasoningEffort": [
+          "high",
+          "xhigh"
+        ],
+        "reasoningEffortFormat": "responses",
+        "maxInputTokens": 1048576,
+        "maxOutputTokens": 131072
       },
       {
         "id": "deepseek/deepseek-v4-pro",
@@ -22,21 +27,27 @@
         "url": "https://openrouter.ai/api/v1",
         "toolCalling": true,
         "streaming": true,
+        "vision": false,
         "thinking": true,
-        "vision": true,
+        "supportsReasoningEffort": [
+          "high",
+          "xhigh"
+        ],
+        "reasoningEffortFormat": "responses",
         "maxInputTokens": 1000000,
-        "maxOutputTokens": 16384
+        "maxOutputTokens": 384000
       },
       {
         "id": "qwen/qwen3.7-max",
-        "name": "Qwen 3.7 OR",
+        "name": "Qwen 3.7 Max OR",
         "url": "https://openrouter.ai/api/v1",
         "toolCalling": true,
         "streaming": true,
+        "vision": false,
         "thinking": true,
-        "vision": true,
-        "maxInputTokens": 128000,
-        "maxOutputTokens": 16384
+        "reasoningEffortFormat": "responses",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 32768
       },
       {
         "id": "moonshotai/kimi-k2.7-code",
@@ -44,10 +55,11 @@
         "url": "https://openrouter.ai/api/v1",
         "toolCalling": true,
         "streaming": true,
-        "thinking": true,
         "vision": true,
-        "maxInputTokens": 256000,
-        "maxOutputTokens": 16384
+        "thinking": true,
+        "reasoningEffortFormat": "responses",
+        "maxInputTokens": 262144,
+        "maxOutputTokens": 32768
       },
       {
         "id": "minimax/minimax-m3",
@@ -55,10 +67,11 @@
         "url": "https://openrouter.ai/api/v1",
         "toolCalling": true,
         "streaming": true,
-        "thinking": true,
         "vision": true,
-        "maxInputTokens": 1000000,
-        "maxOutputTokens": 16384           
+        "thinking": true,
+        "reasoningEffortFormat": "responses",
+        "maxInputTokens": 1048576,
+        "maxOutputTokens": 512000
       }
     ]
   },
