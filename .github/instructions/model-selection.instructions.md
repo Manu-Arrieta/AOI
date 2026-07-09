@@ -24,21 +24,23 @@ Si el modelo designado para el perfil del agente **no se encuentra disponible** 
 2. **Notificar de inmediato al usuario** sobre la indisponibilidad del modelo.
 3. No hacer una elección en su lugar. **Dejar al libre albedrío y decisión del usuario** indicar el modelo secundario a utilizar o cómo proceder.
 
-## 4. Modelos Externos Recomendados (NVIDIA — Copilot Picker)
+## 4. Modelos Externos Recomendados (OpenRouter + NVIDIA)
 
-Para escenarios donde se requiere capacidad técnica especializada (código agéntico, razonamiento STEM denso, multimodalidad, Agent Swarm), se configuran custom endpoints NVIDIA disponibles en el picker de VS Code Copilot. **Ninguna regla de los apartados 1–3 queda invalidada** por este anexo: la selección sigue siendo decisión del operador.
+Para escenarios donde se requiere capacidad técnica especializada (código agéntico, razonamiento STEM denso, multimodalidad, Agent Swarm), se configuran custom endpoints duales (OpenRouter como primario, NVIDIA como fallback) disponibles en el picker de VS Code Copilot. **Ninguna regla de los apartados 1–3 queda invalidada** por este anexo: la selección sigue siendo decisión del operador.
 
 > ⚠️ **Limitación Copilot**: El campo `model:` en el frontmatter de `.agent.md` solo resuelve modelos del vendor `copilot`. Los IDs NVIDIA listados abajo son `customendpoint` y **NO** se asignan automáticamente — el operador debe seleccionarlos manualmente en el picker antes de invocar al agente.
 
 ### Modelos Disponibles
 
-| Modelo          | ID NVIDIA                     | Contexto | Output Max | Fortaleza                                         | Benchmark |
+> ⚡ **Estrategia Dual-Provider**: OpenRouter provee acceso a las versiones más recientes y potentes (ej. Qwen 3.7, Kimi K2.7). NVIDIA actúa como red de seguridad (fallback) con acceso gratuito/incluido a versiones estables (ej. Qwen 3.5, Kimi K2.6) si OpenRouter se queda sin saldo o experimenta downtime.
+
+| Modelo          | ID OpenRouter / NVIDIA        | Contexto | Output Max | Fortaleza                                         | Benchmark |
 | :-------------- | :---------------------------- | :------- | :--------- | :------------------------------------------------ | :-------- |
 | GLM 5.2         | `z-ai/glm-5.2`                | 1M       | 131,072    | Terminal-Bench 81.0, SWE-Bench Pro 62.1% — récord open-weight | ⭐ Líder código |
-| DeepSeek V4 Pro | `deepseek-ai/deepseek-v4-pro` | 1M       | 384,000    | 49B activos, SWE-Bench Verified 80.6% — razonamiento STEM | ✅ Líder análisis |
+| DeepSeek V4 Pro | `deepseek/deepseek-v4-pro` (OR) | 1M       | 384,000    | 49B activos, SWE-Bench Verified 80.6% — razonamiento STEM | ✅ Líder análisis |
 | Qwen 3.7 Max    | `qwen/qwen3.7-max`            | 1M       | 65,536     | Extended Thinking nativo, GPQA Diamond 92.4% — agent-first | ✅ Líder razonamiento |
 | Kimi K2.7 Code  | `moonshotai/kimi-k2.7-code`   | 256K     | 16,384     | Agent Swarm nativo, 30% menos tokens vs K2.6, MoonViT multimodal | ✅ Líder orquestación |
-| MiniMax M3      | `minimaxai/minimax-m3`        | 1M       | 8,192      | Visión multimodal nativa (imagen+video), BrowseComp 83.5 | ✅ Líder UX/visual |
+| MiniMax M3      | `minimax/minimax-m3`          | 1M       | 8,192      | Visión multimodal nativa (imagen+video), BrowseComp 83.5 | ✅ Líder UX/visual |
 
 > 📊 **Fuente**: Benchmark interno 7 modelos × 3 tests AOI SDD (Functional Analyst, Backend Developer, Triage Specialist) — Julio 2026. Ver `.exportsmemories/` o `/Users/equinox/Desktop/nvidia-bench/reports/`.
 
@@ -87,14 +89,15 @@ Esta jerarquía NO automatiza la selección: el AOI nunca elige modelo por cuent
 
 > Toda asignación de agente declarada en este capítulo debe espejarse en `.agent/skills/agents/*.md` (Antigravity) con un bloque `## Model Requirement` equivalente. El protocolo `dual-sync.instructions.md` aplica sin excepciones.
 
-## 5. Configuración del customendpoint NVIDIA (paso previo, opcional)
+## 5. Configuración Dual OpenRouter + NVIDIA (paso previo, opcional)
 
-> ⚠️ **Si NO se configura**, AOI sigue funcionando con los defaults vendor-copilot declarados en §1–§2 (`DeepSeek V4 Pro` y `GLM-5.2` en raíz). El catálogo del §4 simplemente no se activa. Esta sección habilita el catálogo cuando el operador quiere usar los modelos especializados.
+> ⚠️ **Si NO se configura**, AOI sigue funcionando con los defaults vendor-copilot declarados en §1–§2 (`DeepSeek V4 Pro` y `GLM-5.2` en raíz). El catálogo del §4 simplemente no se activa. Esta sección habilita el catálogo dual cuando el operador quiere usar los modelos especializados.
 
 ### 5.1 Prerrequisitos
 
-1. **API key NVIDIA** activa — registrarla en `https://integrate.api.nvidia.com/`.
-2. **VS Code** corriendo, con permisos de escritura sobre su `User/` dir.
+1. **API key OpenRouter** activa — registrarla en `https://openrouter.ai/keys`.
+2. **API key NVIDIA** activa — registrarla en `https://integrate.api.nvidia.com/`.
+3. **VS Code** corriendo, con permisos de escritura sobre su `User/` dir.
 
 ### 5.2 Ubicaciones del VS Code User dir
 
@@ -113,10 +116,73 @@ VS Code espera un **array JSON** con un único vendor `customendpoint`:
 ```json
 [
   {
+    "name": "OpenRouter",
+    "vendor": "customendpoint",
+    "apiKey": "${input:chat.lm.secret.-5cf42978}",
+    "apiType": "chat-completions",
+    "models": [
+      {
+        "id": "z-ai/glm-5.2",
+        "name": "GLM 5.2 OR",
+        "url": "https://openrouter.ai/api/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 16384
+      },
+      {
+        "id": "deepseek/deepseek-v4-pro",
+        "name": "DeepSeek V4 Pro OR",
+        "url": "https://openrouter.ai/api/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 16384
+      },
+      {
+        "id": "qwen/qwen3.7-max",
+        "name": "Qwen 3.7 OR",
+        "url": "https://openrouter.ai/api/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 128000,
+        "maxOutputTokens": 16384
+      },
+      {
+        "id": "moonshotai/kimi-k2.7-code",
+        "name": "Kimi K2.7 Code OR",
+        "url": "https://openrouter.ai/api/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 256000,
+        "maxOutputTokens": 16384
+      },
+      {
+        "id": "minimax/minimax-m3",
+        "name": "Minimax M3 OR",
+        "url": "https://openrouter.ai/api/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 16384           
+      }
+    ]
+  },
+  {
     "name": "NVIDIA",
     "vendor": "customendpoint",
+    "apiKey": "${input:chat.lm.secret.46ff130f}",
     "apiType": "chat-completions",
-    "apiKey": "TU-API-KEY-NVIDIA-AQUÍ",
     "models": [
       {
         "id": "z-ai/glm-5.2",
@@ -124,7 +190,7 @@ VS Code espera un **array JSON** con un único vendor `customendpoint`:
         "url": "https://integrate.api.nvidia.com/v1",
         "toolCalling": true,
         "streaming": true,
-        "thinking": false,
+        "thinking": true,
         "vision": true,
         "maxInputTokens": 1000000,
         "maxOutputTokens": 16384
@@ -141,19 +207,19 @@ VS Code espera un **array JSON** con un único vendor `customendpoint`:
         "maxOutputTokens": 16384
       },
       {
-        "id": "qwen/qwen3.7-max",
-        "name": "Qwen 3.7 Max",
+        "id": "qwen/qwen3.5-397b-a17b",
+        "name": "Qwen 3.5",
         "url": "https://integrate.api.nvidia.com/v1",
         "toolCalling": true,
         "streaming": true,
         "thinking": true,
         "vision": true,
-        "maxInputTokens": 1000000,
-        "maxOutputTokens": 65536
+        "maxInputTokens": 128000,
+        "maxOutputTokens": 16384
       },
       {
-        "id": "moonshotai/kimi-k2.7-code",
-        "name": "Kimi K2.7 Code",
+        "id": "moonshotai/kimi-k2.6",
+        "name": "Kimi K2.6",
         "url": "https://integrate.api.nvidia.com/v1",
         "toolCalling": true,
         "streaming": true,
@@ -164,14 +230,14 @@ VS Code espera un **array JSON** con un único vendor `customendpoint`:
       },
       {
         "id": "minimaxai/minimax-m3",
-        "name": "MiniMax M3",
+        "name": "Minimax M3",
         "url": "https://integrate.api.nvidia.com/v1",
         "toolCalling": true,
         "streaming": true,
         "thinking": true,
         "vision": true,
         "maxInputTokens": 1000000,
-        "maxOutputTokens": 8192
+        "maxOutputTokens": 16384
       }
     ]
   }

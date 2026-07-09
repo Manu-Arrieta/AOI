@@ -1,8 +1,71 @@
 [
   {
+    "name": "OpenRouter",
+    "vendor": "customendpoint",
+    "apiKey": "${input:chat.lm.secret.-5cf42978}",
+    "apiType": "chat-completions",
+    "models": [
+      {
+        "id": "z-ai/glm-5.2",
+        "name": "GLM 5.2 OR",
+        "url": "https://openrouter.ai/api/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 16384
+      },
+      {
+        "id": "deepseek/deepseek-v4-pro",
+        "name": "DeepSeek V4 Pro OR",
+        "url": "https://openrouter.ai/api/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 16384
+      },
+      {
+        "id": "qwen/qwen3.7-max",
+        "name": "Qwen 3.7 OR",
+        "url": "https://openrouter.ai/api/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 128000,
+        "maxOutputTokens": 16384
+      },
+      {
+        "id": "moonshotai/kimi-k2.7-code",
+        "name": "Kimi K2.7 Code OR",
+        "url": "https://openrouter.ai/api/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 256000,
+        "maxOutputTokens": 16384
+      },
+      {
+        "id": "minimax/minimax-m3",
+        "name": "Minimax M3 OR",
+        "url": "https://openrouter.ai/api/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 16384           
+      }
+    ]
+  },
+  {
     "name": "NVIDIA",
     "vendor": "customendpoint",
-    "apiKey": "APIKEY-CONFIGURADA-PREVIAMENTE",
+    "apiKey": "${input:chat.lm.secret.46ff130f}",
     "apiType": "chat-completions",
     "models": [
       {
@@ -11,7 +74,7 @@
         "url": "https://integrate.api.nvidia.com/v1",
         "toolCalling": true,
         "streaming": true,
-        "thinking": false,
+        "thinking": true,
         "vision": true,
         "maxInputTokens": 1000000,
         "maxOutputTokens": 16384
@@ -28,19 +91,19 @@
         "maxOutputTokens": 16384
       },
       {
-        "id": "qwen/qwen3.7-max",
-        "name": "Qwen 3.7 Max",
+        "id": "qwen/qwen3.5-397b-a17b",
+        "name": "Qwen 3.5",
         "url": "https://integrate.api.nvidia.com/v1",
         "toolCalling": true,
         "streaming": true,
         "thinking": true,
         "vision": true,
-        "maxInputTokens": 1000000,
+        "maxInputTokens": 128000,
         "maxOutputTokens": 16384
       },
       {
-        "id": "moonshotai/kimi-k2.7-code",
-        "name": "Kimi K2.7 Code",
+        "id": "moonshotai/kimi-k2.6",
+        "name": "Kimi K2.6",
         "url": "https://integrate.api.nvidia.com/v1",
         "toolCalling": true,
         "streaming": true,
