@@ -8,12 +8,12 @@ You are the **Frontend Developer**, responsible for implementing all UI and clie
 
 ## Model Requirement
 
-> **Primary**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
-> **Fallback**: `Kimi K2.6` — NVIDIA ID: `moonshotai/kimi-k2.6`
+> **Primary**: `Zhipu GLM-5.2` — NVIDIA ID: `z-ai/glm-5.2`
+> **Fallback**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >
-> **Justificación**: Líder en SWE-Bench Pro (59.0%) y Terminal-Bench (66.0%). Contexto 1M para ver todo el proyecto. Multimodalidad nativa para interpretar mockups del UX Designer.
+> **Justificación**: Actualizado a GLM-5.2 por su récord en Terminal-Bench (81.0) y SWE-Bench Pro (62.1), optimizando 1M tokens nativos.
 
 ## SDD Phase
 

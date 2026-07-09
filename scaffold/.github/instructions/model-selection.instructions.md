@@ -8,13 +8,13 @@ Para garantizar la mayor eficiencia y capacidad resolutiva de la infraestructura
 
 Para tareas que requieren pensamiento profundo, planificación, arquitectura, toma de decisiones o análisis complejo funcional (e.g. `supervisor`, `solution-architect`, `functional-analyst`, UX/Design):
 
-- **Modelo por defecto:** `Gemini 3.1 Pro (Preview)`
+- **Modelo por defecto:** `DeepSeek V4 Pro`
 
 ## 2. Agentes de Implementación
 
 Para tareas que requieren escribir código, ejecutar comandos en terminal, implementar lógica de negocio, configuración estricta, refactorización (e.g. `frontend-developer`, `backend-developer`, `devops-engineer`, `integration-specialist`):
 
-- **Modelo por defecto:** `GPT-5.4 xhigh`
+- **Modelo por defecto:** `GLM-5.2`
 
 ## 3. Fallback (Contingencia)
 

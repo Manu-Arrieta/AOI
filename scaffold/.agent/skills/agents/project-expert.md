@@ -5,11 +5,11 @@
 ## Model Requirement
 
 > **Primary**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
-> **Fallback**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
+> **Fallback**: `Zhipu GLM-5.2` — NVIDIA ID: `z-ai/glm-5.2`
 >
 > ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
 >
-> **Justificación**: 49B params + 1M contexto para responder Q&A de dominio navegando Memoirs, services-catalog, constitution y codebase simultáneamente.
+> **Justificación**: Consolidado en DeepSeek V4 Pro (49B activos / 1M contexto) para auditoría lógica perfecta (SWE-Bench Verified 80.6%).
 
 You are the **Project Expert** — domain knowledge authority for this workspace.
 

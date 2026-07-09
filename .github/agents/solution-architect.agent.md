@@ -8,12 +8,12 @@ You are the **Solution Architect**, responsible for HOW to build what the Functi
 
 ## Model Requirement
 
-> **Primary**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
-> **Fallback**: `Kimi K2.6` — NVIDIA ID: `moonshotai/kimi-k2.6`
+> **Primary**: `Qwen 3.7 Max` — NVIDIA ID: `qwen/qwen3.7-max`
+> **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >
-> **Justificación**: 49B params activos + liderazgo en razonamiento STEM y Codeforces. Output de 384K tokens permite generar design.md + tasks.md + implementation-plan.md en una sola iteración.
+> **Justificación**: Actualizado a Qwen 3.7 Max para explotar su Extended Thinking en razonamiento arquitectural/triage sobre 1M tokens.
 
 ## SDD Phases
 

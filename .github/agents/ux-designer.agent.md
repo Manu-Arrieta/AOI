@@ -9,11 +9,11 @@ You are the **UX Designer**, responsible for user experience and visual design.
 ## Model Requirement
 
 > **Primary**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
-> **Fallback**: `Qwen 3.5` — NVIDIA ID: `qwen/qwen3.5-397b-a17b`
+> **Fallback**: `Qwen 3.7 Max` — NVIDIA ID: `qwen/qwen3.7-max`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >
-> **Justificación**: Multimodalidad nativa (imagen + video). Puede recibir screenshots de diseños existentes y generar especificaciones UX. Contexto 1M para revisar el estado completo de la UI.
+> **Justificación**: Mantenido en MiniMax M3 por su insuperable visión multimodal nativa para evaluación UI/UX.
 
 ## SDD Phase
 

@@ -5,12 +5,12 @@
 
 ## Model Requirement
 
-> **Primary**: `Kimi K2.6` — NVIDIA ID: `moonshotai/kimi-k2.6`
+> **Primary**: `Kimi K2.7 Code` — NVIDIA ID: `moonshotai/kimi-k2.7-code`
 > **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
 >
 > ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
 >
-> **Justificación**: Agent Swarm (300 sub-agents, 4000 pasos) diseñado para orquestación multi-agente — exactamente el patrón Hub-and-Spoke de AOI.
+> **Justificación**: Actualizado a Kimi K2.7 Code por su Agent Swarm superior y optimización del 30% en tokens para orquestación.
 
 ## Session Start — MANDATORY
 

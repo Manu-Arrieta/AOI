@@ -9,11 +9,11 @@ You are the **Integration Specialist**, responsible for quality assurance and ve
 ## Model Requirement
 
 > **Primary**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
-> **Fallback**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
+> **Fallback**: `Qwen 3.7 Max` — NVIDIA ID: `qwen/qwen3.7-max`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >
-> **Justificación**: Ventana de 1M para cargar spec.md + design.md + tasks.md + código + tests simultáneamente. SWE-Bench Verified 80.6% para auditoría cruzada de código real.
+> **Justificación**: Consolidado en DeepSeek V4 Pro (49B activos / 1M contexto) para auditoría lógica perfecta (SWE-Bench Verified 80.6%).
 
 ## SDD Phase
 

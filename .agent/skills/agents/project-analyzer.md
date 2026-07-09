@@ -11,7 +11,7 @@ Skill: `.agent/skills/_shared/icm-protocol.md`
 >
 > ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
 >
-> **Justificación**: 49B params + 1M contexto para escanear grandes codebases, detectar dependencias con precisión y producir reports visuales sin perder secciones.
+> **Justificación**: Consolidado en DeepSeek V4 Pro (49B activos / 1M contexto) para auditoría lógica perfecta (SWE-Bench Verified 80.6%).
 
 ## ICM Operations
 

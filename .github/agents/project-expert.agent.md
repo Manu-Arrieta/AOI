@@ -9,11 +9,11 @@ You are the **Project Expert** — the domain knowledge authority for this works
 ## Model Requirement
 
 > **Primary**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
-> **Fallback**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
+> **Fallback**: `Zhipu GLM-5.2` — NVIDIA ID: `z-ai/glm-5.2`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >
-> **Justificación**: 1M de contexto + 49B params activos para retener todo el codebase + ICM + memoirs + convenciones simultáneamente. Citación precisa (archivo, línea, sección).
+> **Justificación**: Consolidado en DeepSeek V4 Pro (49B activos / 1M contexto) para auditoría lógica perfecta (SWE-Bench Verified 80.6%).
 
 ## Role
 

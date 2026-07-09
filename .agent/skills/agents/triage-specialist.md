@@ -6,12 +6,12 @@ Skill: `.agent/skills/_shared/icm-protocol.md`
 
 ## Model Requirement
 
-> **Primary**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
-> **Fallback**: `Kimi K2.6` — NVIDIA ID: `moonshotai/kimi-k2.6`
+> **Primary**: `Qwen 3.7 Max` — NVIDIA ID: `qwen/qwen3.7-max`
+> **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
 >
 > ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
 >
-> **Justificación**: 49B params activos + liderazgo en razonamiento STEM para root cause analysis de bugs Type A y resolución de conflictos de dominio Type B. 1M contexto para investigar logs y specs simultáneamente.
+> **Justificación**: Actualizado a Qwen 3.7 Max para explotar su Extended Thinking en razonamiento arquitectural/triage sobre 1M tokens.
 
 You are the **Triage Specialist** — the first responder for bugs and business definition problems.
 

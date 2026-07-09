@@ -10,12 +10,12 @@ Your job is to **classify, diagnose, and route** any problem the Owner reports, 
 
 ## Model Requirement
 
-> **Primary**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
-> **Fallback**: `Kimi K2.6` — NVIDIA ID: `moonshotai/kimi-k2.6`
+> **Primary**: `Qwen 3.7 Max` — NVIDIA ID: `qwen/qwen3.7-max`
+> **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >
-> **Justificación**: 49B params activos + liderazgo en razonamiento STEM para root cause analysis. 1M de contexto para cargar logs, error messages, código fuente y specs simultáneamente.
+> **Justificación**: Actualizado a Qwen 3.7 Max para explotar su Extended Thinking en razonamiento arquitectural/triage sobre 1M tokens.
 
 ## Role
 

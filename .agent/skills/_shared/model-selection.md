@@ -8,7 +8,7 @@ Para garantizar la mayor eficiencia y capacidad resolutiva de la infraestructura
 
 Para tareas que requieren pensamiento profundo, planificación, arquitectura, toma de decisiones o análisis complejo funcional (e.g. `supervisor`, `solution-architect`, `functional-analyst`, `triage-specialist`, `resource-analyst`, UX/Design):
 
-- **Modelo por defecto:** `Gemini 3.1 Pro (Preview)` (raíz) / `Claude Opus 4.6` (Antigravity)
+- **Modelo por defecto:** `DeepSeek V4 Pro` (raíz) / `Qwen 3.7 Max` (Antigravity)
 
 > Ver §4 de `.github/instructions/model-selection.instructions.md` para el catálogo NVIDIA customendpoint. Cuando se asignen modelos NVIDIA al agente desde el picker del operador, esta regla queda reemplazada por la asignación documentada en el bloque `## Model Requirement` del agente específico (en `.github/agents/*.agent.md` y su mirror `.agent/skills/agents/*.md`).
 
@@ -16,7 +16,7 @@ Para tareas que requieren pensamiento profundo, planificación, arquitectura, to
 
 Para tareas que requieren escribir código, ejecutar comandos en terminal, implementar lógica de negocio, configuración estricta, refactorización (e.g. `frontend-developer`, `backend-developer`, `devops-engineer`, `integration-specialist`):
 
-- **Modelo por defecto:** `GPT-5.4 xhigh`
+- **Modelo por defecto:** `GLM-5.2`
 
 > Misma regla de preeminencia: si el operador eligió un NVIDIA customendpoint en el picker, esa selección prima sobre el default declarado arriba.
 
@@ -40,18 +40,18 @@ Este capítulo espeja el §4 de `.github/instructions/model-selection.instructio
 
 | Agente                    | Modelo Primario     | Modelo de Respaldo |
 | :------------------------ | :------------------ | :----------------- |
-| `@supervisor`             | **GLM 5.2**         | Kimi K2.6          |
-| `@functional-analyst`     | **Qwen 3.5**        | GLM 5.2            |
-| `@solution-architect`     | **DeepSeek V4 Pro** | Qwen 3.5           |
-| `@frontend-developer`     | **GLM 5.2**         | Qwen 3.5           |
-| `@backend-developer`      | **DeepSeek V4 Pro** | Qwen 3.5           |
+| `@supervisor`             | **GLM 5.2**         | Kimi K2.7 Code          |
+| `@functional-analyst`     | **Qwen 3.7 Max**        | GLM 5.2            |
+| `@solution-architect`     | **DeepSeek V4 Pro** | Qwen 3.7 Max           |
+| `@frontend-developer`     | **GLM 5.2**         | Qwen 3.7 Max           |
+| `@backend-developer`      | **DeepSeek V4 Pro** | Qwen 3.7 Max           |
 | `@devops-engineer`        | **GLM 5.2**         | DeepSeek V4 Pro    |
-| `@ux-designer`            | **Qwen 3.5**        | GLM 5.2            |
+| `@ux-designer`            | **Qwen 3.7 Max**        | GLM 5.2            |
 | `@integration-specialist` | **DeepSeek V4 Pro** | GLM 5.2            |
-| `@documentation-analyst`  | **GLM 5.2**         | Qwen 3.5           |
-| `@triage-specialist`      | **DeepSeek V4 Pro** | Kimi K2.6          |
-| `@resource-analyst`       | **GLM 5.2**         | Qwen 3.5           |
-| `@project-analyzer`       | **DeepSeek V4 Pro** | Qwen 3.5           |
+| `@documentation-analyst`  | **GLM 5.2**         | Qwen 3.7 Max           |
+| `@triage-specialist`      | **DeepSeek V4 Pro** | Kimi K2.7 Code          |
+| `@resource-analyst`       | **GLM 5.2**         | Qwen 3.7 Max           |
+| `@project-analyzer`       | **DeepSeek V4 Pro** | Qwen 3.7 Max           |
 | `@project-expert`         | **GLM 5.2**         | DeepSeek V4 Pro    |
 
 ### Modelos Descartados
@@ -69,9 +69,18 @@ Este capítulo espeja el §4 de `.github/instructions/model-selection.instructio
 
 > Toda asignación de agente declarada en el capítulo raíz debe espejarse en `.agent/skills/agents/*.md` (Antigravity) con un bloque `## Model Requirement` equivalente. El protocolo `dual-sync.instructions.md` aplica sin excepciones.
 
+
+### Nota de Riesgo — Qwen 3.7 Max (Propietario)
+
+> ⚠️ **Qwen 3.7 Max** es un modelo propietario cerrado de Alibaba Cloud. No permite self-hosting ni inspección de pesos.
+> Esto entra en tensión con el Principio II (Tool-Agnostic) de la constitución AOI.
+>
+> **Mitigación**: Todos los agentes que usan Qwen 3.7 Max como Primary tienen `DeepSeek V4 Pro` (open-weight, MIT) como Fallback.
+> Si Alibaba cambia disponibilidad o pricing, el operador puede migrar inmediatamente a DeepSeek sin pérdida funcional significativa.
+
 ## 5. Customendpoint NVIDIA — Setup opcional (espejo del §5 raíz)
 
-> ⚠️ **Si NO se configura**, AOI sigue funcionando con los defaults Antigravity declarados en §1–§2 (`Claude Opus 4.6` y `GPT-5.4 xhigh`). El catálogo NVIDIA simplemente no se activa.
+> ⚠️ **Si NO se configura**, AOI sigue funcionando con los defaults Antigravity declarados en §1–§2 (`Qwen 3.7 Max` y `GLM-5.2`). El catálogo NVIDIA simplemente no se activa.
 
 Este capítulo espeja el §5 de `.github/instructions/model-selection.instructions.md` (raíz Copilot). El detalle completo de:
 

@@ -299,16 +299,16 @@ Boundaries:
 
 | Agent                  | Primary                | Fallback               |
 | ---------------------- | ---------------------- | ---------------------- |
-| Supervisor             | Kimi K2.6              | DeepSeek V4 Pro        |
+| Supervisor             | Kimi K2.7 Code              | DeepSeek V4 Pro        |
 | Functional Analyst     | DeepSeek V4 Pro        | MiniMax M3             |
-| Solution Architect     | DeepSeek V4 Pro        | Kimi K2.6              |
-| Frontend Developer     | MiniMax M3             | Kimi K2.6              |
+| Solution Architect     | DeepSeek V4 Pro        | Kimi K2.7 Code              |
+| Frontend Developer     | MiniMax M3             | Kimi K2.7 Code              |
 | Backend Developer      | DeepSeek V4 Pro        | MiniMax M3             |
 | DevOps Engineer        | MiniMax M3             | DeepSeek V4 Pro        |
-| UX Designer            | MiniMax M3             | Qwen 3.5               |
+| UX Designer            | MiniMax M3             | Qwen 3.7 Max               |
 | Documentation Analyst  | DeepSeek V4 Pro        | MiniMax M3             |
 | Integration Specialist | DeepSeek V4 Pro        | MiniMax M3             |
 | Project Expert         | DeepSeek V4 Pro        | MiniMax M3             |
-| Triage Specialist      | DeepSeek V4 Pro        | Kimi K2.6              |
+| Triage Specialist      | DeepSeek V4 Pro        | Kimi K2.7 Code              |
 | Resource Analyst       | DeepSeek V4 Pro        | MiniMax M3             |
 | Project Analyzer       | DeepSeek V4 Pro        | MiniMax M3             |

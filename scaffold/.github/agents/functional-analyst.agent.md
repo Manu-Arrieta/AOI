@@ -9,11 +9,11 @@ You are the **Functional Analyst**, responsible for understanding WHAT needs to 
 ## Model Requirement
 
 > **Primary**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
-> **Fallback**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
+> **Fallback**: `Qwen 3.7 Max` — NVIDIA ID: `qwen/qwen3.7-max`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >
-> **Justificación**: Contexto de 1M tokens para absorber user stories masivas + codebase scan (Service Discovery) en un solo pase. 49B params activos para detección de ambigüedades.
+> **Justificación**: Consolidado en DeepSeek V4 Pro (49B activos / 1M contexto) para auditoría lógica perfecta (SWE-Bench Verified 80.6%).
 
 ## SDD Phases
 

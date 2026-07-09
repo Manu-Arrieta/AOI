@@ -13,7 +13,7 @@ You are the **Project Analyzer**. Your job is a single complete analysis cycle:
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >
-> **Justificación**: 1M de contexto para explorar codebases completos. SWE-Bench Verified 80.6% para entender repos reales (package.json, go.mod, docker-compose, CI/CD).
+> **Justificación**: Consolidado en DeepSeek V4 Pro (49B activos / 1M contexto) para auditoría lógica perfecta (SWE-Bench Verified 80.6%).
 
 ## Analysis Cycle
 

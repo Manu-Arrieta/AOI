@@ -8,13 +8,13 @@ Para garantizar la mayor eficiencia y capacidad resolutiva de la infraestructura
 
 Para tareas que requieren pensamiento profundo, planificación, arquitectura, toma de decisiones o análisis complejo funcional (e.g. `supervisor`, `solution-architect`, `functional-analyst`, UX/Design):
 
-- **Modelo por defecto:** `Gemini 3.1 Pro (Preview)`
+- **Modelo por defecto:** `DeepSeek V4 Pro`
 
 ## 2. Agentes de Implementación
 
 Para tareas que requieren escribir código, ejecutar comandos en terminal, implementar lógica de negocio, configuración estricta, refactorización (e.g. `frontend-developer`, `backend-developer`, `devops-engineer`, `integration-specialist`):
 
-- **Modelo por defecto:** `GPT-5.4 xhigh`
+- **Modelo por defecto:** `GLM-5.2`
 
 ## 3. Fallback (Contingencia)
 
@@ -34,43 +34,41 @@ Para escenarios donde se requiere capacidad técnica especializada (código agé
 
 | Modelo          | ID NVIDIA                     | Contexto | Output Max | Fortaleza                                         | Benchmark |
 | :-------------- | :---------------------------- | :------- | :--------- | :------------------------------------------------ | :-------- |
-| GLM 5.2         | `z-ai/glm-5.2`                | 1M       | 16,384     | **Mejor velocidad del catálogo (3.5s)** — 84% calidad | ⭐ Nuevo  |
-| DeepSeek V4 Pro | `deepseek-ai/deepseek-v4-pro` | 1M       | 16,384     | Máxima calidad (94.3%) — razonamiento STEM denso  | ✅ Validado |
-| Qwen 3.5        | `qwen/qwen3.5-397b-a17b`      | 128K     | 16,384     | Mejor requirement.md (95/100) — análisis funcional | ✅ Validado |
-| Kimi K2.6       | `moonshotai/kimi-k2.6`        | 256K     | 8,192      | Rápido (7.5s) pero propenso a CoT loops           | ⚠️ Fallback |
-| MiniMax M3      | `minimaxai/minimax-m3`        | 1M       | 8,192      | Calidad variable — timeouts frecuentes bajo carga | ⚠️ Reserva |
-| Nemotron Ultra  | `nvidia/nemotron-3-ultra-550b-a55b` | 128K | 16,384  | Sin tool calling — no apto para orquestación      | ❌ No usar |
-| DeepSeek V4 Flash | `deepseek-ai/deepseek-v4-flash` | 1M   | 16,384     | ResourceExhausted frecuente — no evaluable        | ❌ No usar |
+| GLM 5.2         | `z-ai/glm-5.2`                | 1M       | 131,072    | Terminal-Bench 81.0, SWE-Bench Pro 62.1% — récord open-weight | ⭐ Líder código |
+| DeepSeek V4 Pro | `deepseek-ai/deepseek-v4-pro` | 1M       | 384,000    | 49B activos, SWE-Bench Verified 80.6% — razonamiento STEM | ✅ Líder análisis |
+| Qwen 3.7 Max    | `qwen/qwen3.7-max`            | 1M       | 65,536     | Extended Thinking nativo, GPQA Diamond 92.4% — agent-first | ✅ Líder razonamiento |
+| Kimi K2.7 Code  | `moonshotai/kimi-k2.7-code`   | 256K     | 16,384     | Agent Swarm nativo, 30% menos tokens vs K2.6, MoonViT multimodal | ✅ Líder orquestación |
+| MiniMax M3      | `minimaxai/minimax-m3`        | 1M       | 8,192      | Visión multimodal nativa (imagen+video), BrowseComp 83.5 | ✅ Líder UX/visual |
 
 > 📊 **Fuente**: Benchmark interno 7 modelos × 3 tests AOI SDD (Functional Analyst, Backend Developer, Triage Specialist) — Julio 2026. Ver `.exportsmemories/` o `/Users/equinox/Desktop/nvidia-bench/reports/`.
 
-### Asignación por Agente
+### Asignación por Agente (Mid-2026)
 
-> ⚡ **Criterio GLM 5.2**: Asignado como Primary en tareas donde latencia < calidad máxima. A 3.5s, GLM es 18× más rápido que DeepSeek V4 Pro (64s) con 84% de su calidad. Ideal para agentes interactivos y de flujo rápido.
+> ⚡ **Criterio actualizado**: Asignación basada en análisis consolidado cruzando evaluaciones de Gemini, Grok, GPT y Claude Opus contra benchmarks reales (SWE-Bench Pro/Verified, Terminal-Bench, GPQA Diamond). Ver `Benchmark/model-reference/consolidated-recommendation.md`.
 
-| Agente                    | Modelo Primario     | Modelo de Respaldo | Criterio de asignación |
-| :------------------------ | :------------------ | :----------------- | :--------------------- |
-| `@supervisor`             | **GLM 5.2**         | Kimi K2.6          | Velocidad crítica para orquestación (3.5s) |
-| `@functional-analyst`     | **Qwen 3.5**        | GLM 5.2            | Mejor requirement.md del benchmark (95/100) |
-| `@solution-architect`     | **DeepSeek V4 Pro** | Qwen 3.5           | Requiere razonamiento arquitectónico profundo |
-| `@frontend-developer`     | **GLM 5.2**         | Qwen 3.5           | Iteración UI rápida — calidad 84% suficiente |
-| `@backend-developer`      | **DeepSeek V4 Pro** | Qwen 3.5           | Mejor código TS/API del benchmark (95/100) |
-| `@devops-engineer`        | **GLM 5.2**         | DeepSeek V4 Pro    | Infra/scripting no requiere máxima profundidad |
-| `@ux-designer`            | **Qwen 3.5**        | GLM 5.2            | Buena redacción estructurada para diseño |
-| `@integration-specialist` | **DeepSeek V4 Pro** | GLM 5.2            | Verificación requiere razonamiento profundo |
-| `@documentation-analyst`  | **GLM 5.2**         | Qwen 3.5           | Docs rápidas — GLM estable, MiniMax tenía timeouts |
-| `@triage-specialist`      | **DeepSeek V4 Pro** | Kimi K2.6          | Mejor diagnóstico del benchmark (98/100); Kimi 90/100 rápido |
-| `@resource-analyst`       | **GLM 5.2**         | Qwen 3.5           | Análisis de recursos — velocidad sobre profundidad |
-| `@project-analyzer`       | **DeepSeek V4 Pro** | Qwen 3.5           | Análisis profundo — calidad máxima requerida |
-| `@project-expert`         | **GLM 5.2**         | DeepSeek V4 Pro    | Q&A interactivo — respuestas rápidas (3.5s) |
+| Agente                    | Modelo Primario      | Modelo de Respaldo  | Criterio de asignación |
+| :------------------------ | :------------------- | :------------------ | :--------------------- |
+| `@supervisor`             | **Kimi K2.7 Code**   | DeepSeek V4 Pro     | Agent Swarm nativo + 30% token savings para orquestación Hub-and-Spoke |
+| `@functional-analyst`     | **DeepSeek V4 Pro**  | Qwen 3.7 Max        | 49B activos + 1M contexto para specs masivas y Service Discovery |
+| `@solution-architect`     | **Qwen 3.7 Max**     | DeepSeek V4 Pro     | Extended Thinking + GPQA 92.4% para trade-offs arquitectónicos |
+| `@frontend-developer`     | **GLM 5.2**          | MiniMax M3          | Terminal-Bench 81.0 + SWE-Bench Pro 62.1% — líder open-weight |
+| `@backend-developer`      | **GLM 5.2**          | DeepSeek V4 Pro     | SWE-Bench Pro 62.1% + 1M contexto nativo (IndexShare) |
+| `@devops-engineer`        | **GLM 5.2**          | MiniMax M3          | Terminal-Bench 81.0 para CLI, scripts e IaC |
+| `@ux-designer`            | **MiniMax M3**       | Qwen 3.7 Max        | Visión multimodal nativa para mockups y accesibilidad |
+| `@integration-specialist` | **DeepSeek V4 Pro**  | Qwen 3.7 Max        | Auditoría cruzada spec→código con 1M de contexto |
+| `@documentation-analyst`  | **DeepSeek V4 Pro**  | Qwen 3.7 Max        | 1M contexto para absorber ciclo SDD completo |
+| `@triage-specialist`      | **Qwen 3.7 Max**     | DeepSeek V4 Pro     | Extended Thinking para Root Cause Analysis profundo |
+| `@resource-analyst`       | **DeepSeek V4 Pro**  | GLM 5.2             | Procesamiento masivo de .resources/ (49B + 1M) |
+| `@project-analyzer`       | **DeepSeek V4 Pro**  | MiniMax M3          | Escaneo exhaustivo de repos con citación precisa |
+| `@project-expert`         | **DeepSeek V4 Pro**  | GLM 5.2             | Retención contextual profunda + citación de fuentes |
 
-### Distribución
+### Distribución (Mid-2026)
 
-- **GLM 5.2**: 6 agentes (velocidad + interactividad — latencia-sensitive)
-- **DeepSeek V4 Pro**: 4 agentes (razonamiento profundo — calidad crítica)
-- **Qwen 3.5**: 2 agentes (análisis funcional + UX)
-- **Kimi K2.6**: 0 primarios, fallback de Supervisor y Triage
-- **MiniMax M3**: en reserva — usar solo si GLM 5.2 no disponible en picker
+- **DeepSeek V4 Pro**: 6 agentes (análisis, auditoría, documentación — contexto masivo 1M + 49B activos)
+- **GLM 5.2**: 3 agentes (frontend, backend, devops — ejecución de código + terminal)
+- **Qwen 3.7 Max**: 2 agentes (arquitectura, triage — Extended Thinking)
+- **Kimi K2.7 Code**: 1 agente (supervisor — orquestación Agent Swarm)
+- **MiniMax M3**: 1 agente (UX — visión multimodal nativa)
 
 ### Modelos Descartados del Catálogo Activo
 
@@ -91,7 +89,7 @@ Esta jerarquía NO automatiza la selección: el AOI nunca elige modelo por cuent
 
 ## 5. Configuración del customendpoint NVIDIA (paso previo, opcional)
 
-> ⚠️ **Si NO se configura**, AOI sigue funcionando con los defaults vendor-copilot declarados en §1–§2 (`Gemini 3.1 Pro (Preview)` y `GPT-5.4 xhigh` en raíz). El catálogo del §4 simplemente no se activa. Esta sección habilita el catálogo cuando el operador quiere usar los modelos especializados.
+> ⚠️ **Si NO se configura**, AOI sigue funcionando con los defaults vendor-copilot declarados en §1–§2 (`DeepSeek V4 Pro` y `GLM-5.2` en raíz). El catálogo del §4 simplemente no se activa. Esta sección habilita el catálogo cuando el operador quiere usar los modelos especializados.
 
 ### 5.1 Prerrequisitos
 
@@ -121,25 +119,14 @@ VS Code espera un **array JSON** con un único vendor `customendpoint`:
     "apiKey": "TU-API-KEY-NVIDIA-AQUÍ",
     "models": [
       {
-        "id": "minimaxai/minimax-m3",
-        "name": "Minimax M3",
+        "id": "z-ai/glm-5.2",
+        "name": "GLM 5.2",
         "url": "https://integrate.api.nvidia.com/v1",
         "toolCalling": true,
         "streaming": true,
-        "thinking": true,
+        "thinking": false,
         "vision": true,
         "maxInputTokens": 1000000,
-        "maxOutputTokens": 8192
-      },
-      {
-        "id": "qwen/qwen3.5-397b-a17b",
-        "name": "Qwen 3.5",
-        "url": "https://integrate.api.nvidia.com/v1",
-        "toolCalling": true,
-        "streaming": true,
-        "thinking": true,
-        "vision": true,
-        "maxInputTokens": 128000,
         "maxOutputTokens": 16384
       },
       {
@@ -154,14 +141,36 @@ VS Code espera un **array JSON** con un único vendor `customendpoint`:
         "maxOutputTokens": 16384
       },
       {
-        "id": "moonshotai/kimi-k2.6",
-        "name": "Kimi K2.6",
+        "id": "qwen/qwen3.7-max",
+        "name": "Qwen 3.7 Max",
+        "url": "https://integrate.api.nvidia.com/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 65536
+      },
+      {
+        "id": "moonshotai/kimi-k2.7-code",
+        "name": "Kimi K2.7 Code",
         "url": "https://integrate.api.nvidia.com/v1",
         "toolCalling": true,
         "streaming": true,
         "thinking": true,
         "vision": true,
         "maxInputTokens": 256000,
+        "maxOutputTokens": 16384
+      },
+      {
+        "id": "minimaxai/minimax-m3",
+        "name": "MiniMax M3",
+        "url": "https://integrate.api.nvidia.com/v1",
+        "toolCalling": true,
+        "streaming": true,
+        "thinking": true,
+        "vision": true,
+        "maxInputTokens": 1000000,
         "maxOutputTokens": 8192
       }
     ]
@@ -347,7 +356,7 @@ Para que la obligatoriedad sea real y no solo a nivel de instalación, el setup 
 
 ### 6.7 Compatibilidad del modelo mental entre capas
 
-AOI bootstrapper ya tiene **13 agentes** con bloques `## Model Requirement` que asignan `Primary` + `Fallback` por NVIDIA custom endpoint (K2.6, DeepSeek V4 Pro, MiniMax M3, Qwen 3.5). Headroom comprime el contexto **antes** de que el provider asignado vía NVIDIA reciba la request. Por lo tanto:
+AOI bootstrapper ya tiene **13 agentes** con bloques `## Model Requirement` que asignan `Primary` + `Fallback` por NVIDIA custom endpoint (Kimi K2.7 Code, DeepSeek V4 Pro, GLM-5.2, Qwen 3.7 Max, MiniMax M3). Headroom comprime el contexto **antes** de que el provider asignado vía NVIDIA reciba la request. Por lo tanto:
 
 ```
 Output de agente AOI

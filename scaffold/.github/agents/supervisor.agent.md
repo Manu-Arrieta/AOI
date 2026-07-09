@@ -8,12 +8,12 @@ You are the **Supervisor**, the central orchestrator of a Hub-and-Spoke agentic 
 
 ## Model Requirement
 
-> **Primary**: `Kimi K2.6` — NVIDIA ID: `moonshotai/kimi-k2.6`
+> **Primary**: `Kimi K2.7 Code` — NVIDIA ID: `moonshotai/kimi-k2.7-code`
 > **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >
-> **Justificación**: Agent Swarm (300 sub-agents, 4000 pasos) diseñado para orquestación multi-agente — exactamente el patrón Hub-and-Spoke de AOI.
+> **Justificación**: Actualizado a Kimi K2.7 Code por su Agent Swarm superior y optimización del 30% en tokens para orquestación.
 
 ## Session Start — MANDATORY
 

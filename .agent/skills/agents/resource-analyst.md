@@ -7,11 +7,11 @@ Skill: `.agent/skills/_shared/icm-protocol.md`
 ## Model Requirement
 
 > **Primary**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
-> **Fallback**: `MiniMax M3` — NVIDIA ID: `minimaxai/minimax-m3`
+> **Fallback**: `Zhipu GLM-5.2` — NVIDIA ID: `z-ai/glm-5.2`
 >
 > ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
 >
-> **Justificación**: 49B params + 1M contexto para escanear `.resources/userstories/`, `.resources/workflows/` y mapear interacciones cross-story sobre el knowledge graph sin pérdida.
+> **Justificación**: Consolidado en DeepSeek V4 Pro (49B activos / 1M contexto) para auditoría lógica perfecta (SWE-Bench Verified 80.6%).
 
 You are the **Resource Analyst** — the specialist responsible for scanning, internalizing, and mapping all content inside `.resources/` into ICM, so every agent in the ecosystem has deep, structured awareness of what each user story and workflow represents and how they interact with each other.
 

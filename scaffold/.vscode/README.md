@@ -2,13 +2,13 @@
 
 Este directorio contiene artefactos para configurar el endpoint NVIDIA
 (`https://integrate.api.nvidia.com/v1`) en VS Code como **custom endpoint** para
-los modelos externos recomendados del catálogo AOI (Kimi K2.6, DeepSeek V4 Pro,
-MiniMax M3, Qwen 3.5).
+los modelos externos recomendados del catálogo AOI (Kimi K2.7 Code, DeepSeek V4 Pro,
+MiniMax M3, Qwen 3.7 Max).
 
 > ⚠️ **OPCIONAL**. AOI funciona perfectamente sin este setup. Si NO se configura,
 > los modelos que se usarán son los defaults declarados en cada plataforma
-> (raíz: `Gemini 3.1 Pro (Preview)` / `GPT-5.4 xhigh`; Antigravity: `Claude Opus 4.6`
-> / `GPT-5.4 xhigh`). El catálogo NVIDIA queda inerte hasta que el operador active
+> (raíz: `DeepSeek V4 Pro` / `GLM-5.2`; Antigravity: `Qwen 3.7 Max`
+> / `GLM-5.2`). El catálogo NVIDIA queda inerte hasta que el operador active
 > el custom endpoint.
 
 ## Archivos
@@ -80,7 +80,7 @@ Tras reiniciar, los 4 modelos NVIDIA aparecerán en el picker de GitHub Copilot 
 Para cada agente que invocás, elegí el modelo en el picker (ver
 `## Model Requirement` en cada `.agent.md`):
 
-- `@supervisor` → Kimi K2.6
+- `@supervisor` → Kimi K2.7 Code
 - `@solution-architect`, `@functional-analyst`, `@integration-specialist`,
   `@documentation-analyst`, `@triage-specialist`, `@resource-analyst`,
   `@project-analyzer`, `@project-expert` → DeepSeek V4 Pro
