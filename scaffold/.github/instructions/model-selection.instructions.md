@@ -40,21 +40,21 @@ runSubagent({ agentName: "ux-designer", model: "Minimax M3 - Provider - Minimax"
 
 > 📊 **Fuente**: Basado en providers directos disponibles en `ChatLanguageModel.example.json`. Kimi K2.6 descartado.
 
-| Agente                    | Primary              | Provider | Fallback               | Provider | Categoría      |
-| :------------------------ | :------------------- | :------- | :--------------------- | :------- | :------------- |
-| `@supervisor`             | `deepseek-v4-pro`    | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
-| `@functional-analyst`     | `deepseek-v4-pro`    | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
-| `@solution-architect`     | `qwen3.7-plus`       | Alibaba  | `deepseek-v4-pro`      | DeepSeek | Razonamiento   |
-| `@triage-specialist`      | `qwen3.7-plus`       | Alibaba  | `deepseek-v4-pro`      | DeepSeek | Razonamiento   |
-| `@integration-specialist` | `deepseek-v4-pro`    | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
-| `@documentation-analyst`  | `deepseek-v4-pro`    | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
-| `@project-analyzer`       | `deepseek-v4-pro`    | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
-| `@project-expert`         | `deepseek-v4-pro`    | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
-| `@resource-analyst`       | `deepseek-v4-pro`    | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
-| `@ux-designer`            | `MiniMax-M3`         | MiniMax  | `minimaxai/minimax-m3` | NVIDIA   | Razonamiento   |
-| `@frontend-developer`     | `glm-5.2`            | Zai      | `z-ai/glm-5.2`         | NVIDIA   | Implementación |
-| `@backend-developer`      | `glm-5.2`            | Zai      | `z-ai/glm-5.2`         | NVIDIA   | Implementación |
-| `@devops-engineer`        | `glm-5.2`            | Zai      | `z-ai/glm-5.2`         | NVIDIA   | Implementación |
+| Agente                    | Primary           | Provider | Fallback                      | Provider | Categoría      |
+| :------------------------ | :---------------- | :------- | :---------------------------- | :------- | :------------- |
+| `@supervisor`             | `deepseek-v4-pro` | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
+| `@functional-analyst`     | `deepseek-v4-pro` | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
+| `@solution-architect`     | `qwen3.7-plus`    | Alibaba  | `deepseek-v4-pro`             | DeepSeek | Razonamiento   |
+| `@triage-specialist`      | `qwen3.7-plus`    | Alibaba  | `deepseek-v4-pro`             | DeepSeek | Razonamiento   |
+| `@integration-specialist` | `deepseek-v4-pro` | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
+| `@documentation-analyst`  | `deepseek-v4-pro` | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
+| `@project-analyzer`       | `deepseek-v4-pro` | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
+| `@project-expert`         | `deepseek-v4-pro` | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
+| `@resource-analyst`       | `deepseek-v4-pro` | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
+| `@ux-designer`            | `MiniMax-M3`      | MiniMax  | `minimaxai/minimax-m3`        | NVIDIA   | Razonamiento   |
+| `@frontend-developer`     | `glm-5.2`         | Zai      | `z-ai/glm-5.2`                | NVIDIA   | Implementación |
+| `@backend-developer`      | `glm-5.2`         | Zai      | `z-ai/glm-5.2`                | NVIDIA   | Implementación |
+| `@devops-engineer`        | `glm-5.2`         | Zai      | `z-ai/glm-5.2`                | NVIDIA   | Implementación |
 
 ### Distribución
 

@@ -40,18 +40,18 @@ Load skill registry: read `.atl/skill-registry.md` to discover available agents 
 
 ## SDD Lifecycle — Phase Routing
 
-| Phase            | Spec-Kit Command        | Agent(s)                                                  | Deliverable                          | Artifact Path                                      |
-| ---------------- | ----------------------- | --------------------------------------------------------- | ------------------------------------ | -------------------------------------------------- |
-| **Constitution** | `/speckit.constitution` | Supervisor                                                | `.specify/memory/constitution.md`    | —                                                  |
-| **Explore**      | —                       | @functional-analyst                                       | Requirements + user stories          | `.tasks/{feature}/TASK-YYYY-NNN/proposal.md`       |
-| **Specify**      | `/speckit.specify`      | @functional-analyst                                       | Formal specification                 | `.tasks/{feature}/TASK-YYYY-NNN/spec.md`           |
-| **Clarify**      | `/speckit.clarify`      | @functional-analyst                                       | Refined requirements                 | —                                                  |
-| **Plan**         | `/speckit.plan`         | @solution-architect                                       | Architecture design                  | `.tasks/{feature}/TASK-YYYY-NNN/design.md`         |
-| **Tasks**        | `/speckit.tasks`        | @solution-architect                                       | Task breakdown                       | `.tasks/{feature}/TASK-YYYY-NNN/tasks.md`          |
-| **Implement**    | `/speckit.implement`    | @frontend-developer, @backend-developer, @devops-engineer | Working code                         | `.tasks/{feature}/TASK-YYYY-NNN/iterations/`       |
+| Phase            | Spec-Kit Command        | Agent(s)                                                                                                             | Deliverable                          | Artifact Path                                      |
+| ---------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | -------------------------------------------------- |
+| **Constitution** | `/speckit.constitution` | Supervisor                                                                                                           | `.specify/memory/constitution.md`    | —                                                  |
+| **Explore**      | —                       | @functional-analyst                                                                                                  | Requirements + user stories          | `.tasks/{feature}/TASK-YYYY-NNN/proposal.md`       |
+| **Specify**      | `/speckit.specify`      | @functional-analyst                                                                                                  | Formal specification                 | `.tasks/{feature}/TASK-YYYY-NNN/spec.md`           |
+| **Clarify**      | `/speckit.clarify`      | @functional-analyst                                                                                                  | Refined requirements                 | —                                                  |
+| **Plan**         | `/speckit.plan`         | @solution-architect                                                                                                  | Architecture design                  | `.tasks/{feature}/TASK-YYYY-NNN/design.md`         |
+| **Tasks**        | `/speckit.tasks`        | @solution-architect                                                                                                  | Task breakdown                       | `.tasks/{feature}/TASK-YYYY-NNN/tasks.md`          |
+| **Implement**    | `/speckit.implement`    | @frontend-developer, @backend-developer, @devops-engineer                                                            | Working code                         | `.tasks/{feature}/TASK-YYYY-NNN/iterations/`       |
 |                  |                         | **🛡️ UX Gate**: @ux-designer is MANDATORY before any new UI component. @frontend-developer enforces this internally. |                                      |                                                    |
-| **Verify**       | —                       | @integration-specialist                                   | QA + verify report                   | `.tasks/{feature}/TASK-YYYY-NNN/verify-report.md`  |
-| **Archive**      | —                       | @documentation-analyst                                    | Final documentation + archive report | `.tasks/{feature}/TASK-YYYY-NNN/archive-report.md` |
+| **Verify**       | —                       | @integration-specialist                                                                                              | QA + verify report                   | `.tasks/{feature}/TASK-YYYY-NNN/verify-report.md`  |
+| **Archive**      | —                       | @documentation-analyst                                                                                               | Final documentation + archive report | `.tasks/{feature}/TASK-YYYY-NNN/archive-report.md` |
 
 ## Agent Roster
 
