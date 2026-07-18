@@ -78,10 +78,37 @@ if (-not $VscodeUserDir) {
 
 $DestFile = Join-Path $VscodeUserDir "ChatLanguageModel.json"
 
+# ── Profile-aware destination resolution ──────────────────────────────────────
+# VS Code profiles re-route chatLanguageModels.json to
+#   profiles/<profile-id>/chatLanguageModels.json
+# when the workspace is associated with a non-default profile.
+$StorageFile = Join-Path $VscodeUserDir "globalStorage\storage.json"
+if (Test-Path $StorageFile) {
+  try {
+    $storage = Get-Content $StorageFile -Raw | ConvertFrom-Json
+    $workspaceUri = "file://$RepoRoot" -replace '\\', '/'
+    $profileId = $storage.profileAssociations.workspaces.PSObject.Properties |
+      Where-Object { $_.Name -eq $workspaceUri } |
+      ForEach-Object { $_.Value }
+
+    if ($profileId -and $profileId -ne '__default__profile__') {
+      $ProfileDest = Join-Path $VscodeUserDir "profiles\$profileId\chatLanguageModels.json"
+      if (Test-Path (Split-Path $ProfileDest -Parent)) {
+        $DestFile = $ProfileDest
+      }
+    }
+  } catch {
+    # storage.json parse failed — fall back to root destination
+  }
+}
+
 Header "NVIDIA customendpoint setup (opcional)"
 Info "VS Code User dir detectado: $VscodeUserDir"
 Info "Template origen:   $TemplateFile"
 Info "Archivo destino:   $DestFile"
+if ($DestFile -match 'profiles\\(.+)\\') {
+  Info "  ️ → Workspace usa perfil VS Code ($($Matches[1])): la configuración de modelos se aplica a este perfil."
+}
 
 # Re-entry check
 if (Test-Path $DestFile) {

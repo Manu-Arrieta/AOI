@@ -34,7 +34,37 @@ en VS Code como **custom endpoints** para el catálogo AOI.
 Editá `ChatLanguageModel.example.json` localmente y reemplazá
 `APIKEY-CONFIGURADA-PREVIAMENTE` por tu API key real de NVIDIA.
 
-### 2. Renombrá el archivo y copialo
+### 2. Identificá el destino correcto (perfil VS Code)
+
+VS Code puede usar **perfiles** que reubican la configuración de modelos. Si tu
+workspace tiene un perfil asignado, el archivo destino es:
+
+```
+<User dir>/profiles/<profile-id>/chatLanguageModels.json
+```
+
+Si el workspace usa el perfil por defecto (`__default__profile__`), el destino es:
+
+```
+<User dir>/ChatLanguageModel.json
+```
+
+Para saber cuál aplica, revisá `globalStorage/storage.json` dentro del User dir.
+El script `nvidia-vscode-setup.{sh,ps1}` **detecta el perfil automáticamente** y
+escribe en la ubicación correcta.
+
+### 3. Copiá el archivo al destino
+
+**Forma automática (recomendado)**:
+
+```bash
+bash scripts/nvidia-vscode-setup.sh --yes --key <TU-API-KEY>
+```
+
+El script detecta el perfil y escribe en `profiles/<id>/chatLanguageModels.json`
+si aplica, o en `ChatLanguageModel.json` de la raíz en caso contrario.
+
+**Forma manual — sin perfil (default profile)**:
 
 **macOS**:
 
@@ -52,7 +82,7 @@ cp .vscode/ChatLanguageModel.example.json "$HOME/.config/Code/User/ChatLanguageM
 sed -i 's/APIKEY-CONFIGURADA-PREVIAMENTE/<tu-api-key-real>/' "$HOME/.config/Code/User/ChatLanguageModel.json"
 ```
 
-**Windows (PowerShell) — forma corta (`$env:APPDATA\Code\User`)**:
+**Windows (PowerShell)**:
 
 ```powershell
 New-Item -ItemType Directory -Force -Path "$env:APPDATA\Code\User"
@@ -60,29 +90,43 @@ Copy-Item .vscode/ChatLanguageModel.example.json "$env:APPDATA\Code\User\ChatLan
 (Get-Content "$env:APPDATA\Code\User\ChatLanguageModel.json") -replace 'APIKEY-CONFIGURADA-PREVIAMENTE','<tu-api-key-real>' | Set-Content "$env:APPDATA\Code\User\ChatLanguageModel.json"
 ```
 
-**Windows (PowerShell) — forma expandida (`$env:APPDATA\Roaming\Code\User`)**:
+**Forma manual — con perfil activo**:
 
-Ambas formas son **equivalentes** en máquinas donde `$env:APPDATA` resuelve correctamente (apuntan al mismo directorio físico `C:\Users\<usuario>\AppData\Roaming\Code\User\`). La forma expandida es útil en instalaciones standalone / portable o cuando se sigue un link de docs que escribe `\Roaming\` explícitamente:
+Reemplazá `<profile-id>` por el ID de tu perfil (ej. `-5f85a270`):
 
-```powershell
-New-Item -ItemType Directory -Force -Path "$env:APPDATA\Roaming\Code\User"
-Copy-Item .vscode/ChatLanguageModel.example.json "$env:APPDATA\Roaming\Code\User\ChatLanguageModel.json"
-(Get-Content "$env:APPDATA\Roaming\Code\User\ChatLanguageModel.json") -replace 'APIKEY-CONFIGURADA-PREVIAMENTE','<tu-api-key-real>' | Set-Content "$env:APPDATA\Roaming\Code\User\ChatLanguageModel.json"
+**macOS**:
+
+```bash
+PROFILE_DIR="$HOME/Library/Application Support/Code/User/profiles/<profile-id>"
+mkdir -p "$PROFILE_DIR"
+cp .vscode/ChatLanguageModel.example.json "$PROFILE_DIR/chatLanguageModels.json"
+sed -i '' 's/APIKEY-CONFIGURADA-PREVIAMENTE/<tu-api-key-real>/' "$PROFILE_DIR/chatLanguageModels.json"
 ```
 
-> 📍 **Resumen de VS Code User dir por plataforma** (el script helper `nvidia-vscode-setup.{sh,ps1}` resuelve automáticamente probando todas las alternativas):
->
-> | Plataforma | Path canónico                              | Forma expandida alternativa (Windows)                            |
-> | :--------- | :----------------------------------------- | :--------------------------------------------------------------- |
-> | macOS      | `~/Library/Application Support/Code/User/` | —                                                                |
-> | Linux      | `~/.config/Code/User/`                     | —                                                                |
-> | Windows    | `%APPDATA%\Code\User\`                     | `%APPDATA%\Roaming\Code\User\` (≡ mismo dir en 99% de los casos) |
->
-> El script PowerShell prueba **ambas formas** y resuelve a la primera que exista (mismo patrón fallback que `aoi_apps/agentic-ops-dashboard/server/utils/token-observability/collect-copilot-token-usage.ts`).
+**Linux**:
 
-### 3. Reiniciá VS Code
+```bash
+PROFILE_DIR="$HOME/.config/Code/User/profiles/<profile-id>"
+mkdir -p "$PROFILE_DIR"
+cp .vscode/ChatLanguageModel.example.json "$PROFILE_DIR/chatLanguageModels.json"
+sed -i 's/APIKEY-CONFIGURADA-PREVIAMENTE/<tu-api-key-real>/' "$PROFILE_DIR/chatLanguageModels.json"
+```
 
-Tras reiniciar, los modelos configurados aparecerán en el picker de GitHub Copilot Chat.
+> 📍 **Resumen de VS Code User dir por plataforma**:
+>
+> | Plataforma | Path canónico                              |
+> | :--------- | :----------------------------------------- |
+> | macOS      | `~/Library/Application Support/Code/User/` |
+> | Linux      | `~/.config/Code/User/`                     |
+> | Windows    | `%APPDATA%\Code\User\`                     |
+>
+> El script `nvidia-vscode-setup.{sh,ps1}` resuelve todo automáticamente (User dir,
+> perfil activo, y destino correcto).
+
+### 4. Reiniciá VS Code
+
+Tras reiniciar, los modelos aparecerán en el picker de GitHub Copilot Chat agrupados
+por provider (NVIDIA, Alibaba, MiniMax, DeepSeek, Kimi, etc.).
 
 ### 4. Seleccioná manualmente por agente
 
@@ -103,8 +147,15 @@ después de instalar `rtk` + `icm`:
 
 ```text
 ▸ Custom endpoints (opcional)
-  Detectar VS Code User dir + copiar plantilla + recordatorio de reemplazar API keys.
+  Detectar VS Code User dir + perfil activo + copiar plantilla en la ubicación
+  correcta (root o profiles/<id>/chatLanguageModels.json) + recordatorio de
+  reemplazar API keys.
 ```
+
+El script **detecta automáticamente el perfil VS Code** desde `storage.json`.
+Si el workspace está asociado a un perfil (ej. `-5f85a270`), escribe en
+`profiles/<id>/chatLanguageModels.json`. Si usa el perfil por defecto, escribe
+en `ChatLanguageModel.json` de la raíz.
 
 Si el operador responde `n`, AOI continúa con defaults vendor-copilot sin
 bloquearse.

@@ -80,6 +80,41 @@ resolve_vscode_user_dir() {
   return 0
 }
 
+# ── Profile-aware destination resolution ────────────────────────────────────────
+# VS Code profiles re-route chatLanguageModels.json to
+#   profiles/<profile-id>/chatLanguageModels.json
+# when the workspace is associated with a non-default profile.
+# If no profile association or default profile, falls back to root ChatLanguageModel.json.
+resolve_profile_dest() {
+  local storage_file="$VSCODE_USER_DIR/globalStorage/storage.json"
+  local default_dest="$VSCODE_USER_DIR/ChatLanguageModel.json"
+
+  if [[ ! -f "$storage_file" ]]; then
+    echo "$default_dest"
+    return
+  fi
+
+  # Build a file:// URI for the repo root (e.g. file:///Users/equinox/Desktop/Proyectos/AOI)
+  local workspace_uri="file://$REPO_ROOT"
+
+  local profile_id
+  profile_id=$(python3 -c "
+import json
+with open('$storage_file') as f:
+    data = json.load(f)
+assoc = data.get('profileAssociations', {}).get('workspaces', {})
+pid = assoc.get('$workspace_uri', '__default__profile__')
+if pid != '__default__profile__':
+    print(pid)
+" 2>/dev/null || true)
+
+  if [[ -n "$profile_id" && -d "$VSCODE_USER_DIR/profiles/$profile_id" ]]; then
+    echo "$VSCODE_USER_DIR/profiles/$profile_id/chatLanguageModels.json"
+  else
+    echo "$default_dest"
+  fi
+}
+
 # ── Sanity: template present ────────────────────────────────────────────────────
 if [[ ! -f "$TEMPLATE_FILE" ]]; then
   err "Template missing: $TEMPLATE_FILE"
@@ -95,10 +130,16 @@ resolve_vscode_user_dir || {
 
 info "VS Code User dir detectado: $VSCODE_USER_DIR"
 info "Template origen:   $TEMPLATE_FILE"
-info "Archivo destino:   $VSCODE_USER_DIR/ChatLanguageModel.json"
+
+# Resolve profile-aware destination (may differ for workspaces with non-default profiles)
+DEST_FILE=$(resolve_profile_dest)
+
+info "Archivo destino:   $DEST_FILE (perfil: ${DEST_FILE##*profiles/})"
+if [[ "$DEST_FILE" == *"/profiles/"* ]]; then
+  info "  ️ → Workspace usa perfil VS Code: la configuración de modelos se aplica a este perfil."
+fi
 
 # Re-entry check: if the destination already exists, don't clobber without confirmation
-DEST_FILE="$VSCODE_USER_DIR/ChatLanguageModel.json"
 
 if [[ -f "$DEST_FILE" ]]; then
   warn "El archivo destino ya existe: $DEST_FILE"
