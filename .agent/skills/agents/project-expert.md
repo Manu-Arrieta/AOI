@@ -4,12 +4,12 @@
 
 ## Model Requirement
 
-> **Primary**: `DeepSeek V4 Pro OR` — OpenRouter ID: `deepseek/deepseek-v4-pro`
-> **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
+> **Primary**: `deepseek-v4-pro` — DeepSeek ID: `deepseek-v4-pro`
+> **Fallback**: `deepseek-ai/deepseek-v4-pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
 >
 > ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
 >
-> **Justificación**: Consolidado en DeepSeek V4 Pro (49B activos / 1M contexto) para auditoría lógica perfecta (SWE-Bench Verified 80.6%).
+> **Justificación**: DeepSeek V4 Pro — retención contextual profunda + citación de fuentes. Walking encyclopedia del proyecto. Provider directo DeepSeek con fallback NVIDIA.
 
 
 ## Session Start — MANDATORY

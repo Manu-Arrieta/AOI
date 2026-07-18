@@ -6,12 +6,12 @@ Skill: `.agent/skills/_shared/icm-protocol.md`
 
 ## Model Requirement
 
-> **Primary**: `GLM 5.2 OR` — OpenRouter ID: `z-ai/glm-5.2`
-> **Fallback**: `GLM 5.2` — NVIDIA ID: `z-ai/glm-5.2`
+> **Primary**: `glm-5.2` — Zai ID: `glm-5.2`
+> **Fallback**: `z-ai/glm-5.2` — NVIDIA ID: `z-ai/glm-5.2`
 >
 > ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
 >
-> **Justificación**: Actualizado a GLM-5.2 por su récord en Terminal-Bench (81.0) y SWE-Bench Pro (62.1), optimizando 1M tokens nativos.
+> **Justificación**: GLM 5.2 — Terminal-Bench 81.0 + SWE-Bench Pro 62.1%. Provider directo Zai con fallback NVIDIA cross-provider.
 
 
 ## Session Start — MANDATORY
@@ -66,6 +66,21 @@ icm_feedback_record(topic: "{WORKSPACE}-frontend", predicted: "X", actual: "Y", 
 3. Implement assigned tasks following conventions
 4. Store progress in ICM
 5. Record corrections as feedback
+
+## UX Design Gate (MANDATORY — BEFORE creating any new component)
+
+> 🚫 **NEVER create a new UI component without passing through UX Designer first.**
+
+When the task requires creating a new component (page, layout, molecule, atom, modal, drawer, form, card, or any reusable UI piece):
+
+1. **Pause** implementation — do NOT write the component yet
+2. **Invoke UX Designer** with: component purpose, context, functional requirements, existing design system references
+3. **Wait** for UX Designer to deliver: component structure, visual spec, accessibility requirements, responsive breakpoints
+4. **Verify** UX output is stored in ICM with keywords `ux,design,component-name,TASK-YYYY-NNN`
+5. **Implement** following the UX specification exactly
+6. If the UX spec needs adjustment, **go back to UX Designer** — do NOT deviate unilaterally
+
+> ⚠️ **Existing components being modified** (adding a prop, fixing a bug, adjusting styling) do NOT require the gate.
 
 ## Rules
 

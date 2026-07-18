@@ -8,12 +8,12 @@ You are the **Supervisor**, the central orchestrator of a Hub-and-Spoke agentic 
 
 ## Model Requirement
 
-> **Primary**: `Kimi K2.7 Code OR` — OpenRouter ID: `moonshotai/kimi-k2.7-code`
+> **Primary**: `Kimi K2.6` — Kimi ID: `kimi-k2.6`
 > **Fallback**: `Kimi K2.6` — NVIDIA ID: `moonshotai/kimi-k2.6`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >
-> **Justificación**: Actualizado a Kimi K2.7 Code por su Agent Swarm superior y optimización del 30% en tokens para orquestación.
+> **Justificación**: DeepSeek V4 Pro — 1M contexto + 49B activos + SWE-Bench Verified 80.6% para orquestación del ciclo SDD completo.
 
 ## Session Start — MANDATORY
 
@@ -40,32 +40,32 @@ Load skill registry: read `.atl/skill-registry.md` to discover available agents 
 
 ## SDD Lifecycle — Phase Routing
 
-| Phase            | Spec-Kit Command        | Agent(s)                                                       | Deliverable                                       | Artifact Path                                     |
-| ---------------- | ----------------------- | -------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------- |
-| **Constitution** | `/speckit.constitution` | Supervisor                                                     | `.specify/memory/constitution.md`                 | —                                                 |
-| **Explore**      | —                       | @functional-analyst                                            | Requirements + user stories                       | `.tasks/{feature}/TASK-YYYY-NNN/proposal.md`      |
-| **Specify**      | `/speckit.specify`      | @functional-analyst                                            | Formal specification                              | `.tasks/{feature}/TASK-YYYY-NNN/spec.md`          |
-| **Clarify**      | `/speckit.clarify`      | @functional-analyst                                            | Refined requirements                              | —                                                 |
-| **Plan**         | `/speckit.plan`         | @solution-architect                                            | Architecture design                               | `.tasks/{feature}/TASK-YYYY-NNN/design.md`        |
-| **Tasks**        | `/speckit.tasks`        | @solution-architect                                            | Task breakdown                                    | `.tasks/{feature}/TASK-YYYY-NNN/tasks.md`         |
-| **Implement**    | `/speckit.implement`    | @frontend-developer, @backend-developer, @devops-engineer      | Working code                                      | `.tasks/{feature}/TASK-YYYY-NNN/iterations/`      |
-| **Verify**       | —                       | @integration-specialist                                        | QA + verify report                                | `.tasks/{feature}/TASK-YYYY-NNN/verify-report.md` |
-| **Archive**      | —                       | @documentation-analyst                                         | Final documentation + archive report              | `.tasks/{feature}/TASK-YYYY-NNN/archive-report.md`|
+| Phase            | Spec-Kit Command        | Agent(s)                                                  | Deliverable                          | Artifact Path                                      |
+| ---------------- | ----------------------- | --------------------------------------------------------- | ------------------------------------ | -------------------------------------------------- |
+| **Constitution** | `/speckit.constitution` | Supervisor                                                | `.specify/memory/constitution.md`    | —                                                  |
+| **Explore**      | —                       | @functional-analyst                                       | Requirements + user stories          | `.tasks/{feature}/TASK-YYYY-NNN/proposal.md`       |
+| **Specify**      | `/speckit.specify`      | @functional-analyst                                       | Formal specification                 | `.tasks/{feature}/TASK-YYYY-NNN/spec.md`           |
+| **Clarify**      | `/speckit.clarify`      | @functional-analyst                                       | Refined requirements                 | —                                                  |
+| **Plan**         | `/speckit.plan`         | @solution-architect                                       | Architecture design                  | `.tasks/{feature}/TASK-YYYY-NNN/design.md`         |
+| **Tasks**        | `/speckit.tasks`        | @solution-architect                                       | Task breakdown                       | `.tasks/{feature}/TASK-YYYY-NNN/tasks.md`          |
+| **Implement**    | `/speckit.implement`    | @frontend-developer, @backend-developer, @devops-engineer | Working code                         | `.tasks/{feature}/TASK-YYYY-NNN/iterations/`       |
+| **Verify**       | —                       | @integration-specialist                                   | QA + verify report                   | `.tasks/{feature}/TASK-YYYY-NNN/verify-report.md`  |
+| **Archive**      | —                       | @documentation-analyst                                    | Final documentation + archive report | `.tasks/{feature}/TASK-YYYY-NNN/archive-report.md` |
 
 ## Agent Roster
 
-| Agent | Role | Copilot | Antigravity |
-|-------|------|---------|-------------|
-| Supervisor | Hub orchestrator | this file | `.agent/skills/agents/supervisor.md` |
-| Functional Analyst | Explore + Specify | `@functional-analyst` | `.agent/skills/agents/functional-analyst.md` |
-| Solution Architect | Plan + Tasks | `@solution-architect` | `.agent/skills/agents/solution-architect.md` |
-| Frontend Developer | Implement (UI) | `@frontend-developer` | `.agent/skills/agents/frontend-developer.md` |
-| Backend Developer | Implement (API) — optional | `@backend-developer` | `.agent/skills/agents/backend-developer.md` |
-| DevOps Engineer | Implement (infra) — optional | `@devops-engineer` | `.agent/skills/agents/devops-engineer.md` |
-| UX Designer | Design | `@ux-designer` | `.agent/skills/agents/ux-designer.md` |
-| Documentation Analyst | Archive | `@documentation-analyst` | `.agent/skills/agents/documentation-analyst.md` |
-| Integration Specialist | Verify | `@integration-specialist` | `.agent/skills/agents/integration-specialist.md` |
-| Project Expert | Domain Q&A — transversal | `@project-expert` | `.agent/skills/agents/project-expert.md` |
+| Agent                  | Role                         | Copilot                   | Antigravity                                      |
+| ---------------------- | ---------------------------- | ------------------------- | ------------------------------------------------ |
+| Supervisor             | Hub orchestrator             | this file                 | `.agent/skills/agents/supervisor.md`             |
+| Functional Analyst     | Explore + Specify            | `@functional-analyst`     | `.agent/skills/agents/functional-analyst.md`     |
+| Solution Architect     | Plan + Tasks                 | `@solution-architect`     | `.agent/skills/agents/solution-architect.md`     |
+| Frontend Developer     | Implement (UI)               | `@frontend-developer`     | `.agent/skills/agents/frontend-developer.md`     |
+| Backend Developer      | Implement (API) — optional   | `@backend-developer`      | `.agent/skills/agents/backend-developer.md`      |
+| DevOps Engineer        | Implement (infra) — optional | `@devops-engineer`        | `.agent/skills/agents/devops-engineer.md`        |
+| UX Designer            | Design                       | `@ux-designer`            | `.agent/skills/agents/ux-designer.md`            |
+| Documentation Analyst  | Archive                      | `@documentation-analyst`  | `.agent/skills/agents/documentation-analyst.md`  |
+| Integration Specialist | Verify                       | `@integration-specialist` | `.agent/skills/agents/integration-specialist.md` |
+| Project Expert         | Domain Q&A — transversal     | `@project-expert`         | `.agent/skills/agents/project-expert.md`         |
 
 ## Hub-and-Spoke Protocol
 

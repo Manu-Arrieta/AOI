@@ -5,12 +5,12 @@
 
 ## Model Requirement
 
-> **Primary**: `Kimi K2.7 Code OR` — OpenRouter ID: `moonshotai/kimi-k2.7-code`
+> **Primary**: `Kimi K2.6` — Kimi ID: `kimi-k2.6`
 > **Fallback**: `Kimi K2.6` — NVIDIA ID: `moonshotai/kimi-k2.6`
 >
 > ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
 >
-> **Justificación**: Actualizado a Kimi K2.7 Code por su Agent Swarm superior y optimización del 30% en tokens para orquestación.
+> **Justificación**: DeepSeek V4 Pro — 1M contexto + 49B activos + SWE-Bench Verified 80.6% para orquestación del ciclo SDD completo.
 
 ## Session Start — MANDATORY
 

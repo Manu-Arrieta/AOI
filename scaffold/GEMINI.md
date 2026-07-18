@@ -116,22 +116,22 @@ Read and follow: `.agent/skills/_shared/model-selection.md` (Antigravity) y `.gi
 
 Para resumen rápido:
 
-- **Razonamiento Abstracto**: `DeepSeek V4 Pro` (raíz) / `Qwen 3.7 Max` (Antigravity)
-- **Implementación**: `GLM-5.2`
-- **Catálogo NVIDIA customendpoint**: K2.7 Code (1 agente: supervisor), DeepSeek V4 Pro (6 agentes), GLM-5.2 (3 agentes), Qwen 3.7 Max (2 agentes), MiniMax M3 (1 agente: UX). **Requiere configuración previa del operador** — ver §5 abajo.
+- **Razonamiento Abstracto**: `DeepSeek V4 Pro`
+- **Implementación**: `GLM 5.2` (Zai) / `DeepSeek V4 Pro` (DeepSeek)
+- **Catálogo Multi-Provider + NVIDIA fallback**: DeepSeek V4 Pro (22 agentes), GLM 5.2 (8 agentes), Qwen 3.7 Plus (2 agentes), MiniMax M3 (1 agente). **Requiere configuración previa del operador** — ver §5 abajo.
 - **Fallback**: NUNCA decidir por defecto; avisar y dejar que el usuario elija. La jerarquía `Primary`+`Fallback` documenta un orden sugerido para la decisión humana, NO automatiza la selección.
 - **Preeminencia**: el bloque `## Model Requirement` del agente индивидуаль reemplaza los defaults cuando es provisto.
 
 ### §5 — Customendpoint NVIDIA (paso opcional pero recomendado)
 
-> ⚠️ **Default si NO se configura**: AOI sigue funcionando con razonamiento abstracto DeepSeek V4 Pro (raíz) / Qwen 3.7 Max (Antigravity) y GLM-5.2 para implementación. **El catálogo NVIDIA queda inerte hasta que el operador active el custom endpoint.**
+> ⚠️ **Default si NO se configura**: AOI sigue funcionando con razonamiento abstracto DeepSeek V4 Pro y GLM 5.2 para implementación. **El catálogo multi-provider + NVIDIA queda inerte hasta que el operador active los custom endpoints.**
 
 **Orden recomendado de configuración** (una vez por máquina del operador):
 
 1. **Tener API key de NVIDIA** (`https://integrate.api.nvidia.com/v1`). Configurar como variable de entorno o pegarla manualmente.
 2. **Configurar el custom endpoint en VS Code**:
    - Archivo destino: `~/Library/Application Support/Code/User/ChatLanguageModel.json` (macOS), `~/.config/Code/User/ChatLanguageModel.json` (Linux), `%APPDATA%\Code\User\ChatLanguageModel.json` o `%APPDATA%\Roaming\Code\User\ChatLanguageModel.json` (Windows — ambas formas válidas; el helper prueba las dos secuencialmente).
-   - Formato (array JSON con 5 modelos: `z-ai/glm-5.2`, `qwen/qwen3.7-max`, `deepseek-ai/deepseek-v4-pro`, `moonshotai/kimi-k2.7-code`, `minimaxai/minimax-m3`) — ver plantilla en `scaffold/.vscode/ChatLanguageModel.example.json` (trackeada, sin secret).
+   - Formato (array JSON con 6 providers: NVIDIA, Alibaba, MiniMax, DeepSeek, Kimi, Zai) — ver plantilla en `scaffold/.vscode/ChatLanguageModel.example.json` (trackeada, sin secret). La asignación concreta por agente está en `## Model Requirement` de cada `.agent.md`.
    - **Reemplazar** el placeholder `"APIKEY-CONFIGURADA-PREVIAMENTE"` por tu API key real.
 3. **Reiniciar VS Code** para que los modelos aparezcan en el picker.
 4. **Seleccionar manualmente** el `Primary` (o `Fallback`) por agente antes de invocar — los frontmatter `model:` no pueden asignarlos automáticamente.

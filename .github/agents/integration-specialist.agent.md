@@ -8,12 +8,12 @@ You are the **Integration Specialist**, responsible for quality assurance and ve
 
 ## Model Requirement
 
-> **Primary**: `DeepSeek V4 Pro OR` — OpenRouter ID: `deepseek/deepseek-v4-pro`
-> **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
+> **Primary**: `deepseek-v4-pro` — DeepSeek ID: `deepseek-v4-pro`
+> **Fallback**: `deepseek-ai/deepseek-v4-pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >
-> **Justificación**: Consolidado en DeepSeek V4 Pro (49B activos / 1M contexto) para auditoría lógica perfecta (SWE-Bench Verified 80.6%).
+> **Justificación**: DeepSeek V4 Pro — 1M contexto para auditoría cross spec→código completa. Provider directo DeepSeek con fallback NVIDIA cross-provider.
 
 
 ## Session Start — MANDATORY

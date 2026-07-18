@@ -8,17 +8,17 @@ Para garantizar la mayor eficiencia y capacidad resolutiva de la infraestructura
 
 Para tareas que requieren pensamiento profundo, planificación, arquitectura, toma de decisiones o análisis complejo funcional (e.g. `supervisor`, `solution-architect`, `functional-analyst`, `triage-specialist`, `resource-analyst`, UX/Design):
 
-- **Modelo por defecto:** `DeepSeek V4 Pro` (raíz) / `Qwen 3.7 Max` (Antigravity)
+- **Modelo por defecto:** `DeepSeek V4 Pro`
 
-> Ver §4 de `.github/instructions/model-selection.instructions.md` para el catálogo NVIDIA customendpoint. Cuando se asignen modelos NVIDIA al agente desde el picker del operador, esta regla queda reemplazada por la asignación documentada en el bloque `## Model Requirement` del agente específico (en `.github/agents/*.agent.md` y su mirror `.agent/skills/agents/*.md`).
+> Ver §4 de `.github/instructions/model-selection.instructions.md` para el catálogo multi-provider + NVIDIA fallback. La asignación concreta por agente está en el bloque `## Model Requirement` del agente específico (en `.github/agents/*.agent.md` y su mirror `.agent/skills/agents/*.md`).
 
 ## 2. Agentes de Implementación
 
 Para tareas que requieren escribir código, ejecutar comandos en terminal, implementar lógica de negocio, configuración estricta, refactorización (e.g. `frontend-developer`, `backend-developer`, `devops-engineer`, `integration-specialist`):
 
-- **Modelo por defecto:** `GLM-5.2`
+- **Modelo por defecto:** `GLM 5.2`
 
-> Misma regla de preeminencia: si el operador eligió un NVIDIA customendpoint en el picker, esa selección prima sobre el default declarado arriba.
+> Misma regla de preeminencia: la asignación del `## Model Requirement` del agente prima sobre el default declarado arriba.
 
 ## 3. Fallback (Contingencia)
 
@@ -42,18 +42,15 @@ Este capítulo espeja el §4 de `.github/instructions/model-selection.instructio
 
 > Toda asignación de agente declarada en el capítulo raíz debe espejarse en `.agent/skills/agents/*.md` (Antigravity) con un bloque `## Model Requirement` equivalente. El protocolo `dual-sync.instructions.md` aplica sin excepciones.
 
+### Nota de Riesgo — Qwen 3.7 Plus (Alibaba Cloud)
 
-### Nota de Riesgo — Qwen 3.7 Max (Propietario)
-
-> ⚠️ **Qwen 3.7 Max** es un modelo propietario cerrado de Alibaba Cloud. No permite self-hosting ni inspección de pesos.
-> Esto entra en tensión con el Principio II (Tool-Agnostic) de la constitución AOI.
+> ⚠️ **Qwen 3.7 Plus** corre en Alibaba Cloud (MaaS). Disponibilidad y pricing pueden variar.
 >
-> **Mitigación**: Todos los agentes que usan Qwen 3.7 Max como Primary tienen `DeepSeek V4 Pro` (open-weight, MIT) como Fallback.
-> Si Alibaba cambia disponibilidad o pricing, el operador puede migrar inmediatamente a DeepSeek sin pérdida funcional significativa.
+> **Mitigación**: Los agentes que usan Qwen 3.7 Plus como Primary tienen `DeepSeek V4 Pro` como Fallback cross-modelo (DeepSeek provider directo).
 
 ## 5. Customendpoint NVIDIA — Setup opcional (espejo del §5 raíz)
 
-> ⚠️ **Si NO se configura**, AOI sigue funcionando con los defaults Antigravity declarados en §1–§2 (`Qwen 3.7 Max` y `GLM-5.2`). El catálogo NVIDIA simplemente no se activa.
+> ⚠️ **Si NO se configura**, AOI sigue funcionando con los defaults declarados en §1–§2 (`DeepSeek V4 Pro` y `GLM 5.2`). El catálogo multi-provider simplemente no se activa.
 
 Este capítulo espeja el §5 de `.github/instructions/model-selection.instructions.md` (raíz Copilot). El detalle completo de:
 

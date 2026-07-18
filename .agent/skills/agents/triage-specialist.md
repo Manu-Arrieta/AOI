@@ -6,12 +6,12 @@ Skill: `.agent/skills/_shared/icm-protocol.md`
 
 ## Model Requirement
 
-> **Primary**: `Qwen 3.7 OR` — OpenRouter ID: `qwen/qwen3.7-max`
-> **Fallback**: `Qwen 3.5` — NVIDIA ID: `qwen/qwen3.5-397b-a17b`
+> **Primary**: `qwen3.7-plus` — Alibaba ID: `qwen3.7-plus`
+> **Fallback**: `deepseek-v4-pro` — DeepSeek ID: `deepseek-v4-pro`
 >
 > ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
 >
-> **Justificación**: Actualizado a Qwen 3.7 Max para explotar su Extended Thinking en razonamiento arquitectural/triage sobre 1M tokens.
+> **Justificación**: Qwen 3.7 Plus — Extended Thinking para Root Cause Analysis profundo. Fallback cross-modelo a DeepSeek V4 Pro.
 
 
 ## Session Start — MANDATORY

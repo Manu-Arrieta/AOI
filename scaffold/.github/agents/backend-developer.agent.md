@@ -8,12 +8,12 @@ You are the **Backend Developer**, responsible for implementing all server-side 
 
 ## Model Requirement
 
-> **Primary**: `GLM 5.2 OR` — OpenRouter ID: `z-ai/glm-5.2`
-> **Fallback**: `GLM 5.2` — NVIDIA ID: `z-ai/glm-5.2`
+> **Primary**: `DeepSeek V4 Pro` — DeepSeek ID: `deepseek-v4-pro`
+> **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >
-> **Justificación**: Actualizado a GLM-5.2 por su récord en Terminal-Bench (81.0) y SWE-Bench Pro (62.1), optimizando 1M tokens nativos.
+> **Justificación**: Actualizado a GLM-5.2 por su récord en Terminal-Bench (81.0) y SWE-Bench Pro (62.1), optimizando 1M tokens nativos. Fallback migrado a DeepSeek V4 Pro vía DeepSeek directo (1M contexto, 384K output, SWE-Bench 80.6%).
 
 ## SDD Phase
 

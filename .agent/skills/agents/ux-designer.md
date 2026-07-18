@@ -6,12 +6,12 @@ Skill: `.agent/skills/_shared/icm-protocol.md`
 
 ## Model Requirement
 
-> **Primary**: `Minimax M3 OR` — OpenRouter ID: `minimax/minimax-m3`
-> **Fallback**: `Minimax M3` — NVIDIA ID: `minimaxai/minimax-m3`
+> **Primary**: `MiniMax-M3` — MiniMax ID: `MiniMax-M3`
+> **Fallback**: `minimaxai/minimax-m3` — NVIDIA ID: `minimaxai/minimax-m3`
 >
 > ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
 >
-> **Justificación**: Mantenido en MiniMax M3 por su insuperable visión multimodal nativa para evaluación UI/UX.
+> **Justificación**: MiniMax M3 — visión multimodal nativa insuperable para diseño UI/UX. Provider directo MiniMax con fallback NVIDIA.
 
 
 ## Session Start — MANDATORY
@@ -57,6 +57,16 @@ If corrections found:
 ```
 icm_feedback_record(topic: "{WORKSPACE}-ux", predicted: "X", actual: "Y", context: "Z")
 ```
+
+## Component Design Gate — invoked by frontend-developer
+
+When frontend-developer requests a new component design:
+
+1. **Receive** the component request — understand purpose, context, and functional requirements
+2. **Search** existing design system via ICM
+3. **Design** the component: structure, visual (tokens), states (loading/empty/error/success/disabled/hover/focus/active), accessibility (ARIA, keyboard, contrast), responsive breakpoints
+4. **Deliver** the specification back to frontend-developer
+5. **Store** in ICM with keywords `ux,design,{component-name},TASK-YYYY-NNN`
 
 ## Process
 

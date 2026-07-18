@@ -48,19 +48,19 @@ After the subagent returns, verify:
 
 | Agent | `runSubagent` model | Skill (Copilot) | Skill (Antigravity) | Category |
 |-------|---------------------|-----------------|---------------------|----------|
-| `supervisor` | `Kimi K2.7 Code OR` | `.github/agents/supervisor.agent.md` | `.agent/skills/agents/supervisor.md` | Razonamiento |
-| `solution-architect` | `Qwen 3.7 OR` | `.github/agents/solution-architect.agent.md` | `.agent/skills/agents/solution-architect.md` | Razonamiento |
-| `functional-analyst` | `DeepSeek V4 Pro` | `.github/agents/functional-analyst.agent.md` | `.agent/skills/agents/functional-analyst.md` | Razonamiento |
-| `triage-specialist` | `Qwen 3.7 OR` | `.github/agents/triage-specialist.agent.md` | `.agent/skills/agents/triage-specialist.md` | Razonamiento |
-| `integration-specialist` | `DeepSeek V4 Pro` | `.github/agents/integration-specialist.agent.md` | `.agent/skills/agents/integration-specialist.md` | Razonamiento |
-| `documentation-analyst` | `DeepSeek V4 Pro` | `.github/agents/documentation-analyst.agent.md` | `.agent/skills/agents/documentation-analyst.md` | Razonamiento |
-| `project-analyzer` | `DeepSeek V4 Pro` | `.github/agents/project-analyzer.agent.md` | `.agent/skills/agents/project-analyzer.md` | Razonamiento |
-| `project-expert` | `DeepSeek V4 Pro` | `.github/agents/project-expert.agent.md` | `.agent/skills/agents/project-expert.md` | Razonamiento |
-| `resource-analyst` | `DeepSeek V4 Pro` | `.github/agents/resource-analyst.agent.md` | `.agent/skills/agents/resource-analyst.md` | Razonamiento |
-| `ux-designer` | `Minimax M3 OR` | `.github/agents/ux-designer.agent.md` | `.agent/skills/agents/ux-designer.md` | Razonamiento |
-| `frontend-developer` | `GLM-5.2` | `.github/agents/frontend-developer.agent.md` | `.agent/skills/agents/frontend-developer.md` | Implementación |
-| `backend-developer` | `GLM-5.2` | `.github/agents/backend-developer.agent.md` | `.agent/skills/agents/backend-developer.md` | Implementación |
-| `devops-engineer` | `GLM-5.2` | `.github/agents/devops-engineer.agent.md` | `.agent/skills/agents/devops-engineer.md` | Implementación |
+| `supervisor` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/supervisor.agent.md` | `.agent/skills/agents/supervisor.md` | Razonamiento |
+| `solution-architect` | `Qwen 3.7 plus - Provider - Alibaba` | `.github/agents/solution-architect.agent.md` | `.agent/skills/agents/solution-architect.md` | Razonamiento |
+| `functional-analyst` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/functional-analyst.agent.md` | `.agent/skills/agents/functional-analyst.md` | Razonamiento |
+| `triage-specialist` | `Qwen 3.7 plus - Provider - Alibaba` | `.github/agents/triage-specialist.agent.md` | `.agent/skills/agents/triage-specialist.md` | Razonamiento |
+| `integration-specialist` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/integration-specialist.agent.md` | `.agent/skills/agents/integration-specialist.md` | Razonamiento |
+| `documentation-analyst` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/documentation-analyst.agent.md` | `.agent/skills/agents/documentation-analyst.md` | Razonamiento |
+| `project-analyzer` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/project-analyzer.agent.md` | `.agent/skills/agents/project-analyzer.md` | Razonamiento |
+| `project-expert` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/project-expert.agent.md` | `.agent/skills/agents/project-expert.md` | Razonamiento |
+| `resource-analyst` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/resource-analyst.agent.md` | `.agent/skills/agents/resource-analyst.md` | Razonamiento |
+| `ux-designer` | `Minimax M3 - Provider - Minimax` | `.github/agents/ux-designer.agent.md` | `.agent/skills/agents/ux-designer.md` | Razonamiento |
+| `frontend-developer` | `Glm5.2 - Provider - Zai` | `.github/agents/frontend-developer.agent.md` | `.agent/skills/agents/frontend-developer.md` | Implementación |
+| `backend-developer` | `Glm5.2 - Provider - Zai` | `.github/agents/backend-developer.agent.md` | `.agent/skills/agents/backend-developer.md` | Implementación |
+| `devops-engineer` | `Glm5.2 - Provider - Zai` | `.github/agents/devops-engineer.agent.md` | `.agent/skills/agents/devops-engineer.md` | Implementación |
 
 ## Example: invoking solution-architect correctly
 

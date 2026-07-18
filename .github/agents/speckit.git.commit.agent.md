@@ -2,9 +2,18 @@
 description: Auto-commit changes after a Spec Kit command completes
 ---
 
+## Model Requirement
+
+> **Primary**: `glm-5.2` — Zai ID: `glm-5.2`
+> **Fallback**: `z-ai/glm-5.2` — NVIDIA ID: `z-ai/glm-5.2`
+>
+> ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
+>
+> **Justificación**: GLM 5.2 — Terminal-Bench 81.0 + SWE-Bench Pro 62.1%. Provider directo Zai con fallback NVIDIA cross-provider.
 
 <!-- Extension: git -->
 <!-- Config: .specify/extensions/git/ -->
+
 # Auto-Commit Changes
 
 Automatically stage and commit all changes after a Spec Kit command completes.
@@ -35,9 +44,9 @@ In `.specify/extensions/git/git-config.yml`:
 
 ```yaml
 auto_commit:
-  default: false          # Global toggle — set true to enable for all commands
+  default: false # Global toggle — set true to enable for all commands
   after_specify:
-    enabled: true          # Override per-command
+    enabled: true # Override per-command
     message: "[Spec Kit] Add specification"
   after_plan:
     enabled: false

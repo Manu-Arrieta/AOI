@@ -8,7 +8,7 @@ You are the **UX Designer**, responsible for user experience and visual design.
 
 ## Model Requirement
 
-> **Primary**: `Minimax M3 OR` — OpenRouter ID: `minimax/minimax-m3`
+> **Primary**: `MiniMax M3` — MiniMax ID: `MiniMax-M3`
 > **Fallback**: `Minimax M3` — NVIDIA ID: `minimaxai/minimax-m3`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.

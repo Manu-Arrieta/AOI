@@ -1,22 +1,31 @@
-# NVIDIA Customendpoint Setup — AOI
+# Multi-Provider Customendpoint Setup — AOI
 
-Este directorio contiene artefactos para configurar el endpoint NVIDIA
-(`https://integrate.api.nvidia.com/v1`) en VS Code como **custom endpoint** para
-los modelos externos recomendados del catálogo AOI (Kimi K2.7 Code, DeepSeek V4 Pro,
-MiniMax M3, Qwen 3.7 Max).
+Este directorio contiene artefactos para configurar los providers directos
+(DeepSeek, Zai, Alibaba, MiniMax, Kimi) con NVIDIA como fallback universal
+en VS Code como **custom endpoints** para el catálogo AOI.
 
 > ⚠️ **OPCIONAL**. AOI funciona perfectamente sin este setup. Si NO se configura,
 > los modelos que se usarán son los defaults declarados en cada plataforma
-> (raíz: `DeepSeek V4 Pro` / `GLM-5.2`; Antigravity: `Qwen 3.7 Max`
-> / `GLM-5.2`). El catálogo NVIDIA queda inerte hasta que el operador active
-> el custom endpoint.
+> (`DeepSeek V4 Pro` / `GLM 5.2`). El catálogo multi-provider queda inerte
+> hasta que el operador active los custom endpoints.
 
 ## Archivos
 
-| Archivo                          | Estado       | Función                                                                                             |
-| :------------------------------- | :----------- | :-------------------------------------------------------------------------------------------------- |
-| `ChatLanguageModel.example.json` | **tracked**  | Plantilla con `apiKey` placeholder `APIKEY-CONFIGURADA-PREVIAMENTE`. **NO contiene secret real.**   |
-| `ChatLanguageModel.json`         | **ignorado** | (si lo creás localmente con tu API key real, debe estar en `.gitignore` del downstream / scaffold). |
+| Archivo                          | Estado       | Función                                                                                                 |
+| :------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------ |
+| `ChatLanguageModel.example.json` | **tracked**  | Plantilla con `apiKey` placeholders. **NO contiene secrets reales.**                                    |
+| `ChatLanguageModel.json`         | **ignorado** | (si lo creás localmente con tus API keys reales, debe estar en `.gitignore` del downstream / scaffold). |
+
+## Proveedores configurados
+
+| Provider | Modelo               | Uso en agentes                            |
+| :------- | :------------------- | :---------------------------------------- |
+| DeepSeek | DeepSeek V4 Pro      | 22 agentes (análisis, docs, orquestación) |
+| Zai      | GLM 5.2              | 8 agentes (código, terminal, git)         |
+| Alibaba  | Qwen 3.7 Plus        | 2 agentes (arquitectura, triage)          |
+| MiniMax  | MiniMax M3           | 1 agente (UX/visual)                      |
+| NVIDIA   | Todos los anteriores | Fallback universal cross-provider         |
+| Kimi     | Kimi K2.6            | 0 agentes (sin caso de uso)               |
 
 ## Pasos para activarlo (una vez, en tu máquina)
 
@@ -73,19 +82,19 @@ Copy-Item .vscode/ChatLanguageModel.example.json "$env:APPDATA\Roaming\Code\User
 
 ### 3. Reiniciá VS Code
 
-Tras reiniciar, los 4 modelos NVIDIA aparecerán en el picker de GitHub Copilot Chat.
+Tras reiniciar, los modelos configurados aparecerán en el picker de GitHub Copilot Chat.
 
 ### 4. Seleccioná manualmente por agente
 
 Para cada agente que invocás, elegí el modelo en el picker (ver
 `## Model Requirement` en cada `.agent.md`):
 
-- `@supervisor` → Kimi K2.7 Code
-- `@solution-architect`, `@functional-analyst`, `@integration-specialist`,
-  `@documentation-analyst`, `@triage-specialist`, `@resource-analyst`,
-  `@project-analyzer`, `@project-expert` → DeepSeek V4 Pro
-- `@backend-developer` → DeepSeek V4 Pro (default), MiniMax M3 fallback
-- `@frontend-developer`, `@devops-engineer`, `@ux-designer` → MiniMax M3
+- `@supervisor`, `@functional-analyst`, `@integration-specialist`,
+  `@documentation-analyst`, `@resource-analyst`,
+  `@project-analyzer`, `@project-expert` → DeepSeek V4 Pro (DeepSeek)
+- `@frontend-developer`, `@backend-developer`, `@devops-engineer` → GLM 5.2 (Zai)
+- `@solution-architect`, `@triage-specialist` → Qwen 3.7 Plus (Alibaba)
+- `@ux-designer` → MiniMax M3 (MiniMax)
 
 ## Forma automática
 
@@ -93,8 +102,8 @@ Para cada agente que invocás, elegí el modelo en el picker (ver
 después de instalar `rtk` + `icm`:
 
 ```text
-▸ NVIDIA customendpoint (opcional)
-  Detectar VS Code User dir + copiar plantilla + recordatorio de reemplazar API key.
+▸ Custom endpoints (opcional)
+  Detectar VS Code User dir + copiar plantilla + recordatorio de reemplazar API keys.
 ```
 
 Si el operador responde `n`, AOI continúa con defaults vendor-copilot sin

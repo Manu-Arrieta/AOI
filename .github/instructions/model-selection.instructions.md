@@ -22,97 +22,88 @@ Para tareas que requieren escribir código, ejecutar comandos en terminal, imple
 >
 > **El operador DEBE seleccionar el modelo `Primary` en el picker de la plataforma antes de invocar al agente.** Los modelos custom no se asignan automáticamente via frontmatter ni via parámetros de `runSubagent`. Si el `Primary` no está disponible, el operador DEBE elegir el `Fallback` manualmente.
 
-## 4. Mecanismo `runSubagent` (Copilot)
+## 4. Modelos Externos Recomendados (Multi-Provider Directo + NVIDIA Fallback)
 
-Al invocar un agente via `runSubagent`, el caller DEBE pasar el parámetro `model` con el valor exacto del `Primary` declarado en el `## Model Requirement` del agente destino:
+### 4.0 Mecanismo `runSubagent` (Copilot)
+
+Al invocar un agente via `runSubagent`, el caller DEBE pasar el parámetro `model` con el valor del `name` del modelo en el picker de Copilot, documentado en el `## Model Requirement` del agente destino:
 
 ```ts
-// Agentes de razonamiento con Model Requirement específico
-runSubagent({ agentName: "supervisor", model: "Kimi K2.7 Code OR", ... })
-runSubagent({ agentName: "solution-architect", model: "Qwen 3.7 OR", ... })
-runSubagent({ agentName: "triage-specialist", model: "Qwen 3.7 OR", ... })
-
-// Agentes de razonamiento que usan el default (DeepSeek V4 Pro)
-runSubagent({ agentName: "functional-analyst", model: "DeepSeek V4 Pro", ... })
-runSubagent({ agentName: "integration-specialist", model: "DeepSeek V4 Pro", ... })
-
-// Agentes de implementación
-runSubagent({ agentName: "backend-developer", model: "GLM-5.2", ... })
-runSubagent({ agentName: "frontend-developer", model: "GLM-5.2", ... })
-runSubagent({ agentName: "devops-engineer", model: "GLM-5.2", ... })
+// Ejemplos — consultar ## Model Requirement de cada agente para el valor exacto
+runSubagent({ agentName: "functional-analyst", model: "Deepseek v4 pro - Provider - Deepseek", ... })
+runSubagent({ agentName: "frontend-developer", model: "Glm5.2 - Provider - Zai", ... })
+runSubagent({ agentName: "solution-architect", model: "Qwen 3.7 plus - Provider - Alibaba", ... })
+runSubagent({ agentName: "ux-designer", model: "Minimax M3 - Provider - Minimax", ... })
 ```
 
-## 5. Asignación por Agente (tabla canónica)
+> El modelo exacto que se pasa a `runSubagent` es el `name` del modelo en `ChatLanguageModel.json`, que coincide con lo documentado en el `## Model Requirement` del agente.
 
-| Agente | Primary | OpenRouter ID | Fallback | NVIDIA ID | Categoría |
-|---|---|---|---|---|---|
-| `supervisor` | `Kimi K2.7 Code OR` | `moonshotai/kimi-k2.7-code` | `Kimi K2.6` | `moonshotai/kimi-k2.6` | Razonamiento |
-| `solution-architect` | `Qwen 3.7 OR` | `qwen/qwen3.7-max` | `Qwen 3.5` | `qwen/qwen3.5-397b-a17b` | Razonamiento |
-| `functional-analyst` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `triage-specialist` | `Qwen 3.7 OR` | `qwen/qwen3.7-max` | `Qwen 3.5` | `qwen/qwen3.5-397b-a17b` | Razonamiento |
-| `integration-specialist` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `documentation-analyst` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `project-analyzer` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `project-expert` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `resource-analyst` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `ux-designer` | `Minimax M3 OR` | `minimax/minimax-m3` | `Minimax M3` | `minimaxai/minimax-m3` | Razonamiento |
-| `frontend-developer` | `GLM 5.2 OR` | `z-ai/glm-5.2` | `GLM 5.2` | `z-ai/glm-5.2` | Implementación |
-| `backend-developer` | `GLM 5.2 OR` | `z-ai/glm-5.2` | `GLM 5.2` | `z-ai/glm-5.2` | Implementación |
-| `devops-engineer` | `GLM 5.2 OR` | `z-ai/glm-5.2` | `GLM 5.2` | `z-ai/glm-5.2` | Implementación |
+### 4.1 Modelos Disponibles
 
-## 6. Fallback (Contingencia)
+> ⚡ **Estrategia Multi-Provider**: Cada modelo usa su provider nativo como primario (DeepSeek → api.deepseek.com, GLM 5.2 → api.z.ai, Qwen 3.7 → Alibaba Cloud, MiniMax M3 → api.minimax.io). NVIDIA actúa como fallback universal para todos los modelos, garantizando redundancia cross-provider sin intermediarios.
 
-Si el modelo designado para el perfil del agente **no se encuentra disponible** o la plataforma no permite su acceso instantáneo:
-
-1. **Detener la operación.**
-2. **Notificar de inmediato al usuario** sobre la indisponibilidad del modelo.
-3. No hacer una elección en su lugar. **Dejar al libre albedrío y decisión del usuario** indicar el modelo secundario a utilizar o cómo proceder.
-
-> Esta regla aplica incluso cuando existe un jerarquía de `Primary` + `Fallback` configurada para el agente: AOI **nunca** elige un modelo alternativo por cuenta propia. La jerarquía de respaldo sólo describe un orden sugerido para la decisión humana.
-
-## 7. Mirror Obligatorio (Dual-Sync)
-
-> Toda actualización de esta tabla canónica debe espejarse en `.agent/skills/_shared/model-selection.md` (Antigravity). El protocolo `dual-sync.instructions.md` aplica sin excepciones. Ambos archivos deben mantenerse idénticos en su sección normativa y tabla de asignación.
-| Qwen 3.7 Max    | `qwen/qwen3.7-max`            | 1M       | 65,536     | Extended Thinking nativo, GPQA Diamond 92.4% — agent-first | ✅ Líder razonamiento |
-| Kimi K2.7 Code  | `moonshotai/kimi-k2.7-code`   | 256K     | 16,384     | Agent Swarm nativo, 30% menos tokens vs K2.6, MoonViT multimodal | ✅ Líder orquestación |
-| MiniMax M3      | `minimax/minimax-m3`          | 1M       | 8,192      | Visión multimodal nativa (imagen+video), BrowseComp 83.5 | ✅ Líder UX/visual |
+| Modelo          | ID Primario                  | ID Fallback (NVIDIA)          | Fortaleza                                                                   |
+| :-------------- | :--------------------------- | :---------------------------- | :-------------------------------------------------------------------------- |
+| DeepSeek V4 Pro | `deepseek-v4-pro` (DeepSeek) | `deepseek-ai/deepseek-v4-pro` | 1M contexto + 49B activos + SWE-Bench Verified 80.6% — razonamiento general |
+| GLM 5.2         | `glm-5.2` (Zai)              | `z-ai/glm-5.2`                | Terminal-Bench 81.0 + SWE-Bench Pro 62.1% — líder código/terminal           |
+| Qwen 3.7 Plus   | `qwen3.7-plus` (Alibaba)     | `deepseek-v4-pro` (DeepSeek)  | Extended Thinking + 1M contexto — razonamiento profundo                     |
+| MiniMax M3      | `MiniMax-M3` (MiniMax)       | `minimaxai/minimax-m3`        | Visión multimodal nativa — líder UX/visual                                  |
 
 > 📊 **Fuente**: Benchmark interno 7 modelos × 3 tests AOI SDD (Functional Analyst, Backend Developer, Triage Specialist) — Julio 2026. Ver `.exportsmemories/` o `/Users/equinox/Desktop/nvidia-bench/reports/`.
 
-### Asignación por Agente (Mid-2026)
+### Asignación por Agente (Julio 2026)
 
-> ⚡ **Criterio actualizado**: Asignación basada en análisis consolidado cruzando evaluaciones de Gemini, Grok, GPT y Claude Opus contra benchmarks reales (SWE-Bench Pro/Verified, Terminal-Bench, GPQA Diamond). Ver `Benchmark/model-reference/consolidated-recommendation.md`.
+> ⚡ **Criterio actualizado**: Asignación basada en providers directos disponibles en `ChatLanguageModel.example.json`. Fallback universal vía NVIDIA. Kimi K2.6 descartado por no tener caso de uso que DeepSeek V4 Pro o GLM 5.2 no cubran mejor.
 
-| Agente                    | Modelo Primario      | Modelo de Respaldo  | Criterio de asignación |
-| :------------------------ | :------------------- | :------------------ | :--------------------- |
-| `@supervisor`             | **Kimi K2.7 Code**   | DeepSeek V4 Pro     | Agent Swarm nativo + 30% token savings para orquestación Hub-and-Spoke |
-| `@functional-analyst`     | **DeepSeek V4 Pro**  | Qwen 3.7 Max        | 49B activos + 1M contexto para specs masivas y Service Discovery |
-| `@solution-architect`     | **Qwen 3.7 Max**     | DeepSeek V4 Pro     | Extended Thinking + GPQA 92.4% para trade-offs arquitectónicos |
-| `@frontend-developer`     | **GLM 5.2**          | MiniMax M3          | Terminal-Bench 81.0 + SWE-Bench Pro 62.1% — líder open-weight |
-| `@backend-developer`      | **GLM 5.2**          | DeepSeek V4 Pro     | SWE-Bench Pro 62.1% + 1M contexto nativo (IndexShare) |
-| `@devops-engineer`        | **GLM 5.2**          | MiniMax M3          | Terminal-Bench 81.0 para CLI, scripts e IaC |
-| `@ux-designer`            | **MiniMax M3**       | Qwen 3.7 Max        | Visión multimodal nativa para mockups y accesibilidad |
-| `@integration-specialist` | **DeepSeek V4 Pro**  | Qwen 3.7 Max        | Auditoría cruzada spec→código con 1M de contexto |
-| `@documentation-analyst`  | **DeepSeek V4 Pro**  | Qwen 3.7 Max        | 1M contexto para absorber ciclo SDD completo |
-| `@triage-specialist`      | **Qwen 3.7 Max**     | DeepSeek V4 Pro     | Extended Thinking para Root Cause Analysis profundo |
-| `@resource-analyst`       | **DeepSeek V4 Pro**  | GLM 5.2             | Procesamiento masivo de .resources/ (49B + 1M) |
-| `@project-analyzer`       | **DeepSeek V4 Pro**  | MiniMax M3          | Escaneo exhaustivo de repos con citación precisa |
-| `@project-expert`         | **DeepSeek V4 Pro**  | GLM 5.2             | Retención contextual profunda + citación de fuentes |
+| Agente                    | Modelo Primario     | Provider | Modelo de Respaldo | Provider | Criterio                                                                 |
+| :------------------------ | :------------------ | :------- | :----------------- | :------- | :----------------------------------------------------------------------- |
+| `@supervisor`             | **DeepSeek V4 Pro** | DeepSeek | DeepSeek V4 Pro    | NVIDIA   | 1M contexto para orquestación del ciclo SDD completo                     |
+| `@functional-analyst`     | **DeepSeek V4 Pro** | DeepSeek | DeepSeek V4 Pro    | NVIDIA   | 49B activos + 1M contexto para specs masivas y Service Discovery         |
+| `@solution-architect`     | **Qwen 3.7 Plus**   | Alibaba  | DeepSeek V4 Pro    | DeepSeek | Extended Thinking para trade-offs arquitectónicos. Fallback cross-modelo |
+| `@frontend-developer`     | **GLM 5.2**         | Zai      | GLM 5.2            | NVIDIA   | Terminal-Bench 81.0 + SWE-Bench Pro 62.1%. Redundancia cross-provider    |
+| `@backend-developer`      | **GLM 5.2**         | Zai      | GLM 5.2            | NVIDIA   | SWE-Bench Pro 62.1% + 1M contexto. Redundancia cross-provider            |
+| `@devops-engineer`        | **GLM 5.2**         | Zai      | GLM 5.2            | NVIDIA   | Terminal-Bench 81.0 para CLI, scripts e IaC. Redundancia cross-provider  |
+| `@ux-designer`            | **MiniMax M3**      | MiniMax  | MiniMax M3         | NVIDIA   | Visión multimodal nativa insuperable. Redundancia cross-provider         |
+| `@integration-specialist` | **DeepSeek V4 Pro** | DeepSeek | DeepSeek V4 Pro    | NVIDIA   | Auditoría cruzada spec→código con 1M de contexto                         |
+| `@documentation-analyst`  | **DeepSeek V4 Pro** | DeepSeek | DeepSeek V4 Pro    | NVIDIA   | 1M contexto para absorber ciclo SDD completo                             |
+| `@triage-specialist`      | **Qwen 3.7 Plus**   | Alibaba  | DeepSeek V4 Pro    | DeepSeek | Extended Thinking para RCA profundo. Fallback cross-modelo               |
+| `@resource-analyst`       | **DeepSeek V4 Pro** | DeepSeek | DeepSeek V4 Pro    | NVIDIA   | Procesamiento masivo de .resources/ (49B + 1M)                           |
+| `@project-analyzer`       | **DeepSeek V4 Pro** | DeepSeek | DeepSeek V4 Pro    | NVIDIA   | Escaneo exhaustivo de repos con citación precisa                         |
+| `@project-expert`         | **DeepSeek V4 Pro** | DeepSeek | DeepSeek V4 Pro    | NVIDIA   | Retención contextual profunda + citación de fuentes                      |
 
-### Distribución (Mid-2026)
+### Agentes Speckit
 
-- **DeepSeek V4 Pro**: 6 agentes (análisis, auditoría, documentación — contexto masivo 1M + 49B activos)
-- **GLM 5.2**: 3 agentes (frontend, backend, devops — ejecución de código + terminal)
-- **Qwen 3.7 Max**: 2 agentes (arquitectura, triage — Extended Thinking)
-- **Kimi K2.7 Code**: 1 agente (supervisor — orquestación Agent Swarm)
-- **MiniMax M3**: 1 agente (UX — visión multimodal nativa)
+| Agente                   | Modelo Primario     | Provider | Modelo de Respaldo | Provider |
+| :----------------------- | :------------------ | :------- | :----------------- | :------- |
+| `speckit.constitution`   | **DeepSeek V4 Pro** | DeepSeek | DeepSeek V4 Pro    | NVIDIA   |
+| `speckit.specify`        | **DeepSeek V4 Pro** | DeepSeek | DeepSeek V4 Pro    | NVIDIA   |
+| `speckit.clarify`        | **DeepSeek V4 Pro** | DeepSeek | DeepSeek V4 Pro    | NVIDIA   |
+| `speckit.plan`           | **DeepSeek V4 Pro** | DeepSeek | DeepSeek V4 Pro    | NVIDIA   |
+| `speckit.tasks`          | **DeepSeek V4 Pro** | DeepSeek | DeepSeek V4 Pro    | NVIDIA   |
+| `speckit.analyze`        | **DeepSeek V4 Pro** | DeepSeek | DeepSeek V4 Pro    | NVIDIA   |
+| `speckit.checklist`      | **DeepSeek V4 Pro** | DeepSeek | DeepSeek V4 Pro    | NVIDIA   |
+| `speckit.taskstoissues`  | **DeepSeek V4 Pro** | DeepSeek | DeepSeek V4 Pro    | NVIDIA   |
+| `speckit.implement`      | **GLM 5.2**         | Zai      | GLM 5.2            | NVIDIA   |
+| `speckit.git.initialize` | **GLM 5.2**         | Zai      | GLM 5.2            | NVIDIA   |
+| `speckit.git.validate`   | **GLM 5.2**         | Zai      | GLM 5.2            | NVIDIA   |
+| `speckit.git.commit`     | **GLM 5.2**         | Zai      | GLM 5.2            | NVIDIA   |
+| `speckit.git.remote`     | **GLM 5.2**         | Zai      | GLM 5.2            | NVIDIA   |
+| `speckit.git.feature`    | **GLM 5.2**         | Zai      | GLM 5.2            | NVIDIA   |
+
+### Distribución (Julio 2026)
+
+- **DeepSeek V4 Pro**: 22 agentes (7 dominio + 8 speckit reasoning — 1M contexto + 49B activos)
+- **GLM 5.2**: 9 agentes (3 dominio implementación + 1 speckit.implement + 5 speckit.git — Terminal-Bench 81.0)
+- **Qwen 3.7 Plus**: 2 agentes (solution-architect + triage-specialist — Extended Thinking)
+- **MiniMax M3**: 1 agente (ux-designer — visión multimodal nativa)
+- **Kimi K2.6**: 0 agentes (sin caso de uso — DeepSeek V4 Pro lo supera en todo)
 
 ### Modelos Descartados del Catálogo Activo
 
-| Modelo | Razón | Estado |
-| :----- | :---- | :----- |
-| Nemotron Ultra | Tool calling falla incluso con `tool_choice:"required"` — inutilizable para agentes AOI | ❌ Excluido |
-| DeepSeek V4 Flash | ResourceExhausted constante (rate limit del endpoint) — no evaluable | ❌ Excluido (re-test pendiente) |
+| Modelo            | Razón                                                                                   | Estado                          |
+| :---------------- | :-------------------------------------------------------------------------------------- | :------------------------------ |
+| Nemotron Ultra    | Tool calling falla incluso con `tool_choice:"required"` — inutilizable para agentes AOI | ❌ Excluido                     |
+| DeepSeek V4 Flash | ResourceExhausted constante (rate limit del endpoint) — no evaluable                    | ❌ Excluido (re-test pendiente) |
 
 ### Regla de selección manual (CRÍTICA — refuerzo de la regla §3)
 
@@ -124,13 +115,17 @@ Esta jerarquía NO automatiza la selección: el AOI nunca elige modelo por cuent
 
 > Toda asignación de agente declarada en este capítulo debe espejarse en `.agent/skills/agents/*.md` (Antigravity) con un bloque `## Model Requirement` equivalente. El protocolo `dual-sync.instructions.md` aplica sin excepciones.
 
-## 5. Configuración Dual OpenRouter + NVIDIA (paso previo, opcional)
+## 5. Configuración Multi-Provider + NVIDIA Fallback (paso previo, opcional)
 
-> ⚠️ **Si NO se configura**, AOI sigue funcionando con los defaults vendor-copilot declarados en §1–§2 (`DeepSeek V4 Pro` y `GLM-5.2` en raíz). El catálogo del §4 simplemente no se activa. Esta sección habilita el catálogo dual cuando el operador quiere usar los modelos especializados.
+> ⚠️ **Si NO se configura**, AOI sigue funcionando con los defaults vendor-copilot declarados en §1–§2 (`DeepSeek V4 Pro` y `GLM-5.2` en raíz). El catálogo del §4 simplemente no se activa. Esta sección habilita el catálogo multi-provider cuando el operador quiere usar los modelos especializados con redundancia cross-provider.
 
 ### 5.1 Prerrequisitos
 
-1. **API key OpenRouter** activa — registrarla en `https://openrouter.ai/keys`.
+1. **API keys de providers directos** activas:
+   - DeepSeek: `https://platform.deepseek.com/api_keys`
+   - Zai (GLM 5.2): `https://open.bigmodel.cn/usercenter/apikeys`
+   - Alibaba (Qwen): `https://bailian.console.aliyun.com/`
+   - MiniMax: `https://platform.minimax.io/user-center/basic-information/interface-key`
 2. **API key NVIDIA** activa — registrarla en `https://integrate.api.nvidia.com/`.
 3. **VS Code** corriendo, con permisos de escritura sobre su `User/` dir.
 
@@ -146,140 +141,7 @@ Esta jerarquía NO automatiza la selección: el AOI nunca elige modelo por cuent
 
 ### 5.3 Formato del archivo `ChatLanguageModel.json`
 
-VS Code espera un **array JSON** con un único vendor `customendpoint`:
-
-```json
-[
-  {
-    "name": "OpenRouter",
-    "vendor": "customendpoint",
-    "apiKey": "${input:chat.lm.secret.-5cf42978}",
-    "apiType": "chat-completions",
-    "models": [
-      {
-        "id": "z-ai/glm-5.2",
-        "name": "GLM 5.2 OR",
-        "url": "https://openrouter.ai/api/v1",
-        "toolCalling": true,
-        "streaming": true,
-        "thinking": true,
-        "vision": true,
-        "maxInputTokens": 1000000,
-        "maxOutputTokens": 16384
-      },
-      {
-        "id": "deepseek/deepseek-v4-pro",
-        "name": "DeepSeek V4 Pro OR",
-        "url": "https://openrouter.ai/api/v1",
-        "toolCalling": true,
-        "streaming": true,
-        "thinking": true,
-        "vision": true,
-        "maxInputTokens": 1000000,
-        "maxOutputTokens": 16384
-      },
-      {
-        "id": "qwen/qwen3.7-max",
-        "name": "Qwen 3.7 OR",
-        "url": "https://openrouter.ai/api/v1",
-        "toolCalling": true,
-        "streaming": true,
-        "thinking": true,
-        "vision": true,
-        "maxInputTokens": 128000,
-        "maxOutputTokens": 16384
-      },
-      {
-        "id": "moonshotai/kimi-k2.7-code",
-        "name": "Kimi K2.7 Code OR",
-        "url": "https://openrouter.ai/api/v1",
-        "toolCalling": true,
-        "streaming": true,
-        "thinking": true,
-        "vision": true,
-        "maxInputTokens": 256000,
-        "maxOutputTokens": 16384
-      },
-      {
-        "id": "minimax/minimax-m3",
-        "name": "Minimax M3 OR",
-        "url": "https://openrouter.ai/api/v1",
-        "toolCalling": true,
-        "streaming": true,
-        "thinking": true,
-        "vision": true,
-        "maxInputTokens": 1000000,
-        "maxOutputTokens": 16384           
-      }
-    ]
-  },
-  {
-    "name": "NVIDIA",
-    "vendor": "customendpoint",
-    "apiKey": "${input:chat.lm.secret.46ff130f}",
-    "apiType": "chat-completions",
-    "models": [
-      {
-        "id": "z-ai/glm-5.2",
-        "name": "GLM 5.2",
-        "url": "https://integrate.api.nvidia.com/v1",
-        "toolCalling": true,
-        "streaming": true,
-        "thinking": true,
-        "vision": true,
-        "maxInputTokens": 1000000,
-        "maxOutputTokens": 16384
-      },
-      {
-        "id": "deepseek-ai/deepseek-v4-pro",
-        "name": "DeepSeek V4 Pro",
-        "url": "https://integrate.api.nvidia.com/v1",
-        "toolCalling": true,
-        "streaming": true,
-        "thinking": true,
-        "vision": true,
-        "maxInputTokens": 1000000,
-        "maxOutputTokens": 16384
-      },
-      {
-        "id": "qwen/qwen3.5-397b-a17b",
-        "name": "Qwen 3.5",
-        "url": "https://integrate.api.nvidia.com/v1",
-        "toolCalling": true,
-        "streaming": true,
-        "thinking": true,
-        "vision": true,
-        "maxInputTokens": 128000,
-        "maxOutputTokens": 16384
-      },
-      {
-        "id": "moonshotai/kimi-k2.6",
-        "name": "Kimi K2.6",
-        "url": "https://integrate.api.nvidia.com/v1",
-        "toolCalling": true,
-        "streaming": true,
-        "thinking": true,
-        "vision": true,
-        "maxInputTokens": 256000,
-        "maxOutputTokens": 16384
-      },
-      {
-        "id": "minimaxai/minimax-m3",
-        "name": "Minimax M3",
-        "url": "https://integrate.api.nvidia.com/v1",
-        "toolCalling": true,
-        "streaming": true,
-        "thinking": true,
-        "vision": true,
-        "maxInputTokens": 1000000,
-        "maxOutputTokens": 16384
-      }
-    ]
-  }
-]
-```
-
-> 📋 **Plantilla canónica**: `scaffold/.vscode/ChatLanguageModel.example.json`. El archivo real con secret **NO** debe versionarse (ver §5.5).
+> 📋 **Plantilla canónica**: `scaffold/.vscode/ChatLanguageModel.example.json` — este archivo contiene la configuración completa multi-provider (NVIDIA, Alibaba, MiniMax, DeepSeek, Kimi, Zai) con 6 vendors `customendpoint`. El archivo real con API keys **NO** debe versionarse.
 
 ### 5.4 Forma automatizada (recomendado)
 
@@ -457,7 +319,7 @@ Para que la obligatoriedad sea real y no solo a nivel de instalación, el setup 
 
 ### 6.7 Compatibilidad del modelo mental entre capas
 
-AOI bootstrapper ya tiene **13 agentes** con bloques `## Model Requirement` que asignan `Primary` + `Fallback` por NVIDIA custom endpoint (Kimi K2.7 Code, DeepSeek V4 Pro, GLM-5.2, Qwen 3.7 Max, MiniMax M3). Headroom comprime el contexto **antes** de que el provider asignado vía NVIDIA reciba la request. Por lo tanto:
+AOI bootstrapper ya tiene **27 agentes** con bloques `## Model Requirement` que asignan `Primary` + `Fallback` por provider directo (DeepSeek V4 Pro, GLM 5.2 via Zai, Qwen 3.7 Plus via Alibaba, MiniMax M3) con NVIDIA como fallback universal. Headroom comprime el contexto **antes** de que el provider asignado reciba la request. Por lo tanto:
 
 ```
 Output de agente AOI

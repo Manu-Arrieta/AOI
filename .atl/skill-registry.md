@@ -142,13 +142,13 @@ The Supervisor resolves shared skills at the start of each session:
 
 > Git integration skills from the `spec-kit` git extension. Each skill has a Copilot agent (`.github/agents/`) and an Antigravity skill (`.agent/skills/`).
 
-| Skill | Copilot | Antigravity | Description |
-| --- | --- | --- | --- |
-| `speckit.git.commit` | `.github/agents/speckit.git.commit.agent.md` | `.agent/skills/speckit-git-commit/SKILL.md` | Auto-commit after Spec Kit commands |
-| `speckit.git.feature` | `.github/agents/speckit.git.feature.agent.md` | `.agent/skills/speckit-git-feature/SKILL.md` | Create feature branch (sequential/timestamp) |
-| `speckit.git.initialize` | `.github/agents/speckit.git.initialize.agent.md` | `.agent/skills/speckit-git-initialize/SKILL.md` | Initialize Git repo with initial commit |
-| `speckit.git.remote` | `.github/agents/speckit.git.remote.agent.md` | `.agent/skills/speckit-git-remote/SKILL.md` | Detect Git remote URL for GitHub integration |
-| `speckit.git.validate` | `.github/agents/speckit.git.validate.agent.md` | `.agent/skills/speckit-git-validate/SKILL.md` | Validate feature branch naming conventions |
+| Skill                    | Copilot                                          | Antigravity                                     | Description                                  |
+| ------------------------ | ------------------------------------------------ | ----------------------------------------------- | -------------------------------------------- |
+| `speckit.git.commit`     | `.github/agents/speckit.git.commit.agent.md`     | `.agent/skills/speckit-git-commit/SKILL.md`     | Auto-commit after Spec Kit commands          |
+| `speckit.git.feature`    | `.github/agents/speckit.git.feature.agent.md`    | `.agent/skills/speckit-git-feature/SKILL.md`    | Create feature branch (sequential/timestamp) |
+| `speckit.git.initialize` | `.github/agents/speckit.git.initialize.agent.md` | `.agent/skills/speckit-git-initialize/SKILL.md` | Initialize Git repo with initial commit      |
+| `speckit.git.remote`     | `.github/agents/speckit.git.remote.agent.md`     | `.agent/skills/speckit-git-remote/SKILL.md`     | Detect Git remote URL for GitHub integration |
+| `speckit.git.validate`   | `.github/agents/speckit.git.validate.agent.md`   | `.agent/skills/speckit-git-validate/SKILL.md`   | Validate feature branch naming conventions   |
 
 ---
 
@@ -297,18 +297,18 @@ Boundaries:
 > Models are configured in each agent's `## Model Requirement` section.
 > If the NVIDIA custom endpoint is not configured, the IDE's active model is used instead.
 
-| Agent                  | Primary                | Fallback               |
-| ---------------------- | ---------------------- | ---------------------- |
-| Supervisor             | Kimi K2.7 Code              | DeepSeek V4 Pro        |
-| Functional Analyst     | DeepSeek V4 Pro        | MiniMax M3             |
-| Solution Architect     | DeepSeek V4 Pro        | Kimi K2.7 Code              |
-| Frontend Developer     | MiniMax M3             | Kimi K2.7 Code              |
-| Backend Developer      | DeepSeek V4 Pro        | MiniMax M3             |
-| DevOps Engineer        | MiniMax M3             | DeepSeek V4 Pro        |
-| UX Designer            | MiniMax M3             | Qwen 3.7 Max               |
-| Documentation Analyst  | DeepSeek V4 Pro        | MiniMax M3             |
-| Integration Specialist | DeepSeek V4 Pro        | MiniMax M3             |
-| Project Expert         | DeepSeek V4 Pro        | MiniMax M3             |
-| Triage Specialist      | DeepSeek V4 Pro        | Kimi K2.7 Code              |
-| Resource Analyst       | DeepSeek V4 Pro        | MiniMax M3             |
-| Project Analyzer       | DeepSeek V4 Pro        | MiniMax M3             |
+| Agent                  | Primary         | Provider | Fallback        | Provider |
+| ---------------------- | --------------- | -------- | --------------- | -------- |
+| Supervisor             | DeepSeek V4 Pro | DeepSeek | DeepSeek V4 Pro | NVIDIA   |
+| Functional Analyst     | DeepSeek V4 Pro | DeepSeek | DeepSeek V4 Pro | NVIDIA   |
+| Solution Architect     | Qwen 3.7 Plus   | Alibaba  | DeepSeek V4 Pro | DeepSeek |
+| Frontend Developer     | GLM 5.2         | Zai      | GLM 5.2         | NVIDIA   |
+| Backend Developer      | GLM 5.2         | Zai      | GLM 5.2         | NVIDIA   |
+| DevOps Engineer        | GLM 5.2         | Zai      | GLM 5.2         | NVIDIA   |
+| UX Designer            | MiniMax M3      | MiniMax  | MiniMax M3      | NVIDIA   |
+| Documentation Analyst  | DeepSeek V4 Pro | DeepSeek | DeepSeek V4 Pro | NVIDIA   |
+| Integration Specialist | DeepSeek V4 Pro | DeepSeek | DeepSeek V4 Pro | NVIDIA   |
+| Project Expert         | DeepSeek V4 Pro | DeepSeek | DeepSeek V4 Pro | NVIDIA   |
+| Triage Specialist      | Qwen 3.7 Plus   | Alibaba  | DeepSeek V4 Pro | DeepSeek |
+| Resource Analyst       | DeepSeek V4 Pro | DeepSeek | DeepSeek V4 Pro | NVIDIA   |
+| Project Analyzer       | DeepSeek V4 Pro | DeepSeek | DeepSeek V4 Pro | NVIDIA   |

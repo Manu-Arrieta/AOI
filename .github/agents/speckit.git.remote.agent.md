@@ -2,9 +2,18 @@
 description: Detect Git remote URL for GitHub integration
 ---
 
+## Model Requirement
+
+> **Primary**: `glm-5.2` — Zai ID: `glm-5.2`
+> **Fallback**: `z-ai/glm-5.2` — NVIDIA ID: `z-ai/glm-5.2`
+>
+> ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
+>
+> **Justificación**: GLM 5.2 — Terminal-Bench 81.0 + SWE-Bench Pro 62.1%. Provider directo Zai con fallback NVIDIA cross-provider.
 
 <!-- Extension: git -->
 <!-- Config: .specify/extensions/git/ -->
+
 # Detect Git Remote URL
 
 Detect the Git remote URL for integration with GitHub services (e.g., issue creation).
@@ -34,6 +43,7 @@ Parse the remote URL and determine:
 3. **Is GitHub**: Whether the remote points to a GitHub repository
 
 Supported URL formats:
+
 - HTTPS: `https://github.com/<owner>/<repo>.git`
 - SSH: `git@github.com:<owner>/<repo>.git`
 
@@ -44,5 +54,6 @@ Supported URL formats:
 ## Graceful Degradation
 
 If Git is not installed, the directory is not a Git repository, or no remote is configured:
+
 - Return an empty result
 - Do NOT error — other workflows should continue without Git remote information

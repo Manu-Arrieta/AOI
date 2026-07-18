@@ -5,12 +5,12 @@
 
 ## Model Requirement
 
-> **Primary**: `Kimi K2.7 Code OR` — OpenRouter ID: `moonshotai/kimi-k2.7-code`
-> **Fallback**: `Kimi K2.6` — NVIDIA ID: `moonshotai/kimi-k2.6`
+> **Primary**: `deepseek-v4-pro` — DeepSeek ID: `deepseek-v4-pro`
+> **Fallback**: `deepseek-ai/deepseek-v4-pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
 >
 > ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.
 >
-> **Justificación**: Actualizado a Kimi K2.7 Code por su Agent Swarm superior y optimización del 30% en tokens para orquestación.
+> **Justificación**: DeepSeek V4 Pro — 1M contexto + 49B activos + SWE-Bench Verified 80.6% para orquestación del ciclo SDD completo.
 
 ## Session Start — MANDATORY
 
@@ -35,6 +35,7 @@ Load skill registry: read `.atl/skill-registry.md`.
 | Plan         | `/speckit.plan`         | solution-architect      | design.md                         | `.tasks/{feature}/TASK-YYYY-NNN/design.md`         |
 | Tasks        | `/speckit.tasks`        | solution-architect      | tasks.md                          | `.tasks/{feature}/TASK-YYYY-NNN/tasks.md`          |
 | Implement    | `/speckit.implement`    | frontend/backend/devops | Code                              | `.tasks/{feature}/TASK-YYYY-NNN/iterations/`       |
+|              |                         | **🛡️ UX Gate**: UX Designer mandatory before any new UI component. Frontend Developer enforces internally. | | |
 | Verify       | `/sdd-verify`           | integration-specialist  | verify-report.md                  | `.tasks/{feature}/TASK-YYYY-NNN/verify-report.md`  |
 | Archive      | `/sdd-archive`          | documentation-analyst   | archive-report.md                 | `.tasks/{feature}/TASK-YYYY-NNN/archive-report.md` |
 

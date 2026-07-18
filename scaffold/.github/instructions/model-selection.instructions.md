@@ -24,52 +24,46 @@ Para tareas que requieren escribir código, ejecutar comandos en terminal, imple
 
 ## 4. Mecanismo `runSubagent` (Copilot)
 
-Al invocar un agente via `runSubagent`, el caller DEBE pasar el parámetro `model` con el valor exacto del `Primary` declarado en el `## Model Requirement` del agente destino:
+Al invocar un agente via `runSubagent`, el caller DEBE pasar el parámetro `model` con el valor del `name` del modelo en el picker de Copilot, documentado en el `## Model Requirement` del agente destino:
 
 ```ts
-// Agentes de razonamiento con Model Requirement específico
-runSubagent({ agentName: "supervisor", model: "Kimi K2.7 Code OR", ... })
-runSubagent({ agentName: "solution-architect", model: "Qwen 3.7 OR", ... })
-runSubagent({ agentName: "triage-specialist", model: "Qwen 3.7 OR", ... })
-
-// Agentes de razonamiento que usan el default (DeepSeek V4 Pro)
-runSubagent({ agentName: "functional-analyst", model: "DeepSeek V4 Pro", ... })
-runSubagent({ agentName: "integration-specialist", model: "DeepSeek V4 Pro", ... })
-
-// Agentes de implementación
-runSubagent({ agentName: "backend-developer", model: "GLM-5.2", ... })
-runSubagent({ agentName: "frontend-developer", model: "GLM-5.2", ... })
-runSubagent({ agentName: "devops-engineer", model: "GLM-5.2", ... })
+// Ejemplos — consultar ## Model Requirement de cada agente para el valor exacto
+runSubagent({ agentName: "functional-analyst", model: "Deepseek v4 pro - Provider - Deepseek", ... })
+runSubagent({ agentName: "frontend-developer", model: "Glm5.2 - Provider - Zai", ... })
+runSubagent({ agentName: "solution-architect", model: "Qwen 3.7 plus - Provider - Alibaba", ... })
+runSubagent({ agentName: "ux-designer", model: "Minimax M3 - Provider - Minimax", ... })
 ```
 
-## 5. Asignación por Agente (tabla canónica)
+> El modelo exacto que se pasa a `runSubagent` es el `name` del modelo en `ChatLanguageModel.json`, que coincide con lo documentado en el `## Model Requirement` del agente.
 
-| Agente | Primary | OpenRouter ID | Fallback | NVIDIA ID | Categoría |
-|---|---|---|---|---|---|
-| `supervisor` | `Kimi K2.7 Code OR` | `moonshotai/kimi-k2.7-code` | `Kimi K2.6` | `moonshotai/kimi-k2.6` | Razonamiento |
-| `solution-architect` | `Qwen 3.7 OR` | `qwen/qwen3.7-max` | `Qwen 3.5` | `qwen/qwen3.5-397b-a17b` | Razonamiento |
-| `functional-analyst` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `triage-specialist` | `Qwen 3.7 OR` | `qwen/qwen3.7-max` | `Qwen 3.5` | `qwen/qwen3.5-397b-a17b` | Razonamiento |
-| `integration-specialist` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `documentation-analyst` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `project-analyzer` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `project-expert` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `resource-analyst` | `DeepSeek V4 Pro OR` | `deepseek/deepseek-v4-pro` | `DeepSeek V4 Pro` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `ux-designer` | `Minimax M3 OR` | `minimax/minimax-m3` | `Minimax M3` | `minimaxai/minimax-m3` | Razonamiento |
-| `frontend-developer` | `GLM 5.2 OR` | `z-ai/glm-5.2` | `GLM 5.2` | `z-ai/glm-5.2` | Implementación |
-| `backend-developer` | `GLM 5.2 OR` | `z-ai/glm-5.2` | `GLM 5.2` | `z-ai/glm-5.2` | Implementación |
-| `devops-engineer` | `GLM 5.2 OR` | `z-ai/glm-5.2` | `GLM 5.2` | `z-ai/glm-5.2` | Implementación |
+## 5. Asignación por Agente (tabla canónica — Julio 2026)
 
-## 6. Fallback (Contingencia)
+> 📊 **Fuente**: Basado en providers directos disponibles en `ChatLanguageModel.example.json`. Kimi K2.6 descartado.
 
-Si el modelo designado para el perfil del agente **no se encuentra disponible** o la plataforma no permite su acceso instantáneo:
+| Agente                    | Primary              | Provider | Fallback               | Provider | Categoría      |
+| :------------------------ | :------------------- | :------- | :--------------------- | :------- | :------------- |
+| `@supervisor`             | `deepseek-v4-pro`    | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
+| `@functional-analyst`     | `deepseek-v4-pro`    | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
+| `@solution-architect`     | `qwen3.7-plus`       | Alibaba  | `deepseek-v4-pro`      | DeepSeek | Razonamiento   |
+| `@triage-specialist`      | `qwen3.7-plus`       | Alibaba  | `deepseek-v4-pro`      | DeepSeek | Razonamiento   |
+| `@integration-specialist` | `deepseek-v4-pro`    | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
+| `@documentation-analyst`  | `deepseek-v4-pro`    | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
+| `@project-analyzer`       | `deepseek-v4-pro`    | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
+| `@project-expert`         | `deepseek-v4-pro`    | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
+| `@resource-analyst`       | `deepseek-v4-pro`    | DeepSeek | `deepseek-ai/deepseek-v4-pro` | NVIDIA   | Razonamiento   |
+| `@ux-designer`            | `MiniMax-M3`         | MiniMax  | `minimaxai/minimax-m3` | NVIDIA   | Razonamiento   |
+| `@frontend-developer`     | `glm-5.2`            | Zai      | `z-ai/glm-5.2`         | NVIDIA   | Implementación |
+| `@backend-developer`      | `glm-5.2`            | Zai      | `z-ai/glm-5.2`         | NVIDIA   | Implementación |
+| `@devops-engineer`        | `glm-5.2`            | Zai      | `z-ai/glm-5.2`         | NVIDIA   | Implementación |
 
-1. **Detener la operación.**
-2. **Notificar de inmediato al usuario** sobre la indisponibilidad del modelo.
-3. No hacer una elección en su lugar. **Dejar al libre albedrío y decisión del usuario** indicar el modelo secundario a utilizar o cómo proceder.
+### Distribución
 
-> Esta regla aplica incluso cuando existe un jerarquía de `Primary` + `Fallback` configurada para el agente: AOI **nunca** elige un modelo alternativo por cuenta propia. La jerarquía de respaldo sólo describe un orden sugerido para la decisión humana.
+- **DeepSeek V4 Pro**: 22 agentes (7 dominio + 8 speckit reasoning + 7 speckit)
+- **GLM 5.2**: 9 agentes (3 dominio + 5 speckit implementación/git) — Provider Zai, fallback NVIDIA
+- **Qwen 3.7 Plus**: 2 agentes (solution-architect + triage-specialist) — Provider Alibaba, fallback DeepSeek
+- **MiniMax M3**: 1 agente (ux-designer) — Provider MiniMax, fallback NVIDIA
+- **Kimi K2.6**: 0 agentes — descartado
 
-## 7. Mirror Obligatorio (Dual-Sync)
+## 6. Mirror Obligatorio (Dual-Sync)
 
-> Toda actualización de esta tabla canónica debe espejarse en `.agent/skills/_shared/model-selection.md` (Antigravity). El protocolo `dual-sync.instructions.md` aplica sin excepciones. Ambos archivos deben mantenerse idénticos en su sección normativa y tabla de asignación.
+> Toda actualización de esta tabla canónica debe espejarse en `.agent/skills/_shared/model-selection.md` (Antigravity). El protocolo `dual-sync.instructions.md` aplica sin excepciones.

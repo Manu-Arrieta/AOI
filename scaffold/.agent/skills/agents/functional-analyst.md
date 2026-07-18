@@ -4,7 +4,7 @@
 
 ## Model Requirement
 
-> **Primary**: `DeepSeek V4 Pro OR` — OpenRouter ID: `deepseek/deepseek-v4-pro`
+> **Primary**: `DeepSeek V4 Pro` — DeepSeek ID: `deepseek-v4-pro`
 > **Fallback**: `DeepSeek V4 Pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
 >
 > ⚠️ Antigravity does not auto-bind custom endpoints. The operator must select this model in the Antigravity model picker before invoking the agent.

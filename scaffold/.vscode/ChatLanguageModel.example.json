@@ -1,81 +1,5 @@
 [
   {
-    "name": "OpenRouter",
-    "vendor": "customendpoint",
-    "apiKey": "${input:chat.lm.secret.-5cf42978}",
-    "apiType": "chat-completions",
-    "models": [
-      {
-        "id": "z-ai/glm-5.2",
-        "name": "GLM 5.2 OR",
-        "url": "https://openrouter.ai/api/v1",
-        "toolCalling": true,
-        "streaming": true,
-        "vision": false,
-        "thinking": true,
-        "supportsReasoningEffort": [
-          "high",
-          "xhigh"
-        ],
-        "reasoningEffortFormat": "responses",
-        "maxInputTokens": 1048576,
-        "maxOutputTokens": 131072
-      },
-      {
-        "id": "deepseek/deepseek-v4-pro",
-        "name": "DeepSeek V4 Pro OR",
-        "url": "https://openrouter.ai/api/v1",
-        "toolCalling": true,
-        "streaming": true,
-        "vision": false,
-        "thinking": true,
-        "supportsReasoningEffort": [
-          "high",
-          "xhigh"
-        ],
-        "reasoningEffortFormat": "responses",
-        "maxInputTokens": 1000000,
-        "maxOutputTokens": 384000
-      },
-      {
-        "id": "qwen/qwen3.7-max",
-        "name": "Qwen 3.7 Max OR",
-        "url": "https://openrouter.ai/api/v1",
-        "toolCalling": true,
-        "streaming": true,
-        "vision": false,
-        "thinking": true,
-        "reasoningEffortFormat": "responses",
-        "maxInputTokens": 1000000,
-        "maxOutputTokens": 32768
-      },
-      {
-        "id": "moonshotai/kimi-k2.7-code",
-        "name": "Kimi K2.7 Code OR",
-        "url": "https://openrouter.ai/api/v1",
-        "toolCalling": true,
-        "streaming": true,
-        "vision": true,
-        "thinking": true,
-        "reasoningEffortFormat": "responses",
-        "maxInputTokens": 262144,
-        "maxOutputTokens": 32768
-      },
-      {
-        "id": "minimax/minimax-m3",
-        "name": "Minimax M3 OR",
-        "url": "https://openrouter.ai/api/v1",
-        "toolCalling": true,
-        "streaming": true,
-        "vision": true,
-        "thinking": true,
-        "reasoningEffortFormat": "responses",
-        "maxInputTokens": 1048576,
-        "maxOutputTokens": 512000
-      }
-    ]
-  },
-  {
     "name": "NVIDIA",
     "vendor": "customendpoint",
     "apiKey": "${input:chat.lm.secret.46ff130f}",
@@ -83,7 +7,7 @@
     "models": [
       {
         "id": "z-ai/glm-5.2",
-        "name": "GLM 5.2",
+        "name": "GLM 5.2 - Provider - Nvidia",
         "url": "https://integrate.api.nvidia.com/v1",
         "toolCalling": true,
         "streaming": true,
@@ -94,7 +18,7 @@
       },
       {
         "id": "deepseek-ai/deepseek-v4-pro",
-        "name": "DeepSeek V4 Pro",
+        "name": "DeepSeek V4 Pro - Provider - Nvidia",
         "url": "https://integrate.api.nvidia.com/v1",
         "toolCalling": true,
         "streaming": true,
@@ -105,7 +29,7 @@
       },
       {
         "id": "qwen/qwen3.5-397b-a17b",
-        "name": "Qwen 3.5",
+        "name": "Qwen 3.5 - Provider - Nvidia",
         "url": "https://integrate.api.nvidia.com/v1",
         "toolCalling": true,
         "streaming": true,
@@ -116,7 +40,7 @@
       },
       {
         "id": "moonshotai/kimi-k2.6",
-        "name": "Kimi K2.6",
+        "name": "Kimi K2.6 - Provider - Nvidia",
         "url": "https://integrate.api.nvidia.com/v1",
         "toolCalling": true,
         "streaming": true,
@@ -127,7 +51,7 @@
       },
       {
         "id": "minimaxai/minimax-m3",
-        "name": "Minimax M3",
+        "name": "Minimax M3 - Provider - Nvidia",
         "url": "https://integrate.api.nvidia.com/v1",
         "toolCalling": true,
         "streaming": true,
@@ -135,6 +59,95 @@
         "vision": true,
         "maxInputTokens": 1000000,
         "maxOutputTokens": 16384
+      }
+    ]
+  },
+  {
+    "name": "Alibaba",
+    "vendor": "customendpoint",
+    "apiKey": "${input:chat.lm.secret.-66432d39}",
+    "apiType": "chat-completions",
+    "models": [
+      {
+        "id": "qwen3.7-plus",
+        "name": "Qwen 3.7 plus - Provider - Alibaba",
+        "url": "https://ws-3ec31q7rubgzd4bl.eu-central-1.maas.aliyuncs.com/compatible-mode/v1",
+        "toolCalling": true,
+        "vision": true,
+        "thinking": true,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 1000000
+      }
+    ]
+  },
+  {
+    "name": "MiniMax",
+    "vendor": "customendpoint",
+    "apiKey": "${input:chat.lm.secret.2bd15d4f}",
+    "apiType": "chat-completions",
+    "models": [
+      {
+        "id": "MiniMax-M3",
+        "name": "Minimax M3 - Provider - Minimax",
+        "url": "https://api.minimax.io/v1",
+        "toolCalling": true,
+        "vision": true,
+        "streaming": true,
+        "thinking": true
+      }
+    ]
+  },
+  {
+    "name": "DeepSeek",
+    "vendor": "customendpoint",
+    "apiKey": "${input:chat.lm.secret.-5bf18d36}",
+    "apiType": "chat-completions",
+    "models": [
+      {
+        "id": "deepseek-v4-pro",
+        "name": "Deepseek v4 pro - Provider - Deepseek",
+        "url": "https://api.deepseek.com",
+        "toolCalling": true,
+        "vision": true,
+        "thinking": true,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 1000000
+      }
+    ]
+  },
+  {
+    "name": "Kimi",
+    "vendor": "customendpoint",
+    "apiKey": "${input:chat.lm.secret.-60795c8c}",
+    "apiType": "chat-completions",
+    "models": [
+      {
+        "id": "kimi-k2.6",
+        "name": "Kimi-k 2.6 - Provider - Kimi",
+        "url": "https://api.moonshot.ai/v1",
+        "toolCalling": true,
+        "vision": true,
+        "thinking": true,
+        "maxInputTokens": 128000,
+        "maxOutputTokens": 16000
+      }
+    ]
+  },
+  {
+    "name": "Zai",
+    "vendor": "customendpoint",
+    "apiKey": "${input:chat.lm.secret.-4dc2323c}",
+    "apiType": "chat-completions",
+    "models": [
+      {
+        "id": "glm-5.2",
+        "name": "Glm5.2 - Provider - Zai",
+        "url": "https://api.z.ai/api/paas/v4",
+        "toolCalling": true,
+        "vision": true,
+        "thinking": true,
+        "maxInputTokens": 128000,
+        "maxOutputTokens": 16000
       }
     ]
   }

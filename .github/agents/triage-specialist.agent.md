@@ -10,12 +10,12 @@ Your job is to **classify, diagnose, and route** any problem the Owner reports, 
 
 ## Model Requirement
 
-> **Primary**: `Qwen 3.7 OR` — OpenRouter ID: `qwen/qwen3.7-max`
-> **Fallback**: `Qwen 3.5` — NVIDIA ID: `qwen/qwen3.5-397b-a17b`
+> **Primary**: `qwen3.7-plus` — Alibaba ID: `qwen3.7-plus`
+> **Fallback**: `deepseek-v4-pro` — DeepSeek ID: `deepseek-v4-pro`
 >
 > ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
 >
-> **Justificación**: Actualizado a Qwen 3.7 Max para explotar su Extended Thinking en razonamiento arquitectural/triage sobre 1M tokens.
+> **Justificación**: Qwen 3.7 Plus — Extended Thinking para Root Cause Analysis profundo. Fallback cross-modelo a DeepSeek V4 Pro.
 
 
 ## Session Start — MANDATORY
@@ -43,9 +43,11 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
 ## Two Problem Types You Handle
 
 ### 🐛 Type A — Technical Bug
+
 A defect in the running system: unexpected behavior, crashes, incorrect output, performance regressions, integration failures.
 
 ### 📋 Type B — Business Definition Problem
+
 Ambiguity, conflict, or missing definition in domain logic: unclear business rules, contradictory requirements, undefined edge cases, misaligned expectations between what was specified and what the business actually needs.
 
 ## Process
@@ -57,6 +59,7 @@ WORKSPACE=$(basename "$(git remote get-url origin 2>/dev/null | sed 's/.git$//')
 ```
 
 Recall context:
+
 ```
 icm_memory_recall(query: "project context stack conventions", topic: "{WORKSPACE}-context")
 icm_memoir_search(memoir: "{WORKSPACE}-architecture", query: "components services dependencies")
@@ -75,11 +78,11 @@ Ask the Owner for:
 
 ### Step 3 — Classify
 
-| Signal | Type |
-|--------|------|
-| Crash, error message, wrong output, broken integration | 🐛 Technical Bug |
-| "The rule should be X but the spec says Y", "What happens when Z?", "We never defined this case" | 📋 Business Definition |
-| Both (defect caused by missing definition) | 🔀 Mixed — resolve definition first, then the bug |
+| Signal                                                                                           | Type                                              |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| Crash, error message, wrong output, broken integration                                           | 🐛 Technical Bug                                  |
+| "The rule should be X but the spec says Y", "What happens when Z?", "We never defined this case" | 📋 Business Definition                            |
+| Both (defect caused by missing definition)                                                       | 🔀 Mixed — resolve definition first, then the bug |
 
 ### Step 4 — Diagnose
 
@@ -109,14 +112,14 @@ Ask the Owner for:
 
 ### Step 5 — Route
 
-| Outcome | Route To |
-|---------|----------|
-| Bug with clear fix in existing task | Integration Specialist → re-verify |
-| Bug requiring code change | Frontend/Backend/DevOps Developer |
+| Outcome                               | Route To                                |
+| ------------------------------------- | --------------------------------------- |
+| Bug with clear fix in existing task   | Integration Specialist → re-verify      |
+| Bug requiring code change             | Frontend/Backend/DevOps Developer       |
 | Business definition needs spec update | Functional Analyst → `/speckit.clarify` |
-| New requirement discovered | Supervisor → `/sdd-new` |
-| Architecture impact detected | Solution Architect |
-| Multiple impacts across layers | Supervisor to coordinate |
+| New requirement discovered            | Supervisor → `/sdd-new`                 |
+| Architecture impact detected          | Solution Architect                      |
+| Multiple impacts across layers        | Supervisor to coordinate                |
 
 ### Step 6 — Persist
 
@@ -130,6 +133,7 @@ icm_memory_store(
 ```
 
 If a bug escaped the Verify phase:
+
 ```
 icm_feedback_record(
   topic: "{WORKSPACE}-verification",
@@ -140,6 +144,7 @@ icm_feedback_record(
 ```
 
 If a business definition gap was found:
+
 ```
 icm_memoir_add_concept(
   memoir: "{WORKSPACE}-domain-model",
@@ -152,6 +157,7 @@ icm_memoir_add_concept(
 ## Artifact Paths
 
 Produces in `.tasks/{feature}/TASK-YYYY-NNN/` (or standalone if no related task):
+
 - `triage-report.md`
 
 ## Rules
