@@ -1,6 +1,6 @@
 ---
 description: "Start a new SDD cycle. Explores requirements, creates proposal, and kicks off specification."
-mode: "agent"
+agent: "agent"
 ---
 
 # /sdd-new — Explore + Propose
@@ -44,7 +44,7 @@ Record every user message and agent response during this phase. Transcripts capt
 5. Create directory `.tasks/{feature-name}/TASK-YYYY-NNN/`
 6. Create `.tasks/{feature-name}/TASK-YYYY-NNN/context.md` with initial state
 7. If the Owner explicitly linked files under `.resources/`, create or update
-  `.tasks/{feature-name}/TASK-YYYY-NNN/relations.json`
+   `.tasks/{feature-name}/TASK-YYYY-NNN/relations.json`
 8. Register in `.tasks/registry.md`
 
 ### Step 4: Service Discovery Gate (MANDATORY)

@@ -1,6 +1,6 @@
 # AOI — Agentic Operational Infrastructure
 
-Installs a complete agentic ecosystem into any project: **RTK** (token optimization) + **ICM** (persistent memory) + **Spec-Kit** (SDD lifecycle) + **11 specialized agents** synced across Copilot and Antigravity.
+Installs a complete agentic ecosystem into any project: **RTK** (token optimization) + **ICM** (persistent memory) + **Spec-Kit** (SDD lifecycle) + **11 specialized agents** powered by Copilot.
 
 ## Quick Start
 
@@ -70,13 +70,13 @@ Documentation boundary:
 
 ### Tools (in priority order)
 
-| Tool                    | Purpose                                   | macOS / Linux                                   | Windows 11+                                                   |
-| ----------------------- | ----------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------- |
-| **RTK**                 | Token optimization (60-90% savings)       | `brew install rtk`                              | GitHub release binary via `setup.ps1`                         |
-| **ICM**                 | Persistent memory (4 methods)             | `brew tap rtk-ai/tap && brew install icm`       | Official `install.ps1` via `setup.ps1`                        |
-| **Headroom**            | CLI compression layer (60-95%)            | `bash scripts/install-headroom.sh --yes`        | `powershell scripts/install-headroom.ps1 -Yes`                |
-| **Codebase Memory MCP** | Structural code intelligence / code graph | `bash scripts/install-codebase-memory.sh --ui --yes` | `powershell scripts/install-codebase-memory.ps1 -Yes -Variant ui`         |
-| **Specify CLI**         | Spec-Driven Development lifecycle         | `uv tool install specify-cli`                   | `winget install --id astral-sh.uv -e` + `uv tool install ...` |
+| Tool                    | Purpose                                   | macOS / Linux                                        | Windows 11+                                                       |
+| ----------------------- | ----------------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------- |
+| **RTK**                 | Token optimization (60-90% savings)       | `brew install rtk`                                   | GitHub release binary via `setup.ps1`                             |
+| **ICM**                 | Persistent memory (4 methods)             | `brew tap rtk-ai/tap && brew install icm`            | Official `install.ps1` via `setup.ps1`                            |
+| **Headroom**            | CLI compression layer (60-95%)            | `bash scripts/install-headroom.sh --yes`             | `powershell scripts/install-headroom.ps1 -Yes`                    |
+| **Codebase Memory MCP** | Structural code intelligence / code graph | `bash scripts/install-codebase-memory.sh --ui --yes` | `powershell scripts/install-codebase-memory.ps1 -Yes -Variant ui` |
+| **Specify CLI**         | Spec-Driven Development lifecycle         | `uv tool install specify-cli`                        | `winget install --id astral-sh.uv -e` + `uv tool install ...`     |
 
 On Windows, AOI uses `winget` for `uv` when available. RTK does not currently document an official `winget` package, so `setup.ps1` installs the Windows release binary directly.
 
@@ -137,14 +137,7 @@ The dashboard runtime is mandatory too. Setup no longer skips dashboard bootstra
 │ └── rollback-workspace-memory.prompt.md # /rollback-workspace-memory — restore previous memory version
 └── instructions/ # Always-loaded rules
 ├── icm-protocol.instructions.md # ICM 4-method compliance
-├── dual-sync.instructions.md # Copilot ↔ Antigravity sync
 └── model-selection.instructions.md# Mandatory Model Selection Policy
-
-GEMINI.md # Antigravity root instructions
-.agent/skills/
-├── \_shared/icm-protocol.md # Shared ICM convention
-├── \_shared/model-selection.md # Mandatory Model Selection Policy
-└── agents/ # 11 Antigravity agent mirrors
 
 ```
 
@@ -180,56 +173,60 @@ flowchart TD
 ```
 
 ### 1. RTK (Token Output Optimizer)
-* **Core Role:** Optimizes the token window of LLM agents by filtering, compressing, and pruning verbose terminal outputs (such as build logs, long test progress bars, npm/pip install noise, and linters). It typically achieves **60% to 90% token savings** on long executions.
-* **Technical Integration:**
+
+- **Core Role:** Optimizes the token window of LLM agents by filtering, compressing, and pruning verbose terminal outputs (such as build logs, long test progress bars, npm/pip install noise, and linters). It typically achieves **60% to 90% token savings** on long executions.
+- **Technical Integration:**
   - Placed directly in the workspace terminal shell path (via `setup.sh` / `setup.ps1`).
-  - Integrated via command prefixes in the system instructions (`GEMINI.md` and `.github/instructions/`).
+  - Integrated via command prefixes in the system instructions (`.github/instructions/`).
   - **Mandatory Usage rule:** Every tool-driven command executed by the AI must be prefixed with `rtk` (e.g., `rtk npm run test`, `rtk git status`).
-* **Lifecycle Role:**
+- **Lifecycle Role:**
   - **Implement (`/sdd-apply`) & Verify (`/sdd-verify`):** Extremely active here. When developers or agents run builds, compiler checks, or test suites, RTK compresses the output before it returns to the agent's context, preventing context-window bloat and lowering token costs.
 
 ### 2. ICM (Intelligent Context Manager - Persistent Memory)
-* **Core Role:** Solves "agent amnesia" by persisting semantic memories, memoirs (knowledge graphs), corrections (feedback), and raw session transcripts across separate conversation turns and between different agents.
-* **Technical Integration:**
+
+- **Core Role:** Solves "agent amnesia" by persisting semantic memories, memoirs (knowledge graphs), corrections (feedback), and raw session transcripts across separate conversation turns and between different agents.
+- **Technical Integration:**
   - Invoked through the `icm` CLI wrapper.
   - Automatically recalled on startup via `icm recall-context` and stored via `icm store` hook commands.
   - Topics and memoirs are scoped using the `{WORKSPACE}` name as a prefix to avoid cross-project pollution.
-* **Lifecycle Role:**
+- **Lifecycle Role:**
   - **Explore (`/sdd-new`):** Calls `icm recall` to retrieve previous learnings or user preferences. Initiates transcripts for verbatim replay.
   - **Specify / Plan (`/sdd-ff`):** Stores structural design decisions (`decisions-{project}`) and system constraints.
   - **Verify (`/sdd-verify`):** Collects user feedback or corrections and stores them under the `errors-resolved` or `preferences` topics so the agent learns from mistakes.
   - **Archive (`/sdd-archive`):** Triggers a final transcript backup and saves a high-level summary of the completed feature context.
 
 ### 3. Headroom (CLI Compression Proxy)
-* **Core Role:** Acts as an OpenAI-compatible local API proxy that compresses prompt inputs and outputs specifically for CLI-based agents (like Claude Code, Codex, or GitHub Copilot CLI), achieving up to 95% token savings.
-* **Technical Integration:**
+
+- **Core Role:** Acts as an OpenAI-compatible local API proxy that compresses prompt inputs and outputs specifically for CLI-based agents (like Claude Code, Codex, or GitHub Copilot CLI), achieving up to 95% token savings.
+- **Technical Integration:**
   - Runs as a background proxy on `localhost:8787` (configured during installation).
   - Terminal agents have their `OPENAI_BASE_URL` or equivalent environment variable routed through this local proxy.
-  - Integrates the `.githooks/pre-commit-aoi-guard.sh` hook to prevent `headroom learn --apply` from silently overwriting core configuration files like `GEMINI.md` or `AGENTS.md`.
-* **Lifecycle Role:**
+  - Integrates the `.githooks/pre-commit-aoi-guard.sh` hook to prevent `headroom learn --apply` from silently overwriting core configuration files like `AGENTS.md`.
+- **Lifecycle Role:**
   - **Transversal:** Runs silently in the background of any terminal execution or manual CLI interaction, independent of VS Code Copilot Chat.
 
 ### 4. Codebase Memory MCP (Code Graph Intelligence)
-* **Core Role:** Builds a structural, queryable graph representation of the codebase. Instead of relying on full-text search (`grep`), it allows agents to navigate semantic relationships (e.g., finding where a class is instantiated, tracing function calls, or extracting specific code symbols).
-* **Technical Integration:**
+
+- **Core Role:** Builds a structural, queryable graph representation of the codebase. Instead of relying on full-text search (`grep`), it allows agents to navigate semantic relationships (e.g., finding where a class is instantiated, tracing function calls, or extracting specific code symbols).
+- **Technical Integration:**
   - Registered locally in the project workspace's `.vscode/mcp.json`.
   - Exposes custom MCP tools (`search_graph`, `trace_path`, `get_code_snippet`, `query_graph`, `get_architecture`).
   - Maintains index state using a `post-commit` Git hook to automatically re-index on git commits.
-* **Lifecycle Role:**
+- **Lifecycle Role:**
   - **Explore (`/sdd-new`) & Plan (`/sdd-ff`):** Used during the initial assessment of a codebase or feature request to map files, trace data flows, and determine dependencies before generating the specification (`spec.md`) and implementation plan (`implementation_plan.md`).
 
 ## Code Discovery Protocol
 
 When `codebase-memory-mcp` is registered in `.vscode/mcp.json`, agents automatically prefer its graph tools over broad grep or file-by-file reads:
 
-| Priority | Tool | Use case |
-|---|---|---|
-| 1 | `search_graph` | Find functions, classes, routes by pattern |
-| 2 | `trace_path` | Follow call chains inbound/outbound |
-| 3 | `get_code_snippet` | Read exact source of an already-found symbol |
-| 4 | `query_graph` | Complex Cypher-like structural queries |
-| 5 | `get_architecture` | Codebase overview: languages, hotspots, clusters |
-| 6 | `grep` / `read` | Literals, config files, non-code files, or fallback |
+| Priority | Tool               | Use case                                            |
+| -------- | ------------------ | --------------------------------------------------- |
+| 1        | `search_graph`     | Find functions, classes, routes by pattern          |
+| 2        | `trace_path`       | Follow call chains inbound/outbound                 |
+| 3        | `get_code_snippet` | Read exact source of an already-found symbol        |
+| 4        | `query_graph`      | Complex Cypher-like structural queries              |
+| 5        | `get_architecture` | Codebase overview: languages, hotspots, clusters    |
+| 6        | `grep` / `read`    | Literals, config files, non-code files, or fallback |
 
 If the project is not indexed yet, call `index_repository` first. If the MCP server is absent, the normal local search flow applies.
 
@@ -385,15 +382,15 @@ All agents use [ICM](https://github.com/rtk-ai/icm) with four complementary meth
 
 No context is lost between sessions.
 
-## Dual-Sync Rule
+## Scaffold Mirror Integrity
 
-**MANDATORY**: Every agent/skill must exist in both Copilot AND Antigravity formats.
+**MANDATORY**: Every agent/skill must be kept in sync between the live repository and `scaffold/` mirror.
 
-| Copilot                          | Antigravity                      |
-| -------------------------------- | -------------------------------- |
-| `.github/agents/{name}.agent.md` | `.agent/skills/agents/{name}.md` |
+| Live                             | Scaffold Mirror                           |
+| -------------------------------- | ----------------------------------------- |
+| `.github/agents/{name}.agent.md` | `scaffold/.github/agents/{name}.agent.md` |
 
-The `dual-sync.instructions.md` enforces this rule automatically. If agents diverge, `/sdd-verify` fails.
+Changes to agents, skills, or infrastructure MUST be mirrored to `scaffold/` in the same commit.
 
 ## Windows Notes
 

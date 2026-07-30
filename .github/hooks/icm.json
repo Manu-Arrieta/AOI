@@ -1,32 +1,31 @@
 {
-  "version": 1,
   "hooks": {
-    "sessionStart": [
+    "SessionStart": [
       {
         "type": "command",
-        "bash": "bash .github/scripts/icm-hook.sh start",
-        "timeoutSec": 10
+        "command": "bash .github/scripts/icm-hook.sh start",
+        "timeout": 10
       }
     ],
-    "preToolUse": [
+    "PreToolUse": [
       {
         "type": "command",
-        "bash": "bash .github/scripts/icm-hook.sh pre",
-        "timeoutSec": 5
+        "command": "bash .github/scripts/icm-hook.sh pre",
+        "timeout": 5
       }
     ],
-    "postToolUse": [
+    "PostToolUse": [
       {
         "type": "command",
-        "bash": "bash .github/scripts/icm-hook.sh post",
-        "timeoutSec": 10
+        "command": "bash .github/scripts/icm-hook.sh post",
+        "timeout": 10
       }
     ],
-    "userPromptSubmitted": [
+    "UserPromptSubmit": [
       {
         "type": "command",
-        "bash": "bash .github/scripts/icm-hook.sh prompt",
-        "timeoutSec": 10
+        "command": "bash .github/scripts/icm-hook.sh prompt",
+        "timeout": 10
       }
     ]
   }

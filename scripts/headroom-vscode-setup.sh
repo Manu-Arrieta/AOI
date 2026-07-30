@@ -97,10 +97,10 @@ printf "  ${BLUE}bash scripts/headroom-vscode-setup.sh --emit-zsh >> ~/.zshrc${N
 printf "\n"
 
 header "Avisos importantes"
-warn "headroom learn --apply puede escribir sobre GEMINI.md / AGENTS.md / CLAUDE.md sin awareness AOI."
+warn "headroom learn --apply puede escribir sobre AGENTS.md / CLAUDE.md sin awareness AOI."
 warn "Si usas AOI bootstrapper, NO corras 'headroom learn --apply' sin revisar 'git diff' primero."
 warn "  Recomendación: usar 'headroom learn --dry-run' y mergear manualmente si el diff toca archivos AOI-managed."
-warn "Cuando termines, hacé 'git checkout -- GEMINI.md AGENTS.md CLAUDE.md' para descartar cambios no aprobados."
+warn "Cuando termines, hacé 'git checkout -- AGENTS.md CLAUDE.md' para descartar cambios no aprobados."
 printf "\n"
 
 info "── Estado actual ──"

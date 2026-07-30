@@ -47,9 +47,9 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
    - No spec drift (implementation matches what was planned)
    - Tests exist and pass
    - Code follows project conventions
-4. **Verify** dual-sync compliance:
-   - All agents exist in both `.github/agents/` AND `.agent/skills/agents/`
-   - `GEMINI.md` is up to date
+4. **Verify** scaffold-mirror compliance:
+   - All agents exist in `.github/agents/`
+   - `CLAUDE.md` and `AGENTS.md` are up to date
 5. **Plan migration from the integration manifest** (active sandbox only):
    - When a `.sandboxes/{name}/integration-manifest.json` exists, treat it as the
      **single source of truth** for what migrates — it replaces any prose-only
@@ -62,7 +62,7 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
      `.specify/memory/base-project.json` by looking up `roots[{rootKey}]` to get
      the real base-project destination path.
 6. **Record** findings as feedback: `icm_feedback_record(topic: "{WORKSPACE}-{category}", prediction, correction, context)`
-7. **Store** QA report: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", content: "**What**: Verification [PASS|FAIL] — [findings summary]\n**Why**: [Ready for archive | Needs rework]\n**Where**: [QA report, test results]\n**Learned**: [Spec drift, common errors, dual-sync issues]", importance: "high", keywords: "verify,qa,TASK-YYYY-NNN")`
+7. **Store** QA report: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", content: "**What**: Verification [PASS|FAIL] — [findings summary]\n**Why**: [Ready for archive | Needs rework]\n**Where**: [QA report, test results]\n**Learned**: [Spec drift, common errors, scaffold-mirror issues]", importance: "high", keywords: "verify,qa,TASK-YYYY-NNN")`
 8. **Health check**: `icm_memory_health()` — audit topic hygiene before closing
 
 ## Rules

@@ -45,24 +45,11 @@ mkdir -p "$CONF_DIR/conflicts"
 # ── Copy scaffold files to snapshots (organized by category) ────────────────
 info "Snapshotting scaffold files..."
 
-# Agents (Copilot + Antigravity)
+# Agents (Copilot)
 if [ -d "$SCAFFOLD_DIR/.github/agents" ]; then
   rsync -a --delete "$SCAFFOLD_DIR/.github/agents/" "$SNAPSHOTS_DIR/agents/copilot/" 2>/dev/null || \
     cp -R "$SCAFFOLD_DIR/.github/agents/." "$SNAPSHOTS_DIR/agents/copilot/"
 fi
-if [ -d "$SCAFFOLD_DIR/.agent/skills/agents" ]; then
-  rsync -a --delete "$SCAFFOLD_DIR/.agent/skills/agents/" "$SNAPSHOTS_DIR/agents/antigravity/" 2>/dev/null || \
-    cp -R "$SCAFFOLD_DIR/.agent/skills/agents/." "$SNAPSHOTS_DIR/agents/antigravity/"
-fi
-
-# Skills (non-agent skills)
-while IFS= read -r -d '' skill_dir; do
-  skill_name="$(basename "$skill_dir")"
-  if [ "$skill_name" != "agents" ]; then
-    mkdir -p "$SNAPSHOTS_DIR/skills/$skill_name"
-    cp -R "$skill_dir/." "$SNAPSHOTS_DIR/skills/$skill_name/"
-  fi
-done < <(find "$SCAFFOLD_DIR/.agent/skills" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null)
 
 # Prompts
 if [ -d "$SCAFFOLD_DIR/.github/prompts" ]; then
@@ -79,12 +66,6 @@ for const_file in \
   fi
 done
 
-# Configs (root-level config files)
-for cfg_file in GEMINI.md; do
-  if [ -f "$SCAFFOLD_DIR/$cfg_file" ]; then
-    cp "$SCAFFOLD_DIR/$cfg_file" "$SNAPSHOTS_DIR/configs/"
-  fi
-done
 # .vscode configs
 if [ -d "$SCAFFOLD_DIR/.vscode" ]; then
   mkdir -p "$SNAPSHOTS_DIR/configs/.vscode"

@@ -670,8 +670,6 @@ if command -v specify &>/dev/null; then
   info "Initializing spec-kit for Copilot..."
   specify init . --ai copilot --force 2>/dev/null && ok "Spec-kit → Copilot" || warn "Spec-kit Copilot init skipped (may need manual setup)"
 
-  info "Initializing spec-kit for Antigravity..."
-  specify init . --ai agy --ai-skills --force 2>/dev/null && ok "Spec-kit → Antigravity" || warn "Spec-kit Antigravity init skipped (may need manual setup)"
 else
   warn "Specify CLI not found — skipping spec-kit init"
   warn "Run manually after installing: specify init . --ai copilot --force"
@@ -827,7 +825,7 @@ mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/server/routes"
 mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/server/utils"
 mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/shared"
 mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/test"
-ok "Directories: .tasks/ .sandboxes/ .atl/ .resources/ aoi_apps/agentic-ops-dashboard/"
+ok "Directories: .tasks/ .sandboxes/ .resources/ aoi_apps/agentic-ops-dashboard/"
 
 if [ -f "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/package.json" ]; then
   ensure_dashboard_runtime
@@ -1000,7 +998,7 @@ icm init --mode skill 2>/dev/null && ok "ICM → Skills installed" || warn "ICM 
 icm init --mode cli 2>/dev/null && ok "ICM → CLI instructions" || warn "ICM CLI instructions skipped"
 # Remove tools we don't use (icm init --mode cli installs for all tools indiscriminately)
 rm -f "$PROJECT_PATH/.windsurfrules" 2>/dev/null && warn "Removed .windsurfrules (Windsurf not in use)" || true
-# Ensure icm-serve.sh is executable (needed for GUI apps like Antigravity that inherit limited PATH)
+# Ensure icm-serve.sh is executable (needed for VS Code that inherits limited PATH)
 chmod +x "$PROJECT_PATH/.github/scripts/icm-serve.sh" 2>/dev/null || true
 chmod +x "$PROJECT_PATH/.github/scripts/icm-hook.sh" 2>/dev/null || true
 
@@ -1011,7 +1009,7 @@ require_icm
 
 # Memory: store initialization context (project-isolated)
 icm store -t "$PROJECT_NAME-context" \
-  -c "Project $PROJECT_NAME initialized with AOI (Agentic Operational Infrastructure) v3. Stack: Hub-and-Spoke orchestration, SDD lifecycle (spec-kit), ICM persistence (4 methods: memories, memoirs, feedback, transcripts), RTK token optimization. Dual-sync enforced: Copilot (.github/agents/) ↔ Antigravity (.agent/skills/agents/). Task artifacts in .tasks/{feature}/TASK-YYYY-NNN/. Skill registry at .atl/skill-registry.md." \
+  -c "$PROJECT_NAME initialized with AOI (Agentic Operational Infrastructure) v3. Stack: Hub-and-Spoke orchestration, SDD lifecycle (spec-kit), ICM persistence (4 methods: memories, memoirs, feedback, transcripts), RTK token optimization. Agents in .github/agents/. Task artifacts in .tasks/{feature}/TASK-YYYY-NNN/." \
   -i critical \
   -k "init,aoi,architecture" 2>/dev/null && ok "Memory: init context stored (topic: $PROJECT_NAME-context)"
 
@@ -1027,15 +1025,8 @@ icm memoir add-concept -m "$PROJECT_NAME-architecture" -n "hub-and-spoke" \
   -d "Supervisor orchestrates specialized agents per SDD phase" \
   -l "type:pattern,domain:orchestration" 2>/dev/null || true
 
-icm memoir add-concept -m "$PROJECT_NAME-architecture" -n "dual-sync" \
-  -d "All agents/skills must exist in both Copilot (.github/agents/) and Antigravity (.agent/skills/agents/) formats" \
-  -l "type:constraint,domain:sync" 2>/dev/null || true
-
 icm memoir link -m "$PROJECT_NAME-architecture" \
   --from "hub-and-spoke" --to "sdd-lifecycle" -r depends_on 2>/dev/null || true
-
-icm memoir link -m "$PROJECT_NAME-architecture" \
-  --from "dual-sync" --to "hub-and-spoke" -r related_to 2>/dev/null || true
 
 ok "Memoir: architecture graph bootstrapped"
 

@@ -1,6 +1,6 @@
 ---
 description: "Fast-Forward from proposal to implementation-ready tasks. Runs specify → plan → tasks using spec-kit."
-mode: "agent"
+agent: "agent"
 ---
 
 # /sdd-ff — Fast Forward (Specify → Plan → Tasks)

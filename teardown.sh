@@ -47,11 +47,9 @@ printf "  .github/hooks/\n"
 printf "  .github/instructions/\n"
 printf "  .github/prompts/\n"
 printf "  .github/scripts/\n"
-printf "  .agent/\n"
 printf "  .specify/\n"
 printf "  .resources/\n"
 printf "  aoi_apps/agentic-ops-dashboard/ (including package.json, pnpm-lock.yaml, node_modules/)\n"
-printf "  GEMINI.md\n"
 printf "  AGENTS.md  (if from AOI)\n"
 printf "  CLAUDE.md  (if from AOI)\n"
 printf "  .conf/     (configuration snapshot)\n\n"
@@ -120,7 +118,6 @@ remove_aoi_file() {
   fi
 }
 
-remove_aoi_file "GEMINI.md"        "Antigravity System Instructions"
 remove_aoi_file "AGENTS.md"        "RTK\|icm"
 remove_aoi_file "CLAUDE.md"        "RTK\|icm"
 remove_aoi_file ".windsurfrules"   "icm"

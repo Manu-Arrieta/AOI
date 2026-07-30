@@ -1,6 +1,6 @@
 ---
 description: "Formally close a task: consolidate ICM, generate docs, produce archive report, record transcript."
-mode: "agent"
+agent: "agent"
 ---
 
 # /sdd-archive — Formal Closure

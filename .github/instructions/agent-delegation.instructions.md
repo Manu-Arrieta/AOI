@@ -1,3 +1,9 @@
+---
+name: "Agent Delegation Protocol"
+description: "Mandatory protocol for all agents that invoke runSubagent. Model selection, prompt template, and verification steps."
+applyTo: "**"
+---
+
 # Agent Delegation Protocol
 
 **MANDATORY for all agents that invoke `runSubagent`.**
@@ -48,28 +54,47 @@ After the subagent returns, verify:
 
 ## Agent Registry
 
-| Agent                    | `runSubagent` model                     | Skill (Copilot)                                  | Skill (Antigravity)                              | Category       |
-| ------------------------ | --------------------------------------- | ------------------------------------------------ | ------------------------------------------------ | -------------- |
-| `supervisor`             | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/supervisor.agent.md`             | `.agent/skills/agents/supervisor.md`             | Razonamiento   |
-| `solution-architect`     | `Qwen 3.7 plus - Provider - Alibaba`    | `.github/agents/solution-architect.agent.md`     | `.agent/skills/agents/solution-architect.md`     | Razonamiento   |
-| `functional-analyst`     | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/functional-analyst.agent.md`     | `.agent/skills/agents/functional-analyst.md`     | Razonamiento   |
-| `triage-specialist`      | `Qwen 3.7 plus - Provider - Alibaba`    | `.github/agents/triage-specialist.agent.md`      | `.agent/skills/agents/triage-specialist.md`      | Razonamiento   |
-| `integration-specialist` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/integration-specialist.agent.md` | `.agent/skills/agents/integration-specialist.md` | Razonamiento   |
-| `documentation-analyst`  | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/documentation-analyst.agent.md`  | `.agent/skills/agents/documentation-analyst.md`  | Razonamiento   |
-| `project-analyzer`       | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/project-analyzer.agent.md`       | `.agent/skills/agents/project-analyzer.md`       | Razonamiento   |
-| `project-expert`         | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/project-expert.agent.md`         | `.agent/skills/agents/project-expert.md`         | Razonamiento   |
-| `resource-analyst`       | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/resource-analyst.agent.md`       | `.agent/skills/agents/resource-analyst.md`       | Razonamiento   |
-| `ux-designer`            | `Minimax M3 - Provider - Minimax`       | `.github/agents/ux-designer.agent.md`            | `.agent/skills/agents/ux-designer.md`            | Razonamiento   |
-| `frontend-developer`     | `Glm5.2 - Provider - Zai`               | `.github/agents/frontend-developer.agent.md`     | `.agent/skills/agents/frontend-developer.md`     | Implementación |
-| `backend-developer`      | `Glm5.2 - Provider - Zai`               | `.github/agents/backend-developer.agent.md`      | `.agent/skills/agents/backend-developer.md`      | Implementación |
-| `devops-engineer`        | `Glm5.2 - Provider - Zai`               | `.github/agents/devops-engineer.agent.md`        | `.agent/skills/agents/devops-engineer.md`        | Implementación |
+| Agent                    | `runSubagent` model                     | Skill                                            | Category       |
+| ------------------------ | --------------------------------------- | ------------------------------------------------ | -------------- |
+| `supervisor`             | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/supervisor.agent.md`             | Razonamiento   |
+| `solution-architect`     | `Qwen 3.7 plus - Provider - Alibaba`    | `.github/agents/solution-architect.agent.md`     | Razonamiento   |
+| `functional-analyst`     | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/functional-analyst.agent.md`     | Razonamiento   |
+| `triage-specialist`      | `Qwen 3.7 plus - Provider - Alibaba`    | `.github/agents/triage-specialist.agent.md`      | Razonamiento   |
+| `integration-specialist` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/integration-specialist.agent.md` | Razonamiento   |
+| `documentation-analyst`  | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/documentation-analyst.agent.md`  | Razonamiento   |
+| `project-analyzer`       | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/project-analyzer.agent.md`       | Razonamiento   |
+| `project-expert`         | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/project-expert.agent.md`         | Razonamiento   |
+| `resource-analyst`       | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/resource-analyst.agent.md`       | Razonamiento   |
+| `ux-designer`            | `Minimax M3 - Provider - Minimax`       | `.github/agents/ux-designer.agent.md`            | Razonamiento   |
+| `frontend-developer`     | `Glm5.2 - Provider - Zai`               | `.github/agents/frontend-developer.agent.md`     | Implementación |
+| `backend-developer`      | `Glm5.2 - Provider - Zai`               | `.github/agents/backend-developer.agent.md`      | Implementación |
+| `devops-engineer`        | `Glm5.2 - Provider - Zai`               | `.github/agents/devops-engineer.agent.md`        | Implementación |
+
+### Agentes Spec-Kit
+
+| Agent                     | `runSubagent` model                     | Skill                                              | Category       |
+| ------------------------- | --------------------------------------- | -------------------------------------------------- | -------------- |
+| `speckit.constitution`    | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.constitution.agent.md`     | Razonamiento   |
+| `speckit.specify`         | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.specify.agent.md`          | Razonamiento   |
+| `speckit.clarify`         | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.clarify.agent.md`          | Razonamiento   |
+| `speckit.plan`            | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.plan.agent.md`             | Razonamiento   |
+| `speckit.tasks`           | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.tasks.agent.md`            | Razonamiento   |
+| `speckit.analyze`         | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.analyze.agent.md`          | Razonamiento   |
+| `speckit.checklist`       | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.checklist.agent.md`        | Razonamiento   |
+| `speckit.taskstoissues`   | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.taskstoissues.agent.md`    | Razonamiento   |
+| `speckit.implement`       | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.implement.agent.md`        | Implementación |
+| `speckit.git.initialize`  | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.git.initialize.agent.md`   | Implementación |
+| `speckit.git.feature`     | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.git.feature.agent.md`      | Implementación |
+| `speckit.git.commit`      | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.git.commit.agent.md`       | Implementación |
+| `speckit.git.remote`      | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.git.remote.agent.md`       | Implementación |
+| `speckit.git.validate`    | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.git.validate.agent.md`     | Implementación |
 
 ## Example: invoking solution-architect correctly
 
 ```ts
 runSubagent({
   agentName: "solution-architect",
-  model: "Qwen 3.7 OR",
+  model: "Qwen 3.7 plus - Provider - Alibaba",
   description: "Design customer deployment plan",
   prompt: `Workspace: {PROJECT}, {ABSOLUTE_PATH}
 Feature: {FEATURE}, TASK-{ID}
@@ -97,7 +122,7 @@ runSubagent({ agentName: "solution-architect", prompt: "..." })
 runSubagent({ agentName: "backend-developer", model: "GLM-5.2", prompt: "Implement X" })
 
 // ❌ Wrong model for agent category
-runSubagent({ agentName: "solution-architect", model: "GLM-5.2", ... })
+runSubagent({ agentName: "solution-architect", model: "Glm5.2 - Provider - Zai", ... })
 
 // ❌ Subagent doesn't know the workspace or TASK-ID
 runSubagent({ agentName: "frontend-developer", model: "GLM-5.2", prompt: "Fix the header" })

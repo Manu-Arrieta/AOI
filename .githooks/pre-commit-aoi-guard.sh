@@ -2,7 +2,7 @@
 # .githooks/pre-commit-aoi-guard.sh — Block `headroom learn` overwriting AOI-managed files.
 #
 # Why this exists: `headroom learn --apply` rewrites CLAUDE.md / AGENTS.md /
-# GEMINI.md (the three AOI-managed instruction files at the repo root) without
+# AGENTS.md (the AOI-managed instruction files at the repo root) without
 # AOI awareness. Headroom is MANDATORY, but AOI must keep ownership of its own
 # managed instruction surface, or the bootstrap contracts drift in non-recoverable
 # ways.
@@ -21,7 +21,6 @@
 set -euo pipefail
 
 AOI_MANAGED_FILES=(
-  "GEMINI.md"
   "AGENTS.md"
   "CLAUDE.md"
 )

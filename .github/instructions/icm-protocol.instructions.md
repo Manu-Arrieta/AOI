@@ -21,7 +21,7 @@ icm_feedback_record(...)    ← MANDATORY
 
 ### Mode 2 — CLI Fallback (when MCP tools are absent)
 
-If MCP tools are NOT in your tool list (e.g. in Antigravity GUI), use `icm` from PATH:
+If MCP tools are NOT in your tool list, use `icm` from PATH:
 
 ```bash
 icm store -t "{WORKSPACE}-context" -c "..." -i critical -k "key1,key2"
@@ -48,11 +48,11 @@ ICM hooks run automatically in supported tools. You do NOT need to call them —
 
 | Hook               | What it does                                                 | Tools                              |
 | ------------------ | ------------------------------------------------------------ | ---------------------------------- |
-| `SessionStart`     | Injects wake-up pack of critical/high memories (~500 tokens) | Claude, Gemini, Codex, Copilot CLI |
-| `PreToolUse`       | Auto-allows `icm` CLI commands (no permission prompt)        | Claude, Gemini, Codex, Copilot CLI |
-| `PostToolUse`      | Extracts facts from tool output every N calls (rule-based)   | Claude, Gemini, Codex, Copilot CLI |
-| `PreCompact`       | Extracts memories from transcript before context compression | Claude, Gemini                     |
-| `UserPromptSubmit` | Injects recalled context at the start of each user prompt    | Claude, Gemini, Codex, Copilot CLI |
+| `SessionStart`     | Injects wake-up pack of critical/high memories (~500 tokens) | Copilot CLI, Codex, Claude |
+| `PreToolUse`       | Auto-allows `icm` CLI commands (no permission prompt)        | Copilot CLI, Codex, Claude |
+| `PostToolUse`      | Extracts facts from tool output every N calls (rule-based)   | Copilot CLI, Codex, Claude |
+| `PreCompact`       | Extracts memories from transcript before context compression | Claude                    |
+| `UserPromptSubmit` | Injects recalled context at the start of each user prompt    | Copilot CLI, Codex, Claude |
 
 **Important**: Hooks handle automatic recall/extraction. You STILL must explicitly store important decisions, architecture changes, and phase completions — hooks only capture incidental facts.
 
@@ -118,7 +118,7 @@ When a topic exceeds 7 entries, `icm_memory_store` warns the caller to consolida
 
 - Build/test output (ephemeral)
 - Git status (changes every minute)
-- Content already in project files (`.specify/`, `GEMINI.md`, etc.)
+- Content already in project files (`.specify/`, `AGENTS.md`, etc.)
 - Trivial exploration that leads nowhere
 
 ## Project Isolation

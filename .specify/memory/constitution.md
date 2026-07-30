@@ -20,13 +20,12 @@ Follow-up TODOs:
 
 ## Core Principles
 
-### I. Dual-Sync First
+### I. Scaffold Mirror Integrity
 
-Any change to agents, skills, prompts, registries, or workflow guidance MUST keep
-Copilot and Antigravity artifacts semantically equivalent. When a change affects
-what this repository installs, the live repository copy and the `scaffold/`
-mirror MUST be updated in the same change. Rationale: AOI ships an
-ecosystem, not isolated files, and drift breaks downstream projects silently.
+Any change to agents, skills, prompts, registries, or workflow guidance that
+affects what this repository installs MUST keep the live repository copy and
+the `scaffold/` mirror in sync. Rationale: AOI ships an ecosystem, not
+isolated files, and drift breaks downstream projects silently.
 
 ### II. ICM-Centered Execution
 
@@ -89,7 +88,7 @@ unverified drift degrades both this repository and every generated workspace.
   `.specify/memory/versions/` MUST be immutable; later changes require a new
   version activation or an explicit rollback event.
 - Changes touching shared agentic infrastructure MUST review the root and
-  `scaffold/` copies across `.github/`, `.agent/`, `.atl/`, `.specify/`, and
+  `scaffold/` copies across `.github/`, `.specify/`, and
   setup or teardown scripts when applicable.
 - Generated guidance MUST stay generic unless a rule is intentionally tool-
   scoped; assistant-specific wording MUST appear only where the surface is
@@ -102,10 +101,10 @@ unverified drift degrades both this repository and every generated workspace.
 - Initialization MUST verify that `.specify/memory/constitution.md`,
   `.tasks/registry.md`, and the required agent registries exist before handing
   work to downstream phases.
-- Specifications MUST document existing surface discovery, dual-sync impact,
+- Specifications MUST document existing surface discovery, scaffold-mirror impact,
   tooling or platform impact, and measurable outcomes before requirements are
   finalized.
-- Plans MUST include a constitution check covering dual-sync scope, ICM
+- Plans MUST include a constitution check covering mirror-sync scope, ICM
   obligations, RTK and platform implications, and focused validation strategy.
 - Tasks MUST include mirrored artifact updates, registry or documentation
   maintenance, and validation work whenever shared workflow surfaces change.
@@ -131,7 +130,7 @@ unverified drift degrades both this repository and every generated workspace.
   changes, MINOR for new or materially expanded principles or sections, and
   PATCH for clarifications that do not alter compliance expectations.
 - Compliance review is mandatory for every change touching shared workflow
-  surfaces; reviewers MUST verify constitution alignment, dual-sync parity, and
+  surfaces; reviewers MUST verify constitution alignment, scaffold-mirror parity, and
   validation evidence before approving completion.
 
 **Version**: 1.3.0 | **Ratified**: 2026-05-26 | **Last Amended**: 2026-06-15

@@ -202,11 +202,9 @@ Write-Host "  .github/hooks/"
 Write-Host "  .github/instructions/"
 Write-Host "  .github/prompts/"
 Write-Host "  .github/scripts/"
-Write-Host "  .agent/"
 Write-Host "  .specify/"
 Write-Host "  .resources/"
 Write-Host "  aoi_apps/agentic-ops-dashboard/ (including package.json, pnpm-lock.yaml, node_modules/)"
-Write-Host "  GEMINI.md"
 Write-Host "  AGENTS.md  (if from AOI)"
 Write-Host "  CLAUDE.md  (if from AOI)"
 Write-Host "  .conf/     (configuration snapshot)"
@@ -254,7 +252,6 @@ if (Test-Path -LiteralPath $githubDir -PathType Container) {
     }
 }
 
-Remove-IaBaseFile -Root $ProjectPath -RelativePath "GEMINI.md" -Marker "Antigravity System Instructions"
 Remove-IaBaseFile -Root $ProjectPath -RelativePath "AGENTS.md" -Marker "RTK|icm"
 Remove-IaBaseFile -Root $ProjectPath -RelativePath "CLAUDE.md" -Marker "RTK|icm"
 Remove-IaBaseFile -Root $ProjectPath -RelativePath ".windsurfrules" -Marker "icm"

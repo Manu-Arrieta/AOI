@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 # rtk-hook.sh — RTK PreToolUse hook wrapper
-# Resolves RTK binary path for GUI apps (VS Code, Antigravity) that inherit
+# Resolves RTK binary path for GUI apps (VS Code) that inherit
 # a limited PATH from launchd and may not see Homebrew binaries.
 #
-# This script is called by:
-#   .github/hooks/rtk-rewrite.json  (Copilot)
-#   .agent/hooks/rtk-rewrite.json   (Antigravity)
+# Called by: .github/hooks/rtk-rewrite.json
 
 set -euo pipefail
 

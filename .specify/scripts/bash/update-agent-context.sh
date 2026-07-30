@@ -30,12 +30,12 @@
 #
 # 5. Multi-Agent Support
 #    - Handles agent-specific file paths and naming conventions
-#    - Supports: Claude, Gemini, Copilot, Cursor, Qwen, opencode, Codex, Windsurf, Junie, Kilo Code, Auggie CLI, Roo Code, CodeBuddy CLI, Qoder CLI, Amp, SHAI, Tabnine CLI, Kiro CLI, Mistral Vibe, Kimi Code, Pi Coding Agent, iFlow CLI, Forge, Antigravity or Generic
+#    - Supports: Claude, Gemini, Copilot, Cursor, Qwen, opencode, Codex, Windsurf, Junie, Kilo Code, Auggie CLI, Roo Code, CodeBuddy CLI, Qoder CLI, Amp, SHAI, Tabnine CLI, Kiro CLI, Mistral Vibe, Kimi Code, Pi Coding Agent, iFlow CLI, Forge or Generic
 #    - Can update single agents or all existing agent files
 #    - Creates default Claude file if no agent files exist
 #
 # Usage: ./update-agent-context.sh [agent_type]
-# Agent types: claude|gemini|copilot|cursor-agent|qwen|opencode|codex|windsurf|junie|kilocode|auggie|roo|codebuddy|amp|shai|tabnine|kiro-cli|agy|bob|vibe|qodercli|kimi|trae|pi|iflow|forge|generic
+# Agent types: claude|gemini|copilot|cursor-agent|qwen|opencode|codex|windsurf|junie|kilocode|auggie|roo|codebuddy|amp|shai|tabnine|kiro-cli|bob|vibe|qodercli|kimi|trae|pi|iflow|forge|generic
 # Leave empty to update all existing agent files
 
 set -e
@@ -80,7 +80,6 @@ AMP_FILE="$AGENTS_FILE"
 SHAI_FILE="$REPO_ROOT/SHAI.md"
 TABNINE_FILE="$REPO_ROOT/TABNINE.md"
 KIRO_FILE="$AGENTS_FILE"
-AGY_FILE="$REPO_ROOT/.agent/rules/specify-rules.md"
 BOB_FILE="$AGENTS_FILE"
 VIBE_FILE="$REPO_ROOT/.vibe/agents/specify-agents.md"
 KIMI_FILE="$REPO_ROOT/KIMI.md"
@@ -686,9 +685,6 @@ update_specific_agent() {
         kiro-cli)
             update_agent_file "$KIRO_FILE" "Kiro CLI" || return 1
             ;;
-        agy)
-            update_agent_file "$AGY_FILE" "Antigravity" || return 1
-            ;;
         bob)
             update_agent_file "$BOB_FILE" "IBM Bob" || return 1
             ;;
@@ -769,7 +765,6 @@ update_all_existing_agents() {
     _update_if_new "$SHAI_FILE" "SHAI"                     || _all_ok=false
     _update_if_new "$TABNINE_FILE" "Tabnine CLI"           || _all_ok=false
     _update_if_new "$QODER_FILE" "Qoder CLI"               || _all_ok=false
-    _update_if_new "$AGY_FILE" "Antigravity"               || _all_ok=false
     _update_if_new "$VIBE_FILE" "Mistral Vibe"             || _all_ok=false
     _update_if_new "$KIMI_FILE" "Kimi Code"                || _all_ok=false
     _update_if_new "$TRAE_FILE" "Trae"                     || _all_ok=false
@@ -800,7 +795,7 @@ print_summary() {
     fi
     
     echo
-    log_info "Usage: $0 [claude|gemini|copilot|cursor-agent|qwen|opencode|codex|windsurf|junie|kilocode|auggie|roo|codebuddy|amp|shai|tabnine|kiro-cli|agy|bob|vibe|qodercli|kimi|trae|pi|iflow|forge|generic]"
+    log_info "Usage: $0 [claude|gemini|copilot|cursor-agent|qwen|opencode|codex|windsurf|junie|kilocode|auggie|roo|codebuddy|amp|shai|tabnine|kiro-cli|bob|vibe|qodercli|kimi|trae|pi|iflow|forge|generic]"
 }
 
 #==============================================================================

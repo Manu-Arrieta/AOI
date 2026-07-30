@@ -1,6 +1,6 @@
 ---
 description: "Scan the actual .resources/ folder structure and update .resources/constitution.md to reflect it exactly, then persist the change in ICM."
-mode: "agent"
+agent: "agent"
 ---
 
 # /update-resource-governance-structure — Sync Resources Constitution

@@ -900,13 +900,6 @@ try {
             Write-Warn "Spec-kit Copilot init skipped (may need manual setup)"
         }
 
-        Write-Info "Initializing spec-kit for Antigravity..."
-        try {
-            & $specifyPath init . --ai agy --ai-skills --force 2>$null
-            Write-Ok "Spec-kit → Antigravity"
-        } catch {
-            Write-Warn "Spec-kit Antigravity init skipped (may need manual setup)"
-        }
     } else {
         Write-Warn "Specify CLI not found — skipping spec-kit init"
         Write-Warn "Run manually after installing: specify init . --ai copilot --force"
@@ -921,7 +914,6 @@ Write-Ok "Scaffold merged"
 
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".tasks") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".sandboxes") -Force | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".atl") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".resources") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".resources\userstories") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".resources\workflows") -Force | Out-Null
@@ -932,7 +924,7 @@ New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\server\utils") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\shared") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\test") -Force | Out-Null
-Write-Ok "Directories: .tasks/ .sandboxes/ .atl/ .resources/ aoi_apps/agentic-ops-dashboard/"
+Write-Ok "Directories: .tasks/ .sandboxes/ .resources/ aoi_apps/agentic-ops-dashboard/"
 
 if (Test-Path -LiteralPath (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\package.json") -PathType Leaf) {
     $dashboardInstaller = Ensure-DashboardRuntimePrerequisites
@@ -1043,7 +1035,7 @@ try {
 Write-Header "Phase 5: ICM Bootstrap"
 $icmPath = Ensure-IcmAvailable
 try {
-    & $icmPath store -t "$ProjectName-context" -c "Project $ProjectName initialized with AOI (Agentic Operational Infrastructure) v3. Stack: Hub-and-Spoke orchestration, SDD lifecycle (spec-kit), ICM persistence (4 methods: memories, memoirs, feedback, transcripts), RTK token optimization. Dual-sync enforced: Copilot (.github/agents/) ↔ Antigravity (.agent/skills/agents/). Task artifacts in .tasks/{feature}/TASK-YYYY-NNN/. Skill registry at .atl/skill-registry.md." -i critical -k "init,aoi,architecture" 2>$null
+    & $icmPath store -t "$ProjectName-context" -c "$ProjectName initialized with AOI (Agentic Operational Infrastructure) v3. Stack: Hub-and-Spoke orchestration, SDD lifecycle (spec-kit), ICM persistence (4 methods: memories, memoirs, feedback, transcripts), RTK token optimization. Agents in .github/agents/. Task artifacts in .tasks/{feature}/TASK-YYYY-NNN/." -i critical -k "init,aoi,architecture" 2>$null
     Write-Ok "Memory: init context stored (topic: $ProjectName-context)"
 } catch {
     Write-Warn "Memory bootstrap skipped"
@@ -1058,9 +1050,7 @@ try {
 
 try { & $icmPath memoir add-concept -m "$ProjectName-architecture" -n "sdd-lifecycle" -d "Spec-Driven Development lifecycle: constitution → specify → plan → tasks → implement → verify → archive" -l "type:process,domain:workflow" 2>$null } catch { }
 try { & $icmPath memoir add-concept -m "$ProjectName-architecture" -n "hub-and-spoke" -d "Supervisor orchestrates specialized agents per SDD phase" -l "type:pattern,domain:orchestration" 2>$null } catch { }
-try { & $icmPath memoir add-concept -m "$ProjectName-architecture" -n "dual-sync" -d "All agents/skills must exist in both Copilot (.github/agents/) and Antigravity (.agent/skills/agents/) formats" -l "type:constraint,domain:sync" 2>$null } catch { }
 try { & $icmPath memoir link -m "$ProjectName-architecture" --from "hub-and-spoke" --to "sdd-lifecycle" -r depends_on 2>$null } catch { }
-try { & $icmPath memoir link -m "$ProjectName-architecture" --from "dual-sync" --to "hub-and-spoke" -r related_to 2>$null } catch { }
 Write-Ok "Memoir: architecture graph bootstrapped"
 
 Write-Header "Phase 6: Base-Project Map"

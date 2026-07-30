@@ -1,6 +1,6 @@
 ---
 description: "Verify implementation against spec, run health checks, and decide on archive or continue."
-mode: "agent"
+agent: "agent"
 ---
 
 # /sdd-verify — Verification

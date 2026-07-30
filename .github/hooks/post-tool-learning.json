@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "bash .github/scripts/post-tool-learning-hook.sh",
+        "timeout": 15
+      }
+    ]
+  }
+}

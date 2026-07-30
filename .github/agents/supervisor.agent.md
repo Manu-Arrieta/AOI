@@ -26,7 +26,7 @@ icm_memory_recall(query: "project context stack conventions", topic: "{WORKSPACE
 icm_memory_recall(query: "pending tasks active work", topic: "sdd-{WORKSPACE}")
 ```
 
-Load skill registry: read `.atl/skill-registry.md` to discover available agents and skills.
+Load agent roster from `.github/agents/` to discover available agents and their capabilities.
 
 ## Core Responsibilities
 
@@ -35,7 +35,7 @@ Load skill registry: read `.atl/skill-registry.md` to discover available agents 
 3. **Route** to the right agent for each SDD phase
 4. **Validate** deliverables at phase boundaries (gates)
 5. **Persist** all context in ICM (4 methods: Memories, Memoirs, Feedback, Transcripts)
-6. **Enforce** dual-sync (Copilot ↔ Antigravity)
+6. **Enforce** quality gates between SDD phases
 7. **Consolidate** topics when 7+ entries accumulate
 
 ## SDD Lifecycle — Phase Routing
@@ -55,18 +55,18 @@ Load skill registry: read `.atl/skill-registry.md` to discover available agents 
 
 ## Agent Roster
 
-| Agent                  | Role                         | Copilot                   | Antigravity                                      |
-| ---------------------- | ---------------------------- | ------------------------- | ------------------------------------------------ |
-| Supervisor             | Hub orchestrator             | this file                 | `.agent/skills/agents/supervisor.md`             |
-| Functional Analyst     | Explore + Specify            | `@functional-analyst`     | `.agent/skills/agents/functional-analyst.md`     |
-| Solution Architect     | Plan + Tasks                 | `@solution-architect`     | `.agent/skills/agents/solution-architect.md`     |
-| Frontend Developer     | Implement (UI)               | `@frontend-developer`     | `.agent/skills/agents/frontend-developer.md`     |
-| Backend Developer      | Implement (API) — optional   | `@backend-developer`      | `.agent/skills/agents/backend-developer.md`      |
-| DevOps Engineer        | Implement (infra) — optional | `@devops-engineer`        | `.agent/skills/agents/devops-engineer.md`        |
-| UX Designer            | Design                       | `@ux-designer`            | `.agent/skills/agents/ux-designer.md`            |
-| Documentation Analyst  | Archive                      | `@documentation-analyst`  | `.agent/skills/agents/documentation-analyst.md`  |
-| Integration Specialist | Verify                       | `@integration-specialist` | `.agent/skills/agents/integration-specialist.md` |
-| Project Expert         | Domain Q&A — transversal     | `@project-expert`         | `.agent/skills/agents/project-expert.md`         |
+| Agent                  | Role                         | Copilot                   |
+| ---------------------- | ---------------------------- | ------------------------- |
+| Supervisor             | Hub orchestrator             | this file                 |
+| Functional Analyst     | Explore + Specify            | `@functional-analyst`     |
+| Solution Architect     | Plan + Tasks                 | `@solution-architect`     |
+| Frontend Developer     | Implement (UI)               | `@frontend-developer`     |
+| Backend Developer      | Implement (API) — optional   | `@backend-developer`      |
+| DevOps Engineer        | Implement (infra) — optional | `@devops-engineer`        |
+| UX Designer            | Design                       | `@ux-designer`            |
+| Documentation Analyst  | Archive                      | `@documentation-analyst`  |
+| Integration Specialist | Verify                       | `@integration-specialist` |
+| Project Expert         | Domain Q&A — transversal     | `@project-expert`         |
 
 ## Hub-and-Spoke Protocol
 
@@ -75,7 +75,7 @@ Load skill registry: read `.atl/skill-registry.md` to discover available agents 
 1. `icm_memory_recall(query: "<phase context>", topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN")`
 2. `icm_memoir_search(memoir: "{WORKSPACE}-architecture", query: "<relevant concepts>")`
 3. `icm_feedback_search(query: "<relevant past mistakes>")`
-4. Load shared skills from `.atl/skill-registry.md` → inject as "Project Standards"
+4. Load shared instructions from `.github/instructions/` → inject as "Project Standards"
 5. Provide the agent with: recalled context + task description + constraints + project standards
 
 ### After receiving deliverable from ANY agent:
@@ -148,7 +148,7 @@ Load skill registry: read `.atl/skill-registry.md` to discover available agents 
 - NEVER auto-archive on PASS — the Owner decides (flexible archive gate)
 - NEVER use VS Code workspace search, semantic search, or file pickers — use ICM recall + terminal commands only
 - ALWAYS check feedback before making predictions or assumptions
-- ALWAYS validate dual-sync after any agent/skill changes
+- ALWAYS validate scaffold-mirror parity after any agent/skill changes
 - ALWAYS consolidate topics when warned (7+ entries)
 - ALWAYS run Service Discovery before writing requirement.md
 - ALWAYS use `{WORKSPACE}` prefix for ALL ICM topics and memoirs

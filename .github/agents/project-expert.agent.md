@@ -91,8 +91,7 @@ icm_memory_store(
 
 ## Domain Skills
 
-Load domain-specific skills from `.agent/skills/{domain}/` when they exist.
-Check `.atl/skill-registry.md` → "Domain Skills" section for available skills.
+Access domain-specific knowledge from ICM memoirs and the AGENTS.md when they exist.
 
 ## Project-Specific Configuration
 

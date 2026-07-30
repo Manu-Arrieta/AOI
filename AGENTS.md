@@ -62,7 +62,7 @@ Without this activation, the `memoir_*`, `memory_*`, `codebase-memo_*` tools wil
 - Phase 1.6 of `setup.sh` / `setup.ps1` offers Headroom as an optional install (non-blocking).
 - When installed, set `HEADROOM_HOST`, `HEADROOM_PORT`, `HEADROOM_PROXY_PORT` in your shell rc so CLI agents route through the proxy.
 - Token savings for VS Code Chat come from **RTK** (terminal output filtering) and **codebase-memory-mcp** (120× fewer tokens in code exploration).
-- Do **not** run `headroom learn --apply` unattended — it may overwrite `GEMINI.md`, `AGENTS.md`, `CLAUDE.md`. Use `--dry-run` first.
+- Do **not** run `headroom learn --apply` unattended — it may overwrite `AGENTS.md`, `CLAUDE.md`. Use `--dry-run` first.
 
 <!-- headroom:end -->
 

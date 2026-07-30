@@ -3,7 +3,7 @@
 Instala un ecosistema agéntico completo en cualquier proyecto: **RTK**
 (optimización de tokens) + **ICM** (memoria persistente) + **Spec-Kit**
 (ciclo de vida SDD) + **11 agentes especializados** sincronizados entre
-Copilot y Antigravity.
+Copilot.
 
 ## Inicio Rápido
 
@@ -72,13 +72,13 @@ Límite de documentación:
 
 ### Herramientas (en orden de prioridad)
 
-| Herramienta             | Propósito                                  | macOS / Linux                                   | Windows 11+                                                   |
-| ----------------------- | ------------------------------------------ | ----------------------------------------------- | ------------------------------------------------------------- |
-| **RTK**                 | Optimización de tokens (60-90%)            | `brew install rtk`                              | Binario desde GitHub Releases vía `setup.ps1`                 |
-| **ICM**                 | Memoria persistente (4 métodos)            | `brew tap rtk-ai/tap && brew install icm`       | `install.ps1` oficial vía `setup.ps1`                         |
-| **Headroom**            | Capa de compresión CLI (60-95%)           | `bash scripts/install-headroom.sh --yes`        | `powershell scripts/install-headroom.ps1 -Yes`                |
-| **Codebase Memory MCP** | Inteligencia estructural de código / grafo | `bash scripts/install-codebase-memory.sh --ui --yes` | `powershell scripts/install-codebase-memory.ps1 -Yes -Variant ui`         |
-| **Specify CLI**         | Ciclo de vida de Spec-Driven Development   | `uv tool install specify-cli`                   | `winget install --id astral-sh.uv -e` + `uv tool install ...` |
+| Herramienta             | Propósito                                  | macOS / Linux                                        | Windows 11+                                                       |
+| ----------------------- | ------------------------------------------ | ---------------------------------------------------- | ----------------------------------------------------------------- |
+| **RTK**                 | Optimización de tokens (60-90%)            | `brew install rtk`                                   | Binario desde GitHub Releases vía `setup.ps1`                     |
+| **ICM**                 | Memoria persistente (4 métodos)            | `brew tap rtk-ai/tap && brew install icm`            | `install.ps1` oficial vía `setup.ps1`                             |
+| **Headroom**            | Capa de compresión CLI (60-95%)            | `bash scripts/install-headroom.sh --yes`             | `powershell scripts/install-headroom.ps1 -Yes`                    |
+| **Codebase Memory MCP** | Inteligencia estructural de código / grafo | `bash scripts/install-codebase-memory.sh --ui --yes` | `powershell scripts/install-codebase-memory.ps1 -Yes -Variant ui` |
+| **Specify CLI**         | Ciclo de vida de Spec-Driven Development   | `uv tool install specify-cli`                        | `winget install --id astral-sh.uv -e` + `uv tool install ...`     |
 
 En Windows, AOI usa `winget` para `uv` cuando está disponible. RTK no
 documenta por ahora un paquete oficial para `winget`, así que `setup.ps1`
@@ -96,6 +96,7 @@ El setup ofrece dos variantes durante la Phase 1.8:
 - **`ui`** (recomendado) — incluye la visualización 3D interactiva del grafo en `http://localhost:9749`, disponible cada vez que VS Code tiene el servidor MCP conectado.
 
 Tras una instalación exitosa, el setup activa automáticamente:
+
 - `auto_index true` — watcher nativo de git que re-indexa de forma incremental ante cualquier cambio.
 - `ui true` + `port 9749` — visualización HTTP del grafo habilitada al iniciar la próxima sesión de VS Code.
 - `index_repository` inicial en background — el proyecto queda indexado antes de la primera sesión de agente.
@@ -143,28 +144,21 @@ El runtime del dashboard también es obligatorio. El setup ya no saltea su boots
 │   └── rollback-workspace-memory.prompt.md # /rollback-workspace-memory — restauración de la versión previa
 └── instructions/ # Reglas siempre cargadas
   ├── icm-protocol.instructions.md # Cumplimiento ICM de 4 métodos
-    ├── dual-sync.instructions.md # Sincronización Copilot ↔ Antigravity
     └── model-selection.instructions.md # Política obligatoria de selección de modelo
-
-GEMINI.md # Instrucciones raíz de Antigravity
-.agent/skills/
-├── _shared/icm-protocol.md # Convención ICM compartida
-├── _shared/model-selection.md # Política obligatoria de selección de modelo
-└── agents/ # 11 espejos de agentes para Antigravity
 ```
 
 ## Protocolo de Descubrimiento de Código
 
 Cuando `codebase-memory-mcp` está registrado en `.vscode/mcp.json`, los agentes prefieren automáticamente sus herramientas de grafo sobre `grep` amplio o lecturas archivo por archivo:
 
-| Prioridad | Herramienta | Caso de uso |
-|---|---|---|
-| 1 | `search_graph` | Encontrar funciones, clases, routes por patrón |
-| 2 | `trace_path` | Seguir call chains inbound/outbound |
-| 3 | `get_code_snippet` | Leer el source exacto de un símbolo ya encontrado |
-| 4 | `query_graph` | Queries estructurales complejas tipo Cypher |
-| 5 | `get_architecture` | Overview del codebase: lenguajes, hotspots, clusters |
-| 6 | `grep` / lectura directa | Literales, configs, non-code files, o fallback |
+| Prioridad | Herramienta              | Caso de uso                                          |
+| --------- | ------------------------ | ---------------------------------------------------- |
+| 1         | `search_graph`           | Encontrar funciones, clases, routes por patrón       |
+| 2         | `trace_path`             | Seguir call chains inbound/outbound                  |
+| 3         | `get_code_snippet`       | Leer el source exacto de un símbolo ya encontrado    |
+| 4         | `query_graph`            | Queries estructurales complejas tipo Cypher          |
+| 5         | `get_architecture`       | Overview del codebase: lenguajes, hotspots, clusters |
+| 6         | `grep` / lectura directa | Literales, configs, non-code files, o fallback       |
 
 Si el proyecto todavía no está indexado, llamar `index_repository` primero. Si el servidor MCP no está presente, se aplica el flujo normal de búsqueda local.
 
@@ -330,13 +324,9 @@ No se pierde contexto entre sesiones.
 ## Regla de Doble Sincronización
 
 **OBLIGATORIO**: Cada agente/skill debe existir tanto en formato Copilot como
-en Antigravity.
 
-| Copilot                          | Antigravity                      |
-| -------------------------------- | -------------------------------- |
-| `.github/agents/{name}.agent.md` | `.agent/skills/agents/{name}.md` |
+## Integridad del Mirror Scaffold
 
-`dual-sync.instructions.md` hace cumplir esta regla automáticamente. Si los
 agentes divergen, `/sdd-verify` falla.
 
 ## Notas para Windows

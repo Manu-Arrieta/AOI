@@ -1,6 +1,6 @@
 # scripts/aoi-headroom-wrap.ps1 — Mandatory wrapper for GitHub Copilot CLI invocations (Windows).
 #
-# Mirrors scripts/aoi-headroom-wrap.sh via AOI dual-sync. Refuses to run when
+# Mirrors scripts/aoi-headroom-wrap.sh. Refuses to run when
 # `headroom` is missing on PATH and re-execs `headroom wrap copilot --subscription`
 # preserving argv. Honor exit codes transparently.
 

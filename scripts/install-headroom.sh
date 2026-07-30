@@ -259,5 +259,5 @@ ok "Installer finalizado."
 warn "Headroom está instalado pero NO está activo. Para activarlo:"
 printf "  ${BLUE}headroom proxy --port 8787${NC}    # proxy OpenAI-compatible on localhost\n"
 printf "  ${BLUE}headroom wrap copilot --subscription -- --model gpt-4o${NC}    # wrappear GitHub Copilot CLI\n"
-warn "AVISO: NO corra 'headroom learn --apply' durante sesiones AOI activas — puede modificar GEMINI.md, AGENTS.md o CLAUDE.md sin awareness AOI. Use --dry-run y revise diff primero."
+warn "AVISO: NO corra 'headroom learn --apply' durante sesiones AOI activas — puede modificar AGENTS.md o CLAUDE.md sin awareness AOI. Use --dry-run y revise diff primero."
 exit 0

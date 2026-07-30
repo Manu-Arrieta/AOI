@@ -1,6 +1,6 @@
 ---
 description: "Execute implementation tasks from the approved plan using spec-kit implement."
-mode: "agent"
+agent: "agent"
 ---
 
 # /sdd-apply — Implementation

@@ -1,8 +1,14 @@
+---
+name: "Model Selection Protocol"
+description: "Mandatory model selection rules for all AOI agents. Covers reasoning agents, implementation agents, multi-provider config, and NVIDIA fallback."
+applyTo: "**"
+---
+
 # Model Selection Protocol
 
 **OBLIGATORIO PARA TODOS LOS AGENTES:**
 
-Para garantizar la mayor eficiencia y capacidad resolutiva de la infraestructura agéntica, la selección de modelos debe obedecer estrictamente las siguientes reglas, tanto en **Copilot** como en **Antigravity**.
+Para garantizar la mayor eficiencia y capacidad resolutiva de la infraestructura agéntica, la selección de modelos debe obedecer estrictamente las siguientes reglas en **Copilot**.
 
 ## 1. Agentes de Razonamiento Abstracto
 
@@ -18,7 +24,7 @@ Para tareas que requieren escribir código, ejecutar comandos en terminal, imple
 
 ## 3. Regla de Preeminencia (CRÍTICA)
 
-> Cuando un agente declara un bloque `## Model Requirement` en su archivo `.agent.md` (Copilot) o `.agent/skills/agents/*.md` (Antigravity), la asignación documentada en ese bloque **reemplaza** el default genérico de las categorías §1 y §2. Si el bloque `## Model Requirement` del agente especifica un `Primary` + `Fallback`, esa jerarquía es la fuente de verdad para ESE agente.
+> Cuando un agente declara un bloque `## Model Requirement` en su archivo `.agent.md`, la asignación documentada en ese bloque **reemplaza** el default genérico de las categorías §1 y §2. Si el bloque `## Model Requirement` del agente especifica un `Primary` + `Fallback`, esa jerarquía es la fuente de verdad para ESE agente.
 >
 > **El operador DEBE seleccionar el modelo `Primary` en el picker de la plataforma antes de invocar al agente.** Los modelos custom no se asignan automáticamente via frontmatter ni via parámetros de `runSubagent`. Si el `Primary` no está disponible, el operador DEBE elegir el `Fallback` manualmente.
 
@@ -110,10 +116,6 @@ runSubagent({ agentName: "ux-designer", model: "Minimax M3 - Provider - Minimax"
 > Cuando el operador seleccione un agente, **debe** abrir el picker de modelos y elegir el `Primary` configurado. Si el `Primary` no está disponible en el picker, **debe** elegir el `Fallback`. **Si ambos están ausentes** o el operador no completa la selección antes de la invocación, se aplica la regla §3: detener y notificar.
 
 Esta jerarquía NO automatiza la selección: el AOI nunca elige modelo por cuenta propia.
-
-### Mirror Obligatorio
-
-> Toda asignación de agente declarada en este capítulo debe espejarse en `.agent/skills/agents/*.md` (Antigravity) con un bloque `## Model Requirement` equivalente. El protocolo `dual-sync.instructions.md` aplica sin excepciones.
 
 ## 5. Configuración Multi-Provider + NVIDIA Fallback (paso previo, opcional)
 
@@ -270,9 +272,9 @@ Persistencia de envvars: el operador decide. El helper `headroom-vscode-setup.sh
 
 Headroom provee el comando `headroom learn`, que **mina sesiones pasadas de IA y escribe correcciones automáticas** a archivos de instrucciones del workspace. Documentación oficial dice:
 
-> `headroom learn` — mines failed sessions, writes corrections to `CLAUDE.md` / `AGENTS.md` / `GEMINI.md`.
+> `headroom learn` — mines failed sessions, writes corrections to `CLAUDE.md` / `AGENTS.md`.
 
-AOI **exactly tracks** los tres archivos en la raíz del repo (`GEMINI.md`, `AGENTS.md`, `CLAUDE.md`). Si el operador corre `headroom learn --apply` durante una sesión AOI activa, Headroom podría machucar secciones AOI-managed **sin awareness AOI**.
+AOI **exactly tracks** los dos archivos en la raíz del repo (`AGENTS.md`, `CLAUDE.md`). Si el operador corre `headroom learn --apply` durante una sesión AOI activa, Headroom podría machucar secciones AOI-managed **sin awareness AOI**.
 
 **Política AOI**:
 
@@ -282,7 +284,7 @@ AOI **exactly tracks** los tres archivos en la raíz del repo (`GEMINI.md`, `AGE
 4. **Recomendación operativa**:
    - Pre-correr `git diff --stat` antes de `headroom learn --apply`
    - Usar `headroom learn --dry-run` (variante `--verbosity` lo soporta nativamente) para revisar el diff propuesto
-   - Post-correr `git checkout -- GEMINI.md AGENTS.md CLAUDE.md` para descartar cambios no aprobados manualmente
+   - Post-correr `git checkout -- AGENTS.md CLAUDE.md` para descartar cambios no aprobados manualmente
 5. **Mitigaciones futuras posibles** (no implementadas en v0):
    - Marcas `# aoi:managed-begin` / `# aoi:managed-end` en archivos AOI-managed y un git hook que rechace cambios fuera de esos bloques
    - Constitution `policy.md` que registre "archivos AOI-managed no son editables por headroom learn sin aprobación"
@@ -303,11 +305,11 @@ AOI **exactly tracks** los tres archivos en la raíz del repo (`GEMINI.md`, `AGE
 
 Para que la obligatoriedad sea real y no solo a nivel de instalación, el setup añade **Phase 1.7** que instala dos activos críticos:
 
-| Activo                            | Ruta                                 | Función                                                                                                                                                                                                                       |
-| --------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `aoi-headroom-wrap.sh` (+ `.ps1`) | `scripts/aoi-headroom-wrap.{sh,ps1}` | Wrapper que rechaza invocaciones si `headroom` falta en PATH y reejecuta `headroom wrap copilot --subscription`. Es el único punto de invocación de Copilot CLI permitido por la política AOI.                                |
-| `aoi-copilot` shim                | `scripts/bin/aoi-copilot`            | Shim binario que enruta cualquier llamada estilo "copilot" hacia el wrapper. SDD agents usan este shim en lugar del comando nativo.                                                                                           |
-| `pre-commit-aoi-guard.sh`         | `.githooks/pre-commit-aoi-guard.sh`  | Pre-commit hook que **bloquea** cualquier cambio en `GEMINI.md`, `AGENTS.md` o `CLAUDE.md` sin el marker `[aoi-managed-ok]`. Impide que `headroom learn --apply` (u otra herramienta externa) pise la superficie AOI-managed. |
+| Activo                            | Ruta                                 | Función                                                                                                                                                                                                          |
+| --------------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `aoi-headroom-wrap.sh` (+ `.ps1`) | `scripts/aoi-headroom-wrap.{sh,ps1}` | Wrapper que rechaza invocaciones si `headroom` falta en PATH y reejecuta `headroom wrap copilot --subscription`. Es el único punto de invocación de Copilot CLI permitido por la política AOI.                   |
+| `aoi-copilot` shim                | `scripts/bin/aoi-copilot`            | Shim binario que enruta cualquier llamada estilo "copilot" hacia el wrapper. SDD agents usan este shim en lugar del comando nativo.                                                                              |
+| `pre-commit-aoi-guard.sh`         | `.githooks/pre-commit-aoi-guard.sh`  | Pre-commit hook que **bloquea** cualquier cambio en `AGENTS.md` o `CLAUDE.md` sin el marker `[aoi-managed-ok]`. Impide que `headroom learn --apply` (u otra herramienta externa) pise la superficie AOI-managed. |
 
 **Reglas para SDD agents**:
 
