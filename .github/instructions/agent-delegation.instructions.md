@@ -72,22 +72,22 @@ After the subagent returns, verify:
 
 ### Agentes Spec-Kit
 
-| Agent                     | `runSubagent` model                     | Skill                                              | Category       |
-| ------------------------- | --------------------------------------- | -------------------------------------------------- | -------------- |
-| `speckit.constitution`    | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.constitution.agent.md`     | Razonamiento   |
-| `speckit.specify`         | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.specify.agent.md`          | Razonamiento   |
-| `speckit.clarify`         | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.clarify.agent.md`          | Razonamiento   |
-| `speckit.plan`            | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.plan.agent.md`             | Razonamiento   |
-| `speckit.tasks`           | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.tasks.agent.md`            | Razonamiento   |
-| `speckit.analyze`         | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.analyze.agent.md`          | Razonamiento   |
-| `speckit.checklist`       | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.checklist.agent.md`        | Razonamiento   |
-| `speckit.taskstoissues`   | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.taskstoissues.agent.md`    | Razonamiento   |
-| `speckit.implement`       | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.implement.agent.md`        | Implementación |
-| `speckit.git.initialize`  | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.git.initialize.agent.md`   | Implementación |
-| `speckit.git.feature`     | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.git.feature.agent.md`      | Implementación |
-| `speckit.git.commit`      | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.git.commit.agent.md`       | Implementación |
-| `speckit.git.remote`      | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.git.remote.agent.md`       | Implementación |
-| `speckit.git.validate`    | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.git.validate.agent.md`     | Implementación |
+| Agent                    | `runSubagent` model                     | Skill                                            | Category       |
+| ------------------------ | --------------------------------------- | ------------------------------------------------ | -------------- |
+| `speckit.constitution`   | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.constitution.agent.md`   | Razonamiento   |
+| `speckit.specify`        | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.specify.agent.md`        | Razonamiento   |
+| `speckit.clarify`        | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.clarify.agent.md`        | Razonamiento   |
+| `speckit.plan`           | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.plan.agent.md`           | Razonamiento   |
+| `speckit.tasks`          | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.tasks.agent.md`          | Razonamiento   |
+| `speckit.analyze`        | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.analyze.agent.md`        | Razonamiento   |
+| `speckit.checklist`      | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.checklist.agent.md`      | Razonamiento   |
+| `speckit.taskstoissues`  | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.taskstoissues.agent.md`  | Razonamiento   |
+| `speckit.implement`      | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.implement.agent.md`      | Implementación |
+| `speckit.git.initialize` | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.git.initialize.agent.md` | Implementación |
+| `speckit.git.feature`    | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.git.feature.agent.md`    | Implementación |
+| `speckit.git.commit`     | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.git.commit.agent.md`     | Implementación |
+| `speckit.git.remote`     | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.git.remote.agent.md`     | Implementación |
+| `speckit.git.validate`   | `Glm5.2 - Provider - Zai`               | `.github/agents/speckit.git.validate.agent.md`   | Implementación |
 
 ## Example: invoking solution-architect correctly
 
