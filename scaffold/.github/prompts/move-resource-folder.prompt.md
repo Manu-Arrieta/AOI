@@ -1,6 +1,6 @@
 ---
 description: "Move a governed folder inside .resources and persist the structural change."
-mode: "agent"
+agent: "agent"
 ---
 
 # /move-resource-folder — Move Resource Folder

@@ -1,6 +1,6 @@
 ---
 description: "Delete a governed folder inside .resources and persist the structural change."
-mode: "agent"
+agent: "agent"
 ---
 
 # /delete-resource-folder — Delete Resource Folder

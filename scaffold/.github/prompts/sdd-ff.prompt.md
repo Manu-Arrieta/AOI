@@ -1,6 +1,6 @@
 ---
 description: "Fast-Forward from proposal to implementation-ready tasks. Runs specify → plan → tasks using spec-kit."
-mode: "agent"
+agent: "agent"
 ---
 
 # /sdd-ff — Fast Forward (Specify → Plan → Tasks)
@@ -20,6 +20,8 @@ WORKSPACE=$(basename "$(git remote get-url origin 2>/dev/null | sed 's/.git$//')
 ```
 icm_memory_recall(query: "context conventions stack", topic: "{WORKSPACE}-context")
 ```
+
+> **Headroom mandatory policy.** Any Copilot CLI invocation in this workspace MUST be routed through `bash scripts/aoi-headroom-wrap.sh` (or the `aoi-copilot` shim) so the call exits via `headroom wrap copilot --subscription`. The wrapper refuses to run when `headroom` is missing.
 
 ### Step 2: Identify Task
 

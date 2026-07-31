@@ -1,6 +1,6 @@
 ---
 description: "Create a governed folder inside .resources and persist the structural change."
-mode: "agent"
+agent: "agent"
 ---
 
 # /new-resource-folder — Create Resource Folder

@@ -54,7 +54,24 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
 6. **Check** conventions: `icm_memory_recall(query: "frontend conventions", topic: "{WORKSPACE}-conventions")`
 7. **Search** feedback: `icm_feedback_search(query: "frontend implementation")` for past gotchas
 
-### Phase 1: UX Gate (if new component — MANDATORY)
+### Phase 1: TDD Gate (MANDATORY — per task)
+
+> 🧪 **NEVER write production code without a failing test first.**
+
+For EACH task before writing implementation code:
+
+1. **RED** — Write a test that defines the expected behavior. Run it and verify it **fails**.
+2. **GREEN** — Write the **minimum** code to make the test pass. Do NOT write extra logic.
+3. **REFACTOR** — Clean up the code while keeping tests green. Remove duplication, improve readability.
+
+Rules:
+
+- ❌ No production code without a failing test
+- ❌ No moving to next task without all tests green
+- ✅ Tests are the spec — they define what the code must do
+- ✅ If a test is hard to write, the design may need revisiting — escalate to @solution-architect
+
+### Phase 2: UX Gate (if new component — MANDATORY)
 
 > 🚫 **NEVER create a new UI component without passing through @ux-designer first.**
 
@@ -68,7 +85,7 @@ When the task requires creating a new component (page, layout, molecule, atom, m
 
 > ⚠️ **Existing component modifications** (adding props, fixing bugs, adjusting styling) do NOT require the gate.
 
-### Phase 2: Implement
+### Phase 3: Implement
 
 1. **Implement** tasks following the design, conventions, and analysis
 2. **Fit into existing patterns** — don't introduce new patterns unless the task explicitly requires it
@@ -76,7 +93,7 @@ When the task requires creating a new component (page, layout, molecule, atom, m
 4. **Store** progress: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", content: "**What**: Frontend tasks completed — [task list]\n**Why**: [Next phase enabled]\n**Where**: [File paths]\n**Learned**: [Patterns, gotchas]", importance: "high", keywords: "frontend,implementation,TASK-YYYY-NNN")`
 5. **Record** any issues or corrections as feedback
 
-### Phase 3: Verify
+### Phase 4: Verify
 
 1. Run `get_errors` on all modified files
 2. Run existing tests — ensure no regressions

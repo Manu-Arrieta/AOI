@@ -1,6 +1,6 @@
 ---
 description: "Execute implementation tasks from the approved plan using spec-kit implement."
-mode: "agent"
+agent: "agent"
 ---
 
 # /sdd-apply — Implementation
@@ -21,6 +21,8 @@ WORKSPACE=$(basename "$(git remote get-url origin 2>/dev/null | sed 's/.git$//')
 icm_memory_recall(query: "context conventions stack", topic: "{WORKSPACE}-context")
 icm_memory_recall(query: "implementation plan tasks", topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN")
 ```
+
+> **Headroom mandatory policy.** Any Copilot CLI invocation in this workspace MUST be routed through `bash scripts/aoi-headroom-wrap.sh` (or the `aoi-copilot` shim) so the call exits via `headroom wrap copilot --subscription`. The wrapper refuses to run when `headroom` is missing.
 
 ### Step 2: Identify Task + Validate Pre-Conditions
 

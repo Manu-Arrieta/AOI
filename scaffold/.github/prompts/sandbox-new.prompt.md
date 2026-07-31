@@ -1,6 +1,6 @@
 ---
 description: "Create or evolve a multipurpose sandbox (compartments + living constitution + integration manifest). The single manual entry point — there is no /sandbox-amend. Optional workflow."
-mode: "agent"
+agent: "agent"
 ---
 
 # /sandbox-new — Create or Evolve Sandbox

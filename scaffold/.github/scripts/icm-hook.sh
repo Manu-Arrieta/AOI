@@ -25,6 +25,7 @@ do
 done
 
 if [ -z "$ICM_BIN" ]; then
+  echo "[icm-hook] WARNING: icm binary not found in PATH or known locations. ICM hooks inactive." >&2
   exit 0
 fi
 

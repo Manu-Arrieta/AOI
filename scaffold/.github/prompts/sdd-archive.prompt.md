@@ -1,6 +1,6 @@
 ---
 description: "Formally close a task: consolidate ICM, generate docs, produce archive report, record transcript."
-mode: "agent"
+agent: "agent"
 ---
 
 # /sdd-archive — Formal Closure
@@ -21,6 +21,8 @@ WORKSPACE=$(basename "$(git remote get-url origin 2>/dev/null | sed 's/.git$//')
 icm_memory_recall(query: "context", topic: "{WORKSPACE}-context")
 icm_memory_recall(query: "verify report complete", topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN")
 ```
+
+> **Headroom mandatory policy.** Any Copilot CLI invocation in this workspace MUST be routed through `bash scripts/aoi-headroom-wrap.sh` (or the `aoi-copilot` shim) so the call exits via `headroom wrap copilot --subscription`. The wrapper refuses to run when `headroom` is missing.
 
 ### Step 2: Start Transcript (Verbatim)
 

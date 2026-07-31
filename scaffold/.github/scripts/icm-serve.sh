@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # icm-serve.sh — Starts the ICM MCP server (stdio transport, compact mode)
-# Used by .vscode/mcp.json to provide ICM tools to Antigravity and Copilot agents.
+# Used by .vscode/mcp.json to provide ICM tools to Copilot agents.
 #
 # ICM uses a GLOBAL database shared across all projects.
-# Project isolation is handled via topic/memoir prefixes (see .agent/skills/_shared/icm-protocol.md)
+# Project isolation is handled via topic/memoir prefixes (see .github/instructions/icm-protocol.instructions.md)
 
 set -euo pipefail
 

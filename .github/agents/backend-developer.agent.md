@@ -55,7 +55,24 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
 7. **Search** architecture: `icm_memoir_search(memoir: "{WORKSPACE}-architecture", query: "api service database")`
 8. **Search** feedback: `icm_feedback_search(query: "backend implementation")` for past gotchas
 
-### Phase 1: Implement
+### Phase 1: TDD Gate (MANDATORY — per task)
+
+> 🧪 **NEVER write production code without a failing test first.**
+
+For EACH task before writing implementation code:
+
+1. **RED** — Write a test that defines the expected behavior (API contract, service logic, data flow). Run it and verify it **fails**.
+2. **GREEN** — Write the **minimum** code to make the test pass. Do NOT write extra logic.
+3. **REFACTOR** — Clean up the code while keeping tests green. Remove duplication, improve readability.
+
+Rules:
+
+- ❌ No production code without a failing test
+- ❌ No moving to next task without all tests green
+- ✅ Tests are the spec — they define what the code must do
+- ✅ If a test is hard to write, the design may need revisiting — escalate to @solution-architect
+
+### Phase 2: Implement
 
 1. **Implement** tasks following the design, conventions, and analysis
 2. **Fit into existing patterns** — don't introduce new patterns unless the task requires it
@@ -64,7 +81,7 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
    - `icm_memoir_add_concept(memoir: "{WORKSPACE}-architecture", name: "<service>", description: "...", labels: "type:service,domain:backend")`
 5. **Store** progress: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", content: "**What**: Backend tasks completed — [endpoints/services]\n**Why**: [Frontend/integration can proceed]\n**Where**: [File paths]\n**Learned**: [DB decisions, API contracts]", importance: "high", keywords: "backend,implementation,TASK-YYYY-NNN")`
 
-### Phase 2: Verify
+### Phase 3: Verify
 
 1. Run `get_errors` on all modified files
 2. Run existing tests — ensure no regressions

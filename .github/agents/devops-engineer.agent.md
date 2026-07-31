@@ -53,7 +53,24 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
 5. **Search** architecture: `icm_memoir_search(memoir: "{WORKSPACE}-architecture", query: "infrastructure deployment")`
 6. **Search** feedback: `icm_feedback_search(query: "devops deployment")` for past gotchas
 
-### Phase 1: Implement
+### Phase 1: TDD Gate (MANDATORY — per task)
+
+> 🧪 **NEVER write provisioning/configuration code without a failing test first.**
+
+For EACH task before writing implementation code:
+
+1. **RED** — Write a test that validates the expected behavior (config syntax, deployment outcome, infra state). Run it and verify it **fails**.
+2. **GREEN** — Write the **minimum** configuration/script to make the test pass.
+3. **REFACTOR** — Clean up while keeping tests green. Remove duplication, improve readability.
+
+Rules:
+
+- ❌ No infra/config code without a failing test (lint, validation, or integration test)
+- ❌ No moving to next task without all tests green
+- ✅ Tests are the spec — they define what the infra must satisfy
+- ✅ If a test is hard to write, the design may need revisiting — escalate to @solution-architect
+
+### Phase 2: Implement
 
 1. **Implement** infrastructure, CI/CD, and deployment tasks
 2. **Fit into existing patterns** — don't introduce new tools or patterns unless the task requires it
@@ -61,7 +78,7 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
    - `icm_memoir_add_concept(memoir: "{WORKSPACE}-architecture", name: "<infra-component>", description: "...", labels: "type:infrastructure")`
 4. **Store** infra decisions: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", content: "**What**: Infra completed — [phase]\n**Why**: [Enables deployment]\n**Where**: [Config paths]\n**Learned**: [Issues resolved, env gotchas]", importance: "high", keywords: "devops,infrastructure,TASK-YYYY-NNN")`
 
-### Phase 2: Verify
+### Phase 3: Verify
 
 1. Validate configs are syntactically correct
 2. If a CI/CD pipeline exists, verify it still passes

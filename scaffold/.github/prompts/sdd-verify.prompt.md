@@ -1,6 +1,6 @@
 ---
 description: "Verify implementation against spec, run health checks, and decide on archive or continue."
-mode: "agent"
+agent: "agent"
 ---
 
 # /sdd-verify — Verification
@@ -21,6 +21,8 @@ WORKSPACE=$(basename "$(git remote get-url origin 2>/dev/null | sed 's/.git$//')
 icm_memory_recall(query: "context conventions", topic: "{WORKSPACE}-context")
 icm_memory_recall(query: "implementation complete", topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN")
 ```
+
+> **Headroom mandatory policy.** Any Copilot CLI invocation in this workspace MUST be routed through `bash scripts/aoi-headroom-wrap.sh` (or the `aoi-copilot` shim) so the call exits via `headroom wrap copilot --subscription`. The wrapper refuses to run when `headroom` is missing.
 
 ### Step 2: Identify Task + Load Artifacts
 
@@ -79,9 +81,9 @@ node scripts/sandbox/validate-manifest.mjs .sandboxes/{name}/integration-manifes
   element whose `disposition` is `integrate` AND whose `status` is `pending`,
   emit one **migration-plan line**. Resolve the element's `target` token —
   written as `{rootKey}:{relative-path}` where `rootKey ∈ {frontend, backend,
-  sharedLibs}` — against `.specify/memory/base-project.json` by looking up
+sharedLibs}` — against `.specify/memory/base-project.json` by looking up
   `roots[{rootKey}]` to produce the real base-project path (FR-10).
-  Example: `auth-form` with `target: "frontend:apps/agentic-ops-dashboard/app/components/AuthForm.vue"`
+  Example: `auth-form` with `target: "frontend:aoi_apps/agentic-ops-dashboard/app/components/AuthForm.vue"`
   resolves `frontend` via `base-project.json.roots.frontend` → the concrete
   destination path under the base project.
 - Elements with any other `disposition` (`discard`, `visualization-only`,
@@ -98,6 +100,7 @@ icm_memory_health()
 ```
 
 Check for:
+
 - Topics with 7+ entries needing consolidation → run `icm_memory_consolidate` immediately
 - Stale entries → flag for review
 - Missing critical topics → warn
@@ -112,29 +115,35 @@ Write `.tasks/{feature-name}/TASK-YYYY-NNN/verify-report.md`:
 ## Result: {PASS | FAIL | PARTIAL}
 
 ## Spec Compliance
-| Requirement | Status | Evidence |
-|-------------|--------|----------|
-| ... | ✅/❌ | file:line or description |
+
+| Requirement | Status | Evidence                 |
+| ----------- | ------ | ------------------------ |
+| ...         | ✅/❌  | file:line or description |
 
 ## Architecture Compliance
+
 - [ ] Design decisions respected
 - [ ] No drift from `design.md`
 
 ## Quality Gates
+
 - [ ] Service Discovery completed (mandatory)
 - [ ] Sandbox manifest valid — `validate-manifest.mjs` exit 0 (if active sandbox)
 - [ ] ICM Memory Health OK
 - [ ] No orphan tasks in `tasks.md`
 
 ## Migration Plan (active sandbox only)
-| Element | Disposition | Status | Resolved Target |
-|---------|-------------|--------|-----------------|
-| ... | integrate | pending | {base path resolved via base-project.json} |
+
+| Element | Disposition | Status  | Resolved Target                            |
+| ------- | ----------- | ------- | ------------------------------------------ |
+| ...     | integrate   | pending | {base path resolved via base-project.json} |
 
 ## Issues Found
+
 {list or "None"}
 
 ## Recommendation
+
 {PASS → archive | FAIL → iterate | PARTIAL → owner decision}
 ```
 
@@ -154,12 +163,12 @@ Present results to the Owner and offer choices:
 
 > "TASK-YYYY-NNN verification: {RESULT}. What would you like to do?"
 
-| Option | When | Action |
-|--------|------|--------|
-| **Archive** | PASS — feature is done | → `/sdd-archive TASK-ID` |
-| **Continue** | PASS but Owner wants to iterate | → keep status `🔄 Sandbox Activo`, Owner drives next changes |
-| **Fix + Re-verify** | FAIL or PARTIAL | → back to `/sdd-apply` for fixes, then re-verify |
-| **Cancel** | Owner abandons | → status `❌ Cancelado`, persist reason |
+| Option              | When                            | Action                                                       |
+| ------------------- | ------------------------------- | ------------------------------------------------------------ |
+| **Archive**         | PASS — feature is done          | → `/sdd-archive TASK-ID`                                     |
+| **Continue**        | PASS but Owner wants to iterate | → keep status `🔄 Sandbox Activo`, Owner drives next changes |
+| **Fix + Re-verify** | FAIL or PARTIAL                 | → back to `/sdd-apply` for fixes, then re-verify             |
+| **Cancel**          | Owner abandons                  | → status `❌ Cancelado`, persist reason                      |
 
 **The Owner decides.** The Supervisor does NOT auto-archive on PASS.
 

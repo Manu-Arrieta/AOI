@@ -1,6 +1,6 @@
 ---
 description: "Start a new SDD cycle. Explores requirements, creates proposal, and kicks off specification."
-mode: "agent"
+agent: "agent"
 ---
 
 # /sdd-new — Explore + Propose
@@ -23,6 +23,8 @@ icm_memoir_search(memoir: "{WORKSPACE}-architecture", query: "current architectu
 icm_feedback_search(query: "requirements specification")
 ```
 
+> **Headroom mandatory policy.** Any Copilot CLI invocation in this workspace MUST be routed through `bash scripts/aoi-headroom-wrap.sh` (or the `aoi-copilot` shim) so the call exits via `headroom wrap copilot --subscription`. Direct `copilot` invocations are forbidden by AOI bootstrap. The wrapper refuses to run when `headroom` is missing.
+
 Present the recalled context to the user briefly.
 
 ### Step 2: Start Transcript (Verbatim)
@@ -42,7 +44,7 @@ Record every user message and agent response during this phase. Transcripts capt
 5. Create directory `.tasks/{feature-name}/TASK-YYYY-NNN/`
 6. Create `.tasks/{feature-name}/TASK-YYYY-NNN/context.md` with initial state
 7. If the Owner explicitly linked files under `.resources/`, create or update
-  `.tasks/{feature-name}/TASK-YYYY-NNN/relations.json`
+   `.tasks/{feature-name}/TASK-YYYY-NNN/relations.json`
 8. Register in `.tasks/registry.md`
 
 ### Step 4: Service Discovery Gate (MANDATORY)
