@@ -34,6 +34,7 @@ Resolve the TASK-ID from user input `{{input}}`:
 4. Read `.tasks/{feature-name}/TASK-YYYY-NNN/design.md` for architecture context
 
 **Pre-conditions (ALL must be met):**
+
 - `spec.md` exists and is approved
 - `design.md` exists
 - `tasks.md` exists with task breakdown
