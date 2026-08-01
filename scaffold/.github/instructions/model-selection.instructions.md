@@ -42,7 +42,7 @@ runSubagent({ agentName: "solution-architect", model: "Qwen 3.7 plus - Provider 
 runSubagent({ agentName: "ux-designer", model: "Minimax M3 - Provider - Minimax", ... })
 ```
 
-> El modelo exacto que se pasa a `runSubagent` es el `name` del modelo en `ChatLanguageModel.json`, que coincide con lo documentado en el `## Model Requirement` del agente.
+> El modelo exacto que se pasa a `runSubagent` es el `name` que aparece en el picker de Copilot (`Deepseek v4 pro - Provider - Deepseek (customendpoint)`, `Glm5.2 - Provider - Zai (customendpoint)`, etc.). Los agentes documentan el **API-level ID** en su `## Model Requirement` (ej. `deepseek-v4-pro`). Para saber qué valor pasar a `runSubagent`, consultá la columna `runSubagent model` en el Agent Registry de `agent-delegation.instructions.md` o usá el nombre exacto tal cual aparece en el picker de VS Code.
 
 ### 4.1 Modelos Disponibles
 

@@ -47,9 +47,13 @@ printf "  .github/hooks/\n"
 printf "  .github/instructions/\n"
 printf "  .github/prompts/\n"
 printf "  .github/scripts/\n"
+printf "  .github/skills/\n"
+printf "  .githooks/\n"
 printf "  .specify/\n"
 printf "  .resources/\n"
 printf "  aoi_apps/agentic-ops-dashboard/ (including package.json, pnpm-lock.yaml, node_modules/)\n"
+printf "  scripts/aoi-headroom-wrap.sh\n"
+printf "  scripts/bin/aoi-copilot\n"
 printf "  AGENTS.md  (if from AOI)\n"
 printf "  CLAUDE.md  (if from AOI)\n"
 printf "  .conf/     (configuration snapshot)\n\n"
@@ -79,6 +83,7 @@ remove_dir() {
 remove_dir ".agent"
 remove_dir ".specify"
 remove_dir ".resources"
+remove_dir ".atl"
 remove_dir ".conf"
 remove_dir "aoi_apps/agentic-ops-dashboard"
 
@@ -88,9 +93,39 @@ if [ -d "$PROJECT_PATH/aoi_apps" ] && [ -z "$(ls -A "$PROJECT_PATH/aoi_apps" 2>/
 fi
 
 # .github — only remove AOI subdirs, not the whole .github (may have workflows etc.)
-for subdir in agents hooks instructions prompts scripts; do
+for subdir in agents hooks instructions prompts scripts skills; do
   remove_dir ".github/$subdir"
 done
+
+# .githooks — AOI pre-commit guard
+remove_dir ".githooks"
+
+# Restore original pre-commit if AOI chained itself into it
+if [ -f "$PROJECT_PATH/.git/hooks/pre-commit.aoi-bak" ]; then
+  mv "$PROJECT_PATH/.git/hooks/pre-commit.aoi-bak" "$PROJECT_PATH/.git/hooks/pre-commit"
+  ok "Restored .git/hooks/pre-commit from backup"
+elif [ -f "$PROJECT_PATH/.git/hooks/pre-commit" ] && grep -q "pre-commit-aoi-guard.sh" "$PROJECT_PATH/.git/hooks/pre-commit"; then
+  rm -f "$PROJECT_PATH/.git/hooks/pre-commit"
+  ok "Removed AOI pre-commit hook"
+fi
+
+# Phase 1.7 artifacts — aoi-headroom-wrap and aoi-copilot shim
+if [ -f "$PROJECT_PATH/scripts/aoi-headroom-wrap.sh" ]; then
+  rm -f "$PROJECT_PATH/scripts/aoi-headroom-wrap.sh"
+  ok "Removed scripts/aoi-headroom-wrap.sh"
+fi
+if [ -f "$PROJECT_PATH/scripts/bin/aoi-copilot" ]; then
+  rm -f "$PROJECT_PATH/scripts/bin/aoi-copilot"
+  ok "Removed scripts/bin/aoi-copilot"
+fi
+if [ -d "$PROJECT_PATH/scripts/bin" ] && [ -z "$(ls -A "$PROJECT_PATH/scripts/bin" 2>/dev/null)" ]; then
+  rm -rf "$PROJECT_PATH/scripts/bin"
+  ok "Removed scripts/bin/ (was empty)"
+fi
+if [ -d "$PROJECT_PATH/scripts" ] && [ -z "$(ls -A "$PROJECT_PATH/scripts" 2>/dev/null)" ]; then
+  rm -rf "$PROJECT_PATH/scripts"
+  ok "Removed scripts/ (was empty)"
+fi
 
 # copilot-instructions.md is created by `icm init --mode cli` inside .github/
 if [ -f "$PROJECT_PATH/.github/copilot-instructions.md" ]; then

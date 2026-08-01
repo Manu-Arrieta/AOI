@@ -10,19 +10,19 @@ defineProps<{
 
 const { messages } = useLocale()
 
-const emit = defineEmits<{
-  select: [artifactPath: string]
-}>()
+const emit = defineEmits<{ select: [artifactPath: string] }>()
+
+function kindIcon(kind: string) {
+  return kind === 'directory' ? 'i-lucide-folder' : 'i-lucide-file-text'
+}
 </script>
 
 <template>
-  <UCard class="artifact-panel" variant="soft" :ui="{ header: 'p-0 sm:p-0', body: 'px-0 pt-4 pb-0 sm:px-0 sm:pt-4 sm:pb-0' }">
-    <template #header>
-      <header class="mini-header">
-        <h3>{{ messages.artifactsPanel.title }}</h3>
-        <UBadge color="neutral" variant="outline">{{ artifacts.length }}</UBadge>
-      </header>
-    </template>
+  <div class="artifact-panel">
+    <header class="mini-header">
+      <h3>{{ messages.artifactsPanel.title }}</h3>
+      <UBadge color="neutral" variant="outline" size="sm">{{ artifacts.length }}</UBadge>
+    </header>
 
     <div v-if="!artifacts.length" class="panel-empty panel-empty-tight">
       {{ messages.artifactsPanel.empty }}
@@ -36,12 +36,13 @@ const emit = defineEmits<{
           @click="emit('select', artifact.path)"
         >
           <span class="artifact-item-copy">
+            <UIcon :name="kindIcon(artifact.kind)" style="color: var(--muted); flex-shrink: 0;" />
             <strong>{{ artifact.name }}</strong>
             <small>{{ artifact.path }}</small>
           </span>
-          <UBadge color="neutral" variant="outline">{{ artifact.kind }}</UBadge>
+          <UBadge color="neutral" variant="outline" size="sm">{{ artifact.kind }}</UBadge>
         </button>
       </li>
     </ul>
-  </UCard>
+  </div>
 </template>

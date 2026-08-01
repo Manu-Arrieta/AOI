@@ -202,9 +202,13 @@ Write-Host "  .github/hooks/"
 Write-Host "  .github/instructions/"
 Write-Host "  .github/prompts/"
 Write-Host "  .github/scripts/"
+Write-Host "  .github/skills/"
+Write-Host "  .githooks/"
 Write-Host "  .specify/"
 Write-Host "  .resources/"
 Write-Host "  aoi_apps/agentic-ops-dashboard/ (including package.json, pnpm-lock.yaml, node_modules/)"
+Write-Host "  scripts/aoi-headroom-wrap.ps1"
+Write-Host "  scripts/bin/aoi-copilot"
 Write-Host "  AGENTS.md  (if from AOI)"
 Write-Host "  CLAUDE.md  (if from AOI)"
 Write-Host "  .conf/     (configuration snapshot)"
@@ -221,6 +225,7 @@ Write-Header "Removing Infrastructure"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".agent"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".specify"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".resources"
+Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".atl"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".conf"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath "aoi_apps\agentic-ops-dashboard"
 
@@ -233,8 +238,52 @@ if (Test-Path -LiteralPath $appsDir -PathType Container) {
     }
 }
 
-foreach ($subdir in @("agents", "hooks", "instructions", "prompts", "scripts")) {
+foreach ($subdir in @("agents", "hooks", "instructions", "prompts", "scripts", "skills")) {
     Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".github\$subdir"
+}
+
+# .githooks — AOI pre-commit guard
+Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".githooks"
+
+# Restore original pre-commit if AOI chained itself into it
+$preCommitBak = Join-Path $ProjectPath ".git\hooks\pre-commit.aoi-bak"
+$preCommit = Join-Path $ProjectPath ".git\hooks\pre-commit"
+if (Test-Path -LiteralPath $preCommitBak) {
+    Move-Item -LiteralPath $preCommitBak -Destination $preCommit -Force
+    Write-Ok "Restored .git/hooks/pre-commit from backup"
+} elseif (Test-Path -LiteralPath $preCommit) {
+    $preCommitContent = Get-Content -LiteralPath $preCommit -Raw
+    if ($preCommitContent -match "pre-commit-aoi-guard.sh") {
+        Remove-Item -LiteralPath $preCommit -Force
+        Write-Ok "Removed AOI pre-commit hook"
+    }
+}
+
+# Phase 1.7 artifacts — aoi-headroom-wrap and aoi-copilot shim
+$wrapPs1 = Join-Path $ProjectPath "scripts\aoi-headroom-wrap.ps1"
+if (Test-Path -LiteralPath $wrapPs1) {
+    Remove-Item -LiteralPath $wrapPs1 -Force
+    Write-Ok "Removed scripts/aoi-headroom-wrap.ps1"
+}
+$wrapSh = Join-Path $ProjectPath "scripts\aoi-headroom-wrap.sh"
+if (Test-Path -LiteralPath $wrapSh) {
+    Remove-Item -LiteralPath $wrapSh -Force
+    Write-Ok "Removed scripts/aoi-headroom-wrap.sh"
+}
+$copilotShim = Join-Path $ProjectPath "scripts\bin\aoi-copilot"
+if (Test-Path -LiteralPath $copilotShim) {
+    Remove-Item -LiteralPath $copilotShim -Force
+    Write-Ok "Removed scripts/bin/aoi-copilot"
+}
+$scriptsBinDir = Join-Path $ProjectPath "scripts\bin"
+if ((Test-Path -LiteralPath $scriptsBinDir) -and @(Get-ChildItem -LiteralPath $scriptsBinDir -Force).Count -eq 0) {
+    Remove-Item -LiteralPath $scriptsBinDir -Recurse -Force
+    Write-Ok "Removed scripts/bin/ (was empty)"
+}
+$scriptsDir = Join-Path $ProjectPath "scripts"
+if ((Test-Path -LiteralPath $scriptsDir) -and @(Get-ChildItem -LiteralPath $scriptsDir -Force).Count -eq 0) {
+    Remove-Item -LiteralPath $scriptsDir -Recurse -Force
+    Write-Ok "Removed scripts/ (was empty)"
 }
 
 $copilotInstructions = Join-Path $ProjectPath ".github\copilot-instructions.md"

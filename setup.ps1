@@ -843,6 +843,79 @@ if (Test-Path $headroomInstall) {
     Write-Warn "scripts/install-headroom.ps1 no encontrado junto a setup.ps1 — saltando Phase 1.6"
 }
 
+Write-Header "Phase 1.7: AOI Headroom integration (obligatorio)"
+$wrapSrc = Join-Path $PSScriptRoot "scripts\aoi-headroom-wrap.ps1"
+$wrapShSrc = Join-Path $PSScriptRoot "scripts\aoi-headroom-wrap.sh"
+$guardSrc = Join-Path $PSScriptRoot ".githooks\pre-commit-aoi-guard.sh"
+
+if (-not (Test-Path -LiteralPath $wrapSrc) -or -not (Test-Path -LiteralPath $guardSrc)) {
+    Write-Err "AOI Headroom integration assets missing in installer. Setup cannot complete."
+    exit 1
+}
+
+$projectScriptsDir = Join-Path $ProjectPath "scripts"
+$projectGithooksDir = Join-Path $ProjectPath ".githooks"
+$projectBinDir = Join-Path $projectScriptsDir "bin"
+
+New-Item -ItemType Directory -Path $projectScriptsDir -Force | Out-Null
+New-Item -ItemType Directory -Path $projectGithooksDir -Force | Out-Null
+
+Copy-Item -LiteralPath $wrapSrc -Destination (Join-Path $projectScriptsDir "aoi-headroom-wrap.ps1") -Force
+if (Test-Path -LiteralPath $wrapShSrc) {
+    Copy-Item -LiteralPath $wrapShSrc -Destination (Join-Path $projectScriptsDir "aoi-headroom-wrap.sh") -Force
+}
+Copy-Item -LiteralPath $guardSrc -Destination (Join-Path $projectGithooksDir "pre-commit-aoi-guard.sh") -Force
+
+Write-Ok "Installed aoi-headroom-wrap → PROJECT/scripts/"
+Write-Ok "Installed pre-commit-aoi-guard.sh → PROJECT/.githooks/"
+
+# Install the aoi-copilot shim
+New-Item -ItemType Directory -Path $projectBinDir -Force | Out-Null
+$shimContent = @'
+#!/usr/bin/env bash
+# AOI Copilot shim — routes to aoi-headroom-wrap.sh so the call exits via
+# `headroom wrap copilot --subscription`.
+exec bash "$(dirname "$0")/../aoi-headroom-wrap.sh" "$@"
+'@
+[System.IO.File]::WriteAllText((Join-Path $projectBinDir "aoi-copilot"), $shimContent, (New-Object System.Text.UTF8Encoding($false)))
+Write-Ok "Installed aoi-copilot shim → PROJECT/scripts/bin/"
+
+# Chain into pre-commit
+$projectGitDir = Join-Path $ProjectPath ".git"
+$preCommitPath = Join-Path $projectGitDir "hooks\pre-commit"
+$guardProjectPath = Join-Path $projectGithooksDir "pre-commit-aoi-guard.sh"
+
+if (Test-Path -LiteralPath $projectGitDir -PathType Container) {
+    if (Test-Path -LiteralPath $preCommitPath) {
+        $existingContent = Get-Content -LiteralPath $preCommitPath -Raw
+        if ($existingContent -notmatch "pre-commit-aoi-guard.sh") {
+            Copy-Item -LiteralPath $preCommitPath -Destination "$preCommitPath.aoi-bak" -Force
+            $chainContent = @"
+#!/usr/bin/env bash
+# AOI bootstrap chain: run guard first, then delegate to project pre-commit.
+SELF_DIR=`$(cd `"$(dirname `"`$0`")`" && pwd)
+bash `"`$SELF_DIR/../../.githooks/pre-commit-aoi-guard.sh`" `"`$@`" || exit `$?
+if [ -f `"`$SELF_DIR/pre-commit.aoi-bak`" ]; then
+  exec bash `"`$SELF_DIR/pre-commit.aoi-bak`" `"`$@`"
+fi
+exit 0
+"@
+            [System.IO.File]::WriteAllText($preCommitPath, $chainContent, (New-Object System.Text.UTF8Encoding($false)))
+            Write-Ok "Chained AOI guard into existing pre-commit hook"
+        } else {
+            Write-Ok "AOI guard already chained into pre-commit (skipped)"
+        }
+    } else {
+        Copy-Item -LiteralPath $guardSrc -Destination $preCommitPath -Force
+        Write-Ok "Installed AOI pre-commit guard → .git/hooks/pre-commit"
+    }
+} else {
+    Write-Info "Target project is not a git repo — AOI guard will activate once 'git init' runs."
+    Write-Info "    When ready, run: New-Item -ItemType SymbolicLink -Path .git\hooks\pre-commit -Target ..\..\..\.githooks\pre-commit-aoi-guard.sh"
+}
+
+Write-Ok "Phase 1.7 complete"
+
 Write-Header "Phase 1.8: Codebase Memory MCP (opcional)"
 $codebaseMemoryInstall = Join-Path $PSScriptRoot "scripts/install-codebase-memory.ps1"
 if (Test-Path $codebaseMemoryInstall) {
@@ -917,6 +990,7 @@ New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".sandboxes") -Force 
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".resources") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".resources\userstories") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".resources\workflows") -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".atl") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\app\components") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\app\pages") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\server\api") -Force | Out-Null
@@ -1076,6 +1150,33 @@ if ($nodePath -and (Test-Path -LiteralPath $baseMapDetector -PathType Leaf)) {
     }
 } else {
     Write-Warn "node or detector missing — base-project map will be detected in /init"
+}
+
+Write-Header "Phase 7: Configuration Snapshot"
+$confSnapshotScript = Join-Path $PSScriptRoot "scripts\conf\snapshot-conf.sh"
+$bashPath = Get-ExecutablePath -Name "bash"
+if ($bashPath -and (Test-Path -LiteralPath $confSnapshotScript -PathType Leaf)) {
+    $confAction = "install"
+    if (Test-Path -LiteralPath (Join-Path $ProjectPath ".conf\manifest.json")) {
+        $confAction = "reinstall"
+    }
+    Write-Info "Generating configuration snapshot (.conf/)..."
+    try {
+        Push-Location $ProjectPath
+        $confResult = & $bashPath $confSnapshotScript $ScaffoldDir $ProjectPath $confAction "0.1.x" 2>&1
+        Pop-Location
+        if ($LASTEXITCODE -eq 0) {
+            Write-Ok "Configuration snapshot persisted to .conf/"
+        } else {
+            Write-Warn "Configuration snapshot failed (exit $LASTEXITCODE) — smart reinstall may not work on next run"
+        }
+    } catch {
+        Write-Warn "Configuration snapshot failed — bash not available. Smart reinstall unavailable on Windows."
+        Write-Warn "Install Git Bash or WSL to enable smart reinstall with conflict detection."
+    }
+} else {
+    Write-Warn "bash or snapshot-conf.sh not found — skipping Phase 7. Smart reinstall unavailable."
+    Write-Warn "Install Git Bash to enable smart reinstall with conflict detection."
 }
 
 Write-Header "Installation Complete"

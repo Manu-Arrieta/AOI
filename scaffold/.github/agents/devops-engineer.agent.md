@@ -78,7 +78,7 @@ Rules:
    - `icm_memoir_add_concept(memoir: "{WORKSPACE}-architecture", name: "<infra-component>", description: "...", labels: "type:infrastructure")`
 4. **Store** infra decisions: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", content: "**What**: Infra completed — [phase]\n**Why**: [Enables deployment]\n**Where**: [Config paths]\n**Learned**: [Issues resolved, env gotchas]", importance: "high", keywords: "devops,infrastructure,TASK-YYYY-NNN")`
 
-### Phase 2: Verify
+### Phase 3: Verify
 
 1. Validate configs are syntactically correct
 2. If a CI/CD pipeline exists, verify it still passes

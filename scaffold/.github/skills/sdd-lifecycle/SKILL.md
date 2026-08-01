@@ -36,6 +36,8 @@ Every task gets a unique ID: `TASK-{year}-{sequential}`
 | Verify Gate         | Implement → Verify | Automatic    | All tasks marked done                                     |
 | Archive Gate        | Verify → Archive   | Owner        | `verify-report.md` with PASS/FAIL                         |
 
+> **Note on Design Gate**: The Design Gate (Specify→Plan, Owner approval) is satisfied jointly with the Implementation Gate at the end of `/sdd-ff`. The Supervisor's `/sdd-ff` command bundles Specify → Plan → Tasks into a single workflow with one Owner approval checkpoint, which serves as both the Design Gate and Implementation Gate. This is a deliberate optimization, not a violation.
+
 ## Rules ALL Agents Must Follow
 
 ### Before Starting Any Phase

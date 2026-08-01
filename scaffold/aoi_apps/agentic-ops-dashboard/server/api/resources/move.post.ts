@@ -7,7 +7,6 @@ const payloadSchema = z.object({
   sourcePath: z.string().min(1),
   destinationPath: z.string().min(1),
   reason: z.string().min(1),
-  relatedTaskId: z.string().min(1).optional(),
 })
 
 export default defineEventHandler(async (event) => {

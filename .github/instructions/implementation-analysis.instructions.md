@@ -75,6 +75,7 @@ Only NOW do you write code. While implementing:
 - **Fit into existing patterns** — don't introduce new patterns unless the task explicitly requires it
 - **Keep existing tests passing** — if a test breaks, your change is wrong
 - **Add tests for new behavior** — the Owner can't review what they can't verify
+- **Proceed to TDD Gate**: after analysis, follow RED → GREEN → REFACTOR as defined in your agent's Phase 1 process. No production code without a failing test first.
 - **Store in ICM** — record what you changed and why
 
 ## After Implementation

@@ -48,6 +48,10 @@ terminal input, shell scripts, or automation macros.
 
 ### Step 3: Implement (via /speckit.implement)
 
+> 🛡️ **TDD Gate**: Every implementation agent MUST follow RED → GREEN → REFACTOR per task.
+> No production code without a failing test first. Enforced internally by @frontend-developer,
+> @backend-developer, and @devops-engineer.
+
 For each task in the implementation plan, in dependency order:
 
 1. Identify the assigned agent (frontend-dev, backend-dev, etc.)
@@ -55,7 +59,7 @@ For each task in the implementation plan, in dependency order:
    - The specific task from `tasks.md`
    - Relevant architecture context from `design.md`
    - Stack conventions from constitution
-3. Agent runs `/speckit.implement` to execute
+3. Agent runs `/speckit.implement` to execute (TDD Gate enforced internally)
 4. Log progress in `.tasks/{feature-name}/TASK-YYYY-NNN/iterations/`
 
 ### Step 4: ICM Progress Tracking

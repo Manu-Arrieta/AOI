@@ -691,7 +691,26 @@ if [ -f "$PROJECT_PATH/.conf/manifest.json" ]; then
   IS_REINSTALL=1
   info "Detected previous installation (.conf/manifest.json) — entering REINSTALL mode"
 
-  # ── 3a: Smart merge for non-aoi_apps files ──────────────────────────────
+  # ── 3a: Cleanup stale/corrupted files from previous installs ───────────
+  # Removes files with doubled extensions (*.agent.agent.md, *.instructions.instructions.md, etc.)
+  # that may have been created by bugs in older AOI versions. Safe: only deletes if correct counterpart exists.
+  STALE_COUNT=0
+  for STALE_PATTERN in "*.agent.agent.md" "*.instructions.instructions.md" "*.skill.skill.md" "*.prompt.prompt.md"; do
+    while IFS= read -r -d '' stale_file; do
+      CORRECT_NAME="${stale_file/.agent.agent.md/.agent.md}"
+      CORRECT_NAME="${CORRECT_NAME/.instructions.instructions.md/.instructions.md}"
+      CORRECT_NAME="${CORRECT_NAME/.skill.skill.md/.skill.md}"
+      CORRECT_NAME="${CORRECT_NAME/.prompt.prompt.md/.prompt.md}"
+      if [ "$stale_file" != "$CORRECT_NAME" ] && [ -f "$CORRECT_NAME" ]; then
+        rm -f "$stale_file" && STALE_COUNT=$((STALE_COUNT + 1))
+      fi
+    done < <(find "$PROJECT_PATH/.github" -name "$STALE_PATTERN" -type f -print0 2>/dev/null || true)
+  done
+  if [ "$STALE_COUNT" -gt 0 ]; then
+    ok "Cleaned up $STALE_COUNT stale/corrupted file(s) from previous install"
+  fi
+
+  # ── 3b: Smart merge for non-aoi_apps files ──────────────────────────────
   if [ -f "$CONF_SCRIPTS_DIR/compare-install.sh" ]; then
     COMPARE_OUTPUT="$(bash "$CONF_SCRIPTS_DIR/compare-install.sh" \
       "$SCAFFOLD_DIR" \
@@ -699,6 +718,11 @@ if [ -f "$PROJECT_PATH/.conf/manifest.json" ]; then
       "$PROJECT_PATH" 2>/dev/null || echo '{}')"
 
     # Parse comparison results using python3 (mandatory dependency via ICM)
+    COMPARE_TMPDIR=""
+    REINSTALL_STATS_UPDATED=0
+    REINSTALL_STATS_CONFLICTS=0
+    REINSTALL_STATS_NEW=0
+    REINSTALL_STATS_SKIPPED=0
     if command -v python3 &>/dev/null; then
       eval "$(python3 -c "
 import json, sys, shlex
@@ -718,10 +742,10 @@ for name, lst in [('auto_update', auto), ('conflict', conflicts), ('new', new)]:
     with open(os.path.join(td, name), 'w') as f:
         f.write('\n'.join(lst))
 print(f'COMPARE_TMPDIR={td}')
-" 2>/dev/null)"
+" 2>/dev/null)" || true
 
       # Apply auto-updates (scaffold changed, user did NOT modify)
-      if [ -f "$COMPARE_TMPDIR/auto_update" ] && [ -s "$COMPARE_TMPDIR/auto_update" ]; then
+      if [ -n "$COMPARE_TMPDIR" ] && [ -f "$COMPARE_TMPDIR/auto_update" ] && [ -s "$COMPARE_TMPDIR/auto_update" ]; then
         while IFS= read -r rel_file; do
           [ -z "$rel_file" ] && continue
           mkdir -p "$(dirname "$PROJECT_PATH/$rel_file")"
@@ -730,33 +754,40 @@ print(f'COMPARE_TMPDIR={td}')
         ok "Auto-updated $REINSTALL_STATS_UPDATED file(s) (scaffold changed, user untouched)"
       fi
 
-      # Copy new files (exist in scaffold but not in previous install)
-      if [ -f "$COMPARE_TMPDIR/new" ] && [ -s "$COMPARE_TMPDIR/new" ]; then
-        while IFS= read -r rel_file; do
-          [ -z "$rel_file" ] && continue
-          mkdir -p "$(dirname "$PROJECT_PATH/$rel_file")"
-          cp "$SCAFFOLD_DIR/$rel_file" "$PROJECT_PATH/$rel_file"
-        done < "$COMPARE_TMPDIR/new"
-        ok "Installed $REINSTALL_STATS_NEW new file(s)"
-      fi
+      if [ -z "$COMPARE_TMPDIR" ]; then
+        warn "python3 smart merge produced no temp dir — falling back to rsync --ignore-existing"
+        if command -v rsync &>/dev/null; then
+          rsync -a --ignore-existing --exclude='aoi_apps/' "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
+        fi
+      else
+        # Copy new files (exist in scaffold but not in previous install)
+        if [ -f "$COMPARE_TMPDIR/new" ] && [ -s "$COMPARE_TMPDIR/new" ]; then
+          while IFS= read -r rel_file; do
+            [ -z "$rel_file" ] && continue
+            mkdir -p "$(dirname "$PROJECT_PATH/$rel_file")"
+            cp "$SCAFFOLD_DIR/$rel_file" "$PROJECT_PATH/$rel_file"
+          done < "$COMPARE_TMPDIR/new"
+          ok "Installed $REINSTALL_STATS_NEW new file(s)"
+        fi
 
-      # Report conflicts (both scaffold and user modified)
-      if [ -f "$COMPARE_TMPDIR/conflict" ] && [ -s "$COMPARE_TMPDIR/conflict" ]; then
-        mkdir -p "$PROJECT_PATH/.conf/conflicts"
-        while IFS= read -r rel_file; do
-          [ -z "$rel_file" ] && continue
-          mkdir -p "$(dirname "$PROJECT_PATH/.conf/conflicts/$rel_file")"
-          cp "$SCAFFOLD_DIR/$rel_file" "$PROJECT_PATH/.conf/conflicts/$rel_file"
-        done < "$COMPARE_TMPDIR/conflict"
-        warn "Found $REINSTALL_STATS_CONFLICTS conflict(s) — new versions saved to .conf/conflicts/"
-        warn "Review and manually merge: ls .conf/conflicts/"
-      fi
+        # Report conflicts (both scaffold and user modified)
+        if [ -f "$COMPARE_TMPDIR/conflict" ] && [ -s "$COMPARE_TMPDIR/conflict" ]; then
+          mkdir -p "$PROJECT_PATH/.conf/conflicts"
+          while IFS= read -r rel_file; do
+            [ -z "$rel_file" ] && continue
+            mkdir -p "$(dirname "$PROJECT_PATH/.conf/conflicts/$rel_file")"
+            cp "$SCAFFOLD_DIR/$rel_file" "$PROJECT_PATH/.conf/conflicts/$rel_file"
+          done < "$COMPARE_TMPDIR/conflict"
+          warn "Found $REINSTALL_STATS_CONFLICTS conflict(s) — new versions saved to .conf/conflicts/"
+          warn "Review and manually merge: ls .conf/conflicts/"
+        fi
 
-      if [ "$REINSTALL_STATS_SKIPPED" -gt 0 ]; then
-        ok "Skipped $REINSTALL_STATS_SKIPPED unchanged file(s)"
-      fi
+        if [ "$REINSTALL_STATS_SKIPPED" -gt 0 ]; then
+          ok "Skipped $REINSTALL_STATS_SKIPPED unchanged file(s)"
+        fi
 
-      rm -rf "$COMPARE_TMPDIR"
+        rm -rf "$COMPARE_TMPDIR"
+      fi
     else
       warn "python3 not available for smart merge — falling back to rsync --ignore-existing"
       if command -v rsync &>/dev/null; then

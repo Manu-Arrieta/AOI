@@ -7,7 +7,7 @@
     },
     "codebase-memory-mcp": {
       "type": "stdio",
-      "command": "/Users/equinox/.local/bin/codebase-memory-mcp"
+      "command": "codebase-memory-mcp"
     }
   }
 }

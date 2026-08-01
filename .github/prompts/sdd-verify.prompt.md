@@ -49,7 +49,8 @@ Hand off to **@integration-specialist**:
 1. For each requirement in `spec.md`, verify implementation exists
 2. For each constraint in `design.md`, verify it was respected
 3. For each task in `tasks.md`, verify completion
-4. Run `/speckit.checklist` for formal verification
+4. **TDD Gate compliance**: confirm tests exist and pass for all implementation tasks
+5. Run `/speckit.checklist` for formal verification
 
 ### Step 4: Service Discovery Gate Check
 

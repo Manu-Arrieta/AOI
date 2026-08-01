@@ -2,8 +2,12 @@
   "servers": {
     "icm": {
       "type": "stdio",
-      "command": "icm",
-      "args": ["serve", "--compact"]
+      "command": "bash",
+      "args": ["${workspaceFolder}/.github/scripts/icm-serve.sh"]
+    },
+    "codebase-memory-mcp": {
+      "type": "stdio",
+      "command": "codebase-memory-mcp"
     }
   }
 }

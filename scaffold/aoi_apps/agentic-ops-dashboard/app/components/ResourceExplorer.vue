@@ -5,7 +5,12 @@ import { computed } from 'vue'
 import type { ResourceTreeNode } from '~/shared/types'
 
 import { useLocale } from '../composables/useLocale'
-import { flattenResources, isProtectedResourceDirectory } from '~/utils/resource-tree'
+import {
+  flattenResources,
+  isProtectedResourceDirectory,
+  toExplorerTreeItems,
+  type FolderTreeItem,
+} from '~/utils/resource-tree'
 
 const props = defineProps<{
   resources: ResourceTreeNode[]
@@ -20,60 +25,58 @@ const emit = defineEmits<{
 
 const { messages } = useLocale()
 
+// ── Summary counts (still used for the overview strip) ────────────────────────
 const flattenedResources = computed(() => flattenResources(props.resources))
-const directoryCount = computed(() => flattenedResources.value.filter((node) => node.kind === 'directory').length)
-const fileCount = computed(() => flattenedResources.value.filter((node) => node.kind === 'file').length)
+const directoryCount = computed(() => flattenedResources.value.filter((n) => n.kind === 'directory').length)
+const fileCount = computed(() => flattenedResources.value.filter((n) => n.kind === 'file').length)
 const protectedDirectoryCount = computed(
-  () => flattenedResources.value.filter((node) => node.kind === 'directory' && isProtectedResourceDirectory(node.path)).length,
+  () => flattenedResources.value.filter((n) => n.kind === 'directory' && isProtectedResourceDirectory(n.path)).length,
 )
 
-function getNodeStateLabel(node: ResourceTreeNode) {
-  if (node.kind === 'file') {
-    return messages.value.resources.readOnly
-  }
+// ── Explorer tree ─────────────────────────────────────────────────────────────
+const explorerTreeItems = computed(() => toExplorerTreeItems(props.resources))
 
-  if (node.path === '.resources') {
-    return messages.value.resources.root
-  }
-
-  if (isProtectedResourceDirectory(node.path)) {
-    return messages.value.resources.protected
-  }
-
+// ── Node helpers ──────────────────────────────────────────────────────────────
+function getNodeStateLabel(item: FolderTreeItem) {
+  if (item.kind === 'file') return messages.value.resources.readOnly
+  if (item.path === '.resources') return messages.value.resources.root
+  if (isProtectedResourceDirectory(item.path)) return messages.value.resources.protected
   return messages.value.resources.managed
 }
 
-function getDirectoryActions(node: ResourceTreeNode): ContextMenuItem[][] {
+function getNodeBadgeVariant(item: FolderTreeItem) {
+  return item.kind === 'file' ? 'outline' : 'soft'
+}
+
+function getDirectoryActions(item: FolderTreeItem): ContextMenuItem[][] {
   const primaryActions: ContextMenuItem[] = [
     {
-      label: node.path === '.resources' ? messages.value.resources.newFolder : messages.value.resources.child,
+      label: item.path === '.resources' ? messages.value.resources.newFolder : messages.value.resources.child,
       icon: 'i-lucide-folder-plus',
       disabled: props.busy,
-      onSelect: () => emit('create', node.path),
+      onSelect: () => emit('create', item.path),
     },
   ]
 
-  if (node.path !== '.resources') {
+  if (item.path !== '.resources') {
     primaryActions.push({
       label: messages.value.resources.move,
       icon: 'i-lucide-arrow-right-left',
       disabled: props.busy,
-      onSelect: () => emit('move', node.path),
+      onSelect: () => emit('move', item.path),
     })
   }
 
   const groupedActions: ContextMenuItem[][] = [primaryActions]
 
-  if (node.path !== '.resources' && !isProtectedResourceDirectory(node.path)) {
-    groupedActions.push([
-      {
-        label: messages.value.resources.delete,
-        icon: 'i-lucide-trash-2',
-        color: 'error',
-        disabled: props.busy,
-        onSelect: () => emit('delete', node.path),
-      },
-    ])
+  if (item.path !== '.resources' && !isProtectedResourceDirectory(item.path)) {
+    groupedActions.push([{
+      label: messages.value.resources.delete,
+      icon: 'i-lucide-trash-2',
+      color: 'error',
+      disabled: props.busy,
+      onSelect: () => emit('delete', item.path),
+    }])
   }
 
   return groupedActions
@@ -81,33 +84,40 @@ function getDirectoryActions(node: ResourceTreeNode): ContextMenuItem[][] {
 </script>
 
 <template>
-  <UCard
-    class="surface-panel resource-panel-shell"
-    variant="subtle"
-    :ui="{ header: 'p-0 sm:p-0', body: 'px-0 pt-4 pb-0 sm:px-0 sm:pt-4 sm:pb-0' }"
-  >
-    <template #header>
-      <header class="panel-header">
-        <div>
-          <p class="eyebrow">{{ messages.resources.eyebrow }}</p>
-          <h2>{{ messages.resources.title }}</h2>
-        </div>
-        <UButton color="neutral" icon="i-lucide-folder-plus" variant="outline" :disabled="busy" @click="emit('create', '.resources')">
-          {{ messages.resources.newFolder }}
-        </UButton>
-      </header>
-    </template>
+  <div class="surface-panel resource-panel-shell">
+    <header class="panel-header">
+      <div>
+        <p class="eyebrow">{{ messages.resources.eyebrow }}</p>
+        <h2>{{ messages.resources.title }}</h2>
+      </div>
+      <UButton
+        color="neutral"
+        icon="i-lucide-folder-plus"
+        variant="outline"
+        size="sm"
+        :disabled="busy"
+        @click="emit('create', '.resources')"
+      >
+        {{ messages.resources.newFolder }}
+      </UButton>
+    </header>
 
-    <p class="resource-copy">
-      {{ messages.resources.copy }}
-    </p>
+    <p class="resource-copy">{{ messages.resources.copy }}</p>
 
     <section class="resource-overview">
       <div class="resource-summary-strip">
-        <UBadge color="neutral" variant="soft">{{ messages.resources.totalNodes }} · {{ flattenedResources.length }}</UBadge>
-        <UBadge color="neutral" variant="outline">{{ messages.resources.folders }} · {{ directoryCount }}</UBadge>
-        <UBadge color="neutral" variant="outline">{{ messages.resources.files }} · {{ fileCount }}</UBadge>
-        <UBadge color="neutral" variant="outline">{{ messages.resources.protected }} · {{ protectedDirectoryCount }}</UBadge>
+        <UBadge color="neutral" variant="soft">
+          {{ messages.resources.totalNodes }} · {{ flattenedResources.length }}
+        </UBadge>
+        <UBadge color="neutral" variant="outline">
+          {{ messages.resources.folders }} · {{ directoryCount }}
+        </UBadge>
+        <UBadge color="neutral" variant="outline">
+          {{ messages.resources.files }} · {{ fileCount }}
+        </UBadge>
+        <UBadge color="neutral" variant="outline">
+          {{ messages.resources.protected }} · {{ protectedDirectoryCount }}
+        </UBadge>
       </div>
     </section>
 
@@ -119,7 +129,6 @@ function getDirectoryActions(node: ResourceTreeNode): ContextMenuItem[][] {
             <strong>{{ messages.resources.operationsTitle }}</strong>
           </div>
         </template>
-
         <template #right>
           <UBadge color="neutral" variant="outline">
             {{ busy ? messages.resources.busy : messages.resources.ready }}
@@ -131,72 +140,52 @@ function getDirectoryActions(node: ResourceTreeNode): ContextMenuItem[][] {
         {{ messages.resources.empty }}
       </div>
 
-      <ul v-else class="resource-listing">
-        <li v-for="node in flattenedResources" :key="node.path">
-          <UContextMenu v-if="node.kind === 'directory'" :items="getDirectoryActions(node)">
-            <div class="resource-row resource-row-context">
-              <div class="resource-node" :style="{ paddingInlineStart: `${node.depth * 1.1 + 0.25}rem` }">
-                <div class="resource-node-badges">
-                  <UBadge color="neutral" variant="outline">{{ messages.resources.directoryKind }}</UBadge>
-                  <UBadge color="neutral" variant="soft">{{ getNodeStateLabel(node) }}</UBadge>
-                </div>
-                <div class="resource-node-copy">
-                  <strong>{{ node.name }}</strong>
-                  <small>{{ node.path }}</small>
-                </div>
+      <UTree
+        v-else
+        :items="explorerTreeItems"
+        class="re-explorer-tree"
+      >
+        <!-- Directory node — wrapped in UContextMenu for right-click actions -->
+        <template #item="{ item, handleToggle }">
+          <UContextMenu
+            v-if="item.kind === 'directory'"
+            :items="getDirectoryActions(item as FolderTreeItem)"
+          >
+            <div
+              class="re-tree-node re-tree-node--dir"
+              @click="handleToggle"
+            >
+              <div class="re-tree-node-leading">
+                <UIcon :name="item.icon" class="re-tree-icon" />
+                <UBadge color="neutral" :variant="getNodeBadgeVariant(item as FolderTreeItem)" size="sm">
+                  {{ getNodeStateLabel(item as FolderTreeItem) }}
+                </UBadge>
               </div>
-
-              <div class="resource-actions">
-                <UButton
-                  color="neutral"
-                  size="xs"
-                  variant="ghost"
-                  icon="i-lucide-folder-plus"
-                  :disabled="busy"
-                  @click.stop="emit('create', node.path)"
-                >
-                  {{ node.path === '.resources' ? messages.resources.newFolder : messages.resources.child }}
-                </UButton>
-                <UButton
-                  v-if="node.path !== '.resources'"
-                  color="neutral"
-                  size="xs"
-                  variant="ghost"
-                  icon="i-lucide-arrow-right-left"
-                  :disabled="busy"
-                  @click.stop="emit('move', node.path)"
-                >
-                  {{ messages.resources.move }}
-                </UButton>
-                <UButton
-                  v-if="node.path !== '.resources' && !isProtectedResourceDirectory(node.path)"
-                  color="error"
-                  size="xs"
-                  variant="ghost"
-                  icon="i-lucide-trash-2"
-                  :disabled="busy"
-                  @click.stop="emit('delete', node.path)"
-                >
-                  {{ messages.resources.delete }}
-                </UButton>
+              <div class="re-tree-node-copy">
+                <strong>{{ item.label }}</strong>
+                <small>{{ item.path }}</small>
               </div>
             </div>
           </UContextMenu>
 
-          <div v-else class="resource-row resource-row-file">
-            <div class="resource-node" :style="{ paddingInlineStart: `${node.depth * 1.1 + 0.25}rem` }">
-              <div class="resource-node-badges">
-                <UBadge color="neutral" variant="outline">{{ messages.resources.fileKind }}</UBadge>
-                <UBadge color="neutral" variant="soft">{{ getNodeStateLabel(node) }}</UBadge>
-              </div>
-              <div class="resource-node-copy">
-                <strong>{{ node.name }}</strong>
-                <small>{{ node.path }}</small>
-              </div>
+          <!-- File node — no context menu, no toggle -->
+          <div
+            v-else
+            class="re-tree-node re-tree-node--file"
+          >
+            <div class="re-tree-node-leading">
+              <UIcon :name="item.icon" class="re-tree-icon re-tree-icon--file" />
+              <UBadge color="neutral" variant="outline" size="sm">
+                {{ getNodeStateLabel(item as FolderTreeItem) }}
+              </UBadge>
+            </div>
+            <div class="re-tree-node-copy">
+              <strong>{{ item.label }}</strong>
+              <small>{{ item.path }}</small>
             </div>
           </div>
-        </li>
-      </ul>
+        </template>
+      </UTree>
     </section>
-  </UCard>
+  </div>
 </template>

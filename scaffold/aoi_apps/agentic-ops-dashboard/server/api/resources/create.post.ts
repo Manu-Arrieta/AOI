@@ -7,7 +7,6 @@ const payloadSchema = z.object({
   folderName: z.string().min(1),
   parentPath: z.string().min(1).default('.resources'),
   purpose: z.string().min(1),
-  relatedTaskId: z.string().min(1).optional(),
 })
 
 export default defineEventHandler(async (event) => {
