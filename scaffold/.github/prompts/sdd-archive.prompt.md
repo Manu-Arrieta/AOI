@@ -112,6 +112,14 @@ Write `.tasks/{feature-name}/TASK-YYYY-NNN/archive-report.md`:
 ## What Was Deliberately Excluded
 - {item}: {reason}
 
+## Reusable Patterns Extracted (DRY)
+- {pattern}: {location} — {when to reuse}
+
+## Principles Compliance Summary
+- **SRP**: {any violations noted in verify-report? resolved?}
+- **Security**: {threats identified in /sdd-new, mitigations applied}
+- **Observability**: {logs/metrics/traces configured, dashboards/alerts if any}
+
 ## Services Discovered/Created
 - {service path}: {what it does}
 

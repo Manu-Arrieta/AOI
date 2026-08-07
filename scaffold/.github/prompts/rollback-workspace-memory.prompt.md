@@ -1,5 +1,7 @@
+---
 description: "Restore the previous governed memory version for the current workspace with explicit rollback intent."
 agent: supervisor
+---
 
 # /rollback-workspace-memory — Roll Back Workspace Memory
 

@@ -103,6 +103,12 @@ Investigate the codebase before committing to the change:
 3. Analyze alternative approaches with tradeoffs
 4. Consult OpenAPI spec if the feature involves backend data
 5. **Testability assessment**: identify existing test infrastructure (frameworks, fixtures, mocks) and note which areas will require test coverage in `/sdd-ff` and `/sdd-apply`
+6. **Principles checklist** (evaluate during exploration):
+   - **KISS**: Is there a simpler way to achieve this? Does the simplest solution already exist?
+   - **YAGNI**: Does every point in the proposal solve a REAL Owner problem, not a hypothetical one?
+   - **Separation of Concerns**: Which layers does this feature affect? (UI / Logic / Data / Infra)
+   - **Contract-First**: Does this feature expose or consume an API contract? Define it early.
+   - **Security**: Does this feature handle auth, PII, or sensitive data? Note the threat surface.
 
 Persist in ICM:
 
@@ -119,7 +125,11 @@ icm_memory_store(
 With the exploration analysis, produce the proposal:
 
 1. Recover explore from ICM
-2. Write `.tasks/{feature-name}/TASK-YYYY-NNN/proposal.md`
+2. Write `.tasks/{feature-name}/TASK-YYYY-NNN/proposal.md` — include a `## Principles Assessment` section with:
+   - **Layers affected**: UI / Logic / Data / Infra
+   - **Security threats**: threat surface identified during exploration (auth, PII, sensitive data)
+   - **Contracts**: API contracts this feature exposes or consumes
+   - **Simplicity notes**: KISS/YAGNI considerations from exploration
 3. Persist summary in ICM
 4. Update registry: status → `📋 Propuesto`
 

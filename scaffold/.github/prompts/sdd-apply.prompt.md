@@ -71,7 +71,16 @@ For each task in the implementation plan, in dependency order:
    - Relevant architecture context from `design.md`
    - Stack conventions from constitution
 3. Agent runs `/speckit.implement` to execute (TDD Gate enforced internally)
-4. Log progress in `.tasks/{feature-name}/TASK-YYYY-NNN/iterations/`
+4. **Implementation Principles Review** — after each task, the implementing agent verifies:
+   - **SRP**: No new file exceeds ~300 LOC. If it does, justify or split.
+   - **DRY**: No code was copy-pasted from another module. If logic is shared, extract to a common utility.
+   - **KISS**: No abstraction was introduced with only one implementation. Remove unnecessary layers.
+   - **Fail Fast**: Public functions validate their inputs at entry. No silent failures.
+   - **Composition over Inheritance**: No inheritance hierarchy >2 levels deep. Prefer composition.
+   - **Law of Demeter**: No method chains like `a.b.c.d()`. Talk only to direct collaborators.
+   - **Immutability**: Use `const`/`readonly`/`final` where possible. Mutable state only when necessary.
+   - **Security**: Inputs validated, outputs encoded. No hardcoded secrets. SQL parameterized.
+5. Log progress in `.tasks/{feature-name}/TASK-YYYY-NNN/iterations/`
 
 ### Step 4: ICM Progress Tracking
 

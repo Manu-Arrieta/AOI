@@ -84,6 +84,12 @@ Hand off to the **@solution-architect**:
      connections: ["component-a", "component-b"]
    )
    ```
+5. **Architecture Principles Gate** — `design.md` MUST address:
+   - **SRP**: Each component/module has one clear responsibility. If a module name requires "and", split it.
+   - **OCP**: Document extension points — where can new behavior be added without modifying existing code?
+   - **DIP**: Dependency direction — high-level modules must NOT depend on low-level modules directly. Both depend on abstractions.
+   - **Contract-First**: API contracts (interfaces, types, endpoints) defined in spec before implementation starts.
+   - **Observability**: What needs to be logged, measured, or traced? Document in design.md: "Observability: {logs/metrics/traces needed}"
 
 ### Step 5: Tasks (via @solution-architect + /speckit.tasks)
 

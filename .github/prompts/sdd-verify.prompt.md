@@ -54,7 +54,16 @@ Hand off to **@integration-specialist**:
    - Detect test runner from project stack: `npm test`, `pnpm test`, `pytest`, `go test ./...`, `dotnet test`, etc.
    - Run the test suite and capture output. If tests fail → include failures in verify-report as FAIL reason
    - If no test files exist for a task that specified test requirements → mark as TDD FAIL
-5. Run `/speckit.checklist` for formal verification
+5. **Software Principles Gate** — review all new/modified files and report violations:
+   - **SRP**: Any file >300 LOC? → WARNING (justify or recommend split)
+   - **DIP**: Circular imports between modules? → WARNING
+   - **DRY**: Code blocks duplicated across 2+ files (>10 lines similar)? → WARNING
+   - **Fail Fast**: Empty `catch` blocks or silenced errors? → WARNING
+   - **Security**: Hardcoded secrets, API keys, or passwords? → FAIL. Unparameterized SQL? → FAIL. Also: read `proposal.md` `## Principles Assessment` — verify that security threats identified during `/sdd-new` have mitigations in the implementation.
+   - **Observability**: Read `design.md` Observability section — verify that logs/metrics/traces specified in design were actually implemented. New endpoints/controllers without logging? → WARNING
+   - **Contract-First**: Read `spec.md` for API contracts defined — verify that interfaces/types/endpoints match the spec. Breaking changes from spec? → WARNING
+   Include findings in verify-report under `## Principles Compliance`.
+6. Run `/speckit.checklist` for formal verification
 
 ### Step 4: Service Discovery Gate Check
 

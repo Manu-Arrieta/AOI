@@ -1,5 +1,7 @@
+---
 description: "Prepare and optionally activate a governed memory sync from another workspace with explicit source version resolution."
 agent: supervisor
+---
 
 # /sync-workspace-memory — Sync Workspace Memory
 
