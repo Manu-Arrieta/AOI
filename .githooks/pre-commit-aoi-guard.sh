@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # .githooks/pre-commit-aoi-guard.sh — Block `headroom learn` overwriting AOI-managed files.
 #
-# Why this exists: `headroom learn --apply` rewrites CLAUDE.md / AGENTS.md /
-# AGENTS.md (the AOI-managed instruction files at the repo root) without
-# AOI awareness. Headroom is MANDATORY, but AOI must keep ownership of its own
-# managed instruction surface, or the bootstrap contracts drift in non-recoverable
-# ways.
+# Why this exists: `headroom learn --apply` rewrites copilot-instructions.md
+# (the AOI-managed instruction file inside .github/) without AOI awareness.
+# Headroom is MANDATORY, but AOI must keep ownership of its own managed
+# instruction surface, or the bootstrap contracts drift in non-recoverable ways.
 #
 # Behavior:
 #   - Runs as pre-commit hook. Stage-must-clear before commit succeeds, so any
@@ -21,8 +20,7 @@
 set -euo pipefail
 
 AOI_MANAGED_FILES=(
-  "AGENTS.md"
-  "CLAUDE.md"
+  ".github/copilot-instructions.md"
 )
 
 force=0

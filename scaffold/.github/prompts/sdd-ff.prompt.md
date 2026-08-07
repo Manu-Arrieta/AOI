@@ -83,8 +83,9 @@ Continue with @solution-architect:
 1. Runs `/speckit.tasks` to break down the design into implementable tasks
 2. Output → `.tasks/{feature-name}/TASK-YYYY-NNN/tasks.md`
 3. Produces `implementation-plan.md` with: agent assignment, dependency order, verification criteria
-4. Persist in ICM: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", importance: "high", content: "Tasks generated: N tasks across K agents")`
-5. Update `.tasks/registry.md`: status → `🏗️ Planificado`
+4. **TDD Gate**: Every task in `tasks.md` MUST include a `## Test Requirements` section specifying: (a) what tests to write first (RED), (b) acceptance criteria for GREEN, and (c) any refactor notes. Implementation agents enforce RED → GREEN → REFACTOR per task during `/sdd-apply`.
+5. Persist in ICM: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", importance: "high", content: "Tasks generated: N tasks across K agents")`
+6. Update `.tasks/registry.md`: status → `🏗️ Planificado`
 
 ### Step 6: Gate — Owner Approval
 

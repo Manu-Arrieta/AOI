@@ -39,6 +39,7 @@ Resolve the TASK-ID from user input `{{input}}`:
 1. Validate it exists in `.tasks/registry.md` with status `✅ Implementado`
 2. Read verify report: `.tasks/{feature-name}/TASK-YYYY-NNN/verify-report.md`
 3. Confirm PASS status
+4. **TDD Gate compliance**: confirm verify-report shows all implementation tasks had tests written (RED → GREEN → REFACTOR). If TDD Gate was not met, warn the Owner before proceeding.
 
 ### Step 4: Generate Documentation
 

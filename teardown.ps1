@@ -209,9 +209,9 @@ Write-Host "  .resources/"
 Write-Host "  aoi_apps/agentic-ops-dashboard/ (including package.json, pnpm-lock.yaml, node_modules/)"
 Write-Host "  scripts/aoi-headroom-wrap.ps1"
 Write-Host "  scripts/bin/aoi-copilot"
-Write-Host "  AGENTS.md  (if from AOI)"
-Write-Host "  CLAUDE.md  (if from AOI)"
 Write-Host "  .conf/     (configuration snapshot)"
+Write-Host "  .sandboxes/ (sandbox environments)"
+Write-Host "  .exportsmemories/ (memory export bundles)"
 Write-Host ""
 
 $confirm = Read-Host "Confirm? [y/N]"
@@ -227,6 +227,8 @@ Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".specify"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".resources"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".atl"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".conf"
+Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".sandboxes"
+Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".exportsmemories"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath "aoi_apps\agentic-ops-dashboard"
 
 $appsDir = Join-Path $ProjectPath "aoi_apps"
@@ -301,8 +303,6 @@ if (Test-Path -LiteralPath $githubDir -PathType Container) {
     }
 }
 
-Remove-IaBaseFile -Root $ProjectPath -RelativePath "AGENTS.md" -Marker "RTK|icm"
-Remove-IaBaseFile -Root $ProjectPath -RelativePath "CLAUDE.md" -Marker "RTK|icm"
 Remove-IaBaseFile -Root $ProjectPath -RelativePath ".windsurfrules" -Marker "icm"
 
 # Legacy cleanup: older AOI installs created dashboard workspace files at repo root.

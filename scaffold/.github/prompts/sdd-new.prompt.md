@@ -102,6 +102,7 @@ Investigate the codebase before committing to the change:
 2. Identify: current system state, impacted areas, reusable patterns, stack constraints
 3. Analyze alternative approaches with tradeoffs
 4. Consult OpenAPI spec if the feature involves backend data
+5. **Testability assessment**: identify existing test infrastructure (frameworks, fixtures, mocks) and note which areas will require test coverage in `/sdd-ff` and `/sdd-apply`
 
 Persist in ICM:
 
@@ -109,7 +110,7 @@ Persist in ICM:
 icm_memory_store(
   topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN",
   importance: "high",
-  content: "## Exploration: {topic}\n### Current State\n{...}\n### Impacted Areas\n{...}\n### Approaches\n1. {Name} — pros/cons/effort\n2. {Name} — pros/cons/effort\n### Recommendation\n{...}\n### Risks\n{...}"
+  content: "## Exploration: {topic}\n### Current State\n{...}\n### Impacted Areas\n{...}\n### Approaches\n1. {Name} — pros/cons/effort\n2. {Name} — pros/cons/effort\n### Recommendation\n{...}\n### Testability\n{existing test infra, coverage gaps}\n### Risks\n{...}"
 )
 ```
 

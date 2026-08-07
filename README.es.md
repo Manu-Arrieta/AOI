@@ -88,7 +88,7 @@ instala directamente el binario de Windows.
 
 `Headroom` comprime contexto para agentes basados en CLI (Claude Code, Codex, `gh copilot`). **No** intercepta el tráfico de VS Code Copilot Chat — esa extensión llama directamente a la API de GitHub. El ahorro de tokens en VS Code Chat proviene de **RTK** (filtrado de salida de terminal) y **Codebase Memory MCP** (120× menos tokens en exploración de código).
 
-`Codebase Memory MCP` es opcional. AOI lo instala en modo seguro con `--skip-config`, así que el binario queda disponible pero los archivos AGENTS/GEMINI del home del operador no se tocan. Si el binario está presente, AOI lo registra sólo en el `.vscode/mcp.json` local del proyecto.
+`Codebase Memory MCP` es opcional. AOI lo instala en modo seguro con `--skip-config`, así que el binario queda disponible pero los archivos de instrucciones del home del operador no se tocan. Si el binario está presente, AOI lo registra sólo en el `.vscode/mcp.json` local del proyecto.
 
 El setup ofrece dos variantes durante la Phase 1.8:
 

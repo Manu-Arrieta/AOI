@@ -72,10 +72,10 @@ Write-Host "  powershell -NoProfile -ExecutionPolicy Bypass -File scripts/headro
 Write-Host ""
 
 Header "Avisos importantes"
-Warn "headroom learn --apply puede escribir sobre AGENTS.md / CLAUDE.md sin awareness AOI."
+Warn "headroom learn --apply puede escribir sobre copilot-instructions.md sin awareness AOI."
 Warn "Si usas AOI bootstrapper, NO corras 'headroom learn --apply' sin revisar 'git diff' primero."
 Warn "  Recomendación: usar 'headroom learn --dry-run' y mergear manualmente si el diff toca archivos AOI-managed."
-Warn "Cuando termines, hacé 'git checkout -- GEMINI.md AGENTS.md CLAUDE.md' para descartar cambios no aprobados."
+Warn "Cuando termines, hacé 'git checkout -- .github/copilot-instructions.md' para descartar cambios no aprobados."
 Write-Host ""
 
 Info "-- Estado actual --"

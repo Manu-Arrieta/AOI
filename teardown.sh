@@ -54,9 +54,9 @@ printf "  .resources/\n"
 printf "  aoi_apps/agentic-ops-dashboard/ (including package.json, pnpm-lock.yaml, node_modules/)\n"
 printf "  scripts/aoi-headroom-wrap.sh\n"
 printf "  scripts/bin/aoi-copilot\n"
-printf "  AGENTS.md  (if from AOI)\n"
-printf "  CLAUDE.md  (if from AOI)\n"
-printf "  .conf/     (configuration snapshot)\n\n"
+printf "  .conf/     (configuration snapshot)\n"
+printf "  .sandboxes/ (sandbox environments)\n"
+printf "  .exportsmemories/ (memory export bundles)\n\n"
 printf "${BOLD}Confirm? [y/N] ${NC}"
 read -r CONFIRM
 
@@ -85,6 +85,8 @@ remove_dir ".specify"
 remove_dir ".resources"
 remove_dir ".atl"
 remove_dir ".conf"
+remove_dir ".sandboxes"
+remove_dir ".exportsmemories"
 remove_dir "aoi_apps/agentic-ops-dashboard"
 
 if [ -d "$PROJECT_PATH/aoi_apps" ] && [ -z "$(ls -A "$PROJECT_PATH/aoi_apps" 2>/dev/null)" ]; then
@@ -153,8 +155,6 @@ remove_aoi_file() {
   fi
 }
 
-remove_aoi_file "AGENTS.md"        "RTK\|icm"
-remove_aoi_file "CLAUDE.md"        "RTK\|icm"
 remove_aoi_file ".windsurfrules"   "icm"
 
 # Legacy cleanup: older AOI installs created dashboard workspace files at repo root.

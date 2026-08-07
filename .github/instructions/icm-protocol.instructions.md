@@ -118,7 +118,7 @@ When a topic exceeds 7 entries, `icm_memory_store` warns the caller to consolida
 
 - Build/test output (ephemeral)
 - Git status (changes every minute)
-- Content already in project files (`.specify/`, `AGENTS.md`, etc.)
+- Content already in project files (`.specify/`, `copilot-instructions.md`, etc.)
 - Trivial exploration that leads nowhere
 
 ## Project Isolation

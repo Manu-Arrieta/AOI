@@ -21,7 +21,7 @@ You MUST call `icm store` when ANY of the following happens:
 
 Do this BEFORE responding to the user. Not after. Not later. Immediately.
 
-Do NOT store: trivial details, info already in CLAUDE.md, ephemeral state (build logs, git status).
+Do NOT store: trivial details, info already in copilot-instructions.md, ephemeral state (build logs, git status).
 
 ### Other commands
 ```bash

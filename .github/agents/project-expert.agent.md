@@ -91,7 +91,7 @@ icm_memory_store(
 
 ## Domain Skills
 
-Access domain-specific knowledge from ICM memoirs and the AGENTS.md when they exist.
+Access domain-specific knowledge from ICM memoirs and the copilot-instructions.md when they exist.
 
 ## Project-Specific Configuration
 

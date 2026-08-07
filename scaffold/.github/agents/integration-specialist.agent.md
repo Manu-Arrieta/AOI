@@ -49,7 +49,7 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
    - Code follows project conventions
 4. **Verify** scaffold-mirror compliance:
    - All agents exist in `.github/agents/`
-   - `CLAUDE.md` and `AGENTS.md` are up to date
+   - `copilot-instructions.md` is up to date
 5. **Plan migration from the integration manifest** (active sandbox only):
    - When a `.sandboxes/{name}/integration-manifest.json` exists, treat it as the
      **single source of truth** for what migrates — it replaces any prose-only

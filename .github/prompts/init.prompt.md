@@ -320,5 +320,5 @@ Suggest next action: "Project is ready. Create your first task with `/sdd-new`."
 
 ### Step 19: Populate Workspace Placeholders
 
-Replace `{WORKSPACE}` placeholders in `AGENTS.md` and `CLAUDE.md` with the actual
+Replace `{WORKSPACE}` placeholders in `copilot-instructions.md` with the actual
 workspace name. Store the final context in ICM.

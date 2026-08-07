@@ -201,7 +201,7 @@ flowchart TD
 - **Technical Integration:**
   - Runs as a background proxy on `localhost:8787` (configured during installation).
   - Terminal agents have their `OPENAI_BASE_URL` or equivalent environment variable routed through this local proxy.
-  - Integrates the `.githooks/pre-commit-aoi-guard.sh` hook to prevent `headroom learn --apply` from silently overwriting core configuration files like `AGENTS.md`.
+  - Integrates the `.githooks/pre-commit-aoi-guard.sh` hook to prevent `headroom learn --apply` from silently overwriting core configuration files like `copilot-instructions.md`.
 - **Lifecycle Role:**
   - **Transversal:** Runs silently in the background of any terminal execution or manual CLI interaction, independent of VS Code Copilot Chat.
 

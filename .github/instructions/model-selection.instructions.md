@@ -272,9 +272,9 @@ Persistencia de envvars: el operador decide. El helper `headroom-vscode-setup.sh
 
 Headroom provee el comando `headroom learn`, que **mina sesiones pasadas de IA y escribe correcciones automáticas** a archivos de instrucciones del workspace. Documentación oficial dice:
 
-> `headroom learn` — mines failed sessions, writes corrections to `CLAUDE.md` / `AGENTS.md`.
+> `headroom learn` — mines failed sessions, writes corrections to `copilot-instructions.md`.
 
-AOI **exactly tracks** los dos archivos en la raíz del repo (`AGENTS.md`, `CLAUDE.md`). Si el operador corre `headroom learn --apply` durante una sesión AOI activa, Headroom podría machucar secciones AOI-managed **sin awareness AOI**.
+AOI **exactly tracks** el archivo de instrucciones en `.github/copilot-instructions.md`. Si el operador corre `headroom learn --apply` durante una sesión AOI activa, Headroom podría machucar secciones AOI-managed **sin awareness AOI**.
 
 **Política AOI**:
 
@@ -284,7 +284,7 @@ AOI **exactly tracks** los dos archivos en la raíz del repo (`AGENTS.md`, `CLAU
 4. **Recomendación operativa**:
    - Pre-correr `git diff --stat` antes de `headroom learn --apply`
    - Usar `headroom learn --dry-run` (variante `--verbosity` lo soporta nativamente) para revisar el diff propuesto
-   - Post-correr `git checkout -- AGENTS.md CLAUDE.md` para descartar cambios no aprobados manualmente
+   - Post-correr `git checkout -- .github/copilot-instructions.md` para descartar cambios no aprobados manualmente
 5. **Mitigaciones futuras posibles** (no implementadas en v0):
    - Marcas `# aoi:managed-begin` / `# aoi:managed-end` en archivos AOI-managed y un git hook que rechace cambios fuera de esos bloques
    - Constitution `policy.md` que registre "archivos AOI-managed no son editables por headroom learn sin aprobación"
@@ -309,7 +309,7 @@ Para que la obligatoriedad sea real y no solo a nivel de instalación, el setup 
 | --------------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `aoi-headroom-wrap.sh` (+ `.ps1`) | `scripts/aoi-headroom-wrap.{sh,ps1}` | Wrapper que rechaza invocaciones si `headroom` falta en PATH y reejecuta `headroom wrap copilot --subscription`. Es el único punto de invocación de Copilot CLI permitido por la política AOI.                   |
 | `aoi-copilot` shim                | `scripts/bin/aoi-copilot`            | Shim binario que enruta cualquier llamada estilo "copilot" hacia el wrapper. SDD agents usan este shim en lugar del comando nativo.                                                                              |
-| `pre-commit-aoi-guard.sh`         | `.githooks/pre-commit-aoi-guard.sh`  | Pre-commit hook que **bloquea** cualquier cambio en `AGENTS.md` o `CLAUDE.md` sin el marker `[aoi-managed-ok]`. Impide que `headroom learn --apply` (u otra herramienta externa) pise la superficie AOI-managed. |
+| `pre-commit-aoi-guard.sh`         | `.githooks/pre-commit-aoi-guard.sh`  | Pre-commit hook que **bloquea** cualquier cambio en `copilot-instructions.md` sin el marker `[aoi-managed-ok]`. Impide que `headroom learn --apply` (u otra herramienta externa) pise la superficie AOI-managed. |
 
 **Reglas para SDD agents**:
 

@@ -621,7 +621,7 @@ header "Phase 1.8: Codebase Memory MCP (opcional)"
 if [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then
   info "codebase-memory-mcp indexa el repo en un knowledge graph local para reducir"
   info "exploración file-by-file. AOI lo instala con --skip-config para NO tocar"
-  info "AGENTS/GEMINI del operador y registra el MCP sólo en el workspace actual."
+  info "copilot-instructions.md del operador y registra el MCP sólo en el workspace actual."
   printf "${YELLOW}▸${NC} Instalar codebase-memory-mcp? [Y/n]: "
   read -r CBM_CHOICE
   case "$CBM_CHOICE" in
