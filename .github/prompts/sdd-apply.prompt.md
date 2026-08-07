@@ -24,6 +24,14 @@ icm_memory_recall(query: "implementation plan tasks", topic: "sdd-{WORKSPACE}-{F
 
 > **Headroom mandatory policy.** Any Copilot CLI invocation in this workspace MUST be routed through `bash scripts/aoi-headroom-wrap.sh` (or the `aoi-copilot` shim) so the call exits via `headroom wrap copilot --subscription`. The wrapper refuses to run when `headroom` is missing.
 
+### Step 1b: Start Transcript (Verbatim)
+
+```
+icm_transcript_start_session(agent: "supervisor", project: "{WORKSPACE}")
+```
+
+Record implementation decisions and mid-flight changes verbatim. This captures rationale for approach changes, blockers encountered, and Owner decisions during the longest SDD phase.
+
 ### Step 2: Identify Task + Validate Pre-Conditions
 
 Resolve the TASK-ID from user input `{{input}}`:
@@ -39,6 +47,8 @@ Resolve the TASK-ID from user input `{{input}}`:
 - `design.md` exists
 - `tasks.md` exists with task breakdown
 - `implementation-plan.md` exists with agent assignments
+
+**On pre-conditions met**: Update `.tasks/registry.md` status → `⚙️ En Implementación` immediately before starting implementation.
 
 ### Resource Workflow Semantics (MANDATORY)
 

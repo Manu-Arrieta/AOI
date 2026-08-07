@@ -23,6 +23,14 @@ icm_memory_recall(query: "context conventions stack", topic: "{WORKSPACE}-contex
 
 > **Headroom mandatory policy.** Any Copilot CLI invocation in this workspace MUST be routed through `bash scripts/aoi-headroom-wrap.sh` (or the `aoi-copilot` shim) so the call exits via `headroom wrap copilot --subscription`. The wrapper refuses to run when `headroom` is missing.
 
+### Step 1b: Start Transcript (Verbatim)
+
+```
+icm_transcript_start_session(agent: "supervisor", project: "{WORKSPACE}")
+```
+
+Record architecture and design decisions verbatim during specify/plan/tasks. These capture the Owner's rationale that is lost when Memories summarize.
+
 ### Step 2: Identify Task
 
 Resolve the TASK-ID from user input `{{input}}`:
@@ -30,8 +38,9 @@ Resolve the TASK-ID from user input `{{input}}`:
 1. If user provides TASK-ID → validate it exists in `.tasks/registry.md`
 2. If not → show active tasks and ask the Owner to pick one
 3. Read `.tasks/{feature-name}/TASK-YYYY-NNN/proposal.md` for context
-4. Recall exploration from ICM: `icm_memory_recall(query: "exploration", topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN")`
-5. If `.tasks/{feature-name}/TASK-YYYY-NNN/relations.json` exists, treat it as
+4. If `.tasks/{feature-name}/TASK-YYYY-NNN/requirement.md` exists, read it as @functional-analyst output from `/sdd-new`. If missing, warn the Owner: "No requirement.md found — @functional-analyst may not have completed analysis. Proceed anyway?"
+5. Recall exploration from ICM: `icm_memory_recall(query: "exploration", topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN")`
+6. If `.tasks/{feature-name}/TASK-YYYY-NNN/relations.json` exists, treat it as
   the canonical explicit relation record for linked `.resources/` files
 
 ### Resource Linkage Rule (MANDATORY)

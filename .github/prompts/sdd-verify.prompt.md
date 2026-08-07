@@ -49,7 +49,11 @@ Hand off to **@integration-specialist**:
 1. For each requirement in `spec.md`, verify implementation exists
 2. For each constraint in `design.md`, verify it was respected
 3. For each task in `tasks.md`, verify completion
-4. **TDD Gate compliance**: confirm tests exist and pass for all implementation tasks
+4. **TDD Gate compliance**: confirm tests exist and pass for all implementation tasks. To verify:
+   - Read each task's `## Test Requirements` section from `tasks.md`
+   - Detect test runner from project stack: `npm test`, `pnpm test`, `pytest`, `go test ./...`, `dotnet test`, etc.
+   - Run the test suite and capture output. If tests fail → include failures in verify-report as FAIL reason
+   - If no test files exist for a task that specified test requirements → mark as TDD FAIL
 5. Run `/speckit.checklist` for formal verification
 
 ### Step 4: Service Discovery Gate Check
