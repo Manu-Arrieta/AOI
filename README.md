@@ -1,163 +1,145 @@
-# AOI — Agentic Operational Infrastructure
+# AOI — Agentic Operational Infrastructure & AOI-OS
 
-Tu equipo de desarrollo de software, orquestado por IA.
+**Tu equipo de desarrollo de software autónomo, determinista y autosanable, orquestado por IA.**
 
-AOI transforma cualquier repositorio en un espacio de trabajo inteligente con **memoria persistente**, **agentes especializados**, y un **ciclo de vida completo** desde la idea hasta el cierre.
-
----
-
-## ¿Cómo funciona?
-
-```
-Tu proyecto vacío
-       ↓
-   setup.sh          ← Instala herramientas + agentes
-       ↓
-   /init             ← Configura tu stack y convenciones
-       ↓
-   /sdd-new          ← Explora y propone un feature
-       ↓
-   /sdd-ff           ← Diseña, planifica, genera tareas
-       ↓
-   /sdd-apply        ← Implementa con TDD
-       ↓
-   /sdd-verify       ← Verifica calidad y principios
-       ↓
-   /sdd-archive      ← Documenta y cierra
-```
-
-Cada paso tiene una **aprobación del Owner** antes de avanzar. Tú decides, la IA ejecuta.
+AOI transforma cualquier repositorio en un espacio de trabajo agéntico con **memoria persistente (ICM)**, **agentes especializados**, un **ciclo de vida gobernado (SDD)** y **AOI-OS**: un sistema operativo determinista que ejecuta tareas complejas de forma autónoma con protección de contratos de código, sandboxes herméticos y auto-sanación.
 
 ---
 
-## Instalación
+## ⚡ ¿Cómo funciona?
+
+```text
+Tu proyecto
+    ↓
+setup.sh / setup.ps1    ← Instala infraestructura, agentes y AOI-OS
+    ↓
+/init                   ← Configura stack, convenciones e invariantes
+    ↓
+/sdd-new                ← Explora y propone el feature (@supervisor)
+    ↓
+/sdd-ff                 ← Diseña contratos y planifica tareas (@architect + @analyst)
+    ↓
+/sdd-apply (--os-mode)  ← Implementación autónoma vía AOI-OS o asistida por TDD
+    ↓
+/sdd-verify             ← Verificación de calidad, AST contracts y consensus score
+    ↓
+/sdd-archive            ← Documentación funcional y cierre formal en memoria
+```
+
+Cada paso cuenta con una **aprobación explícita del Owner/Arquitecto**. Tú diseñas la intención y los contratos sagrados; el sistema operativo agéntico ejecuta con garantías matemáticas de no-regresión.
+
+---
+
+## 🧠 AOI-OS: Sistema Operativo Agéntico Autónomo
+
+AOI incluye en su núcleo **AOI-OS**, un runtime determinista compuesto por 8 subsistemas de alta precisión:
+
+```text
+AOI-OS Runtime Core
+├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
+│   └── Compila tasks.md en grafos dirigidos acíclicos y calcula olas de ejecución paralela.
+│
+├── 2. Guardián AST Políglota (scripts/aoi-os/ast-guard/)
+│   └── Protege interfaces y firmas públicas en C# (.cs), TypeScript, Vue SFC y Python.
+│
+├── 3. Motor de Consenso y Arbitraje Multi-Agente (scripts/aoi-os/consensus-gate/)
+│   └── Evalúa seguridad OWASP (cero secretos, cero eval, sanitización) y límite de 300 LOC.
+│
+├── 4. Grafo Semántico de Memoria y Auto-Linker ICM (scripts/aoi-os/memory-linker/)
+│   └── Extrae automáticamente decisiones, errores resueltos y enlaces relacionales (implements, depends_on).
+│
+├── 5. Runtime de Sandboxing Hermético Efímero (scripts/aoi-os/sandbox-runtime/)
+│   └── Ejecuta código en .sandboxes/aoi-os-tmp-{taskId} con commits atómicos solo tras 100% verde.
+│
+├── 6. Gobernador Dinámico de Velocidad de Tokens (scripts/aoi-os/sandbox-runtime/)
+│   └── Detección de anomalías en consumo (+40% de sobrecoste) y compresión adaptativa de contexto.
+│
+├── 7. Bucle de Auto-Sanación y Circuit Breaker (scripts/aoi-os/self-healing/)
+│   └── Diagnóstico de fallos en tests, generación quirúrgica de fixes y rollback tras 2 reintentos.
+│
+└── 8. Telemetría SSE en Vivo y C2 Dashboard (server/api/aoi-os/ & Nuxt 4)
+    └── Matriz DAG interactiva, controles de Playback (Pause/Resume/Step Wave) y Node Inspector Drawer.
+```
+
+---
+
+## 👨‍💻 Tu Rol: De "Escribano de Código" a "Gobernador de Sistemas"
+
+Con **AOI-OS**, tu paradigma de desarrollo evoluciona:
+
+1. **Diseñador de Contratos e Invariantes**: En `/sdd-ff`, tú defines los esquemas, interfaces públicas y restricciones de seguridad.
+2. **Comandante de Operaciones C2**: En el dashboard de Nuxt 4, supervisas la ejecución de olas del DAG, pausas o avanzas el sistema paso a paso e inspeccionas cualquier nodo.
+3. **Juez de Escalación Estratégica**: El 95% de los errores de compilación o aserciones los resuelve la auto-sanación; tú solo intervienes ante ambigüedades arquitectónicas reales.
+
+---
+
+## 🛠️ Instalación y Configuración
 
 ### macOS / Linux
-
 ```bash
 bash "/path/to/AOI/setup.sh" /path/to/my-project
 ```
 
 ### Windows 11+
-
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\AOI\setup.ps1" "C:\path\to\my-project"
 ```
 
-### Prerequisitos
-
-- Node ≥ 20.19
+### Prerrequisitos
+- Node.js ≥ 20.19
 - pnpm ≥ 11.3
-- [ICM](https://github.com/rtk-ai/icm) (memoria persistente)
-- GitHub Copilot en VS Code
+- [ICM](https://github.com/rtk-ai/icm) (memoria persistente de contexto infinito)
+- GitHub Copilot en VS Code o Antigravity IDE
 
-### Primer uso
+---
+
+## 🚀 Modos de Ejecución
+
+### Modo Autónomo OS (Recomendado)
+```bash
+# Ejecutar directamente desde la terminal:
+node scripts/aoi-os/aoi-os-cli.mjs --tasks .tasks/{feature}/{task-id}/tasks.md --workspace "$WORKSPACE" --auto-apply
+
+# O desde Copilot Chat:
+/sdd-apply --os-mode
+```
+
+### Modo Asistido Tradicional
+```text
+# En Copilot Chat:
+/sdd-apply
+```
+
+---
+
+## 📊 Panel de Operaciones (Dashboard C2)
+
+Inicia el dashboard de observabilidad agéntica en tiempo real:
+
+```bash
+pnpm --dir aoi_apps/agentic-ops-dashboard dev
+```
+
+El dashboard incluye:
+* **Matriz DAG de Ejecución**: Visualización SVG de dependencias entre tareas por olas.
+* **Controles de Playback**: Pausar, Reanudar o Avanzar olas paso a paso.
+* **Inspector de Nodos**: Desglose del prompt sintetizado, contratos AST, puntuación de seguridad y consumo de tokens.
+* **Explorador de Recursos y Memoria**: Inspección gobernada de artefactos, relaciones y tópicos ICM.
+
+---
+
+## 🤖 El Equipo de Agentes Especializados
+
+AOI opera bajo una topología **Hub-and-Spoke**: el Supervisor coordina, los especialistas ejecutan.
 
 ```text
-# En VS Code Copilot Chat:
-/init           ← Configura stack, agentes, convenciones
-/sdd-new        ← Inicia tu primer feature
-```
-
----
-
-## El Ciclo de Vida
-
-### 1. `/sdd-new` — Explorar + Proponer
-
-El **@supervisor** coordina la exploración: analiza el codebase, identifica servicios existentes, evalúa la complejidad, y produce una **propuesta** para aprobación del Owner.
-
-**Qué evalúa:**
-- ¿Ya existe algo que resuelva esto? (Service Discovery)
-- ¿Cuál es la solución más simple? (KISS)
-- ¿Qué capas del sistema toca? (Separation of Concerns)
-- ¿Hay riesgos de seguridad? (Security)
-
-**Produce:** `proposal.md` con evaluación de principios
-
----
-
-### 2. `/sdd-ff` — Diseñar + Planificar
-
-El **@functional-analyst** especifica los requerimientos. El **@solution-architect** diseña la solución y genera las tareas de implementación.
-
-**Qué exige:**
-- Cada componente tiene una sola responsabilidad (SRP)
-- El diseño permite extensión sin modificar código existente (OCP)
-- Las dependencias van hacia abstracciones, no hacia implementaciones (DIP)
-- Los contratos de API se definen antes de implementar (Contract-First)
-- Se define qué observar: logs, métricas, traces (Observability)
-- Cada tarea incluye requerimientos de testing (TDD)
-
-**Produce:** `spec.md` + `design.md` + `tasks.md` + `implementation-plan.md`
-
----
-
-### 3. `/sdd-apply` — Implementar
-
-Los agentes especializados (**@frontend-developer**, **@backend-developer**, **@devops-engineer**) implementan cada tarea siguiendo TDD: escriben el test primero (RED), luego el código (GREEN), luego optimizan (REFACTOR).
-
-**Qué revisa después de cada tarea:**
-- Archivos no exceden ~300 líneas (SRP)
-- No se duplica código (DRY)
-- No se agregan abstracciones innecesarias (KISS)
-- Las funciones validan sus inputs (Fail Fast)
-- Se prefiere composición sobre herencia (Composition)
-- Inputs validados, secrets seguros, SQL parametrizado (Security)
-
-**Produce:** Código implementado + tests + logs de iteración
-
----
-
-### 4. `/sdd-verify` — Verificar
-
-El **@integration-specialist** verifica que todo cumple con la especificación, los principios de calidad, y los gates automatizados.
-
-**Gates automáticos (FAIL si no se cumplen):**
-- ✅ Tests pasan (TDD Gate)
-- ✅ Service Discovery fue ejecutado
-- ✅ No hay secrets hardcodeados (Security Gate)
-- ✅ Sandbox manifest válido (si aplica)
-
-**Verificaciones de principios (WARNING):**
-- Archivos >300 LOC
-- Imports circulares
-- Código duplicado >10 líneas
-- Catch blocks vacíos
-- Endpoints sin logging
-- Contratos de API que no coinciden con spec
-
-**Produce:** `verify-report.md` con PASS / FAIL / PARTIAL
-
----
-
-### 5. `/sdd-archive` — Documentar + Cerrar
-
-El **@documentation-analyst** genera la documentación funcional, consolida la memoria, y cierra formalmente el feature.
-
-**Documenta:**
-- Qué se construyó y por qué
-- Decisiones clave con su justificación
-- Qué se excluyó deliberadamente (YAGNI)
-- Patrones reutilizables extraídos (DRY)
-- Estado de seguridad y observabilidad
-
-**Produce:** `functional-docs.md` + `archive-report.md`
-
----
-
-## Los Agentes
-
-AOI opera con un modelo **Hub-and-Spoke**: el Supervisor coordina, los especialistas ejecutan.
-
-```
                     ┌──────────────┐
                     │  @supervisor │  ← Coordina todo
                     └──────┬───────┘
            ┌───────────────┼───────────────┐
            ▼               ▼               ▼
    ┌───────────────┐ ┌────────────┐ ┌──────────────┐
-   │  Explorar     │ │ Implementar│ │   Verificar  │
+   │   Explorar    │ │ Implementar│ │   Verificar  │
    │───────────────│ │────────────│ │──────────────│
    │ @functional-  │ │ @frontend- │ │ @integration-│
    │  analyst      │ │  developer │ │  specialist  │
@@ -170,89 +152,36 @@ AOI opera con un modelo **Hub-and-Spoke**: el Supervisor coordina, los especiali
    └───────────────┘ └────────────┘ └──────────────┘
 ```
 
-**Transversales:** `@triage-specialist` (bugs), `@resource-analyst` (recursos), `@project-analyzer` + `@project-expert` (análisis)
-
 ---
 
-## Herramientas
+## 🧪 Verificación de Calidad y Paridad
 
-| Herramienta | Qué hace | Obligatoria |
-|-------------|----------|:-----------:|
-| **ICM** | Memoria persistente entre sesiones | ✅ |
-| **RTK** | Optimiza tokens de salida terminal (60-90% ahorro) | ⚠️ |
-| **Headroom** | Comprime contexto para CLI (hasta 95% ahorro) | ⚠️ |
-| **Codebase Memory** | Grafo de código navegable por los agentes | ⚠️ |
-| **Spec-Kit** | Motor del ciclo SDD | ⚠️ |
-
----
-
-## Memoria
-
-La IA **no olvida** entre sesiones. ICM mantiene 4 tipos de memoria:
-
-| Tipo | Para qué | Cuándo |
-|------|----------|--------|
-| **Memories** | Decisiones, progreso, contexto | Cada fase |
-| **Memoirs** | Arquitectura y relaciones entre componentes | Diseño |
-| **Feedback** | Correcciones y aprendizajes | Verificación |
-| **Transcripts** | Conversaciones textuales del Owner | Exploración, diseño, implementación, cierre |
-
----
-
-## Estructura de un Feature Completo
-
-```
-.tasks/mi-feature/
-├── feature.md                    ← Contexto del feature
-└── TASK-2026-001/
-    ├── proposal.md               ← Propuesta aprobada
-    ├── spec.md                   ← Especificación formal
-    ├── design.md                 ← Diseño arquitectónico
-    ├── tasks.md                  ← Tareas con test requirements
-    ├── implementation-plan.md    ← Plan de ejecución
-    ├── iterations/               ← Logs de implementación
-    ├── verify-report.md          ← Resultado de verificación
-    ├── functional-docs.md        ← Documentación funcional
-    └── archive-report.md         ← Reporte de cierre
-```
-
----
-
-## Recursos
-
-AOI instala un directorio `.resources/` gobernado para contexto reutilizable:
-
-- `userstories/` — historias de usuario
-- `workflows/` — definiciones de interacción entre componentes (no ejecutables)
-
-Los recursos solo se usan si el Owner los vincula explícitamente durante la construcción de tareas.
-
----
-
-## Dashboard
+Para validar la integridad del sistema:
 
 ```bash
-pnpm --dir aoi_apps/agentic-ops-dashboard dev
-```
+# Validar paridad byte por byte entre raíz y scaffold/:
+pnpm test:parity
 
-Panel de operaciones en tiempo real que muestra el estado de tareas, artefactos, y recursos del proyecto.
+# Ejecutar todas las pruebas de AOI-OS:
+pnpm test:aoi-os
+
+# Ejecutar la suite global completa (134+ tests):
+pnpm test
+```
 
 ---
 
-## Desinstalación
+## 🗑️ Desinstalación Limpia
 
 ```bash
 # macOS / Linux
 bash "/path/to/AOI/teardown.sh" /path/to/my-project
-```
 
-```powershell
 # Windows 11+
 powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\AOI\teardown.ps1" "C:\path\to\my-project"
 ```
-
-> La desinstalación preserva `.tasks/` — el historial de tu proyecto nunca se borra.
+> La desinstalación preserva `.tasks/` y la memoria ICM — el historial y conocimiento de tu proyecto nunca se pierden.
 
 ---
 
-**AOI v3.0** — Agentic Operational Infrastructure
+**AOI v3.5 & AOI-OS** — Autonomous, Deterministic & Self-Healing Agentic Operational Infrastructure
