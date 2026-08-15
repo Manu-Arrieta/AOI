@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v20 (The Grand Epistemic Singularity & Omnipresent Master Matrix).
+ * Master Orchestrator Engine for AOI-OS v21 (The Diamond 60-Pillar Singularity & Universal Autonomous Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -24,7 +24,9 @@
  * Monorepo Dead-Asset Pruner, Speculative Wave Pipeline, Deterministic SBOM Generator,
  * Epistemic Entropy Prover, Delta Snapshot Compressor, API Route Collision Matrix,
  * Capability Token Enforcer, Epistemic Bias Neutralizer, Nullability Contract Guard,
- * Cognitive Density Maximizer, Sandbox Descriptor Sanitizer, and ICM Memory Linking.
+ * Cognitive Density Maximizer, Sandbox Descriptor Sanitizer, Epistemic Provenance Chain,
+ * Package Export Leak Prover, Dynamic Budget Auto-Throttle, Side-Channel Timing Leak Guard,
+ * and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -51,6 +53,7 @@ import { createTimeTravelEngine } from './time-travel/time-travel-engine.mjs'
 import { generateAstMutants, calculateMutationScore } from './mutation-testing/ast-mutation-verifier.mjs'
 import { traceTaintFlows } from './security-guard/ast-taint-tracer.mjs'
 import { auditSyscallSecurity } from './security-guard/syscall-virtual-guard.mjs'
+import { auditTimingSafety } from './security-guard/timing-leak-guard.mjs'
 import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-estimator.mjs'
 import { synthesizeOpenApiSpec } from './contract-docgen/openapi-synthesizer.mjs'
 import { synthesizeE2eTestFlow } from './contract-docgen/e2e-flow-synthesizer.mjs'
@@ -102,6 +105,9 @@ import { neutralizeEpistemicBias } from './bias-neutralizer/epistemic-bias-neutr
 import { auditNullabilitySafety } from './nullability-guard/nullability-contract-guard.mjs'
 import { maximizeCognitiveDensity } from './density-maximizer/cognitive-density-maximizer.mjs'
 import { sanitizeSandboxDescriptors } from './sandbox-guard/descriptor-sanitizer.mjs'
+import { createProvenanceChain } from './provenance/epistemic-provenance-chain.mjs'
+import { auditExportLeaks } from './export-guard/export-leak-prover.mjs'
+import { calculateBudgetThrottle } from './throttle/budget-auto-throttle.mjs'
 import { createSelfHealingSession } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
 import { createHermeticSandbox } from './sandbox-runtime/sandbox-executor.mjs'
@@ -146,6 +152,7 @@ export function createAoiOsPipeline(options) {
   const tokenHologram = createTokenHologram([constitutionRules, tasksMarkdown])
   const eventStore = createEventSourcingKernel({ streamId: `aoi-os-${workspace}-${taskId}` })
   const speculativePipeline = createSpeculativePipeline()
+  const provenanceChain = createProvenanceChain()
 
   const rawNodes = parseTaskDag(tasksMarkdown)
   const validation = validateDagStructure(rawNodes)
@@ -231,6 +238,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Appends an immutable cryptographic provenance block.
+   *
+   * @param {object} entry
+   */
+  function recordProvenance(entry) {
+    return provenanceChain.appendProvenanceBlock(entry)
+  }
+
+  /**
+   * Audits export leaks across package boundaries.
+   *
+   * @param {string} sourceCode
+   * @param {string[]} protectedPackages
+   */
+  function auditPackageExports(sourceCode, protectedPackages = []) {
+    return auditExportLeaks(sourceCode, protectedPackages)
+  }
+
+  /**
+   * Computes adaptive auto-throttle policy.
+   *
+   * @param {number} spentTokens
+   */
+  function checkThrottlePolicy(spentTokens) {
+    return calculateBudgetThrottle({ spentTokens, totalBudget: globalTokenBudget })
+  }
+
+  /**
+   * Audits constant-time cryptographic safety.
+   *
+   * @param {string} sourceCode
+   */
+  function auditTimingAttackSafety(sourceCode) {
+    return auditTimingSafety(sourceCode)
   }
 
   /**
@@ -336,7 +380,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '20.0.0',
+      version: '21.0.0',
       components,
     })
   }
@@ -872,6 +916,7 @@ export function createAoiOsPipeline(options) {
     eventBus,
     eventStore,
     speculativePipeline,
+    provenanceChain,
     tokenGovernor,
     symbolMutex,
     contractCache,
@@ -883,6 +928,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    recordProvenance,
+    auditPackageExports,
+    checkThrottlePolicy,
+    auditTimingAttackSafety,
     cleanseEpistemicBias,
     auditNullability,
     maximizeDensity,
@@ -955,7 +1004,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v20: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v21: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

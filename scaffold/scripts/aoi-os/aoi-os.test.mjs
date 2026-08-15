@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v20 pipeline with Bias Neutralizer, Nullability Guard, Density Maximizer, and Descriptor Sanitizer', async () => {
+test('createAoiOsPipeline initializes full v21 pipeline with Provenance Chain, Export Guard, Budget Throttle, and Timing Guard', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v20',
-    taskId: 'TASK-2026-20',
+    feature: 'aoi-os-v21',
+    taskId: 'TASK-2026-21',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,25 +34,33 @@ test('createAoiOsPipeline initializes full v20 pipeline with Bias Neutralizer, N
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Epistemic Bias Neutralizer
-  const biasCheck = pipeline.cleanseEpistemicBias('Implemented blazingly fast and revolutionary auth.')
-  assert.equal(biasCheck.biasStatus, 'BIAS_NEUTRALIZED_AND_CLEANSED')
+  // 2. Epistemic Provenance Chain
+  const block = pipeline.recordProvenance({
+    taskId: 'T-1',
+    requirement: 'Build API route',
+    modifiedFiles: ['server/api/tasks.ts'],
+    assertions: ['Return 200 OK'],
+    memoryId: '01M035F0SR',
+  })
+  assert.equal(block.index, 0)
+  assert.equal(block.hash.length, 64)
+  assert.equal(pipeline.provenanceChain.verifyChainIntegrity().valid, true)
 
-  // 3. Nullability Contract Guard
-  const nullCheck = pipeline.auditNullability('export const getStreet = (u: any) => u.address?.street;', ['address'])
-  assert.equal(nullCheck.safe, true)
+  // 3. Export Leak Prover
+  const exportCheck = pipeline.auditPackageExports("import { foo } from 'aoi-os';", ['aoi-os'])
+  assert.equal(exportCheck.hermetic, true)
 
-  // 4. Cognitive Density Maximizer
-  const densityCheck = pipeline.maximizeDensity('Please make sure to test and never ever drop tables.')
-  assert.equal(densityCheck.signalDensityPct, 98)
+  // 4. Budget Auto-Throttle
+  const throttle = pipeline.checkThrottlePolicy(30000)
+  assert.equal(throttle.throttleMode, 'STANDARD')
 
-  // 5. Descriptor Sanitizer
-  const sanitCheck = pipeline.auditDescriptorSanitization(['src/index.ts', 'dist/app.js'])
-  assert.equal(sanitCheck.clean, true)
+  // 5. Timing Leak Guard
+  const timingCheck = pipeline.auditTimingAttackSafety("import crypto from 'node:crypto'; crypto.timingSafeEqual(b1, b2);")
+  assert.equal(timingCheck.safe, true)
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v20 omnipresent master suite'],
+    decisions: ['Use deterministic v21 diamond master suite'],
     diffSummary: 'server/api/tasks.ts (+55 lines)',
   }, async () => ({ stdout: 'OK' }))
 

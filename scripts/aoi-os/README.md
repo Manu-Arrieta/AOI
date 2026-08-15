@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v20 (The Grand Epistemic Singularity & Omnipresent Master Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v21 (The Diamond 60-Pillar Singularity & Universal Autonomous Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Epistemic Bias Neutralizer (`bias-neutralizer/epistemic-bias-neutralizer.mjs`)**: Purga estática de sesgos cognitivos, buzzwords y jerga para aserciones 100% fácticas (0 LLM tokens).
-- **Nullability Contract Guard (`nullability-guard/nullability-contract-guard.mjs`)**: Auditoría estática de transiciones de tipos opcionales y eliminación de errores de runtime por `null`/`undefined` (0 LLM tokens).
-- **Cognitive Density Maximizer (`density-maximizer/cognitive-density-maximizer.mjs`)**: Compresión de especificaciones verbales en vectores simbólicos de ultra-alta densidad (>95% SNR) (0 LLM tokens).
-- **Descriptor Sanitizer (`sandbox-guard/descriptor-sanitizer.mjs`)**: Sanitización criptográfica de inodos, sockets y archivos de bloqueo tras el desmontaje del sandbox (0 LLM tokens).
+- **Epistemic Provenance Chain (`provenance/epistemic-provenance-chain.mjs`)**: Trazabilidad criptográfica SHA-256 encadenada de requisitos, AST, tests y memoria (0 LLM tokens).
+- **Export Leak Prover (`export-guard/export-leak-prover.mjs`)**: Demostración formal de fronteras de paquetes y cero importaciones profundas no autorizadas (0 LLM tokens).
+- **Budget Auto-Throttle (`throttle/budget-auto-throttle.mjs`)**: Auto-regulación adaptativa de niveles de esqueletizado según la tasa de consumo de tokens (0 LLM tokens).
+- **Timing Leak Guard (`security-guard/timing-leak-guard.mjs`)**: Detección y neutralización de vulnerabilidades por ataques de canal lateral de tiempo (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 56 Pilares (AOI-OS v20)
+## 🏛️ Matriz Arquitectónica Maestra de 60 Pilares (AOI-OS v21)
 
 ```text
-AOI-OS v20 Architecture Matrix
+AOI-OS v21 Architecture Matrix
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -132,11 +132,17 @@ AOI-OS v20 Architecture Matrix
 │   ├── api-collision-matrix.mjs: Matriz de detección estática de colisiones de rutas y parámetros en APIs.
 │   └── capability-enforcer.mjs: Gobernador criptográfico de tokens de capacidad y confinamiento de agentes.
 │
-└── 53-56. Núcleo Grand Epistemic Master v20 (bias-neutralizer/, nullability-guard/, density-maximizer/, sandbox-guard/)
-    ├── epistemic-bias-neutralizer.mjs: Neutralizador de sesgos cognitivos y depuración fáctica de aserciones.
-    ├── nullability-contract-guard.mjs: Guardián estático de nulabilidad y cero excepciones de desreferenciación.
-    ├── cognitive-density-maximizer.mjs: Maximizador de densidad cognitiva y vectores de prompt (>95% SNR).
-    └── descriptor-sanitizer.mjs: Sanitizador formal de inodos, sockets y descriptores efímeros tras el sandbox.
+├── 53-56. Núcleo Grand Epistemic Master (bias-neutralizer/, nullability-guard/, density-maximizer/, sandbox-guard/)
+│   ├── epistemic-bias-neutralizer.mjs: Neutralizador de sesgos cognitivos y depuración fáctica de aserciones.
+│   ├── nullability-contract-guard.mjs: Guardián estático de nulabilidad y cero excepciones de desreferenciación.
+│   ├── cognitive-density-maximizer.mjs: Maximizador de densidad cognitiva y vectores de prompt (>95% SNR).
+│   └── descriptor-sanitizer.mjs: Sanitizador formal de inodos, sockets y descriptores efímeros tras el sandbox.
+│
+└── 57-60. Núcleo Diamond 60-Pillar Singularity v21 (provenance/, export-guard/, throttle/, security-guard/)
+    ├── epistemic-provenance-chain.mjs: Cadena criptográfica SHA-256 de linaje y procedencia formal.
+    ├── export-leak-prover.mjs: Probador de límites de paquetes y cero importaciones profundas privadas.
+    ├── budget-auto-throttle.mjs: Regulador dinámico de velocidad de gasto y auto-ajuste de esqueletizado.
+    └── timing-leak-guard.mjs: Guardián contra ataques de canal lateral y comparación en tiempo constante.
 ```
 
 ---
@@ -179,12 +185,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [21.0.0] - 2026-08-15 (The Diamond 60-Pillar Singularity & Universal Autonomous Matrix)
+- **Epistemic Provenance Chain**: Cadena criptográfica SHA-256 de linaje y procedencia formal (`provenance/epistemic-provenance-chain.mjs`).
+- **Export Leak Prover**: Probador de límites de paquetes y cero importaciones profundas privadas (`export-guard/export-leak-prover.mjs`).
+- **Budget Auto-Throttle**: Regulador dinámico de velocidad de gasto y auto-ajuste de esqueletizado (`throttle/budget-auto-throttle.mjs`).
+- **Timing Leak Guard**: Guardián contra ataques de canal lateral y comparación en tiempo constante (`security-guard/timing-leak-guard.mjs`).
+- **240/240 Tests Pasando al 100%** y **307 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [20.0.0] - 2026-08-15 (The Grand Epistemic Singularity & Omnipresent Master Matrix)
 - **Epistemic Bias Neutralizer**: Neutralizador de sesgos cognitivos y depuración fáctica de aserciones (`bias-neutralizer/epistemic-bias-neutralizer.mjs`).
 - **Nullability Contract Guard**: Guardián estático de nulabilidad y cero excepciones de desreferenciación (`nullability-guard/nullability-contract-guard.mjs`).
 - **Cognitive Density Maximizer**: Maximizador de densidad cognitiva y vectores de prompt (>95% SNR) (`density-maximizer/cognitive-density-maximizer.mjs`).
 - **Descriptor Sanitizer**: Sanitizador formal de inodos, sockets y descriptores efímeros (`sandbox-guard/descriptor-sanitizer.mjs`).
-- **233/233 Tests Pasando al 100%** y **299 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [19.0.0] - 2026-08-15 (The Transcendent Omni-Core & Universal Synthesis Matrix)
 - **Epistemic Entropy Prover**: Medición de entropía de Shannon y divergencia de conocimiento (`entropy-prover/epistemic-entropy-prover.mjs`).
@@ -207,7 +219,7 @@ pnpm --filter agentic-ops-dashboard dev
 ### [16.0.0] - 2026-08-15 (The Omnipresent Singularity & Infinite-Scale Hyper-Core)
 - **Zero-Knowledge Epistemic Attestor**: Árboles de Merkle criptográficos y atestaciones ZK de cumplimiento formal (`zk-attestor/zk-epistemic-attestor.mjs`).
 - **Root Cause Diagnostic Synthesizer**: Clasificador de arquetipos de error y remediación dirigida de fallos (`diagnostics/root-cause-synthesizer.mjs`).
-- **Circular Dependency Neutralizer**: Detección y desacoplamiento topológico de dependencias circulares (`circular-neutralizer/circular-dependency-neutralizer.mjs`).
+- **Circular Dependency Neutralizer**: Detección y desacoplfloor topológico de dependencias circulares (`circular-neutralizer/circular-dependency-neutralizer.mjs`).
 - **Token Liquidity Balancer**: Balanceador dinámico de liquidez de tokens según complejidad agéntica (`liquidity-balancer/token-liquidity-balancer.mjs`).
 
 ### [15.0.0] - 2026-08-15 (The Autonomous Holo-Genesis & Self-Compiling Hyper-Matrix)

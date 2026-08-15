@@ -2,7 +2,7 @@
 
 **Tu equipo de desarrollo de software autónomo, determinista y autosanable, orquestado por IA.**
 
-AOI transforma cualquier repositorio en un espacio de trabajo agéntico con **memoria persistente (ICM)**, **agentes especializados**, un **ciclo de vida gobernado (SDD)** y **AOI-OS v20**: un sistema operativo determinista de 56 pilares que ejecuta tareas complejas de forma autónoma con protección de contratos de código políglota (TypeScript, Vue SFC, Python, C#), sandboxes herméticos, hot-patching en memoria, demostración formal de invariantes, síntesis cuántica de variantes AST, resolución de dependencias, auto-refactorización, migraciones de base de datos reversibles, pruebas ZK de cumplimiento, diagnóstico de causa raíz, reconciliación de malla de conocimiento, difusión transitiva de ABI, optimización de KV-cache, teoría de juegos y Equilibrio de Nash, podado de activos zombie, pre-compilación especulativa, generación formal de SBOMs, medición de entropía de Shannon, compresión de deltas, auditoría de colisiones de rutas API, confinamiento criptográfico de capacidades, neutralización de sesgos epistémicos, comprobación estática de nulabilidad, maximización de densidad cognitiva y sanitización formal de descriptores con **máxima eficiencia y optimización de tokens**.
+AOI transforma cualquier repositorio en un espacio de trabajo agéntico con **memoria persistente (ICM)**, **agentes especializados**, un **ciclo de vida gobernado (SDD)** y **AOI-OS v21**: un sistema operativo determinista de 60 pilares que ejecuta tareas complejas de forma autónoma con protección de contratos de código políglota (TypeScript, Vue SFC, Python, C#), sandboxes herméticos, hot-patching en memoria, demostración formal de invariantes, síntesis cuántica de variantes AST, resolución de dependencias, auto-refactorización, migraciones de base de datos reversibles, pruebas ZK de cumplimiento, diagnóstico de causa raíz, reconciliación de malla de conocimiento, difusión transitiva de ABI, optimización de KV-cache, teoría de juegos y Equilibrio de Nash, podado de activos zombie, pre-compilación especulativa, generación formal de SBOMs, medición de entropía de Shannon, compresión de deltas, auditoría de colisiones de rutas API, confinamiento criptográfico de capacidades, neutralización de sesgos epistémicos, comprobación estática de nulabilidad, maximización de densidad cognitiva, sanitización formal de descriptores, cadenas criptográficas de procedencia y linaje, auditoría de límites de paquetes, auto-regulación dinámica de presupuesto de tokens y prevención de ataques de canal lateral con **máxima eficiencia y optimización de tokens**.
 
 ---
 
@@ -30,12 +30,12 @@ Cada paso cuenta con una **aprobación explícita del Owner/Arquitecto**. Tú di
 
 ---
 
-## 🧠 AOI-OS v20: Matriz Arquitectónica Maestra de 56 Pilares
+## 🧠 AOI-OS v21: Matriz Arquitectónica Maestra de 60 Pilares
 
 AOI-OS opera maximizando la eficiencia de cómputo local determinista combinado con síntesis agéntica de ultra-alta densidad:
 
 ```text
-AOI-OS v20 Architecture Matrix
+AOI-OS v21 Architecture Matrix
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 ├── 2. Guardián AST Políglota para TS / Vue SFC / Python / C# (scripts/aoi-os/ast-guard/)
 ├── 3. Esqueletizador AST & Cache Semántico de Contratos (ast-skeletonizer.mjs, contract-kv-cache.mjs)
@@ -64,11 +64,12 @@ AOI-OS v20 Architecture Matrix
 ├── 41-44. Núcleo Hyper-Omniscience (knowledge-mesh/, abi-broadcaster/, cache-optimizer/, sandbox-guard/)
 ├── 45-48. Núcleo Quantum Super-Matrix (game-engine/, asset-pruner/, speculative/, sbom/)
 ├── 49-52. Núcleo Transcendent Omni-Core (entropy-prover/, delta-compressor/, route-guard/, capability-guard/)
-└── 53-56. Núcleo Grand Epistemic Master v20 (bias-neutralizer/, nullability-guard/, density-maximizer/, sandbox-guard/)
-    ├── epistemic-bias-neutralizer.mjs: Neutralizador de sesgos cognitivos y depuración fáctica de aserciones.
-    ├── nullability-contract-guard.mjs: Guardián estático de nulabilidad y cero excepciones de desreferenciación.
-    ├── cognitive-density-maximizer.mjs: Maximizador de densidad cognitiva y vectores de prompt (>95% SNR).
-    └── descriptor-sanitizer.mjs: Sanitizador formal de inodos, sockets y descriptores efímeros tras el sandbox.
+├── 53-56. Núcleo Grand Epistemic Master (bias-neutralizer/, nullability-guard/, density-maximizer/, sandbox-guard/)
+└── 57-60. Núcleo Diamond 60-Pillar Singularity v21 (provenance/, export-guard/, throttle/, security-guard/)
+    ├── epistemic-provenance-chain.mjs: Cadena criptográfica SHA-256 de linaje y procedencia formal.
+    ├── export-leak-prover.mjs: Probador de límites de paquetes y cero importaciones profundas privadas.
+    ├── budget-auto-throttle.mjs: Regulador dinámico de velocidad de gasto y auto-ajuste de esqueletizado.
+    └── timing-leak-guard.mjs: Guardián contra ataques de canal lateral y comparación en tiempo constante.
 ```
 
 ---
@@ -136,12 +137,18 @@ node scripts/aoi-os/aoi-os-cli.mjs --tasks .tasks/{feature}/{task-id}/tasks.md -
 
 ## 📜 CHANGELOG
 
+### [21.0.0] - 2026-08-15 (The Diamond 60-Pillar Singularity & Universal Autonomous Matrix)
+- **Epistemic Provenance Chain**: Cadena criptográfica SHA-256 de linaje y procedencia formal (`provenance/epistemic-provenance-chain.mjs`).
+- **Export Leak Prover**: Probador de límites de paquetes y cero importaciones profundas privadas (`export-guard/export-leak-prover.mjs`).
+- **Budget Auto-Throttle**: Regulador dinámico de velocidad de gasto y auto-ajuste de esqueletizado (`throttle/budget-auto-throttle.mjs`).
+- **Timing Leak Guard**: Guardián contra ataques de canal lateral y comparación en tiempo constante (`security-guard/timing-leak-guard.mjs`).
+- **240/240 Tests Pasando al 100%** y **307 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [20.0.0] - 2026-08-15 (The Grand Epistemic Singularity & Omnipresent Master Matrix)
 - **Epistemic Bias Neutralizer**: Neutralizador de sesgos cognitivos y depuración fáctica de aserciones (`bias-neutralizer/epistemic-bias-neutralizer.mjs`).
 - **Nullability Contract Guard**: Guardián estático de nulabilidad y cero excepciones de desreferenciación (`nullability-guard/nullability-contract-guard.mjs`).
 - **Cognitive Density Maximizer**: Maximizador de densidad cognitiva y vectores de prompt (>95% SNR) (`density-maximizer/cognitive-density-maximizer.mjs`).
 - **Descriptor Sanitizer**: Sanitizador formal de inodos, sockets y descriptores efímeros (`sandbox-guard/descriptor-sanitizer.mjs`).
-- **233/233 Tests Pasando al 100%** y **299 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [19.0.0] - 2026-08-15 (The Transcendent Omni-Core & Universal Synthesis Matrix)
 - **Epistemic Entropy Prover**: Medición de entropía de Shannon y divergencia de conocimiento (`entropy-prover/epistemic-entropy-prover.mjs`).
