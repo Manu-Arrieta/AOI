@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v14 (The Omniscient Consensus & Self-Replication Matrix).
+ * Master Orchestrator Engine for AOI-OS v15 (The Autonomous Holo-Genesis & Self-Compiling Hyper-Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -16,7 +16,8 @@
  * Quantum Super-Position Synthesis Matrix, Polyglot Deep Type Synthesizer,
  * Semantic Token Hologram, Zero-Trust Syscall Virtual Guard, Polyglot Dependency Solver,
  * Deterministic Event-Sourcing Kernel, Zero-Overhead Micro-Benchmark Suite,
- * Axiom Self-Reconciler, and ICM Memory Linking.
+ * Axiom Self-Reconciler, Self-Refactoring AST Kernel, Database Migration Diff Synthesizer,
+ * Schema Convergence Prover, Micro-Prompt Context Compactor, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -70,6 +71,10 @@ import { solveDependencies } from './dependency-solver/polyglot-dependency-solve
 import { createEventSourcingKernel } from './event-sourcing/event-sourcing-kernel.mjs'
 import { runMicroBenchmark } from './benchmark/micro-benchmark-suite.mjs'
 import { reconcileAxioms } from './axiom-reconciler/axiom-reconciler.mjs'
+import { proposeAstRefactoring } from './ast-refactor/self-refactoring-kernel.mjs'
+import { synthesizeMigrationDiff } from './db-migration/migration-diff-synthesizer.mjs'
+import { proveSchemaConvergence } from './convergence/schema-convergence-prover.mjs'
+import { compactContextPayload } from './context-compactor/micro-prompt-compactor.mjs'
 import { createSelfHealingSession } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
 import { createHermeticSandbox } from './sandbox-runtime/sandbox-executor.mjs'
@@ -186,6 +191,46 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent }
+  }
+
+  /**
+   * Analyzes complex monolithic functions and generates refactoring proposals.
+   *
+   * @param {string} sourceCode
+   * @param {object} [options]
+   */
+  function proposeRefactor(sourceCode, options = {}) {
+    return proposeAstRefactoring(sourceCode, options)
+  }
+
+  /**
+   * Generates zero-downtime reversible database migration scripts.
+   *
+   * @param {string} tableName
+   * @param {Record<string, string>} prevCols
+   * @param {Record<string, string>} currCols
+   */
+  function generateDbMigration(tableName, prevCols, currCols) {
+    return synthesizeMigrationDiff(tableName, prevCols, currCols)
+  }
+
+  /**
+   * Proves full schema convergence across polyglot representations.
+   *
+   * @param {string} sourceSchema
+   * @param {string} targetSchema
+   */
+  function proveConvergence(sourceSchema, targetSchema) {
+    return proveSchemaConvergence(sourceSchema, targetSchema)
+  }
+
+  /**
+   * Compacts raw context payloads into high-density micro-prompts.
+   *
+   * @param {string} rawPayload
+   */
+  function compactPrompt(rawPayload) {
+    return compactContextPayload(rawPayload)
   }
 
   /**
@@ -612,6 +657,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    proposeRefactor,
+    generateDbMigration,
+    proveConvergence,
+    compactPrompt,
     auditDependencies,
     benchmarkFunction,
     auditAxiomEquilibrium,
@@ -661,7 +710,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v14: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v15: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
