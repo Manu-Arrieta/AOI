@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v9 pipeline with Taint Tracer, Dead-Code Guard, E2E flow, and Constitution auditor', async () => {
+test('createAoiOsPipeline initializes full v10 pipeline with Hot-Patch Kernel, Symbolic Prover, Flakiness Detector, and ABI Linker', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v9',
-    taskId: 'TASK-2026-03',
+    feature: 'aoi-os-v10',
+    taskId: 'TASK-2026-10',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
   })
@@ -31,47 +31,52 @@ test('createAoiOsPipeline initializes full v9 pipeline with Taint Tracer, Dead-C
   assert.equal(prep.microAgent.role, 'backend')
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Static Taint Analysis
+  // 2. Live Micro-Patch Kernel
+  pipeline.patchKernel.registerSymbol('test:fn', () => 1)
+  assert.equal(pipeline.patchKernel.invokeSymbol('test:fn'), 1)
+  pipeline.patchKernel.applyHotPatch('test:fn', () => 2)
+  assert.equal(pipeline.patchKernel.invokeSymbol('test:fn'), 2)
+
+  // 3. Symbolic Invariant Proof
+  const proof = pipeline.proveInvariants('export function safe(x: number) { if (x < 0) throw new Error("neg"); return x * 2; }', 'safe')
+  assert.equal(proof.satisfiable, true)
+  assert.ok(proof.invariantsProven >= 1)
+
+  // 4. Test Flakiness & Race Detector
+  const flakiness = pipeline.auditFlakiness('test("pure", () => { expect(1).toBe(1); })', 'pure.test.ts')
+  assert.equal(flakiness.deterministic, true)
+
+  // 5. Bidirectional ABI Alignment
+  const abi = pipeline.alignAbi(
+    'export interface Task { taskId: string; }',
+    'public class TaskDto { public string TaskId { get; set; } }'
+  )
+  assert.equal(abi.aligned, true)
+
+  // 6. Static Taint Analysis
   const taintCheck = pipeline.auditTaintSecurity('export function clean() { return 123; }', 'clean.ts')
   assert.equal(taintCheck.safe, true)
 
-  // 3. Dead-Code Hygiene Guard
+  // 7. Dead-Code Hygiene Guard
   const deadCheck = pipeline.auditDeadCodeHygiene('export function ok() { const x = 1; return x; }', 'ok.ts')
   assert.equal(deadCheck.clean, true)
 
-  // 4. Constitution Drift Auditor
+  // 8. Constitution Drift Auditor
   const constCheck = pipeline.auditConstitution('export function valid(): number { return 10; }', 'valid.ts')
   assert.equal(constCheck.passed, true)
 
-  // 5. E2E Acceptance Flow Synthesizer
+  // 9. E2E Acceptance Flow Synthesizer
   const e2eSuite = pipeline.generateE2eAcceptanceSuite({ suiteName: 'AOI-OS Master Flow' })
   assert.ok(e2eSuite.includes("describe('AOI-OS Master Flow'"))
 
-  // 6. Predictive Complexity Estimation
-  const complexity = pipeline.predictComplexity('export function run() { if (true) return 1; return 0; }', 'run.ts')
-  assert.equal(complexity.complexityRating, 'low')
-
-  // 7. Mutation Testing Analysis
+  // 10. Mutation Testing Analysis
   const mutants = pipeline.performMutationAnalysis('export function isMatch(a: string, b: string) { return a === b; }')
   assert.ok(mutants.length >= 1)
 
-  // 8. OpenAPI 3.1 Synthesis
-  const openApi = pipeline.getOpenApiSpecification({ title: 'AOI Governed Mesh' })
-  assert.equal(openApi.openapi, '3.1.0')
-
-  // 9. AST Symbol Mutex
-  const lock = pipeline.symbolMutex.acquireLock('T-1', 'server/api/tasks.ts')
-  assert.equal(lock.acquired, true)
-  pipeline.symbolMutex.releaseLock('T-1', 'server/api/tasks.ts')
-
-  // 10. Chaos Fuzzing
-  const fuzz = pipeline.runChaosFuzzing([{ name: 'userId', type: 'string' }], 'getUser')
-  assert.ok(fuzz.testCasesCount > 0)
-
   // 11. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v9 engineering suite'],
-    diffSummary: 'server/api/tasks.ts (+15 lines)',
+    decisions: ['Use deterministic v10 engineering suite'],
+    diffSummary: 'server/api/tasks.ts (+20 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)

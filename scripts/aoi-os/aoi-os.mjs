@@ -2,13 +2,14 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v9 (Autonomous, Deterministic & Self-Healing Agentic OS).
+ * Master Orchestrator Engine for AOI-OS v10 (Autonomous, Deterministic & Self-Healing Agentic OS).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
  * Token Complexity Estimation, OpenAPI 3.1 & E2E Acceptance Flow Synthesizer,
  * Workspace Federation Mesh, Static Taint Tracer, Dead-Code Guard,
- * Dynamic Constitution Drift Auditor, Consensus Gates, and ICM Memory Linking.
+ * Dynamic Constitution Drift Auditor, Live Micro-Patch Kernel, Symbolic Constraint Prover,
+ * Test Flakiness Detector, Bidirectional ABI Linker, Consensus Gates, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -38,6 +39,10 @@ import { synthesizeOpenApiSpec } from './contract-docgen/openapi-synthesizer.mjs
 import { synthesizeE2eTestFlow } from './contract-docgen/e2e-flow-synthesizer.mjs'
 import { auditConstitutionDrift } from './consensus-gate/constitution-drift-auditor.mjs'
 import { createWorkspaceMeshNode } from './federation/workspace-mesh-bridge.mjs'
+import { createLivePatchKernel } from './runtime-kernel/live-patch-kernel.mjs'
+import { proveSymbolicConstraints } from './symbolic-prover/symbolic-constraint-prover.mjs'
+import { auditTestFlakiness } from './test-guard/flakiness-detector.mjs'
+import { alignBidirectionalAbi } from './abi-linker/bidirectional-abi-linker.mjs'
 import { createSelfHealingSession } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
 import { createHermeticSandbox } from './sandbox-runtime/sandbox-executor.mjs'
@@ -75,6 +80,7 @@ export function createAoiOsPipeline(options) {
   const contractCache = createContractKvCache()
   const timeTravel = createTimeTravelEngine()
   const meshNode = createWorkspaceMeshNode({ workspaceId: workspace, peers: federatedPeers })
+  const patchKernel = createLivePatchKernel()
 
   const rawNodes = parseTaskDag(tasksMarkdown)
   const validation = validateDagStructure(rawNodes)
@@ -147,6 +153,36 @@ export function createAoiOsPipeline(options) {
    */
   function performMutationAnalysis(sourceCode, options = {}) {
     return generateAstMutants(sourceCode, options)
+  }
+
+  /**
+   * Proves mathematical and boundary invariants symbolically.
+   *
+   * @param {string} sourceCode
+   * @param {string} [functionName]
+   */
+  function proveInvariants(sourceCode, functionName = '') {
+    return proveSymbolicConstraints(sourceCode, functionName)
+  }
+
+  /**
+   * Audits test suite for flakiness, race conditions, and unseeded randomness.
+   *
+   * @param {string} testCode
+   * @param {string} [filePath]
+   */
+  function auditFlakiness(testCode, filePath = 'test.ts') {
+    return auditTestFlakiness(testCode, filePath)
+  }
+
+  /**
+   * Aligns client and server ABI type definitions in real time.
+   *
+   * @param {string} clientType
+   * @param {string} serverType
+   */
+  function alignAbi(clientType, serverType) {
+    return alignBidirectionalAbi(clientType, serverType)
   }
 
   /**
@@ -404,9 +440,13 @@ export function createAoiOsPipeline(options) {
     contractCache,
     timeTravel,
     meshNode,
+    patchKernel,
     prepareTaskExecution,
     predictComplexity,
     performMutationAnalysis,
+    proveInvariants,
+    auditFlakiness,
+    alignAbi,
     auditTaintSecurity,
     auditDeadCodeHygiene,
     auditConstitution,
@@ -440,7 +480,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v9: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v10: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

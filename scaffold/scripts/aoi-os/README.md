@@ -4,10 +4,10 @@
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota, aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM).
 
-- **Mutation Testing Engine (`mutation-testing/ast-mutation-verifier.mjs`)**: Introduces deterministic AST micro-mutations (boolean flips, boundary shifts, operator inversions) to verify unit test resilience and kill weak assertions before commit (0 LLM tokens).
-- **Token Complexity & Heuristics Predictor (`sandbox-runtime/token-complexity-estimator.mjs`)**: Pre-computes cyclomatic complexity, branch density, and AST depth to predict token consumption and suggest atomic task splits (0 LLM tokens).
-- **Autonomous OpenAPI 3.1 & TypeSpec Synthesizer (`contract-docgen/openapi-synthesizer.mjs`)**: Analyzes route files and AST signatures to generate OpenAPI 3.1 JSON and TypeSpec definitions deterministically (0 LLM tokens).
-- **Multi-Workspace Federation Mesh (`federation/workspace-mesh-bridge.mjs`)**: Connects federated repositories via SHA-256 verified memory bundles and cross-repo contract invariant checking (0 LLM tokens).
+- **Live Micro-Patch Kernel (`runtime-kernel/live-patch-kernel.mjs`)**: In-memory hot-patching registry enabling atomic runtime symbol swapping during DAG wave execution without losing state or restarting the orchestrator (0 LLM tokens).
+- **Symbolic Constraint Prover (`symbolic-prover/symbolic-constraint-prover.mjs`)**: Proves mathematical preconditions, boundary invariants, and non-null guarantees using deterministic symbolic AST evaluation (0 LLM tokens).
+- **Test Flakiness & Race Detector (`test-guard/flakiness-detector.mjs`)**: Scans test files for unseeded random numbers, hardcoded timers, clock skews, and port collisions to eliminate non-deterministic test failures (0 LLM tokens).
+- **Bidirectional ABI Linker (`abi-linker/bidirectional-abi-linker.mjs`)**: Compares and real-time aligns TypeScript client interfaces with C# DTOs / backend models, normalizing field casing and structure across parallel waves (0 LLM tokens).
 
 ---
 
