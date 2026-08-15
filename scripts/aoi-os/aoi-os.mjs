@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v13 (The Quantum Super-Position & Self-Evolving Genesis Core).
+ * Master Orchestrator Engine for AOI-OS v14 (The Omniscient Consensus & Self-Replication Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -14,7 +14,9 @@
  * Polyglot Contract Transpiler & DTO Mirror, Branchless State Virtualizer,
  * C2 Flight Recorder, Semantic Ontology & Knowledge Fabric, Zero-Cost AST Inliner,
  * Quantum Super-Position Synthesis Matrix, Polyglot Deep Type Synthesizer,
- * Semantic Token Hologram, Zero-Trust Syscall Virtual Guard, and ICM Memory Linking.
+ * Semantic Token Hologram, Zero-Trust Syscall Virtual Guard, Polyglot Dependency Solver,
+ * Deterministic Event-Sourcing Kernel, Zero-Overhead Micro-Benchmark Suite,
+ * Axiom Self-Reconciler, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -64,6 +66,10 @@ import { optimizeAstRepresentation } from './ast-optimizer/ast-inliner.mjs'
 import { evaluateSuperpositionBranches } from './quantum-synthesis/superposition-matrix.mjs'
 import { synthesizeFunctionTypesAndSchema } from './type-synthesizer/deep-type-synthesizer.mjs'
 import { createTokenHologram } from './hologram/token-hologram.mjs'
+import { solveDependencies } from './dependency-solver/polyglot-dependency-solver.mjs'
+import { createEventSourcingKernel } from './event-sourcing/event-sourcing-kernel.mjs'
+import { runMicroBenchmark } from './benchmark/micro-benchmark-suite.mjs'
+import { reconcileAxioms } from './axiom-reconciler/axiom-reconciler.mjs'
 import { createSelfHealingSession } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
 import { createHermeticSandbox } from './sandbox-runtime/sandbox-executor.mjs'
@@ -106,6 +112,7 @@ export function createAoiOsPipeline(options) {
   const flightRecorder = createFlightRecorder({ serviceName: `aoi-os-${workspace}` })
   const semanticFabric = createSemanticFabric()
   const tokenHologram = createTokenHologram([constitutionRules, tasksMarkdown])
+  const eventStore = createEventSourcingKernel({ streamId: `aoi-os-${workspace}-${taskId}` })
 
   const rawNodes = parseTaskDag(tasksMarkdown)
   const validation = validateDagStructure(rawNodes)
@@ -118,6 +125,15 @@ export function createAoiOsPipeline(options) {
   const stateManager = createTaskStateManager(rawNodes)
   const batches = computeExecutionBatches(rawNodes)
 
+  // Record initialization event in append-only store
+  eventStore.appendEvent('PIPELINE_INITIALIZED', {
+    workspace,
+    feature,
+    taskId,
+    totalNodes: rawNodes.length,
+    totalWaves: batches.length,
+  })
+
   // Register DAG tasks in semantic ontology
   for (const node of rawNodes) {
     semanticFabric.addNode(`task:${node.id}`, 'task', node.title, { role: node.role })
@@ -128,7 +144,7 @@ export function createAoiOsPipeline(options) {
     }
   }
 
-  // Capture initial snapshot & flight span
+  // Capture initial snapshot
   timeTravel.captureSnapshot(0, {
     totalNodes: rawNodes.length,
     batchesCount: batches.length,
@@ -160,6 +176,8 @@ export function createAoiOsPipeline(options) {
     })
 
     stateManager.transition(nodeId, 'in_progress', { agentId: microAgent.agentId })
+    eventStore.appendEvent('TASK_DISPATCHED', { taskId: nodeId, agentId: microAgent.agentId, role: microAgent.role })
+
     eventBus.emit(
       'dag_transition',
       `Task [${nodeId}] dispatched to @${microAgent.role} (${microAgent.agentId})`,
@@ -168,6 +186,37 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent }
+  }
+
+  /**
+   * Audits dependency imports against package manifests.
+   *
+   * @param {object} [packageJson]
+   * @param {string[]} [sourceImports]
+   */
+  function auditDependencies(packageJson = {}, sourceImports = []) {
+    return solveDependencies({ packageJson, sourceImports })
+  }
+
+  /**
+   * Runs local performance micro-benchmarks on critical functions.
+   *
+   * @param {string} name
+   * @param {Function} fn
+   * @param {object} [benchmarkOptions]
+   */
+  function benchmarkFunction(name, fn, benchmarkOptions = {}) {
+    return runMicroBenchmark(name, fn, benchmarkOptions)
+  }
+
+  /**
+   * Reconciles workspace axioms with task artifacts.
+   *
+   * @param {string[]} [axioms]
+   * @param {Array<{ taskId: string, code?: string }>} [taskArtifacts]
+   */
+  function auditAxiomEquilibrium(axioms = [], taskArtifacts = []) {
+    return reconcileAxioms({ axioms, taskArtifacts })
   }
 
   /**
@@ -504,6 +553,8 @@ export function createAoiOsPipeline(options) {
 
     const syncResult = await syncTaskToIcm(payload, execFn)
 
+    eventStore.appendEvent('MEMORY_SYNCED', { taskId: nodeId, memoryCount: payload.memories.length })
+
     eventBus.emit(
       'memory_synced',
       `Semantic Memory Graph updated: ${payload.memories.length} memories staged for task [${nodeId}]`,
@@ -549,6 +600,7 @@ export function createAoiOsPipeline(options) {
     batches,
     stateManager,
     eventBus,
+    eventStore,
     tokenGovernor,
     symbolMutex,
     contractCache,
@@ -560,6 +612,9 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditDependencies,
+    benchmarkFunction,
+    auditAxiomEquilibrium,
     synthesizeSuperposition,
     synthesizeTypesAndSchema,
     auditSyscalls,
@@ -606,7 +661,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v13: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v14: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
