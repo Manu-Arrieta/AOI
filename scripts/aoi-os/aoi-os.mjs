@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v11 (The Epistemic & Cognitive Matrix).
+ * Master Orchestrator Engine for AOI-OS v13 (The Quantum Super-Position & Self-Evolving Genesis Core).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -11,7 +11,10 @@
  * Dynamic Constitution Drift Auditor, Live Micro-Patch Kernel, Symbolic Constraint Prover,
  * Test Flakiness Detector, Bidirectional ABI Linker, AST Content-Addressable Memo Engine,
  * Adaptive Wave Worker Balancer, BFT Multi-Verifier Cognitive Quorum,
- * Polyglot Contract Transpiler & DTO Mirror, and ICM Memory Linking.
+ * Polyglot Contract Transpiler & DTO Mirror, Branchless State Virtualizer,
+ * C2 Flight Recorder, Semantic Ontology & Knowledge Fabric, Zero-Cost AST Inliner,
+ * Quantum Super-Position Synthesis Matrix, Polyglot Deep Type Synthesizer,
+ * Semantic Token Hologram, Zero-Trust Syscall Virtual Guard, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -37,6 +40,7 @@ import { generateC4ArchitectureDiagram } from './c4-graph/c4-architecture-genera
 import { createTimeTravelEngine } from './time-travel/time-travel-engine.mjs'
 import { generateAstMutants, calculateMutationScore } from './mutation-testing/ast-mutation-verifier.mjs'
 import { traceTaintFlows } from './security-guard/ast-taint-tracer.mjs'
+import { auditSyscallSecurity } from './security-guard/syscall-virtual-guard.mjs'
 import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-estimator.mjs'
 import { synthesizeOpenApiSpec } from './contract-docgen/openapi-synthesizer.mjs'
 import { synthesizeE2eTestFlow } from './contract-docgen/e2e-flow-synthesizer.mjs'
@@ -53,6 +57,13 @@ import {
   transpileToPython,
   transpileToSql,
 } from './contract-transpiler/polyglot-transpiler.mjs'
+import { virtualizeControlFlow } from './virtualizer/branchless-virtualizer.mjs'
+import { createFlightRecorder } from './telemetry/flight-recorder.mjs'
+import { createSemanticFabric } from './ontology/semantic-fabric.mjs'
+import { optimizeAstRepresentation } from './ast-optimizer/ast-inliner.mjs'
+import { evaluateSuperpositionBranches } from './quantum-synthesis/superposition-matrix.mjs'
+import { synthesizeFunctionTypesAndSchema } from './type-synthesizer/deep-type-synthesizer.mjs'
+import { createTokenHologram } from './hologram/token-hologram.mjs'
 import { createSelfHealingSession } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
 import { createHermeticSandbox } from './sandbox-runtime/sandbox-executor.mjs'
@@ -92,6 +103,9 @@ export function createAoiOsPipeline(options) {
   const meshNode = createWorkspaceMeshNode({ workspaceId: workspace, peers: federatedPeers })
   const patchKernel = createLivePatchKernel()
   const memoEngine = createAstMemoEngine()
+  const flightRecorder = createFlightRecorder({ serviceName: `aoi-os-${workspace}` })
+  const semanticFabric = createSemanticFabric()
+  const tokenHologram = createTokenHologram([constitutionRules, tasksMarkdown])
 
   const rawNodes = parseTaskDag(tasksMarkdown)
   const validation = validateDagStructure(rawNodes)
@@ -104,7 +118,17 @@ export function createAoiOsPipeline(options) {
   const stateManager = createTaskStateManager(rawNodes)
   const batches = computeExecutionBatches(rawNodes)
 
-  // Capture initial snapshot
+  // Register DAG tasks in semantic ontology
+  for (const node of rawNodes) {
+    semanticFabric.addNode(`task:${node.id}`, 'task', node.title, { role: node.role })
+    if (node.dependsOn?.length) {
+      for (const dep of node.dependsOn) {
+        semanticFabric.addEdge(`task:${node.id}`, `task:${dep}`, 'depends_on')
+      }
+    }
+  }
+
+  // Capture initial snapshot & flight span
   timeTravel.captureSnapshot(0, {
     totalNodes: rawNodes.length,
     batchesCount: batches.length,
@@ -147,6 +171,33 @@ export function createAoiOsPipeline(options) {
   }
 
   /**
+   * Evaluates speculative code branches and collapses to the optimal candidate.
+   *
+   * @param {Array<{ id: string, name: string, code: string }>} candidateBranches
+   */
+  function synthesizeSuperposition(candidateBranches) {
+    return evaluateSuperpositionBranches(candidateBranches)
+  }
+
+  /**
+   * Infers TypeScript signatures and Zod schemas from loosely typed functions.
+   *
+   * @param {string} fnDeclaration
+   */
+  function synthesizeTypesAndSchema(fnDeclaration) {
+    return synthesizeFunctionTypesAndSchema(fnDeclaration)
+  }
+
+  /**
+   * Audits generated code for dangerous syscall patterns and sandbox escapes.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSyscalls(sourceCode) {
+    return auditSyscallSecurity(sourceCode)
+  }
+
+  /**
    * Evaluates predictive complexity and token requirements for a file.
    *
    * @param {string} sourceCode
@@ -174,6 +225,24 @@ export function createAoiOsPipeline(options) {
    */
   function proveInvariants(sourceCode, functionName = '') {
     return proveSymbolicConstraints(sourceCode, functionName)
+  }
+
+  /**
+   * Virtualizes control flow and proves lock/resource safety.
+   *
+   * @param {string} sourceCode
+   */
+  function virtualizeControl(sourceCode) {
+    return virtualizeControlFlow(sourceCode)
+  }
+
+  /**
+   * Evaluates and applies zero-cost AST optimizations.
+   *
+   * @param {string} sourceCode
+   */
+  function optimizeAst(sourceCode) {
+    return optimizeAstRepresentation(sourceCode)
   }
 
   /**
@@ -487,10 +556,18 @@ export function createAoiOsPipeline(options) {
     meshNode,
     patchKernel,
     memoEngine,
+    flightRecorder,
+    semanticFabric,
+    tokenHologram,
     prepareTaskExecution,
+    synthesizeSuperposition,
+    synthesizeTypesAndSchema,
+    auditSyscalls,
     predictComplexity,
     performMutationAnalysis,
     proveInvariants,
+    virtualizeControl,
+    optimizeAst,
     auditFlakiness,
     alignAbi,
     evaluateBftQuorumVerdict,
@@ -529,7 +606,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v11: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v13: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

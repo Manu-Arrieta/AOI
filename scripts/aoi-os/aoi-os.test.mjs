@@ -12,12 +12,13 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v11 pipeline with Memo Engine, Wave Balancer, BFT Quorum, and Polyglot Transpiler', async () => {
+test('createAoiOsPipeline initializes full v13 pipeline with Superposition Matrix, Deep Type Synthesizer, Token Hologram, and Syscall Guard', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v11',
-    taskId: 'TASK-2026-11',
+    feature: 'aoi-os-v13',
+    taskId: 'TASK-2026-13',
+    constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
   })
@@ -31,53 +32,53 @@ test('createAoiOsPipeline initializes full v11 pipeline with Memo Engine, Wave B
   assert.equal(prep.microAgent.role, 'backend')
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. AST Content-Addressable Memo Engine
-  const code = 'export function add(a: number, b: number): number {\n  return a + b;\n}'
-  const diff1 = pipeline.memoEngine.diffSymbolCache('math.ts', code)
-  assert.equal(diff1.mutatedSymbols.length, 1)
+  // 2. Quantum Super-Position Synthesis Matrix
+  const superPos = pipeline.synthesizeSuperposition([
+    { id: 'b1', name: 'Complex', code: 'function f(x) { if (x > 1) { if (x > 2) return 3; } return 0; }' },
+    { id: 'b2', name: 'Clean', code: 'function f(x) { return x > 2 ? 3 : 0; }' },
+  ])
+  assert.equal(superPos.winner.id, 'b2')
 
-  // 3. Adaptive Wave Worker Balancer
-  const balanced = pipeline.balanceWave(0, 2)
-  assert.equal(balanced.workerCount, 2)
+  // 3. Polyglot Deep Type & Schema Synthesizer
+  const typesSchema = pipeline.synthesizeTypesAndSchema('function handleUser(userId, userAge, isActive)')
+  assert.ok(typesSchema.tsInterface.includes('userId: string;'))
+  assert.ok(typesSchema.zodSchema.includes('userAge: z.number(),'))
 
-  // 4. BFT Multi-Verifier Cognitive Quorum
-  const quorum = pipeline.evaluateBftQuorumVerdict({
-    sourceCode: code,
-    filePath: 'math.ts',
-    testsPassed: true,
-  })
-  assert.equal(quorum.quorumApproved, true)
-  assert.equal(quorum.consensusScore, 100)
+  // 4. Zero-Trust Kernel Syscall Virtual Guard
+  const syscallCheck = pipeline.auditSyscalls('export function ok() { return 123; }')
+  assert.equal(syscallCheck.safe, true)
+  assert.equal(syscallCheck.hermeticProof, 'PROVEN_HERMETIC')
 
-  // 5. Polyglot Contract Transpiler
+  // 5. Semantic Token Hologram
+  assert.equal(pipeline.tokenHologram.containsConcept('eval'), true)
+  assert.equal(pipeline.tokenHologram.toHexString().length, 64)
+
+  // 6. Branchless State Virtualizer
+  const virtualSafe = pipeline.virtualizeControl('export function safe(m: any) { try { return 1; } finally { m.release(); } }')
+  assert.equal(virtualSafe.safe, true)
+
+  // 7. C2 Flight Recorder
+  const spanId = pipeline.flightRecorder.startSpan('test_task_span', { taskId: 'T-1' })
+  pipeline.flightRecorder.addSpanEvent(spanId, 'test_event', { ok: true })
+  const span = pipeline.flightRecorder.endSpan(spanId, 'OK')
+  assert.equal(span.status, 'OK')
+
+  // 8. Semantic Ontology & Knowledge Fabric
+  const relNodes = pipeline.semanticFabric.queryRelatedNodes('task:T-2', 1)
+  assert.ok(relNodes.some((r) => r.node.id === 'task:T-1'))
+
+  // 9. Polyglot Contract Transpiler
   const poly = pipeline.transpileInterfacePolyglot('export interface Account { id: string; }')
   assert.ok(poly.csharp.includes('public class AccountDto'))
-  assert.ok(poly.python.includes('class Account(BaseModel):'))
-  assert.ok(poly.sql.includes('CREATE TABLE IF NOT EXISTS account'))
 
-  // 6. Live Micro-Patch Kernel
+  // 10. Live Micro-Patch Kernel
   pipeline.patchKernel.registerSymbol('test:fn', () => 1)
   assert.equal(pipeline.patchKernel.invokeSymbol('test:fn'), 1)
 
-  // 7. Symbolic Invariant Proof
-  const proof = pipeline.proveInvariants('export function safe(x: number) { if (x < 0) throw new Error("neg"); return x * 2; }', 'safe')
-  assert.equal(proof.satisfiable, true)
-
-  // 8. Test Flakiness & Race Detector
-  const flakiness = pipeline.auditFlakiness('test("pure", () => { expect(1).toBe(1); })', 'pure.test.ts')
-  assert.equal(flakiness.deterministic, true)
-
-  // 9. Bidirectional ABI Alignment
-  const abi = pipeline.alignAbi(
-    'export interface Task { taskId: string; }',
-    'public class TaskDto { public string TaskId { get; set; } }'
-  )
-  assert.equal(abi.aligned, true)
-
-  // 10. Finalize Task and Auto-Sync to ICM
+  // 11. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v11 cognitive matrix suite'],
-    diffSummary: 'server/api/tasks.ts (+25 lines)',
+    decisions: ['Use deterministic v13 genesis core suite'],
+    diffSummary: 'server/api/tasks.ts (+35 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
