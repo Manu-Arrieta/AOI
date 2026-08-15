@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v19 (The Transcendent Omni-Core & Universal Synthesis Matrix).
+ * Master Orchestrator Engine for AOI-OS v20 (The Grand Epistemic Singularity & Omnipresent Master Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -23,7 +23,8 @@
  * Prefix Deduplication Engine, Resource Exhaustion Prover, Epistemic Game Engine,
  * Monorepo Dead-Asset Pruner, Speculative Wave Pipeline, Deterministic SBOM Generator,
  * Epistemic Entropy Prover, Delta Snapshot Compressor, API Route Collision Matrix,
- * Capability Token Enforcer, and ICM Memory Linking.
+ * Capability Token Enforcer, Epistemic Bias Neutralizer, Nullability Contract Guard,
+ * Cognitive Density Maximizer, Sandbox Descriptor Sanitizer, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -97,6 +98,10 @@ import { calculateShannonEntropy, proveEpistemicEntropy } from './entropy-prover
 import { compressDelta, applyDelta } from './delta-compressor/delta-snapshot-compressor.mjs'
 import { auditRouteCollisions } from './route-guard/api-collision-matrix.mjs'
 import { createCapabilityToken, enforceCapability } from './capability-guard/capability-enforcer.mjs'
+import { neutralizeEpistemicBias } from './bias-neutralizer/epistemic-bias-neutralizer.mjs'
+import { auditNullabilitySafety } from './nullability-guard/nullability-contract-guard.mjs'
+import { maximizeCognitiveDensity } from './density-maximizer/cognitive-density-maximizer.mjs'
+import { sanitizeSandboxDescriptors } from './sandbox-guard/descriptor-sanitizer.mjs'
 import { createSelfHealingSession } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
 import { createHermeticSandbox } from './sandbox-runtime/sandbox-executor.mjs'
@@ -229,6 +234,43 @@ export function createAoiOsPipeline(options) {
   }
 
   /**
+   * Neutralizes subjective biases in text rationales.
+   *
+   * @param {string} text
+   */
+  function cleanseEpistemicBias(text) {
+    return neutralizeEpistemicBias(text)
+  }
+
+  /**
+   * Audits cross-boundary optional/nullable property dereferencing.
+   *
+   * @param {string} sourceCode
+   * @param {string[]} optionalFields
+   */
+  function auditNullability(sourceCode, optionalFields = []) {
+    return auditNullabilitySafety(sourceCode, optionalFields)
+  }
+
+  /**
+   * Compresses natural language directives to symbolic notations (>95% SNR).
+   *
+   * @param {string} directives
+   */
+  function maximizeDensity(directives) {
+    return maximizeCognitiveDensity(directives)
+  }
+
+  /**
+   * Proves 100% clean teardown of ephemeral descriptors in sandbox.
+   *
+   * @param {string[]} remainingFiles
+   */
+  function auditDescriptorSanitization(remainingFiles = []) {
+    return sanitizeSandboxDescriptors(remainingFiles)
+  }
+
+  /**
    * Evaluates epistemic Shannon entropy between iterations.
    *
    * @param {string} prevCode
@@ -294,7 +336,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '19.0.0',
+      version: '20.0.0',
       components,
     })
   }
@@ -841,6 +883,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    cleanseEpistemicBias,
+    auditNullability,
+    maximizeDensity,
+    auditDescriptorSanitization,
     auditEntropy,
     compressStateDelta,
     auditApiCollisions,
@@ -909,7 +955,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v19: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v20: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

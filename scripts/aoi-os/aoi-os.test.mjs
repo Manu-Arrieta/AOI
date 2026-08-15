@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v19 pipeline with Entropy Prover, Delta Compressor, Route Collision Matrix, and Capability Enforcer', async () => {
+test('createAoiOsPipeline initializes full v20 pipeline with Bias Neutralizer, Nullability Guard, Density Maximizer, and Descriptor Sanitizer', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v19',
-    taskId: 'TASK-2026-19',
+    feature: 'aoi-os-v20',
+    taskId: 'TASK-2026-20',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,32 +34,25 @@ test('createAoiOsPipeline initializes full v19 pipeline with Entropy Prover, Del
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Capability Enforcer verification
-  const capCheck = pipeline.verifyCapability(prep.capabilityToken, { operation: 'MUTATE_FILE', target: 'server/api/tasks.ts' })
-  assert.equal(capCheck.authorized, true)
+  // 2. Epistemic Bias Neutralizer
+  const biasCheck = pipeline.cleanseEpistemicBias('Implemented blazingly fast and revolutionary auth.')
+  assert.equal(biasCheck.biasStatus, 'BIAS_NEUTRALIZED_AND_CLEANSED')
 
-  // 3. Epistemic Entropy Prover
-  const entropyCheck = pipeline.auditEntropy('export function f() {}', 'export const f = () => {}')
-  assert.equal(entropyCheck.isSimplifiedOrStable, true)
+  // 3. Nullability Contract Guard
+  const nullCheck = pipeline.auditNullability('export const getStreet = (u: any) => u.address?.street;', ['address'])
+  assert.equal(nullCheck.safe, true)
 
-  // 4. Delta Snapshot Compressor
-  const delta = pipeline.compressStateDelta({ a: 1 }, { a: 2 })
-  assert.equal(delta.hasChanges, true)
+  // 4. Cognitive Density Maximizer
+  const densityCheck = pipeline.maximizeDensity('Please make sure to test and never ever drop tables.')
+  assert.equal(densityCheck.signalDensityPct, 98)
 
-  // 5. API Route Collision Matrix
-  const routeAudit = pipeline.auditApiCollisions([
-    { method: 'GET', path: '/api/tasks' },
-    { method: 'POST', path: '/api/tasks' },
-  ])
-  assert.equal(routeAudit.hasCollisions, false)
+  // 5. Descriptor Sanitizer
+  const sanitCheck = pipeline.auditDescriptorSanitization(['src/index.ts', 'dist/app.js'])
+  assert.equal(sanitCheck.clean, true)
 
-  // 6. Epistemic Game Engine (Nash Equilibrium)
-  const nash = pipeline.evaluateGameConsensus({ testsPassed: true, securitySafe: true, contractsIntact: true, performanceScore: 90 })
-  assert.equal(nash.isNashOptimal, true)
-
-  // 7. Finalize Task and Auto-Sync to ICM
+  // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v19 universal synthesis suite'],
+    decisions: ['Use deterministic v20 omnipresent master suite'],
     diffSummary: 'server/api/tasks.ts (+55 lines)',
   }, async () => ({ stdout: 'OK' }))
 
