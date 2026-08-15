@@ -4,8 +4,8 @@
  *
  * Master Orchestrator Engine for AOI-OS (Autonomous, Deterministic & Self-Healing Agentic OS).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
- * Micro-Agent Synthesis, Hermetic Ephemeral Sandboxing, Token Velocity Governor,
- * Multi-Agent Consensus Gate, Semantic ICM Memory Linker, and Self-Healing Loops.
+ * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
+ * Dynamic C4 Graph Generation, Time-Travel Snapshots, Consensus Gates, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -21,6 +21,12 @@ import {
 } from './dag-engine/dag-scheduler.mjs'
 import { synthesizeMicroAgent } from './subagent-synthesizer/subagent-synthesizer.mjs'
 import { validateContractDiff, classifyBlastRadius, detectLanguage } from './ast-guard/ast-contract-guard.mjs'
+import { skeletonizeSource } from './ast-guard/ast-skeletonizer.mjs'
+import { createContractKvCache } from './subagent-synthesizer/contract-kv-cache.mjs'
+import { createAstSymbolMutex } from './mutex/ast-symbol-mutex.mjs'
+import { generateAdversarialVectors } from './fuzzing/adversarial-fuzzer.mjs'
+import { generateC4ArchitectureDiagram } from './c4-graph/c4-architecture-generator.mjs'
+import { createTimeTravelEngine } from './time-travel/time-travel-engine.mjs'
 import { createSelfHealingSession, extractFailureDiagnostic } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
 import { createHermeticSandbox } from './sandbox-runtime/sandbox-executor.mjs'
@@ -52,6 +58,10 @@ export function createAoiOsPipeline(options) {
 
   const eventBus = createAoiOsEventBus()
   const tokenGovernor = createTokenVelocityGuard({ globalTokenBudget })
+  const symbolMutex = createAstSymbolMutex()
+  const contractCache = createContractKvCache()
+  const timeTravel = createTimeTravelEngine()
+
   const rawNodes = parseTaskDag(tasksMarkdown)
   const validation = validateDagStructure(rawNodes)
 
@@ -62,6 +72,13 @@ export function createAoiOsPipeline(options) {
 
   const stateManager = createTaskStateManager(rawNodes)
   const batches = computeExecutionBatches(rawNodes)
+
+  // Capture initial snapshot
+  timeTravel.captureSnapshot(0, {
+    totalNodes: rawNodes.length,
+    batchesCount: batches.length,
+    initialAt: new Date().toISOString(),
+  })
 
   eventBus.emit(
     'dag_transition',
@@ -96,6 +113,45 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent }
+  }
+
+  /**
+   * Prunes source code into a skeletonized slice to maximize token savings.
+   *
+   * @param {string} sourceCode
+   * @param {string} filePath
+   * @param {string[]} [targetSymbols=[]]
+   */
+  function getPrunedSourceSlice(sourceCode, filePath, targetSymbols = []) {
+    return skeletonizeSource(sourceCode, filePath, { targetSymbols })
+  }
+
+  /**
+   * Generates dynamic C4 architecture diagram.
+   */
+  function getC4ArchitectureDiagram(systemName) {
+    const currentTasks = rawNodes.map((n) => ({
+      ...n,
+      status: stateManager.getTask(n.id)?.status || 'pending',
+    }))
+    return generateC4ArchitectureDiagram(currentTasks, { systemName })
+  }
+
+  /**
+   * Runs adversarial chaos fuzzing against target function signatures.
+   *
+   * @param {Array<{ name: string, type?: string }>} params
+   * @param {string} functionName
+   */
+  function runChaosFuzzing(params, functionName) {
+    const fuzzResults = generateAdversarialVectors(params, { functionName })
+    eventBus.emit(
+      'chaos_fuzzer',
+      `Chaos Fuzzer synthesized ${fuzzResults.testCasesCount} boundary vectors for [${functionName}]`,
+      { functionName, count: fuzzResults.testCasesCount },
+      'info'
+    )
+    return fuzzResults
   }
 
   /**
@@ -192,26 +248,6 @@ export function createAoiOsPipeline(options) {
   }
 
   /**
-   * Records token usage through the token velocity governor.
-   *
-   * @param {string} nodeId
-   * @param {number} tokensUsed
-   * @param {string} [role='general']
-   */
-  function recordTokenUsage(nodeId, tokensUsed, role = 'general') {
-    const usage = tokenGovernor.recordUsage(nodeId, tokensUsed, role)
-    if (usage.isAnomaly) {
-      eventBus.emit(
-        'token_governor',
-        `Token Velocity Anomaly detected for task [${nodeId}]: ${tokensUsed} tokens consumed. Switching to hyper_compressed mode.`,
-        { taskId: nodeId, tokensUsed, recommendedMode: usage.recommendedMode },
-        'warning'
-      )
-    }
-    return usage
-  }
-
-  /**
    * Finalizes task and automatically extracts & links semantic memories to ICM.
    *
    * @param {string} nodeId
@@ -282,11 +318,16 @@ export function createAoiOsPipeline(options) {
     stateManager,
     eventBus,
     tokenGovernor,
+    symbolMutex,
+    contractCache,
+    timeTravel,
     prepareTaskExecution,
+    getPrunedSourceSlice,
+    getC4ArchitectureDiagram,
+    runChaosFuzzing,
     createTaskSandbox,
     verifyCodeChange,
     evaluateConsensus,
-    recordTokenUsage,
     finalizeTaskMemory,
     startHealingSession,
   }

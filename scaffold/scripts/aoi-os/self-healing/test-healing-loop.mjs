@@ -81,13 +81,33 @@ export function createSelfHealingSession({
   let state = 'active' // 'active' | 'tripped' | 'resolved'
   const failureHistory = []
 
-  function recordFailure(rawOutput, diffSnippet = '') {
+  function recordFailure(rawOutput, diffSnippet = '', hyperCompressed = false) {
     attemptCount++
     const diagnostic = extractFailureDiagnostic(rawOutput)
     failureHistory.push({ attempt: attemptCount, diagnostic, timestamp: new Date().toISOString() })
 
     if (attemptCount >= maxRetries) {
       state = 'tripped'
+    }
+
+    if (hyperCompressed) {
+      const fixPrompt = [
+        `=== SURGICAL FIX (Attempt ${attemptCount}/${maxRetries}) ===`,
+        `Target: ${targetFile || 'governed file'} | Test: ${diagnostic.testName}`,
+        `Error: ${diagnostic.errorMessage}`,
+        diagnostic.stackSnippet ? `Stack: ${diagnostic.stackSnippet}` : '',
+        `Directive: Fix assertion in ${targetFile}. 0 prose, return code edit only.`,
+      ]
+        .filter(Boolean)
+        .join('\n')
+
+      return {
+        state,
+        attemptCount,
+        isCircuitBreakerTripped: state === 'tripped',
+        diagnostic,
+        fixPrompt,
+      }
     }
 
     const fixPromptLines = [
@@ -98,27 +118,21 @@ export function createSelfHealingSession({
       `## Failing Diagnostic`,
       `Test: ${diagnostic.testName}`,
       `Error: ${diagnostic.errorMessage}`,
+      diagnostic.stackSnippet ? `Stack:\n\`\`\`\n${diagnostic.stackSnippet}\n\`\`\`` : '',
+      diffSnippet ? `\n## Recent Diff\n\`\`\`diff\n${diffSnippet}\n\`\`\`` : '',
       ``,
-      `## Stack Trace`,
-      diagnostic.stackSnippet,
+      `## Surgical Directive`,
+      `1. Modify ONLY ${targetFile || 'the target file'} to make the failing test pass.`,
+      `2. Do NOT touch unrelated files or export signatures.`,
+      `3. Verify input boundaries and assertions.`,
     ]
 
-    if (diffSnippet && diffSnippet.trim()) {
-      fixPromptLines.push(``)
-      fixPromptLines.push(`## Recent Diff Slice`)
-      fixPromptLines.push(diffSnippet.trim())
-    }
-
-    fixPromptLines.push(``)
-    fixPromptLines.push(`## Mandatory Rule:`)
-    fixPromptLines.push(`Fix ONLY the failing assertion. Do NOT refactor surrounding logic or change public signatures.`)
-    fixPromptLines.push(`=======================================================`)
-
     return {
+      state,
       attemptCount,
       isCircuitBreakerTripped: state === 'tripped',
-      fixPrompt: fixPromptLines.join('\n'),
       diagnostic,
+      fixPrompt: fixPromptLines.filter(Boolean).join('\n'),
     }
   }
 

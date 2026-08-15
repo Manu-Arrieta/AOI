@@ -33,7 +33,7 @@ const {
 
 const { locale, messages, setLocale } = useLocale()
 
-type WorkspaceView = 'tasks' | 'resources' | 'metrics'
+type WorkspaceView = 'tasks' | 'table' | 'dag' | 'c4' | 'resources' | 'metrics'
 
 const dialogMode       = ref<'create' | 'move' | 'delete' | null>(null)
 const dialogAnchorPath = ref('.resources')
@@ -86,12 +86,38 @@ const heroTelemetry     = computed(() => [
     icon:  'i-lucide-crosshair',
   },
 ])
+const dagViewerNodes = computed(() => {
+  return (snapshot.value?.tasks ?? []).map((t) => ({
+    id: t.id,
+    title: t.title,
+    role: t.role || 'general',
+    dependsOn: [] as string[],
+    status: (t.status === 'completed' ? 'completed' : t.status === 'in_progress' ? 'in_progress' : 'pending') as 'pending' | 'ready' | 'in_progress' | 'completed' | 'healing' | 'failed',
+  }))
+})
+
 const workspaceViewItems = computed(() => [
   {
     label: messages.value.taskBoard.title,
     value: 'tasks',
-    icon: 'i-lucide-list-todo',
+    icon: 'i-lucide-layout-grid',
     badge: workspaceCounts.value.tasks,
+  },
+  {
+    label: 'TanStack Table',
+    value: 'table',
+    icon: 'i-lucide-table',
+    badge: workspaceCounts.value.tasks,
+  },
+  {
+    label: messages.value.dagViewer?.title || 'Execution DAG',
+    value: 'dag',
+    icon: 'i-lucide-git-branch',
+  },
+  {
+    label: 'C4 Architecture',
+    value: 'c4',
+    icon: 'i-lucide-network',
   },
   {
     label: messages.value.resources.title,
@@ -121,6 +147,27 @@ const activeWorkspaceViewMeta = computed(() => {
       eyebrow: messages.value.resources.eyebrow,
       title:   messages.value.resources.title,
       badge:   `${resourceRoots.value} ${messages.value.landing.numbers.governedRoots}`,
+    }
+  }
+  if (activeWorkspaceView.value === 'table') {
+    return {
+      eyebrow: 'TanStack Data Matrix',
+      title:   'Governed Task Registry Table',
+      badge:   `${workspaceCounts.value.tasks} tasks`,
+    }
+  }
+  if (activeWorkspaceView.value === 'dag') {
+    return {
+      eyebrow: 'AOI-OS Runtime',
+      title:   'Execution DAG & Playback Deck',
+      badge:   'Autonomous Engine',
+    }
+  }
+  if (activeWorkspaceView.value === 'c4') {
+    return {
+      eyebrow: 'Live Architecture',
+      title:   'Dynamic C4 Container Graph',
+      badge:   'C4 Observability',
     }
   }
   return {
@@ -416,6 +463,24 @@ watch(activeWorkspaceView, (view) => {
                 :loading="isLoading"
                 :task-changes="taskChanges"
                 @select="handleTaskSelection"
+              />
+
+              <TaskTanstackTable
+                v-else-if="activeWorkspaceView === 'table'"
+                :tasks="snapshot?.tasks ?? []"
+                :selected-task-id="selectedTaskId"
+                @select="handleTaskSelection"
+              />
+
+              <TaskDagViewer
+                v-else-if="activeWorkspaceView === 'dag'"
+                :nodes="dagViewerNodes"
+                :selected-node-id="selectedTaskId"
+                @select="handleTaskSelection"
+              />
+
+              <C4ArchitectureViewer
+                v-else-if="activeWorkspaceView === 'c4'"
               />
 
               <ResourceExplorer

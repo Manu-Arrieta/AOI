@@ -42,13 +42,16 @@ test('createSelfHealingSession manages retry budget and generates fix prompt', (
   assert.ok(fail1.fixPrompt.includes('server/api/auth.ts'))
   assert.ok(fail1.fixPrompt.includes('+ const token = null'))
 
-  // Attempt 2: Record second failure -> Tripping circuit breaker
+  // Attempt 2: Record second failure with hyperCompressed mode -> Tripping circuit breaker
   const fail2 = session.recordFailure(
-    'AssertionError: Expected token to be defined\n  at auth.test.ts:12:4'
+    'AssertionError: Expected token to be defined\n  at auth.test.ts:12:4',
+    '',
+    true
   )
   assert.equal(fail2.attemptCount, 2)
-  assert.equal(fail2.isCircuitBreakerTripped, true)
-  assert.equal(session.getState(), 'tripped')
+  assert.equal(fail2.state, 'tripped')
+  assert.ok(fail2.fixPrompt.includes('=== SURGICAL FIX (Attempt 2/2) ==='))
+  assert.ok(fail2.fixPrompt.includes('0 prose, return code edit only.'))
 })
 
 test('executeCircuitBreakerRollback executes rollback handler and formats report', async () => {
