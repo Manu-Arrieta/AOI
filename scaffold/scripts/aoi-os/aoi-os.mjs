@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v21 (The Diamond 60-Pillar Singularity & Universal Autonomous Matrix).
+ * Master Orchestrator Engine for AOI-OS v22 (The Apex 64-Pillar Infinity Kernel & Universal Synthesis Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -26,7 +26,8 @@
  * Capability Token Enforcer, Epistemic Bias Neutralizer, Nullability Contract Guard,
  * Cognitive Density Maximizer, Sandbox Descriptor Sanitizer, Epistemic Provenance Chain,
  * Package Export Leak Prover, Dynamic Budget Auto-Throttle, Side-Channel Timing Leak Guard,
- * and ICM Memory Linking.
+ * Semantic AST Merge Prover, Query Performance & N+1 Guard, Bundle Size & Tree-Shaking Verifier,
+ * Sandbox Zombie PID Purger, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -108,6 +109,10 @@ import { sanitizeSandboxDescriptors } from './sandbox-guard/descriptor-sanitizer
 import { createProvenanceChain } from './provenance/epistemic-provenance-chain.mjs'
 import { auditExportLeaks } from './export-guard/export-leak-prover.mjs'
 import { calculateBudgetThrottle } from './throttle/budget-auto-throttle.mjs'
+import { proveSemanticAstMerge } from './ast-merge/semantic-merge-prover.mjs'
+import { auditQueryPerformance } from './query-guard/query-performance-guard.mjs'
+import { verifyBundleDrift } from './bundle-guard/bundle-drift-verifier.mjs'
+import { createProcessRegistry } from './sandbox-guard/zombie-process-purger.mjs'
 import { createSelfHealingSession } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
 import { createHermeticSandbox } from './sandbox-runtime/sandbox-executor.mjs'
@@ -153,6 +158,7 @@ export function createAoiOsPipeline(options) {
   const eventStore = createEventSourcingKernel({ streamId: `aoi-os-${workspace}-${taskId}` })
   const speculativePipeline = createSpeculativePipeline()
   const provenanceChain = createProvenanceChain()
+  const processRegistry = createProcessRegistry()
 
   const rawNodes = parseTaskDag(tasksMarkdown)
   const validation = validateDagStructure(rawNodes)
@@ -238,6 +244,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Reconciles 3-way AST modifications semantically.
+   *
+   * @param {object} mergeOptions
+   */
+  function mergeAstBranches(mergeOptions) {
+    return proveSemanticAstMerge(mergeOptions)
+  }
+
+  /**
+   * Audits queries for missing indexes and N+1 patterns.
+   *
+   * @param {string} sourceCode
+   * @param {string[]} indexedColumns
+   */
+  function auditDbQueries(sourceCode, indexedColumns = []) {
+    return auditQueryPerformance(sourceCode, indexedColumns)
+  }
+
+  /**
+   * Audits bundle imports for heavy dependencies and tree-shaking drift.
+   *
+   * @param {string} sourceCode
+   */
+  function auditBundleImports(sourceCode) {
+    return verifyBundleDrift(sourceCode)
+  }
+
+  /**
+   * Purges zombie processes and returns verification proof.
+   *
+   * @param {Function} [killFn]
+   */
+  function purgeZombiePids(killFn = null) {
+    return processRegistry.purgeZombieProcesses(killFn)
   }
 
   /**
@@ -380,7 +423,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '21.0.0',
+      version: '22.0.0',
       components,
     })
   }
@@ -917,6 +960,7 @@ export function createAoiOsPipeline(options) {
     eventStore,
     speculativePipeline,
     provenanceChain,
+    processRegistry,
     tokenGovernor,
     symbolMutex,
     contractCache,
@@ -928,6 +972,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    mergeAstBranches,
+    auditDbQueries,
+    auditBundleImports,
+    purgeZombiePids,
     recordProvenance,
     auditPackageExports,
     checkThrottlePolicy,
@@ -1004,7 +1052,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v21: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v22: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v21 (The Diamond 60-Pillar Singularity & Universal Autonomous Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v22 (The Apex 64-Pillar Infinity Kernel & Universal Synthesis Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Epistemic Provenance Chain (`provenance/epistemic-provenance-chain.mjs`)**: Trazabilidad criptográfica SHA-256 encadenada de requisitos, AST, tests y memoria (0 LLM tokens).
-- **Export Leak Prover (`export-guard/export-leak-prover.mjs`)**: Demostración formal de fronteras de paquetes y cero importaciones profundas no autorizadas (0 LLM tokens).
-- **Budget Auto-Throttle (`throttle/budget-auto-throttle.mjs`)**: Auto-regulación adaptativa de niveles de esqueletizado según la tasa de consumo de tokens (0 LLM tokens).
-- **Timing Leak Guard (`security-guard/timing-leak-guard.mjs`)**: Detección y neutralización de vulnerabilidades por ataques de canal lateral de tiempo (0 LLM tokens).
+- **Semantic Merge Prover (`ast-merge/semantic-merge-prover.mjs`)**: Reconciliación semántica 3-way AST sin colisiones de Git para ramas concurrentes (0 LLM tokens).
+- **Query Performance Guard (`query-guard/query-performance-guard.mjs`)**: Detección estática de consultas N+1 y filtros sin índices en bases de datos (0 LLM tokens).
+- **Bundle Drift Verifier (`bundle-guard/bundle-drift-verifier.mjs`)**: Auditoría estática contra importaciones monolíticas y preservación de tree-shaking (0 LLM tokens).
+- **Zombie Process Purger (`sandbox-guard/zombie-process-purger.mjs`)**: Registro y purga formal del 100% de subprocesos e hilos huérfanos tras cada ola (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 60 Pilares (AOI-OS v21)
+## 🏛️ Matriz Arquitectónica Maestra de 64 Pilares (AOI-OS v22)
 
 ```text
-AOI-OS v21 Architecture Matrix
+AOI-OS v22 Architecture Matrix (2^6 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -138,11 +138,17 @@ AOI-OS v21 Architecture Matrix
 │   ├── cognitive-density-maximizer.mjs: Maximizador de densidad cognitiva y vectores de prompt (>95% SNR).
 │   └── descriptor-sanitizer.mjs: Sanitizador formal de inodos, sockets y descriptores efímeros tras el sandbox.
 │
-└── 57-60. Núcleo Diamond 60-Pillar Singularity v21 (provenance/, export-guard/, throttle/, security-guard/)
-    ├── epistemic-provenance-chain.mjs: Cadena criptográfica SHA-256 de linaje y procedencia formal.
-    ├── export-leak-prover.mjs: Probador de límites de paquetes y cero importaciones profundas privadas.
-    ├── budget-auto-throttle.mjs: Regulador dinámico de velocidad de gasto y auto-ajuste de esqueletizado.
-    └── timing-leak-guard.mjs: Guardián contra ataques de canal lateral y comparación en tiempo constante.
+├── 57-60. Núcleo Diamond Singularity (provenance/, export-guard/, throttle/, security-guard/)
+│   ├── epistemic-provenance-chain.mjs: Cadena criptográfica SHA-256 de linaje y procedencia formal.
+│   ├── export-leak-prover.mjs: Probador de límites de paquetes y cero importaciones profundas privadas.
+│   ├── budget-auto-throttle.mjs: Regulador dinámico de velocidad de gasto y auto-ajuste de esqueletizado.
+│   └── timing-leak-guard.mjs: Guardián contra ataques de canal lateral y comparación en tiempo constante.
+│
+└── 61-64. Núcleo Apex 64-Pillar Infinity Kernel v22 (ast-merge/, query-guard/, bundle-guard/, sandbox-guard/)
+    ├── semantic-merge-prover.mjs: Reconciliador semántico 3-way AST para fusiones paralelas sin conflictos.
+    ├── query-performance-guard.mjs: Guardián estático contra consultas N+1 y columnas de filtrado no indexadas.
+    ├── bundle-drift-verifier.mjs: Verificador de árbol de dependencias, tamaño de bundle y preservación de tree-shaking.
+    └── zombie-process-purger.mjs: Registro formal de subprocesos y purga atómica de PIDs residuales en sandbox.
 ```
 
 ---
@@ -185,12 +191,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [22.0.0] - 2026-08-15 (The Apex 64-Pillar Infinity Kernel & Universal Synthesis Matrix)
+- **Semantic Merge Prover**: Reconciliación semántica 3-way AST sin colisiones de Git para ramas concurrentes (`ast-merge/semantic-merge-prover.mjs`).
+- **Query Performance Guard**: Detección estática de consultas N+1 y filtros sin índices en bases de datos (`query-guard/query-performance-guard.mjs`).
+- **Bundle Drift Verifier**: Auditoría estática contra importaciones monolíticas y preservación de tree-shaking (`bundle-guard/bundle-drift-verifier.mjs`).
+- **Zombie Process Purger**: Registro y purga formal del 100% de subprocesos e hilos huérfanos tras cada ola (`sandbox-guard/zombie-process-purger.mjs`).
+- **247/247 Tests Pasando al 100%** y **315 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [21.0.0] - 2026-08-15 (The Diamond 60-Pillar Singularity & Universal Autonomous Matrix)
 - **Epistemic Provenance Chain**: Cadena criptográfica SHA-256 de linaje y procedencia formal (`provenance/epistemic-provenance-chain.mjs`).
 - **Export Leak Prover**: Probador de límites de paquetes y cero importaciones profundas privadas (`export-guard/export-leak-prover.mjs`).
 - **Budget Auto-Throttle**: Regulador dinámico de velocidad de gasto y auto-ajuste de esqueletizado (`throttle/budget-auto-throttle.mjs`).
 - **Timing Leak Guard**: Guardián contra ataques de canal lateral y comparación en tiempo constante (`security-guard/timing-leak-guard.mjs`).
-- **240/240 Tests Pasando al 100%** y **307 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [20.0.0] - 2026-08-15 (The Grand Epistemic Singularity & Omnipresent Master Matrix)
 - **Epistemic Bias Neutralizer**: Neutralizador de sesgos cognitivos y depuración fáctica de aserciones (`bias-neutralizer/epistemic-bias-neutralizer.mjs`).

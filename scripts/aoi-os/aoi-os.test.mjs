@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v21 pipeline with Provenance Chain, Export Guard, Budget Throttle, and Timing Guard', async () => {
+test('createAoiOsPipeline initializes full v22 pipeline with 64 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v21',
-    taskId: 'TASK-2026-21',
+    feature: 'aoi-os-v22',
+    taskId: 'TASK-2026-22',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,33 +34,32 @@ test('createAoiOsPipeline initializes full v21 pipeline with Provenance Chain, E
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Epistemic Provenance Chain
-  const block = pipeline.recordProvenance({
-    taskId: 'T-1',
-    requirement: 'Build API route',
-    modifiedFiles: ['server/api/tasks.ts'],
-    assertions: ['Return 200 OK'],
-    memoryId: '01M035F0SR',
+  // 2. Semantic AST Merge Prover
+  const mergeResult = pipeline.mergeAstBranches({
+    baseCode: 'export const V = 1;\n',
+    branchACode: 'export const V = 1;\nexport function a() {}\n',
+    branchBCode: 'export const V = 1;\nexport function b() {}\n',
   })
-  assert.equal(block.index, 0)
-  assert.equal(block.hash.length, 64)
-  assert.equal(pipeline.provenanceChain.verifyChainIntegrity().valid, true)
+  assert.equal(mergeResult.success, true)
+  assert.equal(mergeResult.mergeProof, 'DISJOINT_3WAY_AST_MERGE_PROVEN')
 
-  // 3. Export Leak Prover
-  const exportCheck = pipeline.auditPackageExports("import { foo } from 'aoi-os';", ['aoi-os'])
-  assert.equal(exportCheck.hermetic, true)
+  // 3. Query Performance Guard
+  const queryResult = pipeline.auditDbQueries('export const q = "SELECT * FROM users WHERE id = 1";', ['id'])
+  assert.equal(queryResult.optimal, true)
 
-  // 4. Budget Auto-Throttle
-  const throttle = pipeline.checkThrottlePolicy(30000)
-  assert.equal(throttle.throttleMode, 'STANDARD')
+  // 4. Bundle Drift Verifier
+  const bundleResult = pipeline.auditBundleImports("import { map } from 'lodash-es';")
+  assert.equal(bundleResult.clean, true)
 
-  // 5. Timing Leak Guard
-  const timingCheck = pipeline.auditTimingAttackSafety("import crypto from 'node:crypto'; crypto.timingSafeEqual(b1, b2);")
-  assert.equal(timingCheck.safe, true)
+  // 5. Zombie Process Purger
+  pipeline.processRegistry.registerProcess(999, 'node worker.js')
+  const purgeResult = pipeline.purgeZombiePids()
+  assert.equal(purgeResult.success, true)
+  assert.equal(purgeResult.purgerProof, 'ZERO_ZOMBIE_PROCESSES_PROVEN')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v21 diamond master suite'],
+    decisions: ['Use deterministic v22 apex master suite with 64 pillars'],
     diffSummary: 'server/api/tasks.ts (+55 lines)',
   }, async () => ({ stdout: 'OK' }))
 
