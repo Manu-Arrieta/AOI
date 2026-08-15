@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v16 (The Omnipresent Singularity & Infinite-Scale Hyper-Core)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v17 (The Autonomous Hyper-Omniscience & Infinite Epistemic Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Zero-Knowledge Epistemic Attestor (`zk-attestor/zk-epistemic-attestor.mjs`)**: Árboles de Merkle criptográficos y certificados de cumplimiento formal sin exposición de memoria interna (0 LLM tokens).
-- **Root Cause Diagnostic Synthesizer (`diagnostics/root-cause-synthesizer.mjs`)**: Clasificación formal de arquetipos de error y síntesis de blueprints de remediación dirigida (0 LLM tokens).
-- **Circular Dependency Neutralizer (`circular-neutralizer/circular-dependency-neutralizer.mjs`)**: Detección topológica de ciclos y desacoplamiento determinista mediante interfaces intermedias (0 LLM tokens).
-- **Token Liquidity Balancer (`liquidity-balancer/token-liquidity-balancer.mjs`)**: Redistribución dinámica de cuotas de tokens según complejidad para evitar inanición en tareas paralelas (0 LLM tokens).
+- **Knowledge Mesh Reconciler (`knowledge-mesh/knowledge-mesh-reconciler.mjs`)**: Auditoría de consistencia entre memorias persistentes ICM, reglas arquitectónicas y contratos activos (0 LLM tokens).
+- **ABI Wave Broadcaster (`abi-broadcaster/abi-wave-broadcaster.mjs`)**: Propagación transitiva y generación de olas sincrónicas de actualización de contratos en monorrepositorios (0 LLM tokens).
+- **Prefix Deduplication Engine (`cache-optimizer/prefix-deduplication-engine.mjs`)**: Segregación estructural de prefijos invariantes para 100% de tasa de acierto en KV-Cache de LLMs (0 LLM tokens).
+- **Resource Exhaustion Prover (`sandbox-guard/resource-exhaustion-prover.mjs`)**: Demostración formal de ausencia de fugas de descriptores, streams o temporizadores huérfanos (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica de 40 Pilares (AOI-OS v16)
+## 🏛️ Matriz Arquitectónica de 44 Pilares (AOI-OS v17)
 
 ```text
-AOI-OS v16 Architecture Matrix
+AOI-OS v17 Architecture Matrix
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -108,11 +108,17 @@ AOI-OS v16 Architecture Matrix
 │   ├── schema-convergence-prover.mjs: Demostración formal de convergencia e identidad de tipos políglotas.
 │   └── micro-prompt-compactor.mjs: Compactación de contexto de ultra-alta densidad (90%+ de señal).
 │
-└── 37-40. Núcleo Omnipresente Singularity v16 (zk-attestor/, diagnostics/, circular-neutralizer/, liquidity-balancer/)
-    ├── zk-epistemic-attestor.mjs: Árboles de Merkle criptográficos y atestaciones ZK de cumplimiento formal.
-    ├── root-cause-synthesizer.mjs: Clasificador de arquetipos de error y remediación dirigida de fallos.
-    ├── circular-dependency-neutralizer.mjs: Detección y desacoplamiento topológico de dependencias circulares.
-    └── token-liquidity-balancer.mjs: Balanceador dinámico de liquidez de tokens según complejidad agéntica.
+├── 37-40. Núcleo Omnipresente Singularity (zk-attestor/, diagnostics/, circular-neutralizer/, liquidity-balancer/)
+│   ├── zk-epistemic-attestor.mjs: Árboles de Merkle criptográficos y atestaciones ZK de cumplimiento formal.
+│   ├── root-cause-synthesizer.mjs: Clasificador de arquetipos de error y remediación dirigida de fallos.
+│   ├── circular-dependency-neutralizer.mjs: Detección y desacoplamiento topológico de dependencias circulares.
+│   └── token-liquidity-balancer.mjs: Balanceador dinámico de liquidez de tokens según complejidad agéntica.
+│
+└── 41-44. Núcleo Hyper-Omniscience v17 (knowledge-mesh/, abi-broadcaster/, cache-optimizer/, sandbox-guard/)
+    ├── knowledge-mesh-reconciler.mjs: Sincronización de memoria ICM y auditoría de decisiones obsoletas.
+    ├── abi-wave-broadcaster.mjs: Difusor de olas de propagación transitiva de contratos en monorrepositorios.
+    ├── prefix-deduplication-engine.mjs: Motor de optimización de KV-cache y segregación de prefijos invariantes.
+    └── resource-exhaustion-prover.mjs: Demostración formal de hermeticidad y contención total de recursos.
 ```
 
 ---
@@ -155,12 +161,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [17.0.0] - 2026-08-15 (The Autonomous Hyper-Omniscience & Infinite Epistemic Matrix)
+- **Knowledge Mesh Reconciler**: Sincronización de memoria ICM y auditoría de decisiones obsoletas (`knowledge-mesh/knowledge-mesh-reconciler.mjs`).
+- **ABI Wave Broadcaster**: Difusor de olas de propagación transitiva de contratos en monorrepositorios (`abi-broadcaster/abi-wave-broadcaster.mjs`).
+- **Prefix Deduplication Engine**: Motor de optimización de KV-cache y segregación de prefijos invariantes (`cache-optimizer/prefix-deduplication-engine.mjs`).
+- **Resource Exhaustion Prover**: Demostración formal de hermeticidad y contención total de recursos (`sandbox-guard/resource-exhaustion-prover.mjs`).
+- **213/213 Tests Pasando al 100%** y **275 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [16.0.0] - 2026-08-15 (The Omnipresent Singularity & Infinite-Scale Hyper-Core)
 - **Zero-Knowledge Epistemic Attestor**: Árboles de Merkle criptográficos y atestaciones ZK de cumplimiento formal (`zk-attestor/zk-epistemic-attestor.mjs`).
 - **Root Cause Diagnostic Synthesizer**: Clasificador de arquetipos de error y remediación dirigida de fallos (`diagnostics/root-cause-synthesizer.mjs`).
 - **Circular Dependency Neutralizer**: Detección y desacoplamiento topológico de dependencias circulares (`circular-neutralizer/circular-dependency-neutralizer.mjs`).
 - **Token Liquidity Balancer**: Balanceador dinámico de liquidez de tokens según complejidad agéntica (`liquidity-balancer/token-liquidity-balancer.mjs`).
-- **206/206 Tests Pasando al 100%** y **267 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [15.0.0] - 2026-08-15 (The Autonomous Holo-Genesis & Self-Compiling Hyper-Matrix)
 - **Self-Refactoring AST Kernel**: Descomposición matemática de funciones monolíticas en sub-rutinas puras (`ast-refactor/self-refactoring-kernel.mjs`).

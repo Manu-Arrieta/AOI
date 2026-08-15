@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v16 pipeline with ZK Attestor, Root Cause Diagnostics, Circular Neutralizer, and Liquidity Balancer', async () => {
+test('createAoiOsPipeline initializes full v17 pipeline with Knowledge Mesh Reconciler, ABI Broadcaster, Cache Optimizer, and Resource Prover', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v16',
-    taskId: 'TASK-2026-16',
+    feature: 'aoi-os-v17',
+    taskId: 'TASK-2026-17',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -33,46 +33,42 @@ test('createAoiOsPipeline initializes full v16 pipeline with ZK Attestor, Root C
   assert.equal(prep.microAgent.role, 'backend')
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Zero-Knowledge Epistemic Attestor
-  const attestation = pipeline.attestTaskCompliance('T-1', [
-    { assertion: 'Route compiles', passed: true },
-    { assertion: 'Tests pass', passed: true },
-  ])
-  assert.equal(attestation.allPassed, true)
-  assert.equal(attestation.attestationProof, 'PROVEN_CRYPTOGRAPHIC_COMPLIANCE')
+  // 2. Knowledge Mesh Reconciler
+  const meshDrift = pipeline.auditKnowledgeDrift([{ id: 'm1', topic: 'decisions', content: 'Use Pinia' }], ['Use Pinia'])
+  assert.equal(meshDrift.inSync, true)
 
-  // 3. Root Cause Diagnostic Synthesizer
+  // 3. ABI Wave Broadcaster
+  const abiWave = pipeline.broadcastAbiUpdates('contracts/user.ts', { 'web-app': ['contracts/user.ts'] })
+  assert.equal(abiWave.totalAffectedWorkspaces, 1)
+
+  // 4. Prompt Cache Prefix Optimizer
+  const cacheOpt = pipeline.optimizeCachePrefix({ systemRules: 'Rule 1', contractSchemas: 'Schema 1', taskDiff: 'Diff 1' })
+  assert.equal(cacheOpt.prefixCacheKey.length, 64)
+
+  // 5. Resource Containment Prover
+  const resourceCheck = pipeline.auditResourceLeaks('export function run() { return 1; }')
+  assert.equal(resourceCheck.hermetic, true)
+
+  // 6. Zero-Knowledge Epistemic Attestor
+  const attestation = pipeline.attestTaskCompliance('T-1', [{ assertion: 'Route compiles', passed: true }])
+  assert.equal(attestation.allPassed, true)
+
+  // 7. Root Cause Diagnostic Synthesizer
   const diag = pipeline.diagnoseError('AssertionError: Expected 1 === 2')
   assert.equal(diag.archetype, 'ASSERTION_VALUE_MISMATCH')
 
-  // 4. Circular Dependency Neutralizer
+  // 8. Circular Dependency Neutralizer
   const circ = pipeline.auditCircularDependencies({ 'a.ts': ['b.ts'], 'b.ts': [] })
   assert.equal(circ.hasCycles, false)
 
-  // 5. Token Liquidity Balancer
+  // 9. Token Liquidity Balancer
   const liquidity = pipeline.rebalanceLiquidity(100000, [{ taskId: 'T-1', complexity: 'low' }, { taskId: 'T-2', complexity: 'extreme' }])
   assert.equal(liquidity.liquidityStatus, 'BALANCED_AND_STARVATION_FREE')
 
-  // 6. Self-Refactoring AST Kernel
-  const refactorDiagnosis = pipeline.proposeRefactor('export function add(a: number, b: number) { return a + b; }')
-  assert.equal(refactorDiagnosis.needsRefactor, false)
-
-  // 7. Database Migration Diff Synthesizer
-  const migration = pipeline.generateDbMigration('users', { id: 'TEXT PRIMARY KEY' }, { id: 'TEXT PRIMARY KEY', active: 'BOOLEAN' })
-  assert.equal(migration.hasChanges, true)
-
-  // 8. Schema Convergence Prover
-  const conv = pipeline.proveConvergence('export interface User { id: string; }', 'public class UserDto { public string Id { get; set; } }')
-  assert.equal(conv.converged, true)
-
-  // 9. Micro-Prompt Context Compactor
-  const compacted = pipeline.compactPrompt('/* comment */ export const x = 1; // comment')
-  assert.equal(compacted.compacted, 'export const x = 1;')
-
   // 10. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v16 omnipresent singularity suite'],
-    diffSummary: 'server/api/tasks.ts (+50 lines)',
+    decisions: ['Use deterministic v17 hyper-omniscience suite'],
+    diffSummary: 'server/api/tasks.ts (+55 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)

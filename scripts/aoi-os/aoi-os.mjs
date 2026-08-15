@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v16 (The Omnipresent Singularity & Infinite-Scale Hyper-Core).
+ * Master Orchestrator Engine for AOI-OS v17 (The Autonomous Hyper-Omniscience & Infinite Epistemic Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -19,7 +19,8 @@
  * Axiom Self-Reconciler, Self-Refactoring AST Kernel, Database Migration Diff Synthesizer,
  * Schema Convergence Prover, Micro-Prompt Context Compactor, Zero-Knowledge Epistemic Attestor,
  * Root Cause Diagnostic Synthesizer, Circular Dependency Neutralizer,
- * Token Liquidity Balancer, and ICM Memory Linking.
+ * Token Liquidity Balancer, Knowledge Mesh Reconciler, ABI Wave Broadcaster,
+ * Prefix Deduplication Engine, Resource Exhaustion Prover, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -81,6 +82,10 @@ import { generateEpistemicAttestation } from './zk-attestor/zk-epistemic-attesto
 import { diagnoseRootCause } from './diagnostics/root-cause-synthesizer.mjs'
 import { neutralizeCircularDependencies } from './circular-neutralizer/circular-dependency-neutralizer.mjs'
 import { balanceTokenLiquidity } from './liquidity-balancer/token-liquidity-balancer.mjs'
+import { reconcileKnowledgeMesh } from './knowledge-mesh/knowledge-mesh-reconciler.mjs'
+import { broadcastAbiWave } from './abi-broadcaster/abi-wave-broadcaster.mjs'
+import { optimizePromptCache } from './cache-optimizer/prefix-deduplication-engine.mjs'
+import { proveResourceContainment } from './sandbox-guard/resource-exhaustion-prover.mjs'
 import { createSelfHealingSession } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
 import { createHermeticSandbox } from './sandbox-runtime/sandbox-executor.mjs'
@@ -197,6 +202,44 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent }
+  }
+
+  /**
+   * Reconciles ICM memory graph with active rules to detect obsolete decisions.
+   *
+   * @param {Array<{ id: string, topic: string, content: string }>} memories
+   * @param {string[]} activeRules
+   */
+  function auditKnowledgeDrift(memories = [], activeRules = []) {
+    return reconcileKnowledgeMesh({ memories, activeRules })
+  }
+
+  /**
+   * Calculates transitive ABI propagation waves across dependent packages.
+   *
+   * @param {string} changedContract
+   * @param {Record<string, string[]>} dependents
+   */
+  function broadcastAbiUpdates(changedContract, dependents = {}) {
+    return broadcastAbiWave(changedContract, dependents)
+  }
+
+  /**
+   * Optimizes prompt payloads for 100% KV-cache reuse across micro-agent invocations.
+   *
+   * @param {object} cachePayload
+   */
+  function optimizeCachePrefix(cachePayload) {
+    return optimizePromptCache(cachePayload)
+  }
+
+  /**
+   * Proves hermetic resource containment and zero handle leaks in sandbox code.
+   *
+   * @param {string} sourceCode
+   */
+  function auditResourceLeaks(sourceCode) {
+    return proveResourceContainment(sourceCode)
   }
 
   /**
@@ -702,6 +745,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditKnowledgeDrift,
+    broadcastAbiUpdates,
+    optimizeCachePrefix,
+    auditResourceLeaks,
     attestTaskCompliance,
     diagnoseError,
     auditCircularDependencies,
@@ -759,7 +806,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v16: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v17: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
