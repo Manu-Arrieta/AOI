@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v24 (The Omniscient 72-Pillar Quantum Matrix & Universal Autonomous Hyper-OS).
+ * Master Orchestrator Engine for AOI-OS v25 (The Absolute 76-Pillar Omniverse Kernel & Universal Autonomous Genesis Super-Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -30,7 +30,8 @@
  * Sandbox Zombie PID Purger, Mutation Test Invariant Prover, HTTP Payload Drift Guard,
  * Barrel Star-Export Neutralizer, Sandbox File Permission & Mask Prover, Promise Cascade Guard,
  * API Schema Sunset Sentinel, Heap Allocation & LOH Prover, Sandbox Network Egress Interceptor,
- * and ICM Memory Linking.
+ * Peer Dependency Convergence Guard, ReDoS Vulnerability Prover, CSS Token Drift Guard,
+ * Sandbox Handle Leak Prover, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -58,6 +59,7 @@ import { generateAstMutants, calculateMutationScore } from './mutation-testing/a
 import { traceTaintFlows } from './security-guard/ast-taint-tracer.mjs'
 import { auditSyscallSecurity } from './security-guard/syscall-virtual-guard.mjs'
 import { auditTimingSafety } from './security-guard/timing-leak-guard.mjs'
+import { proveRedosSafety } from './security-guard/redos-vulnerability-prover.mjs'
 import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-estimator.mjs'
 import { synthesizeOpenApiSpec } from './contract-docgen/openapi-synthesizer.mjs'
 import { synthesizeE2eTestFlow } from './contract-docgen/e2e-flow-synthesizer.mjs'
@@ -82,6 +84,7 @@ import { evaluateSuperpositionBranches } from './quantum-synthesis/superposition
 import { synthesizeFunctionTypesAndSchema } from './type-synthesizer/deep-type-synthesizer.mjs'
 import { createTokenHologram } from './hologram/token-hologram.mjs'
 import { solveDependencies } from './dependency-solver/polyglot-dependency-solver.mjs'
+import { auditPeerDependencyConvergence } from './dependency-solver/peer-dependency-guard.mjs'
 import { createEventSourcingKernel } from './event-sourcing/event-sourcing-kernel.mjs'
 import { runMicroBenchmark } from './benchmark/micro-benchmark-suite.mjs'
 import { reconcileAxioms } from './axiom-reconciler/axiom-reconciler.mjs'
@@ -124,6 +127,8 @@ import { auditAsyncSafety } from './async-guard/promise-cascade-guard.mjs'
 import { auditSchemaSunset } from './schema-guard/schema-sunset-sentinel.mjs'
 import { proveHeapAllocations } from './memory-guard/heap-allocation-prover.mjs'
 import { auditNetworkEgress } from './sandbox-guard/egress-interceptor.mjs'
+import { auditCssTokenDrift } from './css-guard/css-token-guard.mjs'
+import { proveHandleSafety } from './sandbox-guard/handle-leak-prover.mjs'
 import { createSelfHealingSession } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
 import { createHermeticSandbox } from './sandbox-runtime/sandbox-executor.mjs'
@@ -255,6 +260,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits peer dependency convergence across monorepo packages.
+   *
+   * @param {Array<{ name: string, peerDependencies?: Record<string, string>, dependencies?: Record<string, string> }>} packages
+   */
+  function auditPeerDependencies(packages = []) {
+    return auditPeerDependencyConvergence(packages)
+  }
+
+  /**
+   * Proves regular expression safety against ReDoS attacks.
+   *
+   * @param {string} sourceCode
+   */
+  function auditRedosVulnerabilities(sourceCode) {
+    return proveRedosSafety(sourceCode)
+  }
+
+  /**
+   * Audits CSS custom properties for token drift.
+   *
+   * @param {string} sourceCode
+   * @param {string[]} declaredTokens
+   */
+  function auditCssTokens(sourceCode, declaredTokens = []) {
+    return auditCssTokenDrift(sourceCode, declaredTokens)
+  }
+
+  /**
+   * Proves deterministic closure of opened file handles.
+   *
+   * @param {string} sourceCode
+   */
+  function auditFileHandlesSafety(sourceCode) {
+    return proveHandleSafety(sourceCode)
   }
 
   /**
@@ -508,7 +550,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '24.0.0',
+      version: '25.0.0',
       components,
     })
   }
@@ -1057,6 +1099,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditPeerDependencies,
+    auditRedosVulnerabilities,
+    auditCssTokens,
+    auditFileHandlesSafety,
     auditAsyncEventLoop,
     auditFieldDeprecations,
     auditHeapAllocationSafety,
@@ -1145,7 +1191,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v24: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v25: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

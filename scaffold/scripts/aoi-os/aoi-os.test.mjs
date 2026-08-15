@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v24 pipeline with 72 pillars', async () => {
+test('createAoiOsPipeline initializes full v25 pipeline with 76 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v24',
-    taskId: 'TASK-2026-24',
+    feature: 'aoi-os-v25',
+    taskId: 'TASK-2026-25',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,29 +34,32 @@ test('createAoiOsPipeline initializes full v24 pipeline with 72 pillars', async 
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Promise Cascade Guard
-  const asyncCheck = pipeline.auditAsyncEventLoop("export async function fn() { await saveAsync(); }")
-  assert.equal(asyncCheck.safe, true)
-  assert.equal(asyncCheck.asyncProof, 'ASYNC_EVENT_LOOP_BOUNDED_AND_SAFE')
+  // 2. Peer Dependency Guard
+  const peerCheck = pipeline.auditPeerDependencies([
+    { name: 'app-web', peerDependencies: { vue: '^3.5.0' } },
+    { name: 'ui-lib', peerDependencies: { vue: '^3.5.0' } },
+  ])
+  assert.equal(peerCheck.convergent, true)
+  assert.equal(peerCheck.convergenceProof, 'ALL_PEER_DEPENDENCIES_CONVERGENT_AND_UNIFIED')
 
-  // 3. Schema Sunset Sentinel
-  const sunsetCheck = pipeline.auditFieldDeprecations("export const user = { id: 1, name: 'Alice' };", [{ name: 'oldName', replacement: 'name' }])
-  assert.equal(sunsetCheck.modern, true)
-  assert.equal(sunsetCheck.sentinelProof, 'ALL_REFERENCED_FIELDS_ACTIVE_AND_MODERN')
+  // 3. ReDoS Prover
+  const redosCheck = pipeline.auditRedosVulnerabilities("export const r = /^[0-9]+$/;")
+  assert.equal(redosCheck.safe, true)
+  assert.equal(redosCheck.redosProof, 'ALL_REGEXES_LINEAR_AND_REDOS_SAFE')
 
-  // 4. Heap Allocation Prover
-  const heapCheck = pipeline.auditHeapAllocationSafety("export const buf = Buffer.alloc(1024);")
-  assert.equal(heapCheck.safe, true)
-  assert.equal(heapCheck.heapProof, 'HEAP_ALLOCATIONS_BOUNDED_AND_SAFE')
+  // 4. CSS Token Guard
+  const cssCheck = pipeline.auditCssTokens(".btn { color: var(--color-primary); }", ['--color-primary'])
+  assert.equal(cssCheck.valid, true)
+  assert.equal(cssCheck.tokenProof, 'ALL_CSS_TOKENS_DECLARED_AND_CONVERGENT')
 
-  // 5. Sandbox Network Egress Interceptor
-  const egressCheck = pipeline.auditSandboxEgress("export const hash = crypto.createHash('sha256').digest('hex');")
-  assert.equal(egressCheck.hermetic, true)
-  assert.equal(egressCheck.egressProof, 'OFFLINE_SANDBOX_EGRESS_CONTAINMENT_PROVEN')
+  // 5. Handle Leak Prover
+  const handleCheck = pipeline.auditFileHandlesSafety("const fd = fs.openSync('a.txt'); try {} finally { fs.closeSync(fd); }")
+  assert.equal(handleCheck.safe, true)
+  assert.equal(handleCheck.handleProof, 'ALL_FILE_HANDLES_DETERMINISTICALLY_CLOSED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v24 quantum master suite with 72 pillars'],
+    decisions: ['Use deterministic v25 omniverse master suite with 76 pillars'],
     diffSummary: 'server/api/tasks.ts (+55 lines)',
   }, async () => ({ stdout: 'OK' }))
 
