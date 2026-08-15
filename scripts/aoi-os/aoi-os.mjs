@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v22 (The Apex 64-Pillar Infinity Kernel & Universal Synthesis Matrix).
+ * Master Orchestrator Engine for AOI-OS v23 (The Infinite Holo-Singularity & Universal Autonomous Super-Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -27,7 +27,8 @@
  * Cognitive Density Maximizer, Sandbox Descriptor Sanitizer, Epistemic Provenance Chain,
  * Package Export Leak Prover, Dynamic Budget Auto-Throttle, Side-Channel Timing Leak Guard,
  * Semantic AST Merge Prover, Query Performance & N+1 Guard, Bundle Size & Tree-Shaking Verifier,
- * Sandbox Zombie PID Purger, and ICM Memory Linking.
+ * Sandbox Zombie PID Purger, Mutation Test Invariant Prover, HTTP Payload Drift Guard,
+ * Barrel Star-Export Neutralizer, Sandbox File Permission & Mask Prover, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -113,6 +114,10 @@ import { proveSemanticAstMerge } from './ast-merge/semantic-merge-prover.mjs'
 import { auditQueryPerformance } from './query-guard/query-performance-guard.mjs'
 import { verifyBundleDrift } from './bundle-guard/bundle-drift-verifier.mjs'
 import { createProcessRegistry } from './sandbox-guard/zombie-process-purger.mjs'
+import { proveTestInvariants } from './test-guard/mutation-invariant-prover.mjs'
+import { auditPayloadDrift } from './payload-guard/payload-drift-guard.mjs'
+import { auditBarrelExports } from './export-guard/barrel-export-neutralizer.mjs'
+import { proveFilePermissions } from './sandbox-guard/file-permission-prover.mjs'
 import { createSelfHealingSession } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
 import { createHermeticSandbox } from './sandbox-runtime/sandbox-executor.mjs'
@@ -244,6 +249,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Proves test invariants and verifies presence of assertions.
+   *
+   * @param {string} testCode
+   */
+  function auditTestInvariants(testCode) {
+    return proveTestInvariants(testCode)
+  }
+
+  /**
+   * Audits payload drift between frontend and backend schemas.
+   *
+   * @param {string[]} clientKeys
+   * @param {string[]} backendKeys
+   */
+  function auditPayloadAlignment(clientKeys = [], backendKeys = []) {
+    return auditPayloadDrift(clientKeys, backendKeys)
+  }
+
+  /**
+   * Audits barrel files for dangerous wildcard star exports.
+   *
+   * @param {string} sourceCode
+   */
+  function auditBarrelIndex(sourceCode) {
+    return auditBarrelExports(sourceCode)
+  }
+
+  /**
+   * Proves least-privilege file permissions in sandbox.
+   *
+   * @param {string} sourceCode
+   */
+  function auditFilePermissionsSafety(sourceCode) {
+    return proveFilePermissions(sourceCode)
   }
 
   /**
@@ -423,7 +465,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '22.0.0',
+      version: '23.0.0',
       components,
     })
   }
@@ -972,6 +1014,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditTestInvariants,
+    auditPayloadAlignment,
+    auditBarrelIndex,
+    auditFilePermissionsSafety,
     mergeAstBranches,
     auditDbQueries,
     auditBundleImports,
@@ -1052,7 +1098,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v22: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v23: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

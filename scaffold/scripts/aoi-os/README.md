@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v22 (The Apex 64-Pillar Infinity Kernel & Universal Synthesis Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v23 (The Infinite Holo-Singularity & Universal Autonomous Super-Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Semantic Merge Prover (`ast-merge/semantic-merge-prover.mjs`)**: Reconciliación semántica 3-way AST sin colisiones de Git para ramas concurrentes (0 LLM tokens).
-- **Query Performance Guard (`query-guard/query-performance-guard.mjs`)**: Detección estática de consultas N+1 y filtros sin índices en bases de datos (0 LLM tokens).
-- **Bundle Drift Verifier (`bundle-guard/bundle-drift-verifier.mjs`)**: Auditoría estática contra importaciones monolíticas y preservación de tree-shaking (0 LLM tokens).
-- **Zombie Process Purger (`sandbox-guard/zombie-process-purger.mjs`)**: Registro y purga formal del 100% de subprocesos e hilos huérfanos tras cada ola (0 LLM tokens).
+- **Mutation Invariant Prover (`test-guard/mutation-invariant-prover.mjs`)**: Demostración estática de presencia de aserciones de invariantes y eliminación de tests superficiales (0 LLM tokens).
+- **Payload Drift Guard (`payload-guard/payload-drift-guard.mjs`)**: Auditoría estática de alineación de nombres de propiedades y tipos entre frontend y backend (0 LLM tokens).
+- **Barrel Export Neutralizer (`export-guard/barrel-export-neutralizer.mjs`)**: Detección y eliminación de re-exportaciones comodín `export *` en índices barril (0 LLM tokens).
+- **File Permission Prover (`sandbox-guard/file-permission-prover.mjs`)**: Verificación estricta de permisos de archivos y cumplimiento de la política de mínimo privilegio (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 64 Pilares (AOI-OS v22)
+## 🏛️ Matriz Arquitectónica Maestra de 68 Pilares (AOI-OS v23)
 
 ```text
-AOI-OS v22 Architecture Matrix (2^6 Pillars)
+AOI-OS v23 Architecture Matrix (68 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -144,11 +144,17 @@ AOI-OS v22 Architecture Matrix (2^6 Pillars)
 │   ├── budget-auto-throttle.mjs: Regulador dinámico de velocidad de gasto y auto-ajuste de esqueletizado.
 │   └── timing-leak-guard.mjs: Guardián contra ataques de canal lateral y comparación en tiempo constante.
 │
-└── 61-64. Núcleo Apex 64-Pillar Infinity Kernel v22 (ast-merge/, query-guard/, bundle-guard/, sandbox-guard/)
-    ├── semantic-merge-prover.mjs: Reconciliador semántico 3-way AST para fusiones paralelas sin conflictos.
-    ├── query-performance-guard.mjs: Guardián estático contra consultas N+1 y columnas de filtrado no indexadas.
-    ├── bundle-drift-verifier.mjs: Verificador de árbol de dependencias, tamaño de bundle y preservación de tree-shaking.
-    └── zombie-process-purger.mjs: Registro formal de subprocesos y purga atómica de PIDs residuales en sandbox.
+├── 61-64. Núcleo Apex 64-Pillar Infinity Kernel (ast-merge/, query-guard/, bundle-guard/, sandbox-guard/)
+│   ├── semantic-merge-prover.mjs: Reconciliador semántico 3-way AST para fusiones paralelas sin conflictos.
+│   ├── query-performance-guard.mjs: Guardián estático contra consultas N+1 y columnas de filtrado no indexadas.
+│   ├── bundle-drift-verifier.mjs: Verificador de árbol de dependencias, tamaño de bundle y preservación de tree-shaking.
+│   └── zombie-process-purger.mjs: Registro formal de subprocesos y purga atómica de PIDs residuales en sandbox.
+│
+└── 65-68. Núcleo Infinite Holo-Super-Matrix v23 (test-guard/, payload-guard/, export-guard/, sandbox-guard/)
+    ├── mutation-invariant-prover.mjs: Demostración formal de aserciones e invariantes en tests.
+    ├── payload-drift-guard.mjs: Guardián de deriva y concordancia de cargas útiles HTTP frontend/backend.
+    ├── barrel-export-neutralizer.mjs: Neutralizador de re-exportaciones comodín en índices barril.
+    └── file-permission-prover.mjs: Probador de máscaras y permisos de mínimo privilegio en archivos del sandbox.
 ```
 
 ---
@@ -191,12 +197,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [23.0.0] - 2026-08-15 (The Infinite Holo-Singularity & Universal Autonomous Super-Matrix)
+- **Mutation Invariant Prover**: Demostración estática de presencia de aserciones de invariantes y eliminación de tests superficiales (`test-guard/mutation-invariant-prover.mjs`).
+- **Payload Drift Guard**: Auditoría estática de alineación de nombres de propiedades y tipos entre frontend y backend (`payload-guard/payload-drift-guard.mjs`).
+- **Barrel Export Neutralizer**: Detección y eliminación de re-exportaciones comodín `export *` en índices barril (`export-guard/barrel-export-neutralizer.mjs`).
+- **File Permission Prover**: Verificación estricta de permisos de archivos y cumplimiento de la política de mínimo privilegio (`sandbox-guard/file-permission-prover.mjs`).
+- **254/254 Tests Pasando al 100%** y **323 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [22.0.0] - 2026-08-15 (The Apex 64-Pillar Infinity Kernel & Universal Synthesis Matrix)
 - **Semantic Merge Prover**: Reconciliación semántica 3-way AST sin colisiones de Git para ramas concurrentes (`ast-merge/semantic-merge-prover.mjs`).
 - **Query Performance Guard**: Detección estática de consultas N+1 y filtros sin índices en bases de datos (`query-guard/query-performance-guard.mjs`).
 - **Bundle Drift Verifier**: Auditoría estática contra importaciones monolíticas y preservación de tree-shaking (`bundle-guard/bundle-drift-verifier.mjs`).
 - **Zombie Process Purger**: Registro y purga formal del 100% de subprocesos e hilos huérfanos tras cada ola (`sandbox-guard/zombie-process-purger.mjs`).
-- **247/247 Tests Pasando al 100%** y **315 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [21.0.0] - 2026-08-15 (The Diamond 60-Pillar Singularity & Universal Autonomous Matrix)
 - **Epistemic Provenance Chain**: Cadena criptográfica SHA-256 de linaje y procedencia formal (`provenance/epistemic-provenance-chain.mjs`).

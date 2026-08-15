@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v22 pipeline with 64 pillars', async () => {
+test('createAoiOsPipeline initializes full v23 pipeline with 68 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v22',
-    taskId: 'TASK-2026-22',
+    feature: 'aoi-os-v23',
+    taskId: 'TASK-2026-23',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,32 +34,29 @@ test('createAoiOsPipeline initializes full v22 pipeline with 64 pillars', async 
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Semantic AST Merge Prover
-  const mergeResult = pipeline.mergeAstBranches({
-    baseCode: 'export const V = 1;\n',
-    branchACode: 'export const V = 1;\nexport function a() {}\n',
-    branchBCode: 'export const V = 1;\nexport function b() {}\n',
-  })
-  assert.equal(mergeResult.success, true)
-  assert.equal(mergeResult.mergeProof, 'DISJOINT_3WAY_AST_MERGE_PROVEN')
+  // 2. Mutation Test Invariant Prover
+  const testCheck = pipeline.auditTestInvariants("test('sample', () => { assert.equal(1, 1); });")
+  assert.equal(testCheck.valid, true)
+  assert.equal(testCheck.invariantProof, 'ALL_TESTS_CONTAIN_INVARIANT_ASSERTIONS')
 
-  // 3. Query Performance Guard
-  const queryResult = pipeline.auditDbQueries('export const q = "SELECT * FROM users WHERE id = 1";', ['id'])
-  assert.equal(queryResult.optimal, true)
+  // 3. HTTP Payload Drift Guard
+  const payloadCheck = pipeline.auditPayloadAlignment(['userId', 'title'], ['userId', 'title'])
+  assert.equal(payloadCheck.aligned, true)
+  assert.equal(payloadCheck.driftProof, 'PAYLOAD_SCHEMA_100PCT_ALIGNED')
 
-  // 4. Bundle Drift Verifier
-  const bundleResult = pipeline.auditBundleImports("import { map } from 'lodash-es';")
-  assert.equal(bundleResult.clean, true)
+  // 4. Barrel Star-Export Neutralizer
+  const barrelCheck = pipeline.auditBarrelIndex("export { foo } from './foo.mjs';")
+  assert.equal(barrelCheck.clean, true)
+  assert.equal(barrelCheck.barrelProof, 'EXPLICIT_BARREL_EXPORTS_PROVEN')
 
-  // 5. Zombie Process Purger
-  pipeline.processRegistry.registerProcess(999, 'node worker.js')
-  const purgeResult = pipeline.purgeZombiePids()
-  assert.equal(purgeResult.success, true)
-  assert.equal(purgeResult.purgerProof, 'ZERO_ZOMBIE_PROCESSES_PROVEN')
+  // 5. Sandbox File Permission & Mask Prover
+  const permCheck = pipeline.auditFilePermissionsSafety("fs.writeFileSync('out.txt', data, { mode: 0o644 });")
+  assert.equal(permCheck.secure, true)
+  assert.equal(permCheck.permissionProof, 'LEAST_PRIVILEGE_PERMISSIONS_PROVEN')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v22 apex master suite with 64 pillars'],
+    decisions: ['Use deterministic v23 holo-singularity master suite with 68 pillars'],
     diffSummary: 'server/api/tasks.ts (+55 lines)',
   }, async () => ({ stdout: 'OK' }))
 
