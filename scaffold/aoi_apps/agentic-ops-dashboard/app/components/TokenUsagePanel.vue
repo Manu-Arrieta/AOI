@@ -15,13 +15,45 @@ const emit = defineEmits<{ toggle: [enabled: boolean] }>()
 
 const { locale, messages } = useLocale()
 
+const cacheEfficiency = computed(() => {
+  const totals = props.summary?.totals
+  const input = totals?.inputTokens ?? 0
+  const cached = totals?.cachedTokens ?? 0
+  const totalInput = input + cached
+  const hitRate = totalInput > 0 ? (cached / totalInput) * 100 : 0
+
+  let healthColor: 'success' | 'warning' | 'error' = 'success'
+  let healthLabel = messages.value.tokenMetrics.healthOptimal
+
+  if (hitRate < 70) {
+    healthColor = 'error'
+    healthLabel = messages.value.tokenMetrics.healthBloat
+  } else if (hitRate < 90) {
+    healthColor = 'warning'
+    healthLabel = messages.value.tokenMetrics.healthModerate
+  }
+
+  return {
+    hitRate: hitRate.toFixed(1),
+    healthColor,
+    healthLabel,
+  }
+})
+
 const totalCards = computed(() => {
   const totals = props.summary?.totals
   return [
-    { label: messages.value.tokenMetrics.requests,     value: totals?.requestCount ?? 0, icon: 'i-lucide-activity' },
-    { label: messages.value.tokenMetrics.inputTokens,  value: totals?.inputTokens  ?? 0, icon: 'i-lucide-arrow-down-to-line' },
-    { label: messages.value.tokenMetrics.outputTokens, value: totals?.outputTokens ?? 0, icon: 'i-lucide-arrow-up-from-line' },
-    { label: messages.value.tokenMetrics.cachedTokens, value: totals?.cachedTokens ?? 0, icon: 'i-lucide-database-zap' },
+    { label: messages.value.tokenMetrics.requests,        value: formatNumber(totals?.requestCount ?? 0), icon: 'i-lucide-activity' },
+    { label: messages.value.tokenMetrics.inputTokens,     value: formatNumber(totals?.inputTokens  ?? 0), icon: 'i-lucide-arrow-down-to-line' },
+    { label: messages.value.tokenMetrics.outputTokens,    value: formatNumber(totals?.outputTokens ?? 0), icon: 'i-lucide-arrow-up-from-line' },
+    { label: messages.value.tokenMetrics.cachedTokens,    value: formatNumber(totals?.cachedTokens ?? 0), icon: 'i-lucide-database-zap' },
+    {
+      label: messages.value.tokenMetrics.cacheHitRate,
+      value: `${cacheEfficiency.value.hitRate}%`,
+      icon: 'i-lucide-gauge',
+      badge: cacheEfficiency.value.healthLabel,
+      badgeColor: cacheEfficiency.value.healthColor,
+    },
   ]
 })
 
@@ -142,7 +174,12 @@ function modelChipColor(model: string) {
             <UIcon :name="card.icon" style="vertical-align: middle; margin-right: 0.3em;" />
             {{ card.label }}
           </span>
-          <strong>{{ formatNumber(card.value) }}</strong>
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem;">
+            <strong>{{ card.value }}</strong>
+            <UBadge v-if="card.badge" :color="card.badgeColor" variant="subtle" size="xs">
+              {{ card.badge }}
+            </UBadge>
+          </div>
         </article>
       </div>
 

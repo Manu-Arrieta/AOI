@@ -180,7 +180,7 @@ test("detectFromDisk excludes AOI's own aoi_apps from base-project roots", () =>
   assert.equal(proposal.$schemaVersion, 1);
   assert.equal(proposal.baseRoot, ".");
   assert.equal(proposal.confirmedBy, null);
-  assert.equal(proposal.workspaceManager, "unknown");
+  assert.equal(proposal.workspaceManager, "pnpm");
 
   assert.deepEqual(proposal.roots.frontend, []);
   assert.deepEqual(proposal.roots.backend, []);

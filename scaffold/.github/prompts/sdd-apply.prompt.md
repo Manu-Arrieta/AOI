@@ -66,10 +66,11 @@ terminal input, shell scripts, or automation macros.
 For each task in the implementation plan, in dependency order:
 
 1. Identify the assigned agent (frontend-dev, backend-dev, etc.)
-2. Hand off to that agent with:
-   - The specific task from `tasks.md`
-   - Relevant architecture context from `design.md`
+2. Hand off to that agent using an **Isolated Subagent Payload** (via `node scripts/subagent-context/sanitize-subagent-payload.mjs --task-dir .tasks/{feature}/{task-id} --role {role}` or extracted slice):
+   - The specific task and test requirements (TDD) from `tasks.md`
+   - Target architecture contracts and interfaces from `design.md`
    - Stack conventions from constitution
+   - **Context Isolation Rule**: Do NOT pass full multi-turn conversational history to the subagent prompt.
 3. Agent runs `/speckit.implement` to execute (TDD Gate enforced internally)
 4. **Implementation Principles Review** — after each task, the implementing agent verifies:
    - **SRP**: No new file exceeds ~300 LOC. If it does, justify or split.
