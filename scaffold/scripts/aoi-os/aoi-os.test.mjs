@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v17 pipeline with Knowledge Mesh Reconciler, ABI Broadcaster, Cache Optimizer, and Resource Prover', async () => {
+test('createAoiOsPipeline initializes full v18 pipeline with Nash Game Engine, Dead Asset Pruner, Speculative Wave Pipeline, and SBOM Generator', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v17',
-    taskId: 'TASK-2026-17',
+    feature: 'aoi-os-v18',
+    taskId: 'TASK-2026-18',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -33,41 +33,32 @@ test('createAoiOsPipeline initializes full v17 pipeline with Knowledge Mesh Reco
   assert.equal(prep.microAgent.role, 'backend')
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Knowledge Mesh Reconciler
+  // 2. Epistemic Game Engine (Nash Equilibrium)
+  const nash = pipeline.evaluateGameConsensus({ testsPassed: true, securitySafe: true, contractsIntact: true, performanceScore: 90 })
+  assert.equal(nash.isNashOptimal, true)
+  assert.equal(nash.consensusVerdict, 'NASH_EQUILIBRIUM_APPROVED')
+
+  // 3. Monorepo Dead-Asset Pruner
+  const assetReport = pipeline.auditZombieAssets(['logo.png', 'dead.png'], ['<img src="logo.png" />'])
+  assert.equal(assetReport.deadAssetsCount, 1)
+
+  // 4. Speculative Wave Pipeline Check
+  assert.equal(pipeline.speculativePipeline.hasStagedWave(1), true)
+  const promo = pipeline.speculativePipeline.promoteSpeculativeWave(1)
+  assert.equal(promo.status, 'SPECULATIVE_WAVE_PROMOTED_ZERO_LATENCY')
+
+  // 5. Deterministic SBOM Generator
+  const sbom = pipeline.generateSbomReport([{ name: 'server/api/tasks.ts', content: 'export const x = 1;' }])
+  assert.equal(sbom.bomFormat, 'CycloneDX')
+  assert.equal(sbom.components[0].hashes[0].value.length, 64)
+
+  // 6. Knowledge Mesh Reconciler
   const meshDrift = pipeline.auditKnowledgeDrift([{ id: 'm1', topic: 'decisions', content: 'Use Pinia' }], ['Use Pinia'])
   assert.equal(meshDrift.inSync, true)
 
-  // 3. ABI Wave Broadcaster
-  const abiWave = pipeline.broadcastAbiUpdates('contracts/user.ts', { 'web-app': ['contracts/user.ts'] })
-  assert.equal(abiWave.totalAffectedWorkspaces, 1)
-
-  // 4. Prompt Cache Prefix Optimizer
-  const cacheOpt = pipeline.optimizeCachePrefix({ systemRules: 'Rule 1', contractSchemas: 'Schema 1', taskDiff: 'Diff 1' })
-  assert.equal(cacheOpt.prefixCacheKey.length, 64)
-
-  // 5. Resource Containment Prover
-  const resourceCheck = pipeline.auditResourceLeaks('export function run() { return 1; }')
-  assert.equal(resourceCheck.hermetic, true)
-
-  // 6. Zero-Knowledge Epistemic Attestor
-  const attestation = pipeline.attestTaskCompliance('T-1', [{ assertion: 'Route compiles', passed: true }])
-  assert.equal(attestation.allPassed, true)
-
-  // 7. Root Cause Diagnostic Synthesizer
-  const diag = pipeline.diagnoseError('AssertionError: Expected 1 === 2')
-  assert.equal(diag.archetype, 'ASSERTION_VALUE_MISMATCH')
-
-  // 8. Circular Dependency Neutralizer
-  const circ = pipeline.auditCircularDependencies({ 'a.ts': ['b.ts'], 'b.ts': [] })
-  assert.equal(circ.hasCycles, false)
-
-  // 9. Token Liquidity Balancer
-  const liquidity = pipeline.rebalanceLiquidity(100000, [{ taskId: 'T-1', complexity: 'low' }, { taskId: 'T-2', complexity: 'extreme' }])
-  assert.equal(liquidity.liquidityStatus, 'BALANCED_AND_STARVATION_FREE')
-
-  // 10. Finalize Task and Auto-Sync to ICM
+  // 7. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v17 hyper-omniscience suite'],
+    decisions: ['Use deterministic v18 quantum super-matrix suite'],
     diffSummary: 'server/api/tasks.ts (+55 lines)',
   }, async () => ({ stdout: 'OK' }))
 

@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v17 (The Autonomous Hyper-Omniscience & Infinite Epistemic Matrix).
+ * Master Orchestrator Engine for AOI-OS v18 (The Infinite Autonomous Singularity & Quantum Super-Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -20,7 +20,9 @@
  * Schema Convergence Prover, Micro-Prompt Context Compactor, Zero-Knowledge Epistemic Attestor,
  * Root Cause Diagnostic Synthesizer, Circular Dependency Neutralizer,
  * Token Liquidity Balancer, Knowledge Mesh Reconciler, ABI Wave Broadcaster,
- * Prefix Deduplication Engine, Resource Exhaustion Prover, and ICM Memory Linking.
+ * Prefix Deduplication Engine, Resource Exhaustion Prover, Epistemic Game Engine,
+ * Monorepo Dead-Asset Pruner, Speculative Wave Pipeline, Deterministic SBOM Generator,
+ * and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -86,6 +88,10 @@ import { reconcileKnowledgeMesh } from './knowledge-mesh/knowledge-mesh-reconcil
 import { broadcastAbiWave } from './abi-broadcaster/abi-wave-broadcaster.mjs'
 import { optimizePromptCache } from './cache-optimizer/prefix-deduplication-engine.mjs'
 import { proveResourceContainment } from './sandbox-guard/resource-exhaustion-prover.mjs'
+import { calculateNashEquilibrium } from './game-engine/epistemic-game-engine.mjs'
+import { auditDeadAssets } from './asset-pruner/monorepo-dead-asset-pruner.mjs'
+import { createSpeculativePipeline } from './speculative/speculative-wave-pipeline.mjs'
+import { generateDeterministicSbom } from './sbom/deterministic-sbom-generator.mjs'
 import { createSelfHealingSession } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
 import { createHermeticSandbox } from './sandbox-runtime/sandbox-executor.mjs'
@@ -129,6 +135,7 @@ export function createAoiOsPipeline(options) {
   const semanticFabric = createSemanticFabric()
   const tokenHologram = createTokenHologram([constitutionRules, tasksMarkdown])
   const eventStore = createEventSourcingKernel({ streamId: `aoi-os-${workspace}-${taskId}` })
+  const speculativePipeline = createSpeculativePipeline()
 
   const rawNodes = parseTaskDag(tasksMarkdown)
   const validation = validateDagStructure(rawNodes)
@@ -158,6 +165,12 @@ export function createAoiOsPipeline(options) {
         semanticFabric.addEdge(`task:${node.id}`, `task:${dep}`, 'depends_on')
       }
     }
+  }
+
+  // Pre-stage future wave speculatively if more than 1 wave exists
+  if (batches.length > 1) {
+    const wave2Tasks = batches[1].map((id) => stateManager.getTask(id)).filter(Boolean)
+    speculativePipeline.stageSpeculativeWave(1, wave2Tasks)
   }
 
   // Capture initial snapshot
@@ -202,6 +215,38 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent }
+  }
+
+  /**
+   * Calculates Nash Equilibrium consensus across micro-agents.
+   *
+   * @param {object} evalOptions
+   */
+  function evaluateGameConsensus(evalOptions) {
+    return calculateNashEquilibrium(evalOptions)
+  }
+
+  /**
+   * Audits declared assets against source files to detect dead zombie resources.
+   *
+   * @param {string[]} assets
+   * @param {string[]} sources
+   */
+  function auditZombieAssets(assets = [], sources = []) {
+    return auditDeadAssets(assets, sources)
+  }
+
+  /**
+   * Generates a standardized CycloneDX SBOM for supply-chain integrity.
+   *
+   * @param {Array<{ name: string, version?: string, type?: string, content?: string }>} components
+   */
+  function generateSbomReport(components = []) {
+    return generateDeterministicSbom({
+      projectName: `AOI-${workspace}`,
+      version: '18.0.0',
+      components,
+    })
   }
 
   /**
@@ -734,6 +779,7 @@ export function createAoiOsPipeline(options) {
     stateManager,
     eventBus,
     eventStore,
+    speculativePipeline,
     tokenGovernor,
     symbolMutex,
     contractCache,
@@ -745,6 +791,9 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    evaluateGameConsensus,
+    auditZombieAssets,
+    generateSbomReport,
     auditKnowledgeDrift,
     broadcastAbiUpdates,
     optimizeCachePrefix,
@@ -806,7 +855,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v17: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v18: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
