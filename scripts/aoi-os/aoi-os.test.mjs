@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v23 pipeline with 68 pillars', async () => {
+test('createAoiOsPipeline initializes full v24 pipeline with 72 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v23',
-    taskId: 'TASK-2026-23',
+    feature: 'aoi-os-v24',
+    taskId: 'TASK-2026-24',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,29 +34,29 @@ test('createAoiOsPipeline initializes full v23 pipeline with 68 pillars', async 
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Mutation Test Invariant Prover
-  const testCheck = pipeline.auditTestInvariants("test('sample', () => { assert.equal(1, 1); });")
-  assert.equal(testCheck.valid, true)
-  assert.equal(testCheck.invariantProof, 'ALL_TESTS_CONTAIN_INVARIANT_ASSERTIONS')
+  // 2. Promise Cascade Guard
+  const asyncCheck = pipeline.auditAsyncEventLoop("export async function fn() { await saveAsync(); }")
+  assert.equal(asyncCheck.safe, true)
+  assert.equal(asyncCheck.asyncProof, 'ASYNC_EVENT_LOOP_BOUNDED_AND_SAFE')
 
-  // 3. HTTP Payload Drift Guard
-  const payloadCheck = pipeline.auditPayloadAlignment(['userId', 'title'], ['userId', 'title'])
-  assert.equal(payloadCheck.aligned, true)
-  assert.equal(payloadCheck.driftProof, 'PAYLOAD_SCHEMA_100PCT_ALIGNED')
+  // 3. Schema Sunset Sentinel
+  const sunsetCheck = pipeline.auditFieldDeprecations("export const user = { id: 1, name: 'Alice' };", [{ name: 'oldName', replacement: 'name' }])
+  assert.equal(sunsetCheck.modern, true)
+  assert.equal(sunsetCheck.sentinelProof, 'ALL_REFERENCED_FIELDS_ACTIVE_AND_MODERN')
 
-  // 4. Barrel Star-Export Neutralizer
-  const barrelCheck = pipeline.auditBarrelIndex("export { foo } from './foo.mjs';")
-  assert.equal(barrelCheck.clean, true)
-  assert.equal(barrelCheck.barrelProof, 'EXPLICIT_BARREL_EXPORTS_PROVEN')
+  // 4. Heap Allocation Prover
+  const heapCheck = pipeline.auditHeapAllocationSafety("export const buf = Buffer.alloc(1024);")
+  assert.equal(heapCheck.safe, true)
+  assert.equal(heapCheck.heapProof, 'HEAP_ALLOCATIONS_BOUNDED_AND_SAFE')
 
-  // 5. Sandbox File Permission & Mask Prover
-  const permCheck = pipeline.auditFilePermissionsSafety("fs.writeFileSync('out.txt', data, { mode: 0o644 });")
-  assert.equal(permCheck.secure, true)
-  assert.equal(permCheck.permissionProof, 'LEAST_PRIVILEGE_PERMISSIONS_PROVEN')
+  // 5. Sandbox Network Egress Interceptor
+  const egressCheck = pipeline.auditSandboxEgress("export const hash = crypto.createHash('sha256').digest('hex');")
+  assert.equal(egressCheck.hermetic, true)
+  assert.equal(egressCheck.egressProof, 'OFFLINE_SANDBOX_EGRESS_CONTAINMENT_PROVEN')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v23 holo-singularity master suite with 68 pillars'],
+    decisions: ['Use deterministic v24 quantum master suite with 72 pillars'],
     diffSummary: 'server/api/tasks.ts (+55 lines)',
   }, async () => ({ stdout: 'OK' }))
 

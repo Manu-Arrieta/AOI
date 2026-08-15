@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v23 (The Infinite Holo-Singularity & Universal Autonomous Super-Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v24 (The Omniscient 72-Pillar Quantum Matrix & Universal Autonomous Hyper-OS)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Mutation Invariant Prover (`test-guard/mutation-invariant-prover.mjs`)**: Demostración estática de presencia de aserciones de invariantes y eliminación de tests superficiales (0 LLM tokens).
-- **Payload Drift Guard (`payload-guard/payload-drift-guard.mjs`)**: Auditoría estática de alineación de nombres de propiedades y tipos entre frontend y backend (0 LLM tokens).
-- **Barrel Export Neutralizer (`export-guard/barrel-export-neutralizer.mjs`)**: Detección y eliminación de re-exportaciones comodín `export *` en índices barril (0 LLM tokens).
-- **File Permission Prover (`sandbox-guard/file-permission-prover.mjs`)**: Verificación estricta de permisos de archivos y cumplimiento de la política de mínimo privilegio (0 LLM tokens).
+- **Promise Cascade Guard (`async-guard/promise-cascade-guard.mjs`)**: Prevención estática de bloqueos de Event Loop, cascadas recursivas y promesas huérfanas (0 LLM tokens).
+- **Schema Sunset Sentinel (`schema-guard/schema-sunset-sentinel.mjs`)**: Detección y migración proactiva de campos y endpoints API deprecados (0 LLM tokens).
+- **Heap Allocation Prover (`memory-guard/heap-allocation-prover.mjs`)**: Demostración formal de alocación segura de buffers y prevención de OOM (0 LLM tokens).
+- **Egress Interceptor (`sandbox-guard/egress-interceptor.mjs`)**: Intercepción y certificación de aislamiento 100% offline en sandboxes herméticos (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 68 Pilares (AOI-OS v23)
+## 🏛️ Matriz Arquitectónica Maestra de 72 Pilares (AOI-OS v24)
 
 ```text
-AOI-OS v23 Architecture Matrix (68 Pillars)
+AOI-OS v24 Architecture Matrix (72 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -144,17 +144,23 @@ AOI-OS v23 Architecture Matrix (68 Pillars)
 │   ├── budget-auto-throttle.mjs: Regulador dinámico de velocidad de gasto y auto-ajuste de esqueletizado.
 │   └── timing-leak-guard.mjs: Guardián contra ataques de canal lateral y comparación en tiempo constante.
 │
-├── 61-64. Núcleo Apex 64-Pillar Infinity Kernel (ast-merge/, query-guard/, bundle-guard/, sandbox-guard/)
+├── 61-64. Núcleo Apex Infinity Kernel (ast-merge/, query-guard/, bundle-guard/, sandbox-guard/)
 │   ├── semantic-merge-prover.mjs: Reconciliador semántico 3-way AST para fusiones paralelas sin conflictos.
 │   ├── query-performance-guard.mjs: Guardián estático contra consultas N+1 y columnas de filtrado no indexadas.
 │   ├── bundle-drift-verifier.mjs: Verificador de árbol de dependencias, tamaño de bundle y preservación de tree-shaking.
 │   └── zombie-process-purger.mjs: Registro formal de subprocesos y purga atómica de PIDs residuales en sandbox.
 │
-└── 65-68. Núcleo Infinite Holo-Super-Matrix v23 (test-guard/, payload-guard/, export-guard/, sandbox-guard/)
-    ├── mutation-invariant-prover.mjs: Demostración formal de aserciones e invariantes en tests.
-    ├── payload-drift-guard.mjs: Guardián de deriva y concordancia de cargas útiles HTTP frontend/backend.
-    ├── barrel-export-neutralizer.mjs: Neutralizador de re-exportaciones comodín en índices barril.
-    └── file-permission-prover.mjs: Probador de máscaras y permisos de mínimo privilegio en archivos del sandbox.
+├── 65-68. Núcleo Infinite Holo-Super-Matrix (test-guard/, payload-guard/, export-guard/, sandbox-guard/)
+│   ├── mutation-invariant-prover.mjs: Demostración formal de aserciones e invariantes en tests.
+│   ├── payload-drift-guard.mjs: Guardián de deriva y concordancia de cargas útiles HTTP frontend/backend.
+│   ├── barrel-export-neutralizer.mjs: Neutralizador de re-exportaciones comodín en índices barril.
+│   └── file-permission-prover.mjs: Probador de máscaras y permisos de mínimo privilegio en archivos del sandbox.
+│
+└── 69-72. Núcleo Omniscient 72-Pillar Quantum Matrix v24 (async-guard/, schema-guard/, memory-guard/, sandbox-guard/)
+    ├── promise-cascade-guard.mjs: Guardián contra bucles infinitos de microtareas y cascadas asíncronas.
+    ├── schema-sunset-sentinel.mjs: Centinela estático de campos obsoletos y migración de esquemas API.
+    ├── heap-allocation-prover.mjs: Probador estático de alocación de memoria y prevención de OOM en heap.
+    └── egress-interceptor.mjs: Interceptor criptográfico de egress y aislamiento de red en sandbox.
 ```
 
 ---
@@ -197,12 +203,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [24.0.0] - 2026-08-15 (The Omniscient 72-Pillar Quantum Matrix & Universal Autonomous Hyper-OS)
+- **Promise Cascade Guard**: Prevención estática de bloqueos de Event Loop, cascadas recursivas y promesas huérfanas (`async-guard/promise-cascade-guard.mjs`).
+- **Schema Sunset Sentinel**: Detección y migración proactiva de campos y endpoints API deprecados (`schema-guard/schema-sunset-sentinel.mjs`).
+- **Heap Allocation Prover**: Demostración formal de alocación segura de buffers y prevención de OOM (`memory-guard/heap-allocation-prover.mjs`).
+- **Egress Interceptor**: Intercepción y certificación de aislamiento 100% offline en sandboxes herméticos (`sandbox-guard/egress-interceptor.mjs`).
+- **261/261 Tests Pasando al 100%** y **331 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [23.0.0] - 2026-08-15 (The Infinite Holo-Singularity & Universal Autonomous Super-Matrix)
 - **Mutation Invariant Prover**: Demostración estática de presencia de aserciones de invariantes y eliminación de tests superficiales (`test-guard/mutation-invariant-prover.mjs`).
 - **Payload Drift Guard**: Auditoría estática de alineación de nombres de propiedades y tipos entre frontend y backend (`payload-guard/payload-drift-guard.mjs`).
 - **Barrel Export Neutralizer**: Detección y eliminación de re-exportaciones comodín `export *` en índices barril (`export-guard/barrel-export-neutralizer.mjs`).
 - **File Permission Prover**: Verificación estricta de permisos de archivos y cumplimiento de la política de mínimo privilegio (`sandbox-guard/file-permission-prover.mjs`).
-- **254/254 Tests Pasando al 100%** y **323 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [22.0.0] - 2026-08-15 (The Apex 64-Pillar Infinity Kernel & Universal Synthesis Matrix)
 - **Semantic Merge Prover**: Reconciliación semántica 3-way AST sin colisiones de Git para ramas concurrentes (`ast-merge/semantic-merge-prover.mjs`).

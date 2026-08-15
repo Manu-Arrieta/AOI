@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v23 (The Infinite Holo-Singularity & Universal Autonomous Super-Matrix).
+ * Master Orchestrator Engine for AOI-OS v24 (The Omniscient 72-Pillar Quantum Matrix & Universal Autonomous Hyper-OS).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -28,7 +28,9 @@
  * Package Export Leak Prover, Dynamic Budget Auto-Throttle, Side-Channel Timing Leak Guard,
  * Semantic AST Merge Prover, Query Performance & N+1 Guard, Bundle Size & Tree-Shaking Verifier,
  * Sandbox Zombie PID Purger, Mutation Test Invariant Prover, HTTP Payload Drift Guard,
- * Barrel Star-Export Neutralizer, Sandbox File Permission & Mask Prover, and ICM Memory Linking.
+ * Barrel Star-Export Neutralizer, Sandbox File Permission & Mask Prover, Promise Cascade Guard,
+ * API Schema Sunset Sentinel, Heap Allocation & LOH Prover, Sandbox Network Egress Interceptor,
+ * and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -118,6 +120,10 @@ import { proveTestInvariants } from './test-guard/mutation-invariant-prover.mjs'
 import { auditPayloadDrift } from './payload-guard/payload-drift-guard.mjs'
 import { auditBarrelExports } from './export-guard/barrel-export-neutralizer.mjs'
 import { proveFilePermissions } from './sandbox-guard/file-permission-prover.mjs'
+import { auditAsyncSafety } from './async-guard/promise-cascade-guard.mjs'
+import { auditSchemaSunset } from './schema-guard/schema-sunset-sentinel.mjs'
+import { proveHeapAllocations } from './memory-guard/heap-allocation-prover.mjs'
+import { auditNetworkEgress } from './sandbox-guard/egress-interceptor.mjs'
 import { createSelfHealingSession } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
 import { createHermeticSandbox } from './sandbox-runtime/sandbox-executor.mjs'
@@ -249,6 +255,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits asynchronous safety and prevents infinite promise cascades.
+   *
+   * @param {string} sourceCode
+   */
+  function auditAsyncEventLoop(sourceCode) {
+    return auditAsyncSafety(sourceCode)
+  }
+
+  /**
+   * Audits schema field deprecation and sunsets.
+   *
+   * @param {string} sourceCode
+   * @param {Array<{ name: string, replacement?: string }>} deprecatedFields
+   */
+  function auditFieldDeprecations(sourceCode, deprecatedFields = []) {
+    return auditSchemaSunset(sourceCode, deprecatedFields)
+  }
+
+  /**
+   * Proves heap memory allocation safety.
+   *
+   * @param {string} sourceCode
+   */
+  function auditHeapAllocationSafety(sourceCode) {
+    return proveHeapAllocations(sourceCode)
+  }
+
+  /**
+   * Audits sandbox network egress isolation.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxEgress(sourceCode) {
+    return auditNetworkEgress(sourceCode)
   }
 
   /**
@@ -465,7 +508,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '23.0.0',
+      version: '24.0.0',
       components,
     })
   }
@@ -1014,6 +1057,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditAsyncEventLoop,
+    auditFieldDeprecations,
+    auditHeapAllocationSafety,
+    auditSandboxEgress,
     auditTestInvariants,
     auditPayloadAlignment,
     auditBarrelIndex,
@@ -1098,7 +1145,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v23: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v24: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
