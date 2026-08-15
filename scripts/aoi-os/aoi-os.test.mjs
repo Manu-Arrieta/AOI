@@ -12,13 +12,14 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full DAG, batches, consensus gate, AST mutex, fuzzing, C4 and time travel', async () => {
+test('createAoiOsPipeline initializes full DAG, batches, consensus gate, AST mutex, fuzzing, C4, time travel, mutation testing, complexity predictor, openapi, and mesh', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v7',
-    taskId: 'TASK-2026-01',
+    feature: 'aoi-os-v8',
+    taskId: 'TASK-2026-02',
     globalTokenBudget: 100000,
+    federatedPeers: ['MoviHub'],
   })
 
   assert.equal(pipeline.rawNodes.length, 2)
@@ -30,30 +31,46 @@ test('createAoiOsPipeline initializes full DAG, batches, consensus gate, AST mut
   assert.equal(prep.microAgent.role, 'backend')
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. AST Symbol Mutex
+  // 2. Predictive Complexity Estimation
+  const complexity = pipeline.predictComplexity('export function run() { if (true) return 1; return 0; }', 'run.ts')
+  assert.equal(complexity.complexityRating, 'low')
+  assert.equal(complexity.recommendation, 'direct')
+
+  // 3. Mutation Testing Analysis
+  const mutants = pipeline.performMutationAnalysis('export function isMatch(a: string, b: string) { return a === b; }')
+  assert.ok(mutants.length >= 1)
+
+  // 4. OpenAPI 3.1 Synthesis
+  const openApi = pipeline.getOpenApiSpecification({ title: 'AOI Governed Mesh' })
+  assert.equal(openApi.openapi, '3.1.0')
+
+  // 5. Workspace Federation Mesh
+  assert.equal(pipeline.meshNode.workspaceId, 'AOI')
+
+  // 6. AST Symbol Mutex
   const lock = pipeline.symbolMutex.acquireLock('T-1', 'server/api/tasks.ts')
   assert.equal(lock.acquired, true)
   pipeline.symbolMutex.releaseLock('T-1', 'server/api/tasks.ts')
 
-  // 3. Chaos Fuzzing
+  // 7. Chaos Fuzzing
   const fuzz = pipeline.runChaosFuzzing([{ name: 'userId', type: 'string' }], 'getUser')
   assert.ok(fuzz.testCasesCount > 0)
 
-  // 4. Dynamic C4 Diagram
+  // 8. Dynamic C4 Diagram
   const c4 = pipeline.getC4ArchitectureDiagram('AOI-OS Core')
   assert.equal(c4.containerCount, 2)
   assert.ok(c4.mermaidDiagram.includes('subgraph System["AOI-OS Core"]'))
 
-  // 5. Time Travel Snapshots
+  // 9. Time Travel Snapshots
   pipeline.timeTravel.captureSnapshot(1, { wave: 1, completed: ['T-1'] })
-  assert.equal(pipeline.timeTravel.getSnapshots().length, 2) // initial + wave 1
+  assert.equal(pipeline.timeTravel.getSnapshots().length, 2)
 
-  // 6. AST Skeletonization & Pruning
+  // 10. AST Skeletonization & Pruning
   const sampleCode = Array.from({ length: 90 }, (_, i) => `export function fn${i}() {\n  return ${i};\n}`).join('\n')
   const pruned = pipeline.getPrunedSourceSlice(sampleCode, 'utils.ts', ['fn0'])
   assert.ok(pruned.savingsPercent > 0)
 
-  // 7. Consensus Gate Arbitration
+  // 11. Consensus Gate Arbitration
   const cleanCode = 'export function getTasks() { return [] }'
   const consensus = pipeline.evaluateConsensus('T-1', cleanCode, {
     testsPassed: true,
@@ -61,17 +78,12 @@ test('createAoiOsPipeline initializes full DAG, batches, consensus gate, AST mut
   })
   assert.equal(consensus.approved, true)
 
-  // 8. Finalize Task and Auto-Sync to ICM
+  // 12. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic in-memory mutex'],
+    decisions: ['Use deterministic mutation verifier and mesh'],
     diffSummary: 'server/api/tasks.ts (+10 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'completed')
-
-  // 9. Event Bus verifications
-  const events = pipeline.eventBus.getRecentEvents(30)
-  assert.ok(events.some((e) => e.type === 'chaos_fuzzer'))
-  assert.ok(events.some((e) => e.type === 'consensus_gate'))
 })

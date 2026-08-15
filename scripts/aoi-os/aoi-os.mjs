@@ -5,7 +5,9 @@
  * Master Orchestrator Engine for AOI-OS (Autonomous, Deterministic & Self-Healing Agentic OS).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
- * Dynamic C4 Graph Generation, Time-Travel Snapshots, Consensus Gates, and ICM Memory Linking.
+ * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
+ * Token Complexity Estimation, OpenAPI 3.1 Synthesizer, Workspace Federation Mesh,
+ * Consensus Gates, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -27,7 +29,11 @@ import { createAstSymbolMutex } from './mutex/ast-symbol-mutex.mjs'
 import { generateAdversarialVectors } from './fuzzing/adversarial-fuzzer.mjs'
 import { generateC4ArchitectureDiagram } from './c4-graph/c4-architecture-generator.mjs'
 import { createTimeTravelEngine } from './time-travel/time-travel-engine.mjs'
-import { createSelfHealingSession, extractFailureDiagnostic } from './self-healing/test-healing-loop.mjs'
+import { generateAstMutants, calculateMutationScore } from './mutation-testing/ast-mutation-verifier.mjs'
+import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-estimator.mjs'
+import { synthesizeOpenApiSpec } from './contract-docgen/openapi-synthesizer.mjs'
+import { createWorkspaceMeshNode } from './federation/workspace-mesh-bridge.mjs'
+import { createSelfHealingSession } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
 import { createHermeticSandbox } from './sandbox-runtime/sandbox-executor.mjs'
 import { createTokenVelocityGuard } from './sandbox-runtime/token-velocity-guard.mjs'
@@ -44,6 +50,7 @@ import { generateTaskMemoryPayload, syncTaskToIcm } from './memory-linker/icm-me
  * @param {string} [options.taskId='TASK-CURRENT'] - Task ID
  * @param {string} [options.constitutionRules=''] - Dynamic constitution rules
  * @param {number} [options.globalTokenBudget=200000] - Token budget cap
+ * @param {string[]} [options.federatedPeers=[]] - Federated peer workspaces
  * @returns {object} Pipeline instance
  */
 export function createAoiOsPipeline(options) {
@@ -54,6 +61,7 @@ export function createAoiOsPipeline(options) {
     taskId = 'TASK-CURRENT',
     constitutionRules = '',
     globalTokenBudget = 200000,
+    federatedPeers = [],
   } = options
 
   const eventBus = createAoiOsEventBus()
@@ -61,6 +69,7 @@ export function createAoiOsPipeline(options) {
   const symbolMutex = createAstSymbolMutex()
   const contractCache = createContractKvCache()
   const timeTravel = createTimeTravelEngine()
+  const meshNode = createWorkspaceMeshNode({ workspaceId: workspace, peers: federatedPeers })
 
   const rawNodes = parseTaskDag(tasksMarkdown)
   const validation = validateDagStructure(rawNodes)
@@ -113,6 +122,35 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent }
+  }
+
+  /**
+   * Evaluates predictive complexity and token requirements for a file.
+   *
+   * @param {string} sourceCode
+   * @param {string} [filePath]
+   */
+  function predictComplexity(sourceCode, filePath = 'file.ts') {
+    return estimateTokenComplexity(sourceCode, filePath)
+  }
+
+  /**
+   * Generates AST micro-mutations to verify test suite quality.
+   *
+   * @param {string} sourceCode
+   * @param {object} [options]
+   */
+  function performMutationAnalysis(sourceCode, options = {}) {
+    return generateAstMutants(sourceCode, options)
+  }
+
+  /**
+   * Synthesizes OpenAPI 3.1 specification for all current DAG tasks.
+   *
+   * @param {object} [options]
+   */
+  function getOpenApiSpecification(options = {}) {
+    return synthesizeOpenApiSpec(rawNodes, options)
   }
 
   /**
@@ -321,7 +359,11 @@ export function createAoiOsPipeline(options) {
     symbolMutex,
     contractCache,
     timeTravel,
+    meshNode,
     prepareTaskExecution,
+    predictComplexity,
+    performMutationAnalysis,
+    getOpenApiSpecification,
     getPrunedSourceSlice,
     getC4ArchitectureDiagram,
     runChaosFuzzing,
