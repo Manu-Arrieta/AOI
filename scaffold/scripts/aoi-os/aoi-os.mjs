@@ -2,12 +2,13 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS (Autonomous, Deterministic & Self-Healing Agentic OS).
+ * Master Orchestrator Engine for AOI-OS v9 (Autonomous, Deterministic & Self-Healing Agentic OS).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
- * Token Complexity Estimation, OpenAPI 3.1 Synthesizer, Workspace Federation Mesh,
- * Consensus Gates, and ICM Memory Linking.
+ * Token Complexity Estimation, OpenAPI 3.1 & E2E Acceptance Flow Synthesizer,
+ * Workspace Federation Mesh, Static Taint Tracer, Dead-Code Guard,
+ * Dynamic Constitution Drift Auditor, Consensus Gates, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -24,14 +25,18 @@ import {
 import { synthesizeMicroAgent } from './subagent-synthesizer/subagent-synthesizer.mjs'
 import { validateContractDiff, classifyBlastRadius, detectLanguage } from './ast-guard/ast-contract-guard.mjs'
 import { skeletonizeSource } from './ast-guard/ast-skeletonizer.mjs'
+import { auditDeadCode } from './ast-guard/ast-deadcode-guard.mjs'
 import { createContractKvCache } from './subagent-synthesizer/contract-kv-cache.mjs'
 import { createAstSymbolMutex } from './mutex/ast-symbol-mutex.mjs'
 import { generateAdversarialVectors } from './fuzzing/adversarial-fuzzer.mjs'
 import { generateC4ArchitectureDiagram } from './c4-graph/c4-architecture-generator.mjs'
 import { createTimeTravelEngine } from './time-travel/time-travel-engine.mjs'
 import { generateAstMutants, calculateMutationScore } from './mutation-testing/ast-mutation-verifier.mjs'
+import { traceTaintFlows } from './security-guard/ast-taint-tracer.mjs'
 import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-estimator.mjs'
 import { synthesizeOpenApiSpec } from './contract-docgen/openapi-synthesizer.mjs'
+import { synthesizeE2eTestFlow } from './contract-docgen/e2e-flow-synthesizer.mjs'
+import { auditConstitutionDrift } from './consensus-gate/constitution-drift-auditor.mjs'
 import { createWorkspaceMeshNode } from './federation/workspace-mesh-bridge.mjs'
 import { createSelfHealingSession } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
@@ -145,12 +150,51 @@ export function createAoiOsPipeline(options) {
   }
 
   /**
+   * Performs static taint and data-flow security analysis.
+   *
+   * @param {string} sourceCode
+   * @param {string} [filePath]
+   */
+  function auditTaintSecurity(sourceCode, filePath = 'file.ts') {
+    return traceTaintFlows(sourceCode, filePath)
+  }
+
+  /**
+   * Identifies dead code and orphan variables.
+   *
+   * @param {string} sourceCode
+   * @param {string} [filePath]
+   */
+  function auditDeadCodeHygiene(sourceCode, filePath = 'file.ts') {
+    return auditDeadCode(sourceCode, filePath)
+  }
+
+  /**
+   * Audits code against dynamic architectural constitution.
+   *
+   * @param {string} sourceCode
+   * @param {string} [filePath]
+   */
+  function auditConstitution(sourceCode, filePath = 'file.ts') {
+    return auditConstitutionDrift(sourceCode, filePath)
+  }
+
+  /**
    * Synthesizes OpenAPI 3.1 specification for all current DAG tasks.
    *
    * @param {object} [options]
    */
   function getOpenApiSpecification(options = {}) {
     return synthesizeOpenApiSpec(rawNodes, options)
+  }
+
+  /**
+   * Synthesizes executable E2E acceptance test suite.
+   *
+   * @param {object} [options]
+   */
+  function generateE2eAcceptanceSuite(options = {}) {
+    return synthesizeE2eTestFlow(rawNodes, options)
   }
 
   /**
@@ -363,7 +407,11 @@ export function createAoiOsPipeline(options) {
     prepareTaskExecution,
     predictComplexity,
     performMutationAnalysis,
+    auditTaintSecurity,
+    auditDeadCodeHygiene,
+    auditConstitution,
     getOpenApiSpecification,
+    generateE2eAcceptanceSuite,
     getPrunedSourceSlice,
     getC4ArchitectureDiagram,
     runChaosFuzzing,
@@ -392,7 +440,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v9: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

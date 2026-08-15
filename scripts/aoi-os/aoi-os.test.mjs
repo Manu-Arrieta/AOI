@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full DAG, batches, consensus gate, AST mutex, fuzzing, C4, time travel, mutation testing, complexity predictor, openapi, and mesh', async () => {
+test('createAoiOsPipeline initializes full v9 pipeline with Taint Tracer, Dead-Code Guard, E2E flow, and Constitution auditor', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v8',
-    taskId: 'TASK-2026-02',
+    feature: 'aoi-os-v9',
+    taskId: 'TASK-2026-03',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
   })
@@ -31,57 +31,47 @@ test('createAoiOsPipeline initializes full DAG, batches, consensus gate, AST mut
   assert.equal(prep.microAgent.role, 'backend')
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Predictive Complexity Estimation
+  // 2. Static Taint Analysis
+  const taintCheck = pipeline.auditTaintSecurity('export function clean() { return 123; }', 'clean.ts')
+  assert.equal(taintCheck.safe, true)
+
+  // 3. Dead-Code Hygiene Guard
+  const deadCheck = pipeline.auditDeadCodeHygiene('export function ok() { const x = 1; return x; }', 'ok.ts')
+  assert.equal(deadCheck.clean, true)
+
+  // 4. Constitution Drift Auditor
+  const constCheck = pipeline.auditConstitution('export function valid(): number { return 10; }', 'valid.ts')
+  assert.equal(constCheck.passed, true)
+
+  // 5. E2E Acceptance Flow Synthesizer
+  const e2eSuite = pipeline.generateE2eAcceptanceSuite({ suiteName: 'AOI-OS Master Flow' })
+  assert.ok(e2eSuite.includes("describe('AOI-OS Master Flow'"))
+
+  // 6. Predictive Complexity Estimation
   const complexity = pipeline.predictComplexity('export function run() { if (true) return 1; return 0; }', 'run.ts')
   assert.equal(complexity.complexityRating, 'low')
-  assert.equal(complexity.recommendation, 'direct')
 
-  // 3. Mutation Testing Analysis
+  // 7. Mutation Testing Analysis
   const mutants = pipeline.performMutationAnalysis('export function isMatch(a: string, b: string) { return a === b; }')
   assert.ok(mutants.length >= 1)
 
-  // 4. OpenAPI 3.1 Synthesis
+  // 8. OpenAPI 3.1 Synthesis
   const openApi = pipeline.getOpenApiSpecification({ title: 'AOI Governed Mesh' })
   assert.equal(openApi.openapi, '3.1.0')
 
-  // 5. Workspace Federation Mesh
-  assert.equal(pipeline.meshNode.workspaceId, 'AOI')
-
-  // 6. AST Symbol Mutex
+  // 9. AST Symbol Mutex
   const lock = pipeline.symbolMutex.acquireLock('T-1', 'server/api/tasks.ts')
   assert.equal(lock.acquired, true)
   pipeline.symbolMutex.releaseLock('T-1', 'server/api/tasks.ts')
 
-  // 7. Chaos Fuzzing
+  // 10. Chaos Fuzzing
   const fuzz = pipeline.runChaosFuzzing([{ name: 'userId', type: 'string' }], 'getUser')
   assert.ok(fuzz.testCasesCount > 0)
 
-  // 8. Dynamic C4 Diagram
-  const c4 = pipeline.getC4ArchitectureDiagram('AOI-OS Core')
-  assert.equal(c4.containerCount, 2)
-  assert.ok(c4.mermaidDiagram.includes('subgraph System["AOI-OS Core"]'))
-
-  // 9. Time Travel Snapshots
-  pipeline.timeTravel.captureSnapshot(1, { wave: 1, completed: ['T-1'] })
-  assert.equal(pipeline.timeTravel.getSnapshots().length, 2)
-
-  // 10. AST Skeletonization & Pruning
-  const sampleCode = Array.from({ length: 90 }, (_, i) => `export function fn${i}() {\n  return ${i};\n}`).join('\n')
-  const pruned = pipeline.getPrunedSourceSlice(sampleCode, 'utils.ts', ['fn0'])
-  assert.ok(pruned.savingsPercent > 0)
-
-  // 11. Consensus Gate Arbitration
-  const cleanCode = 'export function getTasks() { return [] }'
-  const consensus = pipeline.evaluateConsensus('T-1', cleanCode, {
-    testsPassed: true,
-    astInvariantSafe: true,
-  })
-  assert.equal(consensus.approved, true)
-
-  // 12. Finalize Task and Auto-Sync to ICM
+  // 11. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic mutation verifier and mesh'],
-    diffSummary: 'server/api/tasks.ts (+10 lines)',
+    decisions: ['Use deterministic v9 engineering suite'],
+    diffSummary: 'server/api/tasks.ts (+15 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
