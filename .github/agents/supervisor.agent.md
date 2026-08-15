@@ -77,7 +77,7 @@ Load agent roster from `.github/agents/` to discover available agents and their 
 2. `icm_memoir_search(memoir: "{WORKSPACE}-architecture", query: "<relevant concepts>")`
 3. `icm_feedback_search(query: "<relevant past mistakes>")`
 4. Load shared instructions from `.github/instructions/` → inject as "Project Standards"
-5. Provide the agent with: recalled context + task description + constraints + project standards
+5. Provide the agent with: **Isolated Task Payload** (recalled context + target task slice from `tasks.md` + contracts from `design.md` + project standards). Do NOT pass multi-turn conversation transcripts into subagent prompts.
 
 ### After receiving deliverable from ANY agent:
 

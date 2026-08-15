@@ -44,7 +44,7 @@ terminal input, shell scripts, or automation macros is an automatic FAIL.
 
 ### Step 3: Spec Compliance Check
 
-Hand off to **@integration-specialist**:
+Hand off to **@integration-specialist** with isolated task context (via `node scripts/subagent-context/sanitize-subagent-payload.mjs --task-dir .tasks/{feature}/{task-id} --role qa` or task artifacts):
 
 1. For each requirement in `spec.md`, verify implementation exists
 2. For each constraint in `design.md`, verify it was respected
