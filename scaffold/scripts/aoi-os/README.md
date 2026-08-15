@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v15 (The Autonomous Holo-Genesis & Self-Compiling Hyper-Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v16 (The Omnipresent Singularity & Infinite-Scale Hyper-Core)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Self-Refactoring AST Kernel (`ast-refactor/self-refactoring-kernel.mjs`)**: Descomposición matemática de funciones monolíticas en sub-rutinas puras desacopladas (0 LLM tokens).
-- **Database Migration Diff Synthesizer (`db-migration/migration-diff-synthesizer.mjs`)**: Generación reversible y determinista de scripts SQL de migración (UP / DOWN) sin tiempo de inactividad (0 LLM tokens).
-- **Schema Convergence Prover (`convergence/schema-convergence-prover.mjs`)**: Demostración formal de convergencia de tipos entre TypeScript, C#, Python y SQL (0 LLM tokens).
-- **Micro-Prompt Context Compactor (`context-compactor/micro-prompt-compactor.mjs`)**: Eliminación de ruido y tokens muertos para entregar contextos con más del 90% de densidad de señal (0 LLM tokens).
+- **Zero-Knowledge Epistemic Attestor (`zk-attestor/zk-epistemic-attestor.mjs`)**: Árboles de Merkle criptográficos y certificados de cumplimiento formal sin exposición de memoria interna (0 LLM tokens).
+- **Root Cause Diagnostic Synthesizer (`diagnostics/root-cause-synthesizer.mjs`)**: Clasificación formal de arquetipos de error y síntesis de blueprints de remediación dirigida (0 LLM tokens).
+- **Circular Dependency Neutralizer (`circular-neutralizer/circular-dependency-neutralizer.mjs`)**: Detección topológica de ciclos y desacoplamiento determinista mediante interfaces intermedias (0 LLM tokens).
+- **Token Liquidity Balancer (`liquidity-balancer/token-liquidity-balancer.mjs`)**: Redistribución dinámica de cuotas de tokens según complejidad para evitar inanición en tareas paralelas (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica de 36 Pilares (AOI-OS v15)
+## 🏛️ Matriz Arquitectónica de 40 Pilares (AOI-OS v16)
 
 ```text
-AOI-OS v15 Architecture Matrix
+AOI-OS v16 Architecture Matrix
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -102,11 +102,17 @@ AOI-OS v15 Architecture Matrix
 │   ├── micro-benchmark-suite.mjs: Medición de rendimiento y latencia para prevenir regresiones.
 │   └── axiom-reconciler.mjs: Reconciliación de axiomas y auto-equilibrio de la constitución arquitectónica.
 │
-└── 33-36. Núcleo Holo-Genesis v15 (ast-refactor/, db-migration/, convergence/, context-compactor/)
-    ├── self-refactoring-kernel.mjs: Descomposición matemática de funciones complejas en sub-funciones puras.
-    ├── migration-diff-synthesizer.mjs: Generación reversible de migraciones de base de datos (UP / DOWN).
-    ├── schema-convergence-prover.mjs: Demostración formal de convergencia e identidad de tipos políglotas.
-    └── micro-prompt-compactor.mjs: Compactación de contexto de ultra-alta densidad (90%+ de señal).
+├── 33-36. Núcleo Holo-Genesis (ast-refactor/, db-migration/, convergence/, context-compactor/)
+│   ├── self-refactoring-kernel.mjs: Descomposición matemática de funciones complejas en sub-funciones puras.
+│   ├── migration-diff-synthesizer.mjs: Generación reversible de migraciones de base de datos (UP / DOWN).
+│   ├── schema-convergence-prover.mjs: Demostración formal de convergencia e identidad de tipos políglotas.
+│   └── micro-prompt-compactor.mjs: Compactación de contexto de ultra-alta densidad (90%+ de señal).
+│
+└── 37-40. Núcleo Omnipresente Singularity v16 (zk-attestor/, diagnostics/, circular-neutralizer/, liquidity-balancer/)
+    ├── zk-epistemic-attestor.mjs: Árboles de Merkle criptográficos y atestaciones ZK de cumplimiento formal.
+    ├── root-cause-synthesizer.mjs: Clasificador de arquetipos de error y remediación dirigida de fallos.
+    ├── circular-dependency-neutralizer.mjs: Detección y desacoplamiento topológico de dependencias circulares.
+    └── token-liquidity-balancer.mjs: Balanceador dinámico de liquidez de tokens según complejidad agéntica.
 ```
 
 ---
@@ -149,12 +155,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [16.0.0] - 2026-08-15 (The Omnipresent Singularity & Infinite-Scale Hyper-Core)
+- **Zero-Knowledge Epistemic Attestor**: Árboles de Merkle criptográficos y atestaciones ZK de cumplimiento formal (`zk-attestor/zk-epistemic-attestor.mjs`).
+- **Root Cause Diagnostic Synthesizer**: Clasificador de arquetipos de error y remediación dirigida de fallos (`diagnostics/root-cause-synthesizer.mjs`).
+- **Circular Dependency Neutralizer**: Detección y desacoplamiento topológico de dependencias circulares (`circular-neutralizer/circular-dependency-neutralizer.mjs`).
+- **Token Liquidity Balancer**: Balanceador dinámico de liquidez de tokens según complejidad agéntica (`liquidity-balancer/token-liquidity-balancer.mjs`).
+- **206/206 Tests Pasando al 100%** y **267 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [15.0.0] - 2026-08-15 (The Autonomous Holo-Genesis & Self-Compiling Hyper-Matrix)
 - **Self-Refactoring AST Kernel**: Descomposición matemática de funciones monolíticas en sub-rutinas puras (`ast-refactor/self-refactoring-kernel.mjs`).
 - **Database Migration Diff Synthesizer**: Generación reversible y determinista de scripts SQL de migración (UP / DOWN) (`db-migration/migration-diff-synthesizer.mjs`).
 - **Schema Convergence Prover**: Demostración formal de convergencia e identidad de tipos entre TS, C#, Python y SQL (`convergence/schema-convergence-prover.mjs`).
 - **Micro-Prompt Context Compactor**: Compactador de contexto de ultra-alta densidad para máximo apalancamiento de LLM (`context-compactor/micro-prompt-compactor.mjs`).
-- **199/199 Tests Pasando al 100%** y **259 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [14.0.0] - 2026-08-15 (The Omniscient Consensus & Self-Replication Matrix)
 - **Polyglot Dependency Solver**: Resolución determinista y auditoría de dependencias para prevenir conflictos (`dependency-solver/polyglot-dependency-solver.mjs`).

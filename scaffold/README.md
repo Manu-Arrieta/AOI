@@ -2,7 +2,7 @@
 
 **Tu equipo de desarrollo de software autónomo, determinista y autosanable, orquestado por IA.**
 
-AOI transforma cualquier repositorio en un espacio de trabajo agéntico con **memoria persistente (ICM)**, **agentes especializados**, un **ciclo de vida gobernado (SDD)** y **AOI-OS v15**: un sistema operativo determinista de 36 pilares que ejecuta tareas complejas de forma autónoma con protección de contratos de código políglota (TypeScript, Vue SFC, Python, C#), sandboxes herméticos, hot-patching en memoria, demostración formal de invariantes, síntesis cuántica de variantes AST, resolución de dependencias, auto-refactorización, migraciones de base de datos reversibles, demostración de convergencia de esquemas y auto-sanación con **máxima eficiencia y optimización de tokens**.
+AOI transforma cualquier repositorio en un espacio de trabajo agéntico con **memoria persistente (ICM)**, **agentes especializados**, un **ciclo de vida gobernado (SDD)** y **AOI-OS v16**: un sistema operativo determinista de 40 pilares que ejecuta tareas complejas de forma autónoma con protección de contratos de código políglota (TypeScript, Vue SFC, Python, C#), sandboxes herméticos, hot-patching en memoria, demostración formal de invariantes, síntesis cuántica de variantes AST, resolución de dependencias, auto-refactorización, migraciones de base de datos reversibles, pruebas ZK de cumplimiento, diagnóstico de causa raíz y auto-sanación con **máxima eficiencia y optimización de tokens**.
 
 ---
 
@@ -30,12 +30,12 @@ Cada paso cuenta con una **aprobación explícita del Owner/Arquitecto**. Tú di
 
 ---
 
-## 🧠 AOI-OS v15: Matriz Arquitectónica de 36 Pilares
+## 🧠 AOI-OS v16: Matriz Arquitectónica de 40 Pilares
 
 AOI-OS opera maximizando la eficiencia de cómputo local determinista combinado con síntesis agéntica de ultra-alta densidad:
 
 ```text
-AOI-OS v15 Architecture Matrix
+AOI-OS v16 Architecture Matrix
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 ├── 2. Guardián AST Políglota para TS / Vue SFC / Python / C# (scripts/aoi-os/ast-guard/)
 ├── 3. Esqueletizador AST & Cache Semántico de Contratos (ast-skeletonizer.mjs, contract-kv-cache.mjs)
@@ -59,11 +59,12 @@ AOI-OS v15 Architecture Matrix
 ├── 21-24. Núcleo Hyper-Core (virtualizer/, telemetry/, ontology/, ast-optimizer/)
 ├── 25-28. Núcleo Genesis Cuántico (quantum-synthesis/, type-synthesizer/, hologram/, security-guard/)
 ├── 29-32. Núcleo Omnisciente (dependency-solver/, event-sourcing/, benchmark/, axiom-reconciler/)
-└── 33-36. Núcleo Holo-Genesis v15 (ast-refactor/, db-migration/, convergence/, context-compactor/)
-    ├── self-refactoring-kernel.mjs: Descomposición matemática de funciones complejas en sub-funciones puras.
-    ├── migration-diff-synthesizer.mjs: Generación reversible de migraciones de base de datos (UP / DOWN).
-    ├── schema-convergence-prover.mjs: Demostración formal de convergencia e identidad de tipos políglotas.
-    └── micro-prompt-compactor.mjs: Compactación de contexto de ultra-alta densidad (90%+ de señal).
+├── 33-36. Núcleo Holo-Genesis (ast-refactor/, db-migration/, convergence/, context-compactor/)
+└── 37-40. Núcleo Omnipresente Singularity v16 (zk-attestor/, diagnostics/, circular-neutralizer/, liquidity-balancer/)
+    ├── zk-epistemic-attestor.mjs: Árboles de Merkle criptográficos y atestaciones ZK de cumplimiento formal.
+    ├── root-cause-synthesizer.mjs: Clasificador de arquetipos de error y remediación dirigida de fallos.
+    ├── circular-dependency-neutralizer.mjs: Detección y desacoplamiento topológico de dependencias circulares.
+    └── token-liquidity-balancer.mjs: Balanceador dinámico de liquidez de tokens según complejidad agéntica.
 ```
 
 ---
@@ -131,12 +132,18 @@ node scripts/aoi-os/aoi-os-cli.mjs --tasks .tasks/{feature}/{task-id}/tasks.md -
 
 ## 📜 CHANGELOG
 
+### [16.0.0] - 2026-08-15 (The Omnipresent Singularity & Infinite-Scale Hyper-Core)
+- **Zero-Knowledge Epistemic Attestor**: Árboles de Merkle criptográficos y atestaciones ZK de cumplimiento formal (`zk-attestor/zk-epistemic-attestor.mjs`).
+- **Root Cause Diagnostic Synthesizer**: Clasificador de arquetipos de error y remediación dirigida de fallos (`diagnostics/root-cause-synthesizer.mjs`).
+- **Circular Dependency Neutralizer**: Detección y desacoplamiento topológico de dependencias circulares (`circular-neutralizer/circular-dependency-neutralizer.mjs`).
+- **Token Liquidity Balancer**: Balanceador dinámico de liquidez de tokens según complejidad agéntica (`liquidity-balancer/token-liquidity-balancer.mjs`).
+- **206/206 Tests Pasando al 100%** y **267 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [15.0.0] - 2026-08-15 (The Autonomous Holo-Genesis & Self-Compiling Hyper-Matrix)
 - **Self-Refactoring AST Kernel**: Descomposición matemática de funciones monolíticas en sub-rutinas puras (`ast-refactor/self-refactoring-kernel.mjs`).
 - **Database Migration Diff Synthesizer**: Generación reversible y determinista de scripts SQL de migración (UP / DOWN) (`db-migration/migration-diff-synthesizer.mjs`).
 - **Schema Convergence Prover**: Demostración formal de convergencia e identidad de tipos entre TS, C#, Python y SQL (`convergence/schema-convergence-prover.mjs`).
 - **Micro-Prompt Context Compactor**: Compactador de contexto de ultra-alta densidad para máximo apalancamiento de LLM (`context-compactor/micro-prompt-compactor.mjs`).
-- **199/199 Tests Pasando al 100%** y **259 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [14.0.0] - 2026-08-15 (The Omniscient Consensus & Self-Replication Matrix)
 - **Polyglot Dependency Solver**: Resolución determinista y auditoría de dependencias para prevenir conflictos (`dependency-solver/polyglot-dependency-solver.mjs`).

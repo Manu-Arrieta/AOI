@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v15 (The Autonomous Holo-Genesis & Self-Compiling Hyper-Matrix).
+ * Master Orchestrator Engine for AOI-OS v16 (The Omnipresent Singularity & Infinite-Scale Hyper-Core).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -17,7 +17,9 @@
  * Semantic Token Hologram, Zero-Trust Syscall Virtual Guard, Polyglot Dependency Solver,
  * Deterministic Event-Sourcing Kernel, Zero-Overhead Micro-Benchmark Suite,
  * Axiom Self-Reconciler, Self-Refactoring AST Kernel, Database Migration Diff Synthesizer,
- * Schema Convergence Prover, Micro-Prompt Context Compactor, and ICM Memory Linking.
+ * Schema Convergence Prover, Micro-Prompt Context Compactor, Zero-Knowledge Epistemic Attestor,
+ * Root Cause Diagnostic Synthesizer, Circular Dependency Neutralizer,
+ * Token Liquidity Balancer, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -75,6 +77,10 @@ import { proposeAstRefactoring } from './ast-refactor/self-refactoring-kernel.mj
 import { synthesizeMigrationDiff } from './db-migration/migration-diff-synthesizer.mjs'
 import { proveSchemaConvergence } from './convergence/schema-convergence-prover.mjs'
 import { compactContextPayload } from './context-compactor/micro-prompt-compactor.mjs'
+import { generateEpistemicAttestation } from './zk-attestor/zk-epistemic-attestor.mjs'
+import { diagnoseRootCause } from './diagnostics/root-cause-synthesizer.mjs'
+import { neutralizeCircularDependencies } from './circular-neutralizer/circular-dependency-neutralizer.mjs'
+import { balanceTokenLiquidity } from './liquidity-balancer/token-liquidity-balancer.mjs'
 import { createSelfHealingSession } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
 import { createHermeticSandbox } from './sandbox-runtime/sandbox-executor.mjs'
@@ -191,6 +197,45 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent }
+  }
+
+  /**
+   * Generates a zero-knowledge cryptographic epistemic attestation for task assertions.
+   *
+   * @param {string} taskIdentifier
+   * @param {Array<{ assertion: string, passed: boolean }>} assertions
+   */
+  function attestTaskCompliance(taskIdentifier, assertions = []) {
+    return generateEpistemicAttestation(taskIdentifier, assertions)
+  }
+
+  /**
+   * Classifies error messages and traces into formal root-cause archetypes.
+   *
+   * @param {string} errorMessage
+   * @param {string} [stackTrace]
+   */
+  function diagnoseError(errorMessage, stackTrace = '') {
+    return diagnoseRootCause(errorMessage, stackTrace)
+  }
+
+  /**
+   * Detects circular dependencies and synthesizes decoupling plans.
+   *
+   * @param {Record<string, string[]>} dependencyGraph
+   */
+  function auditCircularDependencies(dependencyGraph) {
+    return neutralizeCircularDependencies(dependencyGraph)
+  }
+
+  /**
+   * Rebalances token budget liquidity across active parallel tasks.
+   *
+   * @param {number} totalPool
+   * @param {Array<{ taskId: string, role?: string, complexity?: string }>} tasks
+   */
+  function rebalanceLiquidity(totalPool, tasks) {
+    return balanceTokenLiquidity(totalPool, tasks)
   }
 
   /**
@@ -657,6 +702,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    attestTaskCompliance,
+    diagnoseError,
+    auditCircularDependencies,
+    rebalanceLiquidity,
     proposeRefactor,
     generateDbMigration,
     proveConvergence,
@@ -710,7 +759,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v15: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v16: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
