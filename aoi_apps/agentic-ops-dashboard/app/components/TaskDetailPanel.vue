@@ -33,7 +33,7 @@ const { locale, messages } = useLocale()
 const artifactGridStyle = { '--task-artifact-max-count': '11' }
 
 const selectedArtifactPath = ref<string | null>(null)
-const activeDetailSection = ref<'relations' | 'artifacts'>('relations')
+const activeDetailSection = ref<'relations' | 'artifacts' | 'dag'>('relations')
 
 watch(
   () => props.task?.id,
@@ -52,6 +52,19 @@ const selectedArtifact = computed(
 const taskStatusLabel = computed(() =>
   props.task ? translateDashboardStatus(props.task.status, locale.value) : null,
 )
+const dagNodes = computed(() => {
+  if (!props.task) return []
+  return [
+    {
+      id: props.task.id,
+      title: props.task.title,
+      role: 'general',
+      dependsOn: props.task.relationReferences.map((r) => r.targetId).filter(Boolean),
+      status: (props.task.status.toLowerCase().includes('implement') ? 'in_progress' : 'completed') as const,
+    },
+  ]
+})
+
 const detailTabs = computed(() => [
   {
     label: messages.value.relationsPanel.title,
@@ -64,6 +77,12 @@ const detailTabs = computed(() => [
     value: 'artifacts',
     icon: 'i-lucide-files',
     badge: props.task?.artifacts.length ?? 0,
+  },
+  {
+    label: messages.value.dagViewer.title,
+    value: 'dag',
+    icon: 'i-lucide-git-graph',
+    badge: dagNodes.value.length,
   },
 ])
 const signalStatus = computed(() => ({
@@ -230,6 +249,8 @@ function formatNumber(value: number) {
         </UDashboardToolbar>
 
         <TaskRelationsPanel v-if="activeDetailSection === 'relations'" :task="task" />
+
+        <TaskDagViewer v-else-if="activeDetailSection === 'dag'" :nodes="dagNodes" />
 
         <div v-else class="detail-artifact-grid" :style="artifactGridStyle">
           <ArtifactList

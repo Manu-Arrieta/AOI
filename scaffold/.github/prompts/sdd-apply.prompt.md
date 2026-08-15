@@ -81,7 +81,21 @@ For each task in the implementation plan, in dependency order:
    - **Law of Demeter**: No method chains like `a.b.c.d()`. Talk only to direct collaborators.
    - **Immutability**: Use `const`/`readonly`/`final` where possible. Mutable state only when necessary.
    - **Security**: Inputs validated, outputs encoded. No hardcoded secrets. SQL parameterized.
-5. Log progress in `.tasks/{feature-name}/TASK-YYYY-NNN/iterations/`
+### AOI-OS Autonomous Mode (`--os-mode`)
+
+When running with `--os-mode` or invoking AOI-OS runtime:
+1. Delegate DAG wave compilation and autonomous execution directly to the AOI-OS engine:
+   ```bash
+   node scripts/aoi-os/aoi-os-cli.mjs --tasks .tasks/{feature}/{task-id}/tasks.md --workspace "$WORKSPACE" --auto-apply
+   ```
+2. The engine autonomously:
+   - Compiles task dependency graph and parallel execution waves.
+   - Synthesizes ephemeral micro-agents with strict capability whitelists.
+   - Stages file modifications in isolated sandboxes (`.sandboxes/aoi-os-tmp-{taskId}`).
+   - Enforces Polyglot AST Contract Guards (C#, TS, Vue, Python).
+   - Arbitrates Consensus Gates (OWASP security, secrets & <300 LOC rules).
+   - Auto-heals test diagnostics via circuit breaker rollback if needed.
+   - Sinks semantic memory graph nodes directly into ICM (`decisions-{workspace}`, `errors-resolved`, `context-{workspace}`).
 
 ### Step 4: ICM Progress Tracking
 

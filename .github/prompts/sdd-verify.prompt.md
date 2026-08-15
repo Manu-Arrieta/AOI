@@ -143,6 +143,7 @@ Write `.tasks/{feature-name}/TASK-YYYY-NNN/verify-report.md`:
 
 - [ ] Service Discovery completed (mandatory)
 - [ ] Sandbox manifest valid — `validate-manifest.mjs` exit 0 (if active sandbox)
+- [ ] AOI-OS DAG Quality Gate OK — 0 contract violations, consensus score >= 85% (if executed in --os-mode)
 - [ ] ICM Memory Health OK
 - [ ] No orphan tasks in `tasks.md`
 
