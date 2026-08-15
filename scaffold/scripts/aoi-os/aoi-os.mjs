@@ -2,14 +2,16 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v10 (Autonomous, Deterministic & Self-Healing Agentic OS).
+ * Master Orchestrator Engine for AOI-OS v11 (The Epistemic & Cognitive Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
  * Token Complexity Estimation, OpenAPI 3.1 & E2E Acceptance Flow Synthesizer,
  * Workspace Federation Mesh, Static Taint Tracer, Dead-Code Guard,
  * Dynamic Constitution Drift Auditor, Live Micro-Patch Kernel, Symbolic Constraint Prover,
- * Test Flakiness Detector, Bidirectional ABI Linker, Consensus Gates, and ICM Memory Linking.
+ * Test Flakiness Detector, Bidirectional ABI Linker, AST Content-Addressable Memo Engine,
+ * Adaptive Wave Worker Balancer, BFT Multi-Verifier Cognitive Quorum,
+ * Polyglot Contract Transpiler & DTO Mirror, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -23,6 +25,7 @@ import {
   computeExecutionBatches,
   createTaskStateManager,
 } from './dag-engine/dag-scheduler.mjs'
+import { balanceWaveTasks } from './dag-engine/adaptive-wave-balancer.mjs'
 import { synthesizeMicroAgent } from './subagent-synthesizer/subagent-synthesizer.mjs'
 import { validateContractDiff, classifyBlastRadius, detectLanguage } from './ast-guard/ast-contract-guard.mjs'
 import { skeletonizeSource } from './ast-guard/ast-skeletonizer.mjs'
@@ -38,11 +41,18 @@ import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-esti
 import { synthesizeOpenApiSpec } from './contract-docgen/openapi-synthesizer.mjs'
 import { synthesizeE2eTestFlow } from './contract-docgen/e2e-flow-synthesizer.mjs'
 import { auditConstitutionDrift } from './consensus-gate/constitution-drift-auditor.mjs'
+import { evaluateBftQuorum } from './consensus-gate/bft-quorum-engine.mjs'
 import { createWorkspaceMeshNode } from './federation/workspace-mesh-bridge.mjs'
 import { createLivePatchKernel } from './runtime-kernel/live-patch-kernel.mjs'
 import { proveSymbolicConstraints } from './symbolic-prover/symbolic-constraint-prover.mjs'
 import { auditTestFlakiness } from './test-guard/flakiness-detector.mjs'
 import { alignBidirectionalAbi } from './abi-linker/bidirectional-abi-linker.mjs'
+import { createAstMemoEngine } from './memo-engine/ast-memo-engine.mjs'
+import {
+  transpileToCSharp,
+  transpileToPython,
+  transpileToSql,
+} from './contract-transpiler/polyglot-transpiler.mjs'
 import { createSelfHealingSession } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
 import { createHermeticSandbox } from './sandbox-runtime/sandbox-executor.mjs'
@@ -81,6 +91,7 @@ export function createAoiOsPipeline(options) {
   const timeTravel = createTimeTravelEngine()
   const meshNode = createWorkspaceMeshNode({ workspaceId: workspace, peers: federatedPeers })
   const patchKernel = createLivePatchKernel()
+  const memoEngine = createAstMemoEngine()
 
   const rawNodes = parseTaskDag(tasksMarkdown)
   const validation = validateDagStructure(rawNodes)
@@ -183,6 +194,40 @@ export function createAoiOsPipeline(options) {
    */
   function alignAbi(clientType, serverType) {
     return alignBidirectionalAbi(clientType, serverType)
+  }
+
+  /**
+   * Evaluates code proposal across 5 deterministic verifiers in BFT Quorum.
+   *
+   * @param {object} evalOptions
+   */
+  function evaluateBftQuorumVerdict(evalOptions) {
+    return evaluateBftQuorum(evalOptions)
+  }
+
+  /**
+   * Transpiles a TypeScript interface definition to C#, Python, and SQL DDL.
+   *
+   * @param {string} tsInterfaceCode
+   */
+  function transpileInterfacePolyglot(tsInterfaceCode) {
+    return {
+      csharp: transpileToCSharp(tsInterfaceCode),
+      python: transpileToPython(tsInterfaceCode),
+      sql: transpileToSql(tsInterfaceCode),
+    }
+  }
+
+  /**
+   * Balances a wave's parallel tasks across worker slots using bin-packing.
+   *
+   * @param {number} waveIndex
+   * @param {number} [workerCount=3]
+   */
+  function balanceWave(waveIndex = 0, workerCount = 3) {
+    const waveTaskIds = batches[waveIndex] || []
+    const waveTasks = waveTaskIds.map((id) => stateManager.getTask(id)).filter(Boolean)
+    return balanceWaveTasks(waveTasks, workerCount)
   }
 
   /**
@@ -441,12 +486,16 @@ export function createAoiOsPipeline(options) {
     timeTravel,
     meshNode,
     patchKernel,
+    memoEngine,
     prepareTaskExecution,
     predictComplexity,
     performMutationAnalysis,
     proveInvariants,
     auditFlakiness,
     alignAbi,
+    evaluateBftQuorumVerdict,
+    transpileInterfacePolyglot,
+    balanceWave,
     auditTaintSecurity,
     auditDeadCodeHygiene,
     auditConstitution,
@@ -480,7 +529,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v10: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v11: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
