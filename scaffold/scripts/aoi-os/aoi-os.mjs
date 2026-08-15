@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v18 (The Infinite Autonomous Singularity & Quantum Super-Matrix).
+ * Master Orchestrator Engine for AOI-OS v19 (The Transcendent Omni-Core & Universal Synthesis Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -22,7 +22,8 @@
  * Token Liquidity Balancer, Knowledge Mesh Reconciler, ABI Wave Broadcaster,
  * Prefix Deduplication Engine, Resource Exhaustion Prover, Epistemic Game Engine,
  * Monorepo Dead-Asset Pruner, Speculative Wave Pipeline, Deterministic SBOM Generator,
- * and ICM Memory Linking.
+ * Epistemic Entropy Prover, Delta Snapshot Compressor, API Route Collision Matrix,
+ * Capability Token Enforcer, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -92,6 +93,10 @@ import { calculateNashEquilibrium } from './game-engine/epistemic-game-engine.mj
 import { auditDeadAssets } from './asset-pruner/monorepo-dead-asset-pruner.mjs'
 import { createSpeculativePipeline } from './speculative/speculative-wave-pipeline.mjs'
 import { generateDeterministicSbom } from './sbom/deterministic-sbom-generator.mjs'
+import { calculateShannonEntropy, proveEpistemicEntropy } from './entropy-prover/epistemic-entropy-prover.mjs'
+import { compressDelta, applyDelta } from './delta-compressor/delta-snapshot-compressor.mjs'
+import { auditRouteCollisions } from './route-guard/api-collision-matrix.mjs'
+import { createCapabilityToken, enforceCapability } from './capability-guard/capability-enforcer.mjs'
 import { createSelfHealingSession } from './self-healing/test-healing-loop.mjs'
 import { createAoiOsEventBus } from './daemon/workspace-daemon.mjs'
 import { createHermeticSandbox } from './sandbox-runtime/sandbox-executor.mjs'
@@ -204,6 +209,12 @@ export function createAoiOsPipeline(options) {
       constitutionRules,
     })
 
+    const capabilityToken = createCapabilityToken({
+      taskId: nodeId,
+      role: microAgent.role,
+      allowedFiles: node.targetFiles || [],
+    })
+
     stateManager.transition(nodeId, 'in_progress', { agentId: microAgent.agentId })
     eventStore.appendEvent('TASK_DISPATCHED', { taskId: nodeId, agentId: microAgent.agentId, role: microAgent.role })
 
@@ -214,7 +225,46 @@ export function createAoiOsPipeline(options) {
       'info'
     )
 
-    return { node, microAgent }
+    return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Evaluates epistemic Shannon entropy between iterations.
+   *
+   * @param {string} prevCode
+   * @param {string} currCode
+   */
+  function auditEntropy(prevCode, currCode) {
+    return proveEpistemicEntropy(prevCode, currCode)
+  }
+
+  /**
+   * Compresses snapshot delta between states.
+   *
+   * @param {Record<string, any>} baseState
+   * @param {Record<string, any>} nextState
+   */
+  function compressStateDelta(baseState, nextState) {
+    return compressDelta(baseState, nextState)
+  }
+
+  /**
+   * Audits monorepo API routes for method and parameter collisions.
+   *
+   * @param {Array<{ method: string, path: string }>} routes
+   */
+  function auditApiCollisions(routes = []) {
+    return auditRouteCollisions(routes)
+  }
+
+  /**
+   * Enforces capability token against attempted action.
+   *
+   * @param {object} token
+   * @param {object} action
+   */
+  function verifyCapability(token, action) {
+    return enforceCapability(token, action)
   }
 
   /**
@@ -244,7 +294,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '18.0.0',
+      version: '19.0.0',
       components,
     })
   }
@@ -791,6 +841,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditEntropy,
+    compressStateDelta,
+    auditApiCollisions,
+    verifyCapability,
     evaluateGameConsensus,
     auditZombieAssets,
     generateSbomReport,
@@ -855,7 +909,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v18: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v19: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
