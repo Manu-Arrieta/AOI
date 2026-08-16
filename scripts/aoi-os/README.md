@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v30 (The Supreme 96-Pillar Infinite Singularity & Universal Autonomous Meta-Genesis Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v31 (The Centurial 100-Pillar Omnipresent Singularity & Universal Transcendence Genesis Master Engine)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Rate Limit Guard (`security-guard/rate-limit-guard.mjs`)**: Demostración formal de protección de tasa de peticiones y defensa anti-DoS en endpoints públicos y de autenticación (0 LLM tokens).
-- **Dead Export Package Pruner (`export-guard/dead-export-package-pruner.mjs`)**: Podado estático de sub-módulos y entrypoints exportados en `package.json` no alcanzados en el monorrepositorio (0 LLM tokens).
-- **SSR Hydration Mismatch Guard (`component-guard/hydration-mismatch-guard.mjs`)**: Auditoría estática de determinismo en componentes Vue SFC para prevenir desajustes de hidratación SSR (0 LLM tokens).
-- **Sandbox Temp Cleanup Prover (`sandbox-guard/sandbox-temp-cleanup-prover.mjs`)**: Demostración formal de desvinculación recursiva de directorios temporales en sandboxes (0 LLM tokens).
+- **WebSocket Ping/Pong Heartbeat Teardown Guard (`stream-guard/websocket-heartbeat-guard.mjs`)**: Demostración formal de limpieza de temporizadores de heartbeat en eventos de cierre o error de sockets (0 LLM tokens).
+- **Dead Type Alias Pruner (`type-guard/dead-type-alias-pruner.mjs`)**: Podado estático de alias de tipos TypeScript y parámetros genéricos no alcanzados en el monorrepositorio (0 LLM tokens).
+- **Content-Type & Payload Serialization Guard (`security-guard/content-type-guard.mjs`)**: Auditoría estática de validación de esquemas y deserialización segura de cargas útiles HTTP (0 LLM tokens).
+- **Sandbox Network Socket Unbind Prover (`sandbox-guard/sandbox-socket-unbind-prover.mjs`)**: Demostración formal de cierre y desvinculación de sockets TCP/HTTP en ganchos de teardown (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 96 Pilares (AOI-OS v30)
+## 🏛️ Matriz Arquitectónica Maestra de 100 Pilares (AOI-OS v31)
 
 ```text
-AOI-OS v30 Architecture Matrix (96 Pillars)
+AOI-OS v31 Architecture Matrix (100 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -192,11 +192,17 @@ AOI-OS v30 Architecture Matrix (96 Pillars)
 │   ├── path-traversal-guard.mjs: Auditoría estática contra lecturas de archivos sin sanitizar ni normalizar en disco.
 │   └── subprocess-drain-prover.mjs: Demostración formal de drenaje de streams y prevención de deadlocks de I/O en subprocesos.
 │
-└── 93-96. Núcleo Supreme 96-Pillar Infinite Singularity Matrix v30 (security-guard/, export-guard/, component-guard/, sandbox-guard/)
-    ├── rate-limit-guard.mjs: Demostración formal de protección de tasa de peticiones y defensa anti-DoS en endpoints públicos.
-    ├── dead-export-package-pruner.mjs: Podado estático de sub-módulos y entrypoints exportados en package.json no alcanzados.
-    ├── hydration-mismatch-guard.mjs: Auditoría estática de determinismo en componentes Vue SFC para prevenir desajustes SSR.
-    └── sandbox-temp-cleanup-prover.mjs: Demostración formal de desvinculación recursiva de directorios temporales en sandboxes.
+├── 93-96. Núcleo Supreme Infinite Singularity Matrix (security-guard/, export-guard/, component-guard/, sandbox-guard/)
+│   ├── rate-limit-guard.mjs: Demostración formal de protección de tasa de peticiones y defensa anti-DoS en endpoints públicos.
+│   ├── dead-export-package-pruner.mjs: Podado estático de sub-módulos y entrypoints exportados en package.json no alcanzados.
+│   ├── hydration-mismatch-guard.mjs: Auditoría estática de determinismo en componentes Vue SFC para prevenir desajustes SSR.
+│   └── sandbox-temp-cleanup-prover.mjs: Demostración formal de desvinculación recursiva de directorios temporales en sandboxes.
+│
+└── 97-100. Núcleo Centurial 100-Pillar Omnipresent Master Engine v31 (stream-guard/, type-guard/, security-guard/, sandbox-guard/)
+    ├── websocket-heartbeat-guard.mjs: Demostración formal de limpieza de temporizadores de heartbeat en WebSockets.
+    ├── dead-type-alias-pruner.mjs: Podado estático de alias de tipos TypeScript y parámetros genéricos no alcanzados.
+    ├── content-type-guard.mjs: Auditoría estática de validación de esquemas y deserialización segura de cargas útiles HTTP.
+    └── sandbox-socket-unbind-prover.mjs: Demostración formal de cierre y desvinculación de sockets TCP/HTTP en teardown.
 ```
 
 ---
@@ -239,12 +245,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [31.0.0] - 2026-08-16 (The Centurial 100-Pillar Omnipresent Singularity & Universal Transcendence Genesis Master Engine)
+- **WebSocket Ping/Pong Heartbeat Teardown Guard**: Demostración formal de limpieza de temporizadores de heartbeat en eventos de cierre o error de sockets (`stream-guard/websocket-heartbeat-guard.mjs`).
+- **Dead Type Alias Pruner**: Podado estático de alias de tipos TypeScript y parámetros genéricos no alcanzados en el monorrepositorio (`type-guard/dead-type-alias-pruner.mjs`).
+- **Content-Type & Payload Serialization Guard**: Auditoría estática de validación de esquemas y deserialización segura de cargas útiles HTTP (`security-guard/content-type-guard.mjs`).
+- **Sandbox Network Socket Unbind Prover**: Demostración formal de cierre y desvinculación de sockets TCP/HTTP en ganchos de teardown (`sandbox-guard/sandbox-socket-unbind-prover.mjs`).
+- **310/310 Tests Pasando al 100%** y **387 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [30.0.0] - 2026-08-16 (The Supreme 96-Pillar Infinite Singularity & Universal Autonomous Meta-Genesis Matrix)
 - **Rate Limit Guard**: Demostración formal de protección de tasa de peticiones y defensa anti-DoS en endpoints públicos y de autenticación (`security-guard/rate-limit-guard.mjs`).
 - **Dead Export Package Pruner**: Podado estático de sub-módulos y entrypoints exportados en `package.json` no alcanzados en el monorrepositorio (`export-guard/dead-export-package-pruner.mjs`).
 - **SSR Hydration Mismatch Guard**: Auditoría estática de determinismo en componentes Vue SFC para prevenir desajustes de hidratación SSR (`component-guard/hydration-mismatch-guard.mjs`).
 - **Sandbox Temp Cleanup Prover**: Demostración formal de desvinculación recursiva de directorios temporales en sandboxes (`sandbox-guard/sandbox-temp-cleanup-prover.mjs`).
-- **303/303 Tests Pasando al 100%** y **379 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [29.0.0] - 2026-08-16 (The Transcendent 92-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
 - **Cache Invalidation Guard**: Demostración formal de directivas de invalidación de caché (`no-store`, `no-cache`) en endpoints HTTP de mutación (`cache-guard/cache-invalidation-guard.mjs`).

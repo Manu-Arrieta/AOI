@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v30 (The Supreme 96-Pillar Infinite Singularity & Universal Autonomous Meta-Genesis Matrix).
+ * Master Orchestrator Engine for AOI-OS v31 (The Centurial 100-Pillar Omnipresent Singularity & Universal Transcendence Genesis Master Engine).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -38,7 +38,8 @@
  * Sandbox Path Escape Prover, Cache Invalidation Guard, Dead Enum & Constant Pruner,
  * Path Traversal Guard, Sandbox Subprocess Drain Prover, Rate Limiting & DoS Defense Guard,
  * Dead Export Package Entrypoint Pruner, SSR Hydration Mismatch Guard, Sandbox Temp Directory Cleanup Prover,
- * and ICM Memory Linking.
+ * WebSocket Ping/Pong Heartbeat Teardown Guard, Dead Type Alias & Generic Parameter Pruner,
+ * Content-Type & Payload Serialization Guard, Sandbox Network Socket Unbind Prover, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -71,6 +72,7 @@ import { auditHttpHeadersAndCors } from './security-guard/http-header-guard.mjs'
 import { auditSqlSecurity } from './security-guard/sql-injection-guard.mjs'
 import { auditPathTraversalSafety } from './security-guard/path-traversal-guard.mjs'
 import { auditRateLimiting } from './security-guard/rate-limit-guard.mjs'
+import { auditPayloadDeserializationSafety } from './security-guard/content-type-guard.mjs'
 import { auditCacheInvalidation } from './cache-guard/cache-invalidation-guard.mjs'
 import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
 import { validateStructuralConfig } from './config-guard/structural-config-guard.mjs'
@@ -78,14 +80,17 @@ import { auditDeadRoutes } from './route-guard/dead-route-pruner.mjs'
 import { auditDeadComponents } from './component-guard/dead-component-pruner.mjs'
 import { auditHydrationSafety } from './component-guard/hydration-mismatch-guard.mjs'
 import { auditDeadTypes } from './type-guard/dead-type-pruner.mjs'
+import { auditDeadTypeAliases } from './type-guard/dead-type-alias-pruner.mjs'
 import { auditDeadEnums } from './enum-guard/dead-enum-pruner.mjs'
 import { auditDeadPackageExports } from './export-guard/dead-export-package-pruner.mjs'
 import { proveStreamTeardownSafety } from './stream-guard/stream-teardown-prover.mjs'
+import { auditWebSocketHeartbeat } from './stream-guard/websocket-heartbeat-guard.mjs'
 import { proveSignalTeardown } from './sandbox-guard/signal-teardown-prover.mjs'
 import { provePipeCleanupSafety } from './sandbox-guard/pipe-cleanup-prover.mjs'
 import { provePathContainment } from './sandbox-guard/sandbox-path-escape-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
+import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
 import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-estimator.mjs'
 import { synthesizeOpenApiSpec } from './contract-docgen/openapi-synthesizer.mjs'
 import { synthesizeE2eTestFlow } from './contract-docgen/e2e-flow-synthesizer.mjs'
@@ -287,6 +292,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits WebSocket server handlers for heartbeat interval teardown.
+   *
+   * @param {string} sourceCode
+   */
+  function auditWebSocketHeartbeats(sourceCode) {
+    return auditWebSocketHeartbeat(sourceCode)
+  }
+
+  /**
+   * Audits exported type aliases to detect dead unreferenced ones.
+   *
+   * @param {string[]} typeAliasNames
+   * @param {string} consumerSourceCode
+   */
+  function auditDeadTypeAliasHierarchy(typeAliasNames = [], consumerSourceCode = '') {
+    return auditDeadTypeAliases(typeAliasNames, consumerSourceCode)
+  }
+
+  /**
+   * Audits API route payload deserialization for schema validation safety.
+   *
+   * @param {string} sourceCode
+   */
+  function auditPayloadDeserialization(sourceCode) {
+    return auditPayloadDeserializationSafety(sourceCode)
+  }
+
+  /**
+   * Proves network listen sockets are closed in teardown hooks.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSocketUnbind(sourceCode) {
+    return proveSocketUnbindSafety(sourceCode)
   }
 
   /**
@@ -769,7 +811,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '30.0.0',
+      version: '31.0.0',
       components,
     })
   }
@@ -1318,6 +1360,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditWebSocketHeartbeats,
+    auditDeadTypeAliasHierarchy,
+    auditPayloadDeserialization,
+    auditSocketUnbind,
     auditRateLimits,
     auditPackageExportCoverage,
     auditComponentHydration,
@@ -1430,7 +1476,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v30: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v31: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

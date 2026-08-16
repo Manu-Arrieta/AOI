@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v30 pipeline with 96 pillars', async () => {
+test('createAoiOsPipeline initializes full v31 pipeline with 100 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v30',
-    taskId: 'TASK-2026-30',
+    feature: 'aoi-os-v31',
+    taskId: 'TASK-2026-31',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v30 pipeline with 96 pillars', async 
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Rate Limit Guard
-  const rateCheck = pipeline.auditRateLimits("export default defineEventHandler((e) => { useRateLimiter(e, { maxRequests: 10 }); });", true)
-  assert.equal(rateCheck.safe, true)
-  assert.equal(rateCheck.rateLimitProof, 'RATE_LIMITING_PROTECTION_PROVEN')
+  // 2. WebSocket Heartbeat Guard
+  const wsCheck = pipeline.auditWebSocketHeartbeats("wss.on('connection', (ws) => { const t = setInterval(() => ws.ping(), 1000); ws.on('close', () => clearInterval(t)); });")
+  assert.equal(wsCheck.safe, true)
+  assert.equal(wsCheck.heartbeatProof, 'WEBSOCKET_HEARTBEAT_TEARDOWN_PROVEN')
 
-  // 3. Dead Export Package Pruner
-  const exportCheck = pipeline.auditPackageExportCoverage('@aoi/core', ['.'], "import { main } from '@aoi/core';")
-  assert.equal(exportCheck.allReferenced, true)
-  assert.equal(exportCheck.exportProof, 'ALL_PACKAGE_EXPORTS_REFERENCED')
+  // 3. Dead Type Alias Pruner
+  const aliasCheck = pipeline.auditDeadTypeAliasHierarchy(['UserSummary'], 'function render(u: UserSummary) {}')
+  assert.equal(aliasCheck.allReferenced, true)
+  assert.equal(aliasCheck.aliasProof, 'ALL_TYPE_ALIASES_REFERENCED')
 
-  // 4. Hydration Mismatch Guard
-  const hydrationCheck = pipeline.auditComponentHydration("<script setup>const val = ref(1);</script><template><div>{{ val }}</div></template>")
-  assert.equal(hydrationCheck.safe, true)
-  assert.equal(hydrationCheck.hydrationProof, 'SSR_HYDRATION_DETERMINISM_PROVEN')
+  // 4. Content-Type & Payload Serialization Guard
+  const payloadCheck = pipeline.auditPayloadDeserialization("export default defineEventHandler(async (e) => { const b = await readValidatedBody(e, (x) => schema.safeParse(x)); });")
+  assert.equal(payloadCheck.safe, true)
+  assert.equal(payloadCheck.payloadProof, 'PAYLOAD_DESERIALIZATION_SAFE_AND_VALIDATED')
 
-  // 5. Sandbox Temp Cleanup Prover
-  const tempCheck = pipeline.auditSandboxTempCleanup("const t = fs.mkdtempSync('/tmp'); try {} finally { fs.rmSync(t, { recursive: true }); }")
-  assert.equal(tempCheck.safe, true)
-  assert.equal(tempCheck.cleanupProof, 'TEMP_DIRECTORY_CLEANUP_GUARANTEED')
+  // 5. Sandbox Socket Unbind Prover
+  const socketCheck = pipeline.auditSocketUnbind("const s = http.createServer(); s.listen(3000); afterAll(() => s.close());")
+  assert.equal(socketCheck.safe, true)
+  assert.equal(socketCheck.socketProof, 'NETWORK_SOCKET_UNBIND_GUARANTEED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v30 supreme 96-pillar infinite singularity suite'],
-    diffSummary: 'server/api/tasks.ts (+75 lines)',
+    decisions: ['Use deterministic v31 centurial 100-pillar omnipresent singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+80 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
