@@ -2,7 +2,7 @@
 
 **Tu equipo de desarrollo de software autónomo, determinista y autosanable, orquestado por IA.**
 
-AOI transforma cualquier repositorio en un espacio de trabajo agéntico con **memoria persistente (ICM)**, **agentes especializados**, un **ciclo de vida gobernado (SDD)** y **AOI-OS v29**: un sistema operativo determinista de 92 pilares que ejecuta tareas complejas de forma autónoma con protección de contratos de código políglota (TypeScript, Vue SFC, Python, C#), sandboxes herméticos, hot-patching en memoria, demostración formal de invariantes, síntesis cuántica de variantes AST, resolución de dependencias, auto-refactorización, migraciones de base de datos reversibles, pruebas ZK de cumplimiento, diagnóstico de causa raíz, reconciliación de malla de conocimiento, difusión transitiva de ABI, optimización de KV-cache, teoría de juegos y Equilibrio de Nash, podado de activos zombie, pre-compilación especulativa, generación formal de SBOMs, medición de entropía de Shannon, compresión de deltas, auditoría de colisiones de rutas API, confinamiento criptográfico de capacidades, neutralización de sesgos epistémicos, comprobación estática de nulabilidad, maximización de densidad cognitiva, sanitización formal de descriptores, cadenas criptográficas de procedencia y linaje, auditoría de límites de paquetes, auto-regulación dinámica de presupuesto de tokens, prevención de ataques de canal lateral, reconciliación semántica 3-way AST, análisis estático de consultas e índices de bases de datos, verificación de derivas de bundle size, purga formal de subprocesos zombie, probador de invariantes de aserciones en tests, guardián de deriva de cargas HTTP, neutralizador de re-exportaciones comodín en barriles, cumplimiento de mínimo privilegio en permisos de archivos, prevención estática de bloqueos de microtareas y cascadas asíncronas, centinela estático de campos API deprecados, demostración formal de alocación de memoria en Heap, certificación de aislamiento 100% offline de red en sandboxes, convergencia unificada de peer-dependencies en monorrepositorios, demostración formal de cota de ejecución lineal contra vulnerabilidades ReDoS, guardián de consistencia de variables CSS, probador estático de cierre determinista de file handles, auditoría estática de conformidad de variables .env y detección de secretos, validación estructural AST de configuraciones JSON/YAML, podado de rutas API huérfanas, probador de captura y manejo limpio de señales OS, auditoría de versiones de dependencias en lockfiles, verificación formal de cabeceras HTTP y políticas CORS seguras, podado estático de componentes Vue no renderizados, probador de cierre y desvinculación de FIFOs y sockets IPC, demostración formal de listeners de aborto y limpieza de intervalos en SSE y WebSockets, podado estático de interfaces y tipos huérfanos, auditoría contra concatenaciones dinámicas e inyecciones SQL, probador formal de confinamiento de rutas en sandboxes, demostración formal de directivas de invalidación de caché en endpoints de mutación, podado estático de enums y constantes no alcanzadas, auditoría estática contra lecturas de archivos sin sanitizar y probador de drenaje de streams de subprocesos con **máxima eficiencia y optimización de tokens**.
+AOI transforma cualquier repositorio en un espacio de trabajo agéntico con **memoria persistente (ICM)**, **agentes especializados**, un **ciclo de vida gobernado (SDD)** y **AOI-OS v30**: un sistema operativo determinista de 96 pilares que ejecuta tareas complejas de forma autónoma con protección de contratos de código políglota (TypeScript, Vue SFC, Python, C#), sandboxes herméticos, hot-patching en memoria, demostración formal de invariantes, síntesis cuántica de variantes AST, resolución de dependencias, auto-refactorización, migraciones de base de datos reversibles, pruebas ZK de cumplimiento, diagnóstico de causa raíz, reconciliación de malla de conocimiento, difusión transitiva de ABI, optimización de KV-cache, teoría de juegos y Equilibrio de Nash, podado de activos zombie, pre-compilación especulativa, generación formal de SBOMs, medición de entropía de Shannon, compresión de deltas, auditoría de colisiones de rutas API, confinamiento criptográfico de capacidades, neutralización de sesgos epistémicos, comprobación estática de nulabilidad, maximización de densidad cognitiva, sanitización formal de descriptores, cadenas criptográficas de procedencia y linaje, auditoría de límites de paquetes, auto-regulación dinámica de presupuesto de tokens, prevención de ataques de canal lateral, reconciliación semántica 3-way AST, análisis estático de consultas e índices de bases de datos, verificación de derivas de bundle size, purga formal de subprocesos zombie, probador de invariantes de aserciones en tests, guardián de deriva de cargas HTTP, neutralizador de re-exportaciones comodín en barriles, cumplimiento de mínimo privilegio en permisos de archivos, prevención estática de bloqueos de microtareas y cascadas asíncronas, centinela estático de campos API deprecados, demostración formal de alocación de memoria en Heap, certificación de aislamiento 100% offline de red en sandboxes, convergencia unificada de peer-dependencies en monorrepositorios, demostración formal de cota de ejecución lineal contra vulnerabilidades ReDoS, guardián de consistencia de variables CSS, probador estático de cierre determinista de file handles, auditoría estática de conformidad de variables .env y detección de secretos, validación estructural AST de configuraciones JSON/YAML, podado de rutas API huérfanas, probador de captura y manejo limpio de señales OS, auditoría de versiones de dependencias en lockfiles, verificación formal de cabeceras HTTP y políticas CORS seguras, podado estático de componentes Vue no renderizados, probador de cierre y desvinculación de FIFOs y sockets IPC, demostración formal de listeners de aborto y limpieza de intervalos en SSE y WebSockets, podado estático de interfaces y tipos huérfanos, auditoría contra concatenaciones dinámicas e inyecciones SQL, probador formal de confinamiento de rutas en sandboxes, demostración formal de directivas de invalidación de caché en endpoints de mutación, podado estático de enums y constantes no alcanzadas, auditoría estática contra lecturas de archivos sin sanitizar, probador de drenaje de streams de subprocesos, demostración formal de protección de tasa de peticiones y defensa anti-DoS, podado estático de entrypoints exportados en package.json, auditoría estática contra desajustes de hidratación SSR y probador formal de desvinculación recursiva de directorios temporales en sandboxes con **máxima eficiencia y optimización de tokens**.
 
 ---
 
@@ -30,12 +30,12 @@ Cada paso cuenta con una **aprobación explícita del Owner/Arquitecto**. Tú di
 
 ---
 
-## 🧠 AOI-OS v29: Matriz Arquitectónica Maestra de 92 Pilares
+## 🧠 AOI-OS v30: Matriz Arquitectónica Maestra de 96 Pilares
 
 AOI-OS opera maximizando la eficiencia de cómputo local determinista combinado con síntesis agéntica de ultra-alta densidad:
 
 ```text
-AOI-OS v29 Architecture Matrix (92 Pillars)
+AOI-OS v30 Architecture Matrix (96 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 ├── 2. Guardián AST Políglota para TS / Vue SFC / Python / C# (scripts/aoi-os/ast-guard/)
 ├── 3. Esqueletizador AST & Cache Semántico de Contratos (ast-skeletonizer.mjs, contract-kv-cache.mjs)
@@ -73,11 +73,12 @@ AOI-OS v29 Architecture Matrix (92 Pillars)
 ├── 77-80. Núcleo Sovereign Singularity Matrix (env-guard/, config-guard/, route-guard/, sandbox-guard/)
 ├── 81-84. Núcleo Supreme Infinite Singularity Matrix (dependency-solver/, security-guard/, component-guard/, sandbox-guard/)
 ├── 85-88. Núcleo Absolute Universal Omniverse Matrix (stream-guard/, type-guard/, security-guard/, sandbox-guard/)
-└── 89-92. Núcleo Transcendent 92-Pillar Omnipresent Singularity Matrix v29 (cache-guard/, enum-guard/, security-guard/, sandbox-guard/)
-    ├── cache-invalidation-guard.mjs: Demostración formal de directivas de invalidación de caché en endpoints HTTP de mutación.
-    ├── dead-enum-pruner.mjs: Podado estático de enumeraciones y constantes exportadas no alcanzadas en el monorrepositorio.
-    ├── path-traversal-guard.mjs: Auditoría estática contra lecturas de archivos sin sanitizar ni normalizar en disco.
-    └── subprocess-drain-prover.mjs: Demostración formal de drenaje de streams y prevención de deadlocks de I/O en subprocesos.
+├── 89-92. Núcleo Transcendent Omnipresent Singularity Matrix (cache-guard/, enum-guard/, security-guard/, sandbox-guard/)
+└── 93-96. Núcleo Supreme 96-Pillar Infinite Singularity Matrix v30 (security-guard/, export-guard/, component-guard/, sandbox-guard/)
+    ├── rate-limit-guard.mjs: Demostración formal de protección de tasa de peticiones y defensa anti-DoS en endpoints públicos.
+    ├── dead-export-package-pruner.mjs: Podado estático de sub-módulos y entrypoints exportados en package.json no alcanzados.
+    ├── hydration-mismatch-guard.mjs: Auditoría estática de determinismo en componentes Vue SFC para prevenir desajustes SSR.
+    └── sandbox-temp-cleanup-prover.mjs: Demostración formal de desvinculación recursiva de directorios temporales en sandboxes.
 ```
 
 ---
@@ -145,12 +146,18 @@ node scripts/aoi-os/aoi-os-cli.mjs --tasks .tasks/{feature}/{task-id}/tasks.md -
 
 ## 📜 CHANGELOG
 
+### [30.0.0] - 2026-08-16 (The Supreme 96-Pillar Infinite Singularity & Universal Autonomous Meta-Genesis Matrix)
+- **Rate Limit Guard**: Demostración formal de protección de tasa de peticiones y defensa anti-DoS en endpoints públicos y de autenticación (`security-guard/rate-limit-guard.mjs`).
+- **Dead Export Package Pruner**: Podado estático de sub-módulos y entrypoints exportados en `package.json` no alcanzados en el monorrepositorio (`export-guard/dead-export-package-pruner.mjs`).
+- **SSR Hydration Mismatch Guard**: Auditoría estática de determinismo en componentes Vue SFC para prevenir desajustes de hidratación SSR (`component-guard/hydration-mismatch-guard.mjs`).
+- **Sandbox Temp Cleanup Prover**: Demostración formal de desvinculación recursiva de directorios temporales en sandboxes (`sandbox-guard/sandbox-temp-cleanup-prover.mjs`).
+- **303/303 Tests Pasando al 100%** y **379 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [29.0.0] - 2026-08-16 (The Transcendent 92-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
 - **Cache Invalidation Guard**: Demostración formal de directivas de invalidación de caché (`no-store`, `no-cache`) en endpoints HTTP de mutación (`cache-guard/cache-invalidation-guard.mjs`).
 - **Dead Enum & Constant Pruner**: Podado estático de enumeraciones y constantes exportadas no alcanzadas en el monorrepositorio (`enum-guard/dead-enum-pruner.mjs`).
 - **Path Traversal Guard**: Auditoría estática contra lecturas de archivos sin sanitizar ni normalizar en el sistema de archivos (`security-guard/path-traversal-guard.mjs`).
 - **Subprocess Drain Prover**: Demostración formal de drenaje de streams y prevención de deadlocks de I/O en subprocesos en sandbox (`sandbox-guard/subprocess-drain-prover.mjs`).
-- **296/296 Tests Pasando al 100%** y **371 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [28.0.0] - 2026-08-16 (The Absolute 88-Pillar Universal Omniverse Kernel & Autonomous Transcendence Super-Matrix)
 - **Stream Teardown Prover**: Demostración formal de listeners de aborto y limpieza de intervalos en SSE y WebSockets (`stream-guard/stream-teardown-prover.mjs`).

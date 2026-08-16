@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v29 (The Transcendent 92-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v30 (The Supreme 96-Pillar Infinite Singularity & Universal Autonomous Meta-Genesis Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Cache Invalidation Guard (`cache-guard/cache-invalidation-guard.mjs`)**: Demostración formal de directivas de invalidación de caché (`no-store`, `no-cache`) en endpoints HTTP de mutación (0 LLM tokens).
-- **Dead Enum & Constant Pruner (`enum-guard/dead-enum-pruner.mjs`)**: Podado estático de enumeraciones y constantes exportadas no alcanzadas en el monorrepositorio (0 LLM tokens).
-- **Path Traversal Guard (`security-guard/path-traversal-guard.mjs`)**: Auditoría estática contra lecturas de archivos sin sanitizar ni normalizar en el sistema de archivos (0 LLM tokens).
-- **Subprocess Drain Prover (`sandbox-guard/subprocess-drain-prover.mjs`)**: Demostración formal de drenaje de streams y prevención de deadlocks de I/O en subprocesos en sandbox (0 LLM tokens).
+- **Rate Limit Guard (`security-guard/rate-limit-guard.mjs`)**: Demostración formal de protección de tasa de peticiones y defensa anti-DoS en endpoints públicos y de autenticación (0 LLM tokens).
+- **Dead Export Package Pruner (`export-guard/dead-export-package-pruner.mjs`)**: Podado estático de sub-módulos y entrypoints exportados en `package.json` no alcanzados en el monorrepositorio (0 LLM tokens).
+- **SSR Hydration Mismatch Guard (`component-guard/hydration-mismatch-guard.mjs`)**: Auditoría estática de determinismo en componentes Vue SFC para prevenir desajustes de hidratación SSR (0 LLM tokens).
+- **Sandbox Temp Cleanup Prover (`sandbox-guard/sandbox-temp-cleanup-prover.mjs`)**: Demostración formal de desvinculación recursiva de directorios temporales en sandboxes (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 92 Pilares (AOI-OS v29)
+## 🏛️ Matriz Arquitectónica Maestra de 96 Pilares (AOI-OS v30)
 
 ```text
-AOI-OS v29 Architecture Matrix (92 Pillars)
+AOI-OS v30 Architecture Matrix (96 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -186,11 +186,17 @@ AOI-OS v29 Architecture Matrix (92 Pillars)
 │   ├── sql-injection-guard.mjs: Auditoría estática contra interpolación de cadenas y concatenación dinámica en consultas SQL.
 │   └── sandbox-path-escape-prover.mjs: Demostración formal de confinamiento estricto de rutas de archivos en sandboxes efímeros.
 │
-└── 89-92. Núcleo Transcendent 92-Pillar Omnipresent Singularity Matrix v29 (cache-guard/, enum-guard/, security-guard/, sandbox-guard/)
-    ├── cache-invalidation-guard.mjs: Demostración formal de directivas de invalidación de caché en endpoints HTTP de mutación.
-    ├── dead-enum-pruner.mjs: Podado estático de enumeraciones y constantes exportadas no alcanzadas en el monorrepositorio.
-    ├── path-traversal-guard.mjs: Auditoría estática contra lecturas de archivos sin sanitizar ni normalizar en disco.
-    └── subprocess-drain-prover.mjs: Demostración formal de drenaje de streams y prevención de deadlocks de I/O en subprocesos.
+├── 89-92. Núcleo Transcendent Omnipresent Singularity Matrix (cache-guard/, enum-guard/, security-guard/, sandbox-guard/)
+│   ├── cache-invalidation-guard.mjs: Demostración formal de directivas de invalidación de caché en endpoints HTTP de mutación.
+│   ├── dead-enum-pruner.mjs: Podado estático de enumeraciones y constantes exportadas no alcanzadas en el monorrepositorio.
+│   ├── path-traversal-guard.mjs: Auditoría estática contra lecturas de archivos sin sanitizar ni normalizar en disco.
+│   └── subprocess-drain-prover.mjs: Demostración formal de drenaje de streams y prevención de deadlocks de I/O en subprocesos.
+│
+└── 93-96. Núcleo Supreme 96-Pillar Infinite Singularity Matrix v30 (security-guard/, export-guard/, component-guard/, sandbox-guard/)
+    ├── rate-limit-guard.mjs: Demostración formal de protección de tasa de peticiones y defensa anti-DoS en endpoints públicos.
+    ├── dead-export-package-pruner.mjs: Podado estático de sub-módulos y entrypoints exportados en package.json no alcanzados.
+    ├── hydration-mismatch-guard.mjs: Auditoría estática de determinismo en componentes Vue SFC para prevenir desajustes SSR.
+    └── sandbox-temp-cleanup-prover.mjs: Demostración formal de desvinculación recursiva de directorios temporales en sandboxes.
 ```
 
 ---
@@ -233,12 +239,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [30.0.0] - 2026-08-16 (The Supreme 96-Pillar Infinite Singularity & Universal Autonomous Meta-Genesis Matrix)
+- **Rate Limit Guard**: Demostración formal de protección de tasa de peticiones y defensa anti-DoS en endpoints públicos y de autenticación (`security-guard/rate-limit-guard.mjs`).
+- **Dead Export Package Pruner**: Podado estático de sub-módulos y entrypoints exportados en `package.json` no alcanzados en el monorrepositorio (`export-guard/dead-export-package-pruner.mjs`).
+- **SSR Hydration Mismatch Guard**: Auditoría estática de determinismo en componentes Vue SFC para prevenir desajustes de hidratación SSR (`component-guard/hydration-mismatch-guard.mjs`).
+- **Sandbox Temp Cleanup Prover**: Demostración formal de desvinculación recursiva de directorios temporales en sandboxes (`sandbox-guard/sandbox-temp-cleanup-prover.mjs`).
+- **303/303 Tests Pasando al 100%** y **379 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [29.0.0] - 2026-08-16 (The Transcendent 92-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
 - **Cache Invalidation Guard**: Demostración formal de directivas de invalidación de caché (`no-store`, `no-cache`) en endpoints HTTP de mutación (`cache-guard/cache-invalidation-guard.mjs`).
 - **Dead Enum & Constant Pruner**: Podado estático de enumeraciones y constantes exportadas no alcanzadas en el monorrepositorio (`enum-guard/dead-enum-pruner.mjs`).
 - **Path Traversal Guard**: Auditoría estática contra lecturas de archivos sin sanitizar ni normalizar en el sistema de archivos (`security-guard/path-traversal-guard.mjs`).
 - **Subprocess Drain Prover**: Demostración formal de drenaje de streams y prevención de deadlocks de I/O en subprocesos en sandbox (`sandbox-guard/subprocess-drain-prover.mjs`).
-- **296/296 Tests Pasando al 100%** y **371 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [28.0.0] - 2026-08-16 (The Absolute 88-Pillar Universal Omniverse Kernel & Autonomous Transcendence Super-Matrix)
 - **Stream Teardown Prover**: Demostración formal de listeners de aborto y limpieza de intervalos en SSE y WebSockets (`stream-guard/stream-teardown-prover.mjs`).

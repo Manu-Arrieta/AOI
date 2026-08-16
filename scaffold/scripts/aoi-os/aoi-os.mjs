@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v29 (The Transcendent 92-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core).
+ * Master Orchestrator Engine for AOI-OS v30 (The Supreme 96-Pillar Infinite Singularity & Universal Autonomous Meta-Genesis Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -36,7 +36,9 @@
  * HTTP Header & CORS Guard, Dead Vue Component Pruner, Sandbox Pipe Cleanup Prover,
  * SSE & WebSocket Stream Teardown Prover, Dead Type & Interface Pruner, SQL Injection Guard,
  * Sandbox Path Escape Prover, Cache Invalidation Guard, Dead Enum & Constant Pruner,
- * Path Traversal Guard, Sandbox Subprocess Drain Prover, and ICM Memory Linking.
+ * Path Traversal Guard, Sandbox Subprocess Drain Prover, Rate Limiting & DoS Defense Guard,
+ * Dead Export Package Entrypoint Pruner, SSR Hydration Mismatch Guard, Sandbox Temp Directory Cleanup Prover,
+ * and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -68,18 +70,22 @@ import { proveRedosSafety } from './security-guard/redos-vulnerability-prover.mj
 import { auditHttpHeadersAndCors } from './security-guard/http-header-guard.mjs'
 import { auditSqlSecurity } from './security-guard/sql-injection-guard.mjs'
 import { auditPathTraversalSafety } from './security-guard/path-traversal-guard.mjs'
+import { auditRateLimiting } from './security-guard/rate-limit-guard.mjs'
 import { auditCacheInvalidation } from './cache-guard/cache-invalidation-guard.mjs'
 import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
 import { validateStructuralConfig } from './config-guard/structural-config-guard.mjs'
 import { auditDeadRoutes } from './route-guard/dead-route-pruner.mjs'
 import { auditDeadComponents } from './component-guard/dead-component-pruner.mjs'
+import { auditHydrationSafety } from './component-guard/hydration-mismatch-guard.mjs'
 import { auditDeadTypes } from './type-guard/dead-type-pruner.mjs'
 import { auditDeadEnums } from './enum-guard/dead-enum-pruner.mjs'
+import { auditDeadPackageExports } from './export-guard/dead-export-package-pruner.mjs'
 import { proveStreamTeardownSafety } from './stream-guard/stream-teardown-prover.mjs'
 import { proveSignalTeardown } from './sandbox-guard/signal-teardown-prover.mjs'
 import { provePipeCleanupSafety } from './sandbox-guard/pipe-cleanup-prover.mjs'
 import { provePathContainment } from './sandbox-guard/sandbox-path-escape-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
+import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-estimator.mjs'
 import { synthesizeOpenApiSpec } from './contract-docgen/openapi-synthesizer.mjs'
 import { synthesizeE2eTestFlow } from './contract-docgen/e2e-flow-synthesizer.mjs'
@@ -281,6 +287,45 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits route source code for rate limiting protection.
+   *
+   * @param {string} sourceCode
+   * @param {boolean} [isPublicOrAuth=true]
+   */
+  function auditRateLimits(sourceCode, isPublicOrAuth = true) {
+    return auditRateLimiting(sourceCode, isPublicOrAuth)
+  }
+
+  /**
+   * Audits package.json export subpaths against consumer codebase.
+   *
+   * @param {string} packageName
+   * @param {string[]} exportSubpaths
+   * @param {string} consumerSourceCode
+   */
+  function auditPackageExportCoverage(packageName, exportSubpaths = [], consumerSourceCode = '') {
+    return auditDeadPackageExports(packageName, exportSubpaths, consumerSourceCode)
+  }
+
+  /**
+   * Audits Vue SFC components for SSR hydration safety.
+   *
+   * @param {string} sfcSourceCode
+   */
+  function auditComponentHydration(sfcSourceCode) {
+    return auditHydrationSafety(sfcSourceCode)
+  }
+
+  /**
+   * Proves recursive cleanup of ephemeral temporary directories in sandbox.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxTempCleanup(sourceCode) {
+    return proveSandboxTempCleanupSafety(sourceCode)
   }
 
   /**
@@ -724,7 +769,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '29.0.0',
+      version: '30.0.0',
       components,
     })
   }
@@ -1273,6 +1318,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditRateLimits,
+    auditPackageExportCoverage,
+    auditComponentHydration,
+    auditSandboxTempCleanup,
     auditCacheHeaders,
     auditDeadEnumHierarchy,
     auditPathTraversal,
@@ -1381,7 +1430,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v29: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v30: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
