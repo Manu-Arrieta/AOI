@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v26 pipeline with 80 pillars', async () => {
+test('createAoiOsPipeline initializes full v27 pipeline with 84 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v26',
-    taskId: 'TASK-2026-26',
+    feature: 'aoi-os-v27',
+    taskId: 'TASK-2026-27',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v26 pipeline with 80 pillars', async 
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Env Secret Prover
-  const envCheck = pipeline.auditEnvSafety("export const db = process.env.DATABASE_URL;", ['DATABASE_URL'])
-  assert.equal(envCheck.safe, true)
-  assert.equal(envCheck.envProof, 'ENV_AND_SECRETS_COMPLIANT_AND_HERMETIC')
+  // 2. Lockfile Divergence Prover
+  const lockfileCheck = pipeline.auditLockfileConvergence({ vue: ['3.5.34'] }, ['vue'])
+  assert.equal(lockfileCheck.convergent, true)
+  assert.equal(lockfileCheck.lockfileProof, 'LOCKFILE_CRITICAL_PACKAGES_UNIFIED')
 
-  // 3. Structural Config Guard
-  const configCheck = pipeline.auditConfigStructure('{"name": "aoi-os", "version": "26.0.0"}', 'json')
-  assert.equal(configCheck.valid, true)
-  assert.equal(configCheck.structuralProof, 'CONFIG_SYNTAX_AND_AST_STRUCTURE_PROVEN')
+  // 3. HTTP Header & CORS Guard
+  const httpCheck = pipeline.auditHttpCorsSecurity("export const cors = { origin: ['https://app.com'], credentials: true };")
+  assert.equal(httpCheck.safe, true)
+  assert.equal(httpCheck.headerProof, 'HTTP_HEADERS_AND_CORS_SECURE')
 
-  // 4. Dead Route Pruner
-  const routeCheck = pipeline.auditDeadRouteCoverage(['/api/tasks'], "fetch('/api/tasks');")
-  assert.equal(routeCheck.fullyCovered, true)
-  assert.equal(routeCheck.prunerProof, 'ALL_API_ROUTES_ACTIVELY_REFERENCED')
+  // 4. Dead Component Pruner
+  const compCheck = pipeline.auditDeadComponentTree(['TaskBoard'], '<template><TaskBoard /></template>')
+  assert.equal(compCheck.allRendered, true)
+  assert.equal(compCheck.componentProof, 'ALL_DECLARED_COMPONENTS_RENDERED')
 
-  // 5. Signal Teardown Prover
-  const signalCheck = pipeline.auditSignalTeardownSafety("const s = app.listen(3000); process.on('SIGINT', () => s.close());")
-  assert.equal(signalCheck.safe, true)
-  assert.equal(signalCheck.signalProof, 'GRACEFUL_SIGNAL_TEARDOWN_PROVEN')
+  // 5. Pipe Cleanup Prover
+  const pipeCheck = pipeline.auditPipeCleanup("const s = '/tmp/test.sock'; fs.unlinkSync(s);")
+  assert.equal(pipeCheck.safe, true)
+  assert.equal(pipeCheck.pipeProof, 'ALL_IPC_PIPES_AND_SOCKETS_CLEANED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v26 sovereign singularity suite with 80 pillars'],
-    diffSummary: 'server/api/tasks.ts (+55 lines)',
+    decisions: ['Use deterministic v27 supreme infinite singularity suite with 84 pillars'],
+    diffSummary: 'server/api/tasks.ts (+60 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)

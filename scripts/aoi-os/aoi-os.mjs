@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v26 (The Sovereign 80-Pillar Singularity Core & Universal Autonomous Hyper-Nexus Matrix).
+ * Master Orchestrator Engine for AOI-OS v27 (The Supreme 84-Pillar Infinite Singularity & Universal Autonomous Meta-Genesis Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -32,7 +32,8 @@
  * API Schema Sunset Sentinel, Heap Allocation & LOH Prover, Sandbox Network Egress Interceptor,
  * Peer Dependency Convergence Guard, ReDoS Vulnerability Prover, CSS Token Drift Guard,
  * Sandbox Handle Leak Prover, Environment Variable & Secret Leak Prover, Structural Config Guard,
- * Dead Route Pruner, Sandbox Signal Teardown Prover, and ICM Memory Linking.
+ * Dead Route Pruner, Sandbox Signal Teardown Prover, Lockfile Divergence Prover,
+ * HTTP Header & CORS Guard, Dead Vue Component Pruner, Sandbox Pipe Cleanup Prover, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -61,10 +62,13 @@ import { traceTaintFlows } from './security-guard/ast-taint-tracer.mjs'
 import { auditSyscallSecurity } from './security-guard/syscall-virtual-guard.mjs'
 import { auditTimingSafety } from './security-guard/timing-leak-guard.mjs'
 import { proveRedosSafety } from './security-guard/redos-vulnerability-prover.mjs'
+import { auditHttpHeadersAndCors } from './security-guard/http-header-guard.mjs'
 import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
 import { validateStructuralConfig } from './config-guard/structural-config-guard.mjs'
 import { auditDeadRoutes } from './route-guard/dead-route-pruner.mjs'
+import { auditDeadComponents } from './component-guard/dead-component-pruner.mjs'
 import { proveSignalTeardown } from './sandbox-guard/signal-teardown-prover.mjs'
+import { provePipeCleanupSafety } from './sandbox-guard/pipe-cleanup-prover.mjs'
 import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-estimator.mjs'
 import { synthesizeOpenApiSpec } from './contract-docgen/openapi-synthesizer.mjs'
 import { synthesizeE2eTestFlow } from './contract-docgen/e2e-flow-synthesizer.mjs'
@@ -90,6 +94,7 @@ import { synthesizeFunctionTypesAndSchema } from './type-synthesizer/deep-type-s
 import { createTokenHologram } from './hologram/token-hologram.mjs'
 import { solveDependencies } from './dependency-solver/polyglot-dependency-solver.mjs'
 import { auditPeerDependencyConvergence } from './dependency-solver/peer-dependency-guard.mjs'
+import { proveLockfileConvergence } from './dependency-solver/lockfile-divergence-prover.mjs'
 import { createEventSourcingKernel } from './event-sourcing/event-sourcing-kernel.mjs'
 import { runMicroBenchmark } from './benchmark/micro-benchmark-suite.mjs'
 import { reconcileAxioms } from './axiom-reconciler/axiom-reconciler.mjs'
@@ -265,6 +270,44 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Proves lockfile version convergence for critical packages.
+   *
+   * @param {Record<string, string[]>} lockfilePackageVersions
+   * @param {string[]} criticalPackages
+   */
+  function auditLockfileConvergence(lockfilePackageVersions = {}, criticalPackages = []) {
+    return proveLockfileConvergence(lockfilePackageVersions, criticalPackages)
+  }
+
+  /**
+   * Audits HTTP headers and CORS origins for security.
+   *
+   * @param {string} sourceCode
+   */
+  function auditHttpCorsSecurity(sourceCode) {
+    return auditHttpHeadersAndCors(sourceCode)
+  }
+
+  /**
+   * Audits Vue components for unrendered dead components.
+   *
+   * @param {string[]} componentNames
+   * @param {string} appTemplateCode
+   */
+  function auditDeadComponentTree(componentNames = [], appTemplateCode = '') {
+    return auditDeadComponents(componentNames, appTemplateCode)
+  }
+
+  /**
+   * Proves deterministic closure and cleanup of IPC pipes and domain sockets.
+   *
+   * @param {string} sourceCode
+   */
+  function auditPipeCleanup(sourceCode) {
+    return provePipeCleanupSafety(sourceCode)
   }
 
   /**
@@ -594,7 +637,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '26.0.0',
+      version: '27.0.0',
       components,
     })
   }
@@ -1143,6 +1186,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditLockfileConvergence,
+    auditHttpCorsSecurity,
+    auditDeadComponentTree,
+    auditPipeCleanup,
     auditEnvSafety,
     auditConfigStructure,
     auditDeadRouteCoverage,
@@ -1239,7 +1286,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v26: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v27: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

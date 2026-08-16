@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v26 (The Sovereign 80-Pillar Singularity Core & Universal Autonomous Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v27 (The Supreme 84-Pillar Infinite Singularity & Universal Autonomous Meta-Genesis Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Env Secret Prover (`env-guard/env-secret-prover.mjs`)**: Auditoría estática de conformidad de variables `.env` y prevención de fugas de secretos (0 LLM tokens).
-- **Structural Config Guard (`config-guard/structural-config-guard.mjs`)**: Validación y demostración formal de integridad estructural AST para JSON/JSONC/YAML (0 LLM tokens).
-- **Dead Route Pruner (`route-guard/dead-route-pruner.mjs`)**: Podado estático de endpoints API huérfanos y no alcanzados en el grafo del monorrepositorio (0 LLM tokens).
-- **Signal Teardown Prover (`sandbox-guard/signal-teardown-prover.mjs`)**: Demostración formal de captura y manejo limpio de señales OS (`SIGINT`, `SIGTERM`, `exit`) en sandboxes (0 LLM tokens).
+- **Lockfile Divergence Prover (`dependency-solver/lockfile-divergence-prover.mjs`)**: Auditoría estática de versiones unificadas de dependencias críticas en lockfiles del monorrepositorio (0 LLM tokens).
+- **HTTP Header & CORS Guard (`security-guard/http-header-guard.mjs`)**: Demostración formal de cabeceras de seguridad y políticas CORS sin comodines con credenciales (0 LLM tokens).
+- **Dead Component Pruner (`component-guard/dead-component-pruner.mjs`)**: Podado estático de componentes Vue no renderizados en plantillas y rutas (0 LLM tokens).
+- **Pipe Cleanup Prover (`sandbox-guard/pipe-cleanup-prover.mjs`)**: Demostración formal de cierre y desvinculación de sockets de dominio y FIFOs IPC en sandboxes (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 80 Pilares (AOI-OS v26)
+## 🏛️ Matriz Arquitectónica Maestra de 84 Pilares (AOI-OS v27)
 
 ```text
-AOI-OS v26 Architecture Matrix (80 Pillars)
+AOI-OS v27 Architecture Matrix (84 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -168,11 +168,17 @@ AOI-OS v26 Architecture Matrix (80 Pillars)
 │   ├── css-token-guard.mjs: Guardián de tokens de diseño y variables CSS en el frontend.
 │   └── handle-leak-prover.mjs: Probador de cierre hermético de descriptores y file handles en sandboxes.
 │
-└── 77-80. Núcleo Sovereign 80-Pillar Singularity Matrix v26 (env-guard/, config-guard/, route-guard/, sandbox-guard/)
-    ├── env-secret-prover.mjs: Auditoría estática de conformidad de variables .env y prevención de fugas de secretos.
-    ├── structural-config-guard.mjs: Validación y demostración formal de integridad estructural AST para JSON/YAML.
-    ├── dead-route-pruner.mjs: Podado estático de endpoints API huérfanos y no alcanzados en el monorrepositorio.
-    └── signal-teardown-prover.mjs: Demostración formal de captura y manejo limpio de señales OS en sandboxes.
+├── 77-80. Núcleo Sovereign Singularity Matrix (env-guard/, config-guard/, route-guard/, sandbox-guard/)
+│   ├── env-secret-prover.mjs: Auditoría estática de conformidad de variables .env y prevención de fugas de secretos.
+│   ├── structural-config-guard.mjs: Validación y demostración formal de integridad estructural AST para JSON/YAML.
+│   ├── dead-route-pruner.mjs: Podado estático de endpoints API huérfanos y no alcanzados en el monorrepositorio.
+│   └── signal-teardown-prover.mjs: Demostración formal de captura y manejo limpio de señales OS en sandboxes.
+│
+└── 81-84. Núcleo Supreme 84-Pillar Infinite Singularity Matrix v27 (dependency-solver/, security-guard/, component-guard/, sandbox-guard/)
+    ├── lockfile-divergence-prover.mjs: Auditoría estática de versiones unificadas de dependencias críticas en lockfiles.
+    ├── http-header-guard.mjs: Demostración formal de cabeceras de seguridad y políticas CORS sin comodines con credenciales.
+    ├── dead-component-pruner.mjs: Podado estático de componentes Vue no renderizados en plantillas y rutas.
+    └── pipe-cleanup-prover.mjs: Demostración formal de cierre y desvinculación de sockets de dominio y FIFOs IPC en sandboxes.
 ```
 
 ---
@@ -215,12 +221,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [27.0.0] - 2026-08-16 (The Supreme 84-Pillar Infinite Singularity & Universal Autonomous Meta-Genesis Matrix)
+- **Lockfile Divergence Prover**: Auditoría estática de versiones unificadas de dependencias críticas en lockfiles del monorrepositorio (`dependency-solver/lockfile-divergence-prover.mjs`).
+- **HTTP Header & CORS Guard**: Demostración formal de cabeceras de seguridad y políticas CORS sin comodines con credenciales (`security-guard/http-header-guard.mjs`).
+- **Dead Component Pruner**: Podado estático de componentes Vue no renderizados en plantillas y rutas (`component-guard/dead-component-pruner.mjs`).
+- **Pipe Cleanup Prover**: Demostración formal de cierre y desvinculación de sockets de dominio y FIFOs IPC en sandboxes (`sandbox-guard/pipe-cleanup-prover.mjs`).
+- **282/282 Tests Pasando al 100%** y **355 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [26.0.0] - 2026-08-16 (The Sovereign 80-Pillar Singularity Core & Universal Autonomous Hyper-Nexus Matrix)
 - **Env Secret Prover**: Auditoría estática de conformidad de variables `.env` y prevención de fugas de secretos (`env-guard/env-secret-prover.mjs`).
 - **Structural Config Guard**: Validación y demostración formal de integridad estructural AST para JSON/JSONC/YAML (`config-guard/structural-config-guard.mjs`).
 - **Dead Route Pruner**: Podado estático de endpoints API huérfanos y no alcanzados en el grafo del monorrepositorio (`route-guard/dead-route-pruner.mjs`).
 - **Signal Teardown Prover**: Demostración formal de captura y manejo limpio de señales OS (`SIGINT`, `SIGTERM`, `exit`) en sandboxes (`sandbox-guard/signal-teardown-prover.mjs`).
-- **275/275 Tests Pasando al 100%** y **347 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [25.0.0] - 2026-08-15 (The Absolute 76-Pillar Omniverse Kernel & Universal Autonomous Genesis Super-Matrix)
 - **Peer Dependency Guard**: Auditoría estática de convergencia de dependencias pares y prevención de duplicación de singletons (`dependency-solver/peer-dependency-guard.mjs`).
@@ -279,7 +291,7 @@ pnpm --filter agentic-ops-dashboard dev
 ### [16.0.0] - 2026-08-15 (The Omnipresent Singularity & Infinite-Scale Hyper-Core)
 - **Zero-Knowledge Epistemic Attestor**: Árboles de Merkle criptográficos y atestaciones ZK de cumplimiento formal (`zk-attestor/zk-epistemic-attestor.mjs`).
 - **Root Cause Diagnostic Synthesizer**: Clasificador de arquetipos de error y remediación dirigida de fallos (`diagnostics/root-cause-synthesizer.mjs`).
-- **Circular Dependency Neutralizer**: Detección y desacoplfloor topológico de dependencias circulares (`circular-neutralizer/circular-dependency-neutralizer.mjs`).
+- **Circular Dependency Neutralizer**: Detección y desacoplamiento topológico de dependencias circulares (`circular-neutralizer/circular-dependency-neutralizer.mjs`).
 - **Token Liquidity Balancer**: Balanceador dinámico de liquidez de tokens según complejidad agéntica (`liquidity-balancer/token-liquidity-balancer.mjs`).
 
 ### [15.0.0] - 2026-08-15 (The Autonomous Holo-Genesis & Self-Compiling Hyper-Matrix)
