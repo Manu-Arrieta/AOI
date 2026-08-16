@@ -2,7 +2,7 @@
 
 **Tu equipo de desarrollo de software autónomo, determinista y autosanable, orquestado por IA.**
 
-AOI transforma cualquier repositorio en un espacio de trabajo agéntico con **memoria persistente (ICM)**, **agentes especializados**, un **ciclo de vida gobernado (SDD)** y **AOI-OS v25**: un sistema operativo determinista de 76 pilares que ejecuta tareas complejas de forma autónoma con protección de contratos de código políglota (TypeScript, Vue SFC, Python, C#), sandboxes herméticos, hot-patching en memoria, demostración formal de invariantes, síntesis cuántica de variantes AST, resolución de dependencias, auto-refactorización, migraciones de base de datos reversibles, pruebas ZK de cumplimiento, diagnóstico de causa raíz, reconciliación de malla de conocimiento, difusión transitiva de ABI, optimización de KV-cache, teoría de juegos y Equilibrio de Nash, podado de activos zombie, pre-compilación especulativa, generación formal de SBOMs, medición de entropía de Shannon, compresión de deltas, auditoría de colisiones de rutas API, confinamiento criptográfico de capacidades, neutralización de sesgos epistémicos, comprobación estática de nulabilidad, maximización de densidad cognitiva, sanitización formal de descriptores, cadenas criptográficas de procedencia y linaje, auditoría de límites de paquetes, auto-regulación dinámica de presupuesto de tokens, prevención de ataques de canal lateral, reconciliación semántica 3-way AST, análisis estático de consultas e índices de bases de datos, verificación de derivas de bundle size, purga formal de subprocesos zombie, probador de invariantes de aserciones en tests, guardián de deriva de cargas HTTP, neutralizador de re-exportaciones comodín en barriles, cumplimiento de mínimo privilegio en permisos de archivos, prevención estática de bloqueos de microtareas y cascadas asíncronas, centinela estático de campos API deprecados, demostración formal de alocación de memoria en Heap, certificación de aislamiento 100% offline de red en sandboxes, convergencia unificada de peer-dependencies en monorrepositorios, demostración formal de cota de ejecución lineal contra vulnerabilidades ReDoS, guardián de consistencia de variables CSS y probador estático de cierre determinista de file handles con **máxima eficiencia y optimización de tokens**.
+AOI transforma cualquier repositorio en un espacio de trabajo agéntico con **memoria persistente (ICM)**, **agentes especializados**, un **ciclo de vida gobernado (SDD)** y **AOI-OS v26**: un sistema operativo determinista de 80 pilares que ejecuta tareas complejas de forma autónoma con protección de contratos de código políglota (TypeScript, Vue SFC, Python, C#), sandboxes herméticos, hot-patching en memoria, demostración formal de invariantes, síntesis cuántica de variantes AST, resolución de dependencias, auto-refactorización, migraciones de base de datos reversibles, pruebas ZK de cumplimiento, diagnóstico de causa raíz, reconciliación de malla de conocimiento, difusión transitiva de ABI, optimización de KV-cache, teoría de juegos y Equilibrio de Nash, podado de activos zombie, pre-compilación especulativa, generación formal de SBOMs, medición de entropía de Shannon, compresión de deltas, auditoría de colisiones de rutas API, confinamiento criptográfico de capacidades, neutralización de sesgos epistémicos, comprobación estática de nulabilidad, maximización de densidad cognitiva, sanitización formal de descriptores, cadenas criptográficas de procedencia y linaje, auditoría de límites de paquetes, auto-regulación dinámica de presupuesto de tokens, prevención de ataques de canal lateral, reconciliación semántica 3-way AST, análisis estático de consultas e índices de bases de datos, verificación de derivas de bundle size, purga formal de subprocesos zombie, probador de invariantes de aserciones en tests, guardián de deriva de cargas HTTP, neutralizador de re-exportaciones comodín en barriles, cumplimiento de mínimo privilegio en permisos de archivos, prevención estática de bloqueos de microtareas y cascadas asíncronas, centinela estático de campos API deprecados, demostración formal de alocación de memoria en Heap, certificación de aislamiento 100% offline de red en sandboxes, convergencia unificada de peer-dependencies en monorrepositorios, demostración formal de cota de ejecución lineal contra vulnerabilidades ReDoS, guardián de consistencia de variables CSS, probador estático de cierre determinista de file handles, auditoría estática de conformidad de variables .env y detección de secretos, validación estructural AST de configuraciones JSON/YAML, podado de rutas API huérfanas y probador de captura y manejo limpio de señales OS con **máxima eficiencia y optimización de tokens**.
 
 ---
 
@@ -30,12 +30,12 @@ Cada paso cuenta con una **aprobación explícita del Owner/Arquitecto**. Tú di
 
 ---
 
-## 🧠 AOI-OS v25: Matriz Arquitectónica Maestra de 76 Pilares
+## 🧠 AOI-OS v26: Matriz Arquitectónica Maestra de 80 Pilares
 
 AOI-OS opera maximizando la eficiencia de cómputo local determinista combinado con síntesis agéntica de ultra-alta densidad:
 
 ```text
-AOI-OS v25 Architecture Matrix (76 Pillars)
+AOI-OS v26 Architecture Matrix (80 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 ├── 2. Guardián AST Políglota para TS / Vue SFC / Python / C# (scripts/aoi-os/ast-guard/)
 ├── 3. Esqueletizador AST & Cache Semántico de Contratos (ast-skeletonizer.mjs, contract-kv-cache.mjs)
@@ -69,11 +69,12 @@ AOI-OS v25 Architecture Matrix (76 Pillars)
 ├── 61-64. Núcleo Apex Infinity Kernel (ast-merge/, query-guard/, bundle-guard/, sandbox-guard/)
 ├── 65-68. Núcleo Infinite Holo-Super-Matrix (test-guard/, payload-guard/, export-guard/, sandbox-guard/)
 ├── 69-72. Núcleo Omniscient Quantum Matrix (async-guard/, schema-guard/, memory-guard/, sandbox-guard/)
-└── 73-76. Núcleo Absolute 76-Pillar Omniverse Kernel v25 (dependency-solver/, security-guard/, css-guard/, sandbox-guard/)
-    ├── peer-dependency-guard.mjs: Guardián de convergencia de peer-dependencies en monorrepositorios.
-    ├── redos-vulnerability-prover.mjs: Probador estático de expresiones regulares contra vulnerabilidades ReDoS.
-    ├── css-token-guard.mjs: Guardián de tokens de diseño y variables CSS en el frontend.
-    └── handle-leak-prover.mjs: Probador de cierre hermético de descriptores y file handles en sandboxes.
+├── 73-76. Núcleo Absolute Omniverse Kernel (dependency-solver/, security-guard/, css-guard/, sandbox-guard/)
+└── 77-80. Núcleo Sovereign 80-Pillar Singularity Matrix v26 (env-guard/, config-guard/, route-guard/, sandbox-guard/)
+    ├── env-secret-prover.mjs: Auditoría estática de conformidad de variables .env y prevención de fugas de secretos.
+    ├── structural-config-guard.mjs: Validación y demostración formal de integridad estructural AST para JSON/YAML.
+    ├── dead-route-pruner.mjs: Podado estático de endpoints API huérfanos y no alcanzados en el monorrepositorio.
+    └── signal-teardown-prover.mjs: Demostración formal de captura y manejo limpio de señales OS en sandboxes.
 ```
 
 ---
@@ -141,12 +142,18 @@ node scripts/aoi-os/aoi-os-cli.mjs --tasks .tasks/{feature}/{task-id}/tasks.md -
 
 ## 📜 CHANGELOG
 
+### [26.0.0] - 2026-08-16 (The Sovereign 80-Pillar Singularity Core & Universal Autonomous Hyper-Nexus Matrix)
+- **Env Secret Prover**: Auditoría estática de conformidad de variables `.env` y prevención de fugas de secretos (`env-guard/env-secret-prover.mjs`).
+- **Structural Config Guard**: Validación y demostración formal de integridad estructural AST para JSON/JSONC/YAML (`config-guard/structural-config-guard.mjs`).
+- **Dead Route Pruner**: Podado estático de endpoints API huérfanos y no alcanzados en el grafo del monorrepositorio (`route-guard/dead-route-pruner.mjs`).
+- **Signal Teardown Prover**: Demostración formal de captura y manejo limpio de señales OS (`SIGINT`, `SIGTERM`, `exit`) en sandboxes (`sandbox-guard/signal-teardown-prover.mjs`).
+- **275/275 Tests Pasando al 100%** y **347 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [25.0.0] - 2026-08-15 (The Absolute 76-Pillar Omniverse Kernel & Universal Autonomous Genesis Super-Matrix)
 - **Peer Dependency Guard**: Auditoría estática de convergencia de dependencias pares y prevención de duplicación de singletons (`dependency-solver/peer-dependency-guard.mjs`).
 - **ReDoS Vulnerability Prover**: Demostración formal de cota de ejecución lineal en expresiones regulares y prevención de ataques ReDoS (`security-guard/redos-vulnerability-prover.mjs`).
 - **CSS Token Drift Guard**: Auditoría estática de variables y tokens de diseño CSS contra el diccionario del frontend (`css-guard/css-token-guard.mjs`).
 - **Handle Leak Prover**: Verificación formal de cierre determinista de file descriptors y prevención de fugas EMFILE (`sandbox-guard/handle-leak-prover.mjs`).
-- **268/268 Tests Pasando al 100%** y **339 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [24.0.0] - 2026-08-15 (The Omniscient 72-Pillar Quantum Matrix & Universal Autonomous Hyper-OS)
 - **Promise Cascade Guard**: Prevención estática de bloqueos de Event Loop, cascadas recursivas y promesas huérfanas (`async-guard/promise-cascade-guard.mjs`).

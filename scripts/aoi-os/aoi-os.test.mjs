@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v25 pipeline with 76 pillars', async () => {
+test('createAoiOsPipeline initializes full v26 pipeline with 80 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v25',
-    taskId: 'TASK-2026-25',
+    feature: 'aoi-os-v26',
+    taskId: 'TASK-2026-26',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,32 +34,29 @@ test('createAoiOsPipeline initializes full v25 pipeline with 76 pillars', async 
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Peer Dependency Guard
-  const peerCheck = pipeline.auditPeerDependencies([
-    { name: 'app-web', peerDependencies: { vue: '^3.5.0' } },
-    { name: 'ui-lib', peerDependencies: { vue: '^3.5.0' } },
-  ])
-  assert.equal(peerCheck.convergent, true)
-  assert.equal(peerCheck.convergenceProof, 'ALL_PEER_DEPENDENCIES_CONVERGENT_AND_UNIFIED')
+  // 2. Env Secret Prover
+  const envCheck = pipeline.auditEnvSafety("export const db = process.env.DATABASE_URL;", ['DATABASE_URL'])
+  assert.equal(envCheck.safe, true)
+  assert.equal(envCheck.envProof, 'ENV_AND_SECRETS_COMPLIANT_AND_HERMETIC')
 
-  // 3. ReDoS Prover
-  const redosCheck = pipeline.auditRedosVulnerabilities("export const r = /^[0-9]+$/;")
-  assert.equal(redosCheck.safe, true)
-  assert.equal(redosCheck.redosProof, 'ALL_REGEXES_LINEAR_AND_REDOS_SAFE')
+  // 3. Structural Config Guard
+  const configCheck = pipeline.auditConfigStructure('{"name": "aoi-os", "version": "26.0.0"}', 'json')
+  assert.equal(configCheck.valid, true)
+  assert.equal(configCheck.structuralProof, 'CONFIG_SYNTAX_AND_AST_STRUCTURE_PROVEN')
 
-  // 4. CSS Token Guard
-  const cssCheck = pipeline.auditCssTokens(".btn { color: var(--color-primary); }", ['--color-primary'])
-  assert.equal(cssCheck.valid, true)
-  assert.equal(cssCheck.tokenProof, 'ALL_CSS_TOKENS_DECLARED_AND_CONVERGENT')
+  // 4. Dead Route Pruner
+  const routeCheck = pipeline.auditDeadRouteCoverage(['/api/tasks'], "fetch('/api/tasks');")
+  assert.equal(routeCheck.fullyCovered, true)
+  assert.equal(routeCheck.prunerProof, 'ALL_API_ROUTES_ACTIVELY_REFERENCED')
 
-  // 5. Handle Leak Prover
-  const handleCheck = pipeline.auditFileHandlesSafety("const fd = fs.openSync('a.txt'); try {} finally { fs.closeSync(fd); }")
-  assert.equal(handleCheck.safe, true)
-  assert.equal(handleCheck.handleProof, 'ALL_FILE_HANDLES_DETERMINISTICALLY_CLOSED')
+  // 5. Signal Teardown Prover
+  const signalCheck = pipeline.auditSignalTeardownSafety("const s = app.listen(3000); process.on('SIGINT', () => s.close());")
+  assert.equal(signalCheck.safe, true)
+  assert.equal(signalCheck.signalProof, 'GRACEFUL_SIGNAL_TEARDOWN_PROVEN')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v25 omniverse master suite with 76 pillars'],
+    decisions: ['Use deterministic v26 sovereign singularity suite with 80 pillars'],
     diffSummary: 'server/api/tasks.ts (+55 lines)',
   }, async () => ({ stdout: 'OK' }))
 

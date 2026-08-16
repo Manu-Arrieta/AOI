@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v25 (The Absolute 76-Pillar Omniverse Kernel & Universal Autonomous Genesis Super-Matrix).
+ * Master Orchestrator Engine for AOI-OS v26 (The Sovereign 80-Pillar Singularity Core & Universal Autonomous Hyper-Nexus Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -31,7 +31,8 @@
  * Barrel Star-Export Neutralizer, Sandbox File Permission & Mask Prover, Promise Cascade Guard,
  * API Schema Sunset Sentinel, Heap Allocation & LOH Prover, Sandbox Network Egress Interceptor,
  * Peer Dependency Convergence Guard, ReDoS Vulnerability Prover, CSS Token Drift Guard,
- * Sandbox Handle Leak Prover, and ICM Memory Linking.
+ * Sandbox Handle Leak Prover, Environment Variable & Secret Leak Prover, Structural Config Guard,
+ * Dead Route Pruner, Sandbox Signal Teardown Prover, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -60,6 +61,10 @@ import { traceTaintFlows } from './security-guard/ast-taint-tracer.mjs'
 import { auditSyscallSecurity } from './security-guard/syscall-virtual-guard.mjs'
 import { auditTimingSafety } from './security-guard/timing-leak-guard.mjs'
 import { proveRedosSafety } from './security-guard/redos-vulnerability-prover.mjs'
+import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
+import { validateStructuralConfig } from './config-guard/structural-config-guard.mjs'
+import { auditDeadRoutes } from './route-guard/dead-route-pruner.mjs'
+import { proveSignalTeardown } from './sandbox-guard/signal-teardown-prover.mjs'
 import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-estimator.mjs'
 import { synthesizeOpenApiSpec } from './contract-docgen/openapi-synthesizer.mjs'
 import { synthesizeE2eTestFlow } from './contract-docgen/e2e-flow-synthesizer.mjs'
@@ -260,6 +265,45 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits environment variables and secret leaks.
+   *
+   * @param {string} sourceCode
+   * @param {string[]} declaredEnvVars
+   */
+  function auditEnvSafety(sourceCode, declaredEnvVars = []) {
+    return auditEnvAndSecrets(sourceCode, declaredEnvVars)
+  }
+
+  /**
+   * Validates structural config AST integrity.
+   *
+   * @param {string} content
+   * @param {string} [format='json']
+   */
+  function auditConfigStructure(content, format = 'json') {
+    return validateStructuralConfig(content, format)
+  }
+
+  /**
+   * Audits dead and orphan API routes.
+   *
+   * @param {string[]} declaredRoutes
+   * @param {string} clientSourceCode
+   */
+  function auditDeadRouteCoverage(declaredRoutes = [], clientSourceCode = '') {
+    return auditDeadRoutes(declaredRoutes, clientSourceCode)
+  }
+
+  /**
+   * Proves graceful signal teardown on process listeners.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSignalTeardownSafety(sourceCode) {
+    return proveSignalTeardown(sourceCode)
   }
 
   /**
@@ -550,7 +594,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '25.0.0',
+      version: '26.0.0',
       components,
     })
   }
@@ -1099,6 +1143,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditEnvSafety,
+    auditConfigStructure,
+    auditDeadRouteCoverage,
+    auditSignalTeardownSafety,
     auditPeerDependencies,
     auditRedosVulnerabilities,
     auditCssTokens,
@@ -1191,7 +1239,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v25: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v26: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
