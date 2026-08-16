@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v27 pipeline with 84 pillars', async () => {
+test('createAoiOsPipeline initializes full v29 pipeline with 92 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v27',
-    taskId: 'TASK-2026-27',
+    feature: 'aoi-os-v29',
+    taskId: 'TASK-2026-29',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v27 pipeline with 84 pillars', async 
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Lockfile Divergence Prover
-  const lockfileCheck = pipeline.auditLockfileConvergence({ vue: ['3.5.34'] }, ['vue'])
-  assert.equal(lockfileCheck.convergent, true)
-  assert.equal(lockfileCheck.lockfileProof, 'LOCKFILE_CRITICAL_PACKAGES_UNIFIED')
+  // 2. Cache Invalidation Guard
+  const cacheCheck = pipeline.auditCacheHeaders("setResponseHeader(event, 'Cache-Control', 'no-store');", 'POST')
+  assert.equal(cacheCheck.safe, true)
+  assert.equal(cacheCheck.cacheProof, 'CACHE_CONTROL_INVALIDATION_PROVEN')
 
-  // 3. HTTP Header & CORS Guard
-  const httpCheck = pipeline.auditHttpCorsSecurity("export const cors = { origin: ['https://app.com'], credentials: true };")
-  assert.equal(httpCheck.safe, true)
-  assert.equal(httpCheck.headerProof, 'HTTP_HEADERS_AND_CORS_SECURE')
+  // 3. Dead Enum Pruner
+  const enumCheck = pipeline.auditDeadEnumHierarchy(['TaskStatus'], 'const s = TaskStatus.IN_PROGRESS;')
+  assert.equal(enumCheck.allReferenced, true)
+  assert.equal(enumCheck.enumProof, 'ALL_EXPORTED_ENUMS_REFERENCED')
 
-  // 4. Dead Component Pruner
-  const compCheck = pipeline.auditDeadComponentTree(['TaskBoard'], '<template><TaskBoard /></template>')
-  assert.equal(compCheck.allRendered, true)
-  assert.equal(compCheck.componentProof, 'ALL_DECLARED_COMPONENTS_RENDERED')
+  // 4. Path Traversal Guard
+  const pathCheck = pipeline.auditPathTraversal("const p = path.resolve('/data', path.normalize(f)); fs.readFileSync(p);")
+  assert.equal(pathCheck.safe, true)
+  assert.equal(pathCheck.traversalProof, 'FILE_READS_SANITIZED_AND_CONTAINED')
 
-  // 5. Pipe Cleanup Prover
-  const pipeCheck = pipeline.auditPipeCleanup("const s = '/tmp/test.sock'; fs.unlinkSync(s);")
-  assert.equal(pipeCheck.safe, true)
-  assert.equal(pipeCheck.pipeProof, 'ALL_IPC_PIPES_AND_SOCKETS_CLEANED')
+  // 5. Subprocess Drain Prover
+  const drainCheck = pipeline.auditSubprocessDraining("const c = spawn('ls'); c.stdout.on('data', () => {});")
+  assert.equal(drainCheck.safe, true)
+  assert.equal(drainCheck.drainProof, 'SUBPROCESS_PIPES_DRAINED_AND_BOUNDED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v27 supreme infinite singularity suite with 84 pillars'],
-    diffSummary: 'server/api/tasks.ts (+60 lines)',
+    decisions: ['Use deterministic v29 transcendent 92-pillar omnipresent singularity suite'],
+    diffSummary: 'server/api/tasks.ts (+70 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)

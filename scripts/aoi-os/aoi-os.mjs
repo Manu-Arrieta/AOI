@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v27 (The Supreme 84-Pillar Infinite Singularity & Universal Autonomous Meta-Genesis Matrix).
+ * Master Orchestrator Engine for AOI-OS v29 (The Transcendent 92-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -33,7 +33,10 @@
  * Peer Dependency Convergence Guard, ReDoS Vulnerability Prover, CSS Token Drift Guard,
  * Sandbox Handle Leak Prover, Environment Variable & Secret Leak Prover, Structural Config Guard,
  * Dead Route Pruner, Sandbox Signal Teardown Prover, Lockfile Divergence Prover,
- * HTTP Header & CORS Guard, Dead Vue Component Pruner, Sandbox Pipe Cleanup Prover, and ICM Memory Linking.
+ * HTTP Header & CORS Guard, Dead Vue Component Pruner, Sandbox Pipe Cleanup Prover,
+ * SSE & WebSocket Stream Teardown Prover, Dead Type & Interface Pruner, SQL Injection Guard,
+ * Sandbox Path Escape Prover, Cache Invalidation Guard, Dead Enum & Constant Pruner,
+ * Path Traversal Guard, Sandbox Subprocess Drain Prover, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -63,12 +66,20 @@ import { auditSyscallSecurity } from './security-guard/syscall-virtual-guard.mjs
 import { auditTimingSafety } from './security-guard/timing-leak-guard.mjs'
 import { proveRedosSafety } from './security-guard/redos-vulnerability-prover.mjs'
 import { auditHttpHeadersAndCors } from './security-guard/http-header-guard.mjs'
+import { auditSqlSecurity } from './security-guard/sql-injection-guard.mjs'
+import { auditPathTraversalSafety } from './security-guard/path-traversal-guard.mjs'
+import { auditCacheInvalidation } from './cache-guard/cache-invalidation-guard.mjs'
 import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
 import { validateStructuralConfig } from './config-guard/structural-config-guard.mjs'
 import { auditDeadRoutes } from './route-guard/dead-route-pruner.mjs'
 import { auditDeadComponents } from './component-guard/dead-component-pruner.mjs'
+import { auditDeadTypes } from './type-guard/dead-type-pruner.mjs'
+import { auditDeadEnums } from './enum-guard/dead-enum-pruner.mjs'
+import { proveStreamTeardownSafety } from './stream-guard/stream-teardown-prover.mjs'
 import { proveSignalTeardown } from './sandbox-guard/signal-teardown-prover.mjs'
 import { provePipeCleanupSafety } from './sandbox-guard/pipe-cleanup-prover.mjs'
+import { provePathContainment } from './sandbox-guard/sandbox-path-escape-prover.mjs'
+import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-estimator.mjs'
 import { synthesizeOpenApiSpec } from './contract-docgen/openapi-synthesizer.mjs'
 import { synthesizeE2eTestFlow } from './contract-docgen/e2e-flow-synthesizer.mjs'
@@ -270,6 +281,82 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits mutation endpoints for cache invalidation directives.
+   *
+   * @param {string} sourceCode
+   * @param {string} [httpMethod='POST']
+   */
+  function auditCacheHeaders(sourceCode, httpMethod = 'POST') {
+    return auditCacheInvalidation(sourceCode, httpMethod)
+  }
+
+  /**
+   * Audits exported enums and constants to detect dead unreferenced ones.
+   *
+   * @param {string[]} enumNames
+   * @param {string} consumerSourceCode
+   */
+  function auditDeadEnumHierarchy(enumNames = [], consumerSourceCode = '') {
+    return auditDeadEnums(enumNames, consumerSourceCode)
+  }
+
+  /**
+   * Audits file read operations for unsanitized path traversal.
+   *
+   * @param {string} sourceCode
+   */
+  function auditPathTraversal(sourceCode) {
+    return auditPathTraversalSafety(sourceCode)
+  }
+
+  /**
+   * Proves that subprocess streams are drained and deadlock-free.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSubprocessDraining(sourceCode) {
+    return proveSubprocessDrainSafety(sourceCode)
+  }
+
+  /**
+   * Proves SSE/WebSocket stream abort handling and interval cleanup.
+   *
+   * @param {string} sourceCode
+   */
+  function auditStreamTeardown(sourceCode) {
+    return proveStreamTeardownSafety(sourceCode)
+  }
+
+  /**
+   * Audits exported types against consumer codebases to detect dead types.
+   *
+   * @param {string[]} exportedTypes
+   * @param {string} consumerSourceCode
+   */
+  function auditDeadTypeHierarchy(exportedTypes = [], consumerSourceCode = '') {
+    return auditDeadTypes(exportedTypes, consumerSourceCode)
+  }
+
+  /**
+   * Audits database queries for dynamic string interpolation/concatenation risks.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSqlQuerySecurity(sourceCode) {
+    return auditSqlSecurity(sourceCode)
+  }
+
+  /**
+   * Proves path containment inside assigned sandbox root directory.
+   *
+   * @param {string} sandboxRoot
+   * @param {string} targetPath
+   */
+  function auditPathContainment(sandboxRoot, targetPath) {
+    return provePathContainment(sandboxRoot, targetPath)
   }
 
   /**
@@ -637,7 +724,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '27.0.0',
+      version: '29.0.0',
       components,
     })
   }
@@ -1186,6 +1273,14 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditCacheHeaders,
+    auditDeadEnumHierarchy,
+    auditPathTraversal,
+    auditSubprocessDraining,
+    auditStreamTeardown,
+    auditDeadTypeHierarchy,
+    auditSqlQuerySecurity,
+    auditPathContainment,
     auditLockfileConvergence,
     auditHttpCorsSecurity,
     auditDeadComponentTree,
@@ -1286,7 +1381,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v27: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v29: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
