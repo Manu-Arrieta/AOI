@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v46 (The Transcendent 160-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core).
+ * Master Orchestrator Engine for AOI-OS v47 (The Sovereign 164-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -70,6 +70,8 @@
  * Safe Cryptographic Elliptic Curve Hardness Guard, Sandbox Dynamic Import Subresource Integrity (SRI) Prover,
  * Atomic Stream Chunk UTF-8 Boundary Guard, Dead TypeScript Project Reference Pruner,
  * Safe Cryptographic TLS Minimum Protocol Version Guard, Sandbox Child Process Stdio Buffer Flush Prover,
+ * Atomic Temporary Symlink Clashing & Race Guard, Dead Workspace TypeScript Include Path Pruner,
+ * Safe Cryptographic PBKDF2 Digest Algorithm Hardness Guard, Sandbox Child Process Stdin Stream Closure Prover,
  * and ICM Memory Linking.
  */
 
@@ -117,12 +119,14 @@ import { auditCryptoCipherModeSafety } from './security-guard/crypto-cipher-mode
 import { auditCryptoTimingSafeBufferSafety } from './security-guard/crypto-timing-safe-buffer-guard.mjs'
 import { auditCryptoEcCurveSafety } from './security-guard/crypto-ec-curve-guard.mjs'
 import { auditCryptoTlsVersionSafety } from './security-guard/crypto-tls-version-guard.mjs'
+import { auditCryptoPbkdf2DigestSafety } from './security-guard/crypto-pbkdf2-digest-guard.mjs'
 import { auditCacheInvalidation } from './cache-guard/cache-invalidation-guard.mjs'
 import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
 import { auditDeadEnvFlags } from './env-guard/dead-env-pruner.mjs'
 import { validateStructuralConfig } from './config-guard/structural-config-guard.mjs'
 import { auditDeadConfigAliases } from './config-guard/dead-alias-pruner.mjs'
 import { auditDeadTsconfigReferences } from './config-guard/dead-tsconfig-reference-pruner.mjs'
+import { auditDeadTsconfigIncludes } from './config-guard/dead-tsconfig-include-pruner.mjs'
 import { auditDeadRoutes } from './route-guard/dead-route-pruner.mjs'
 import { auditDeadMarkdownDocLinks } from './doc-guard/dead-doc-link-pruner.mjs'
 import { auditDeadGitignoreRules } from './repo-guard/dead-gitignore-pruner.mjs'
@@ -164,6 +168,7 @@ import { proveSandboxIpcPayloadSafety } from './sandbox-guard/sandbox-ipc-payloa
 import { proveSandboxAbortControllerSafety } from './sandbox-guard/sandbox-abort-controller-prover.mjs'
 import { proveSandboxSriIntegritySafety } from './sandbox-guard/sandbox-sri-integrity-prover.mjs'
 import { proveSandboxStdioFlushSafety } from './sandbox-guard/sandbox-stdio-flush-prover.mjs'
+import { proveSandboxStdinClosureSafety } from './sandbox-guard/sandbox-stdin-close-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -176,6 +181,7 @@ import { auditTempFileCollisionSafety } from './storage-guard/temp-file-collisio
 import { auditDirectoryTraversalBoundarySafety } from './storage-guard/directory-traversal-boundary-guard.mjs'
 import { auditHardlinkRecursionSafety } from './storage-guard/hardlink-recursion-guard.mjs'
 import { auditStreamChunkBoundarySafety } from './storage-guard/stream-chunk-boundary-guard.mjs'
+import { auditTempSymlinkClashSafety } from './storage-guard/temp-symlink-clash-guard.mjs'
 import { auditDeadCssClasses } from './css-guard/dead-css-class-pruner.mjs'
 import { provePortCollisionSafety } from './test-guard/port-collision-prover.mjs'
 import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-estimator.mjs'
@@ -383,6 +389,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits temporary symlink creation for collision and TOCTOU safety.
+   *
+   * @param {string} sourceCode
+   */
+  function auditTempSymlinkClashes(sourceCode) {
+    return auditTempSymlinkClashSafety(sourceCode)
+  }
+
+  /**
+   * Audits tsconfig.json "include" patterns against existing workspace directories.
+   *
+   * @param {object} tsconfigJson
+   * @param {string[]} existingFilesAndDirs
+   */
+  function auditTsconfigIncludes(tsconfigJson = {}, existingFilesAndDirs = []) {
+    return auditDeadTsconfigIncludes(tsconfigJson, existingFilesAndDirs)
+  }
+
+  /**
+   * Audits PBKDF2 key derivation calls for robust digest algorithm specification.
+   *
+   * @param {string} sourceCode
+   */
+  function auditCryptoPbkdf2Digests(sourceCode) {
+    return auditCryptoPbkdf2DigestSafety(sourceCode)
+  }
+
+  /**
+   * Proves deterministic stdin closure in child processes.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxStdinClosure(sourceCode) {
+    return proveSandboxStdinClosureSafety(sourceCode)
   }
 
   /**
@@ -1456,7 +1499,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '46.0.0',
+      version: '47.0.0',
       components,
     })
   }
@@ -2005,6 +2048,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditTempSymlinkClashes,
+    auditTsconfigIncludes,
+    auditCryptoPbkdf2Digests,
+    auditSandboxStdinClosure,
     auditStreamChunkBoundaries,
     auditTsconfigReferences,
     auditCryptoTlsVersions,
@@ -2181,7 +2228,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v46: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v47: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

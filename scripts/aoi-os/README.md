@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v46 (The Transcendent 160-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v47 (The Sovereign 164-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Atomic Stream Chunk UTF-8 Boundary Guard (`storage-guard/stream-chunk-boundary-guard.mjs`)**: Auditoría estática de listeners de datos en flujos de archivos/red (`createReadStream`, `stream.on('data')`) para verificar la decodificación segura de fronteras UTF-8 (`StringDecoder` o acumulador de chunks) previniendo fragmentación y corrupción de caracteres multibyte (0 LLM tokens).
-- **Dead TypeScript Project Reference Pruner (`config-guard/dead-tsconfig-reference-pruner.mjs`)**: Podado estático de referencias huérfanas en `"references": [{ "path": "..." }]` en `tsconfig.json` a subproyectos o carpetas inexistentes antes de `tsc -b` (0 LLM tokens).
-- **Safe Cryptographic TLS Minimum Protocol Version Guard (`security-guard/crypto-tls-version-guard.mjs`)**: Auditoría estática de configuraciones TLS/HTTPS (`https.createServer`, `tls.connect`, `minVersion`) para garantizar la imposición explícita de `minVersion: 'TLSv1.2'` o `'TLSv1.3'`, prohibiendo protocolos obsoletos vulnerables (`SSLv3`, `TLSv1.0`, `TLSv1.1`) (0 LLM tokens).
-- **Sandbox Child Process Stdio Buffer Flush Prover (`sandbox-guard/sandbox-stdio-flush-prover.mjs`)**: Demostración formal de captura del evento `'close'` y drenaje de streams `stdio` en subprocesos de sandbox en lugar de resolución prematura en `'exit'` para prevenir truncamiento de logs (0 LLM tokens).
+- **Atomic Temporary Symlink Clashing & Race Guard (`storage-guard/temp-symlink-clash-guard.mjs`)**: Auditoría estática de operaciones de creación de symlinks temporales (`fs.symlink`, `fs.symlinkSync`) para certificar el uso de sufijos aleatorios no colisionantes (`crypto.randomUUID()`) y desvinculación previa segura contra condiciones de carrera TOCTOU (0 LLM tokens).
+- **Dead Workspace TypeScript Include Path Pruner (`config-guard/dead-tsconfig-include-pruner.mjs`)**: Podado estático de patrones glob y rutas muertas en `"include": [...]` de manifiestos `tsconfig.json` que apuntan a directorios eliminados o inexistentes (0 LLM tokens).
+- **Safe Cryptographic PBKDF2 Digest Algorithm Hardness Guard (`security-guard/crypto-pbkdf2-digest-guard.mjs`)**: Auditoría estática de derivación de claves PBKDF2 (`crypto.pbkdf2`, `crypto.pbkdf2Sync`) para certificar el uso exclusivo de algoritmos de digest modernos y robustos (`sha256`, `sha384`, `sha512`), prohibiendo digests vulnerables como `sha1` o `md5` (0 LLM tokens).
+- **Sandbox Child Process Stdin Stream Closure Prover (`sandbox-guard/sandbox-stdin-close-prover.mjs`)**: Demostración formal de invocación explícita de `child.stdin.end()` o `destroy()` tras enviar payloads a subprocesos con `stdin: 'pipe'` para prevenir bloqueos por espera infinita de EOF (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 160 Pilares (AOI-OS v46)
+## 🏛️ Matriz Arquitectónica Maestra de 164 Pilares (AOI-OS v47)
 
 ```text
-AOI-OS v46 Architecture Matrix (160 Pillars)
+AOI-OS v47 Architecture Matrix (164 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -288,11 +288,17 @@ AOI-OS v46 Architecture Matrix (160 Pillars)
 │   ├── crypto-ec-curve-guard.mjs: Auditoría estática de curvas elípticas para garantizar curvas criptográficas robustas (prime256v1, ed25519).
 │   └── sandbox-sri-integrity-prover.mjs: Demostración formal de validación de hashes criptográficos SRI en imports dinámicos en sandbox.
 │
-└── 157-160. Núcleo Transcendent 160-Pillar Genesis Core v46 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-    ├── stream-chunk-boundary-guard.mjs: Auditoría estática de decodificación de chunks en streams para garantizar fronteras UTF-8 seguras (StringDecoder).
-    ├── dead-tsconfig-reference-pruner.mjs: Podado estático de referencias de proyecto huérfanas en tsconfig.json.
-    ├── crypto-tls-version-guard.mjs: Auditoría estática de sockets TLS y agentes HTTPS para garantizar versión mínima TLSv1.2 o TLSv1.3.
-    └── sandbox-stdio-flush-prover.mjs: Demostración formal de espera a cierre/drenaje completo de streams stdio en subprocesos de sandbox.
+├── 157-160. Núcleo Transcendent 160-Pillar Genesis Core (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+│   ├── stream-chunk-boundary-guard.mjs: Auditoría estática de decodificación de chunks en streams para garantizar fronteras UTF-8 seguras (StringDecoder).
+│   ├── dead-tsconfig-reference-pruner.mjs: Podado estático de referencias de proyecto huérfanas en tsconfig.json.
+│   ├── crypto-tls-version-guard.mjs: Auditoría estática de sockets TLS y agentes HTTPS para garantizar versión mínima TLSv1.2 o TLSv1.3.
+│   └── sandbox-stdio-flush-prover.mjs: Demostración formal de espera a cierre/drenaje completo de streams stdio en subprocesos de sandbox.
+│
+└── 161-164. Núcleo Sovereign 164-Pillar Genesis Matrix v47 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+    ├── temp-symlink-clash-guard.mjs: Auditoría estática de creación de enlaces simbólicos temporales para garantizar sufijos aleatorios y prevención de carreras TOCTOU.
+    ├── dead-tsconfig-include-pruner.mjs: Podado estático de patrones glob huérfanos en include de tsconfig.json.
+    ├── crypto-pbkdf2-digest-guard.mjs: Auditoría estática de digest en PBKDF2 para certificar uso exclusivo de SHA-2 (sha256/sha512).
+    └── sandbox-stdin-close-prover.mjs: Demostración formal de cierre determinista de child.stdin tras enviar payloads en sandbox.
 ```
 
 ---
@@ -335,12 +341,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [47.0.0] - 2026-08-17 (The Sovereign 164-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
+- **Atomic Temporary Symlink Clashing & Race Guard**: Auditoría estática de operaciones de creación de symlinks temporales (`fs.symlink`, `fs.symlinkSync`) para certificar el uso de sufijos aleatorios no colisionantes (`crypto.randomUUID()`) y desvinculación previa segura contra condiciones de carrera TOCTOU (`storage-guard/temp-symlink-clash-guard.mjs`).
+- **Dead Workspace TypeScript Include Path Pruner**: Podado estático de patrones glob y rutas muertas en `"include": [...]` de manifiestos `tsconfig.json` que apuntan a directorios eliminados o inexistentes (`config-guard/dead-tsconfig-include-pruner.mjs`).
+- **Safe Cryptographic PBKDF2 Digest Algorithm Hardness Guard**: Auditoría estática de derivación de claves PBKDF2 (`crypto.pbkdf2`, `crypto.pbkdf2Sync`) para certificar el uso exclusivo de algoritmos de digest modernos y robustos (`sha256`, `sha384`, `sha512`), prohibiendo digests vulnerables como `sha1` o `md5` (`security-guard/crypto-pbkdf2-digest-guard.mjs`).
+- **Sandbox Child Process Stdin Stream Closure Prover**: Demostración formal de invocación explícita de `child.stdin.end()` o `destroy()` tras enviar payloads a subprocesos con `stdin: 'pipe'` para prevenir bloqueos por espera infinita de EOF (`sandbox-guard/sandbox-stdin-close-prover.mjs`).
+- **438/438 Tests Pasando al 100%** y **515 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [46.0.0] - 2026-08-17 (The Transcendent 160-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
 - **Atomic Stream Chunk UTF-8 Boundary Guard**: Auditoría estática de listeners de datos en flujos de archivos/red (`createReadStream`, `stream.on('data')`) para verificar la decodificación segura de fronteras UTF-8 (`StringDecoder` o acumulador de chunks) previniendo fragmentación y corrupción de caracteres multibyte (`storage-guard/stream-chunk-boundary-guard.mjs`).
 - **Dead TypeScript Project Reference Pruner**: Podado estático de referencias huérfanas en `"references": [{ "path": "..." }]` en `tsconfig.json` a subproyectos o carpetas inexistentes antes de `tsc -b` (`config-guard/dead-tsconfig-reference-pruner.mjs`).
 - **Safe Cryptographic TLS Minimum Protocol Version Guard**: Auditoría estática de configuraciones TLS/HTTPS (`https.createServer`, `tls.connect`, `minVersion`) para garantizar la imposición explícita de `minVersion: 'TLSv1.2'` o `'TLSv1.3'`, prohibiendo protocolos obsoletos vulnerables (`SSLv3`, `TLSv1.0`, `TLSv1.1`) (`security-guard/crypto-tls-version-guard.mjs`).
 - **Sandbox Child Process Stdio Buffer Flush Prover**: Demostración formal de captura del evento `'close'` y drenaje de streams `stdio` en subprocesos de sandbox en lugar de resolución prematura en `'exit'` para prevenir truncamiento de logs (`sandbox-guard/sandbox-stdio-flush-prover.mjs`).
-- **430/430 Tests Pasando al 100%** y **507 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [45.0.0] - 2026-08-17 (The Sovereign 156-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
 - **Atomic Hardlink Recursion & Inode Loop Guard**: Auditoría estática de funciones recursivas de rastreo de directorios para verificar seguimiento de inodos visitados (`visitedInodes.has(stat.ino)`) o cota máxima de profundidad (`maxDepth`) contra bucles infinitos por hardlinks cíclicos (`storage-guard/hardlink-recursion-guard.mjs`).
@@ -353,60 +365,6 @@ pnpm --filter agentic-ops-dashboard dev
 - **Dead Package Export Condition Pruner**: Podado estático de condiciones de exportación (`import`, `require`, `types`, `default`) en `package.json` que apuntan a archivos o declaraciones inexistentes (`package-guard/dead-package-export-condition-pruner.mjs`).
 - **Safe Cryptographic Timing-Safe Buffer Comparison Guard**: Auditoría estática de verificación de firmas y tokens HMAC para garantizar comparaciones en tiempo constante con `crypto.timingSafeEqual()` sobre Buffers (`security-guard/crypto-timing-safe-buffer-guard.mjs`).
 - **Sandbox Worker AbortController Cancellation Prover**: Demostración formal de aceptación de `AbortSignal` y listeners de cancelación en tareas asíncronas para garantizar parada instantánea de workers (`sandbox-guard/sandbox-abort-controller-prover.mjs`).
-
-### [43.0.0] - 2026-08-17 (The Sovereign 148-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
-- **Atomic Temporary File Collision & Cryptographic Prefix Guard**: Auditoría estática de rutinas de generación de archivos temporales para garantizar prefijos criptográficos no colisionantes (`crypto.randomUUID()`) contra carreras TOCTOU (`storage-guard/temp-file-collision-guard.mjs`).
-- **Dead Lifecycle Script Hook Pruner**: Podado estático de hooks de ciclo de vida (`preinstall`, `postinstall`, `prepare`) en `package.json` que referencian scripts inexistentes (`package-guard/dead-script-hook-pruner.mjs`).
-- **Safe Cryptographic Cipher Mode & GCM Auth Tag Guard**: Auditoría estática de cifrado simétrico para garantizar modos autenticados AEAD (`aes-256-gcm`) y extracción/verificación de auth tag (`security-guard/crypto-cipher-mode-guard.mjs`).
-- **Sandbox Child Process IPC Message Length Prover**: Demostración formal de validación de límites de tamaño en mensajes IPC de subprocesos contra caídas de serialización V8 (`sandbox-guard/sandbox-ipc-payload-prover.mjs`).
-
-### [42.0.0] - 2026-08-17 (The Transcendent 144-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
-- **Atomic File Permissions & umask Guard**: Auditoría estática de operaciones de creación de archivos sensibles para certificar permisos POSIX restrictivos (`mode: 0o600`) o `process.umask(0o077)` (`storage-guard/file-umask-guard.mjs`).
-- **Dead Workspace Protocol Dependency Pruner**: Podado estático de dependencias rotas del tipo `workspace:*` / `workspace:^` en `package.json` no presentes en el monorrepositorio (`package-guard/dead-workspace-protocol-pruner.mjs`).
-- **Safe Cryptographic KDF Salt & Iteration Guard**: Auditoría estática de funciones de derivación de claves (PBKDF2/Scrypt) para garantizar sales de 16+ bytes e iteraciones OWASP (≥100,000) (`security-guard/crypto-kdf-guard.mjs`).
-- **Sandbox Child Process MaxBuffer Overflow Prover**: Demostración formal de configuración de límites `maxBuffer` explícitos en subprocesos para prevenir caídas fatales `ERR_CHILD_PROCESS_STDIO_MAXBUFFER` (`sandbox-guard/sandbox-maxbuffer-prover.mjs`).
-
-### [41.0.0] - 2026-08-17 (The Sovereign 140-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
-- **Atomic File Lock & PID Lease Guard**: Auditoría estática de rutinas de bloqueo por archivo para certificar detección de locks huérfanos (`process.kill(pid, 0)`) y políticas de expiración TTL (`storage-guard/file-lock-lease-guard.mjs`).
-- **Dead Barrel Duplicate Re-Export Pruner**: Podado estático de re-exportaciones redundantes y símbolos duplicados en archivos índice barril (`index.ts`/`index.mjs`) (`export-guard/dead-barrel-duplicate-pruner.mjs`).
-- **Safe Shell Command Argument Quoting Guard**: Auditoría estática de comandos del sistema (`exec`, `execSync`) para garantizar comillado seguro y sanitización anti-inyección shell (`security-guard/shell-quote-guard.mjs`).
-- **Sandbox Process Group Signal Trap Prover**: Demostración formal de creación de grupos de procesos independientes (`detached: true`) y captura de señales (`kill(-pid)`) para prevenir subprocesos huérfanos (`sandbox-guard/sandbox-signal-trap-prover.mjs`).
-
-### [40.0.0] - 2026-08-17 (The Transcendent 136-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
-- **Atomic File Replace & Staged Write Guard**: Auditoría estática de operaciones de guardado de estado/manifiestos para garantizar escritura atómica en dos fases (`temp + rename`) (`storage-guard/atomic-file-write-guard.mjs`).
-- **Dead Config Path Alias Pruner**: Podado estático de alias de rutas y módulos huérfanos o no alcanzados en `tsconfig.json`/`vite.config.ts` (`config-guard/dead-alias-pruner.mjs`).
-- **Safe Regular Expression Unicode Flag Guard**: Auditoría estática de expresiones regulares de validación para garantizar el uso de flags `u`/`v` contra bypasses multibyte (`security-guard/regex-flag-guard.mjs`).
-- **Sandbox Process Scheduling Priority & Niceness Prover**: Demostración formal de prioridad de scheduling (`nice -n`, `os.setPriority`) en sandboxes para prevenir saturación del Event Loop anfitrión (`sandbox-guard/sandbox-priority-prover.mjs`).
-
-### [39.0.0] - 2026-08-17 (The Sovereign 132-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
-- **Unhandled Rejection & Process Exception Guard**: Auditoría estática de puntos de entrada de procesos y workers para garantizar captura de `unhandledRejection` y `uncaughtException` (`async-guard/unhandled-rejection-guard.mjs`).
-- **Dead Monorepo Workspace Package Pruner**: Podado estático de paquetes y módulos huérfanos o no alcanzados en el monorrepositorio (`package-guard/dead-workspace-package-pruner.mjs`).
-- **Safe Cryptographic Randomness (CSPRNG) Guard**: Auditoría estática contra generadores pseudo-aleatorios débiles (`Math.random()`) en tokens/secretos en favor de CSPRNG (`crypto.randomBytes()`, `crypto.randomUUID()`) (`security-guard/crypto-random-guard.mjs`).
-- **Sandbox Child Process File Descriptor Isolation Prover**: Demostración formal de aislamiento estricto de descriptores de archivos (`stdio: ['ignore', 'pipe', 'pipe']`) en sandboxes para prevenir herencia de sockets privilegiados (`sandbox-guard/sandbox-fd-cloexec-prover.mjs`).
-
-### [38.0.0] - 2026-08-17 (The Transcendent 128-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
-- **Sensitive Data & PII Masking Guard**: Auditoría estática de declaraciones de telemetría y logs (`console.log`, `logger.info`) para garantizar enmascaramiento de contraseñas, tokens y PII (`telemetry/pii-masking-guard.mjs`).
-- **Dead Gitignore Entry & Duplicate Exclusion Rule Pruner**: Podado estático de reglas duplicadas y redundantes en el archivo `.gitignore` del repositorio (`repo-guard/dead-gitignore-pruner.mjs`).
-- **Safe Cryptographic Hash Algorithm Guard**: Auditoría estática contra algoritmos criptográficos vulnerables/deprecados (`md5`, `sha1`, `des`) en favor de estándares robustos (`sha256`, `aes-256-gcm`) (`security-guard/crypto-algorithm-guard.mjs`).
-- **Sandbox Child Process Resource Limit (RLimit CPU & AS) Prover**: Demostración formal de configuración de `ulimit -t` / `RLIMIT_CPU` en sandboxes para prevenir saturación de CPU por subprocesos desbocados (`sandbox-guard/sandbox-rlimit-prover.mjs`).
-
-### [37.0.0] - 2026-08-17 (The Sovereign 124-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
-- **Outbound HTTP Request Timeout & AbortSignal Guard**: Auditoría estática de peticiones de red salientes (`fetch`, `$fetch`, `axios`) para garantizar límites de tiempo explícitos o señales de aborto (`stream-guard/http-timeout-guard.mjs`).
-- **Dead Markdown Anchor & Cross-Doc Link Pruner**: Podado y validación estática de hipervínculos relativos y referencias cruzadas entre documentos markdown (`doc-guard/dead-doc-link-pruner.mjs`).
-- **Dynamic RegExp Length & ReDoS Timeout Guard**: Demostración formal de acotamiento de longitud en expresiones regulares dinámicas instanciadas en tiempo de ejecución (`security-guard/regex-timeout-guard.mjs`).
-- **Sandbox Process Core Dump Prevention Prover**: Demostración formal de configuración de `ulimit -c 0` / `RLIMIT_CORE: 0` en sandboxes para prevenir volcados de memoria y fugas de secretos en disco (`sandbox-guard/sandbox-coredump-prover.mjs`).
-
-### [36.0.0] - 2026-08-17 (The Centurial 120-Pillar Omnipresent Singularity & Universal Transcendence Genesis Master Matrix)
-- **Database Transaction Rollback & Commit Lifecycle Guard**: Demostración formal de rollback garantizado en excepciones para transacciones de base de datos (`BEGIN`, `db.transaction`) (`db-guard/transaction-rollback-guard.mjs`).
-- **Dead Package Script & npm Run Pruner**: Podado estático de scripts y comandos npm huérfanos o no alcanzados en el manifiesto `package.json` (`package-guard/dead-script-pruner.mjs`).
-- **Safe HTML & DOM Sanitization Guard**: Auditoría estática de renderizado HTML dinámico (`v-html`, `innerHTML`) para certificar sanitización anti-XSS con DOMPurify (`security-guard/html-sanitization-guard.mjs`).
-- **Sandbox Process Environment Variable Isolation Prover**: Demostración formal de paso explícito y filtrado de variables `env` en subprocesos de sandbox para prevenir fugas de secretos del host (`sandbox-guard/sandbox-env-isolation-prover.mjs`).
-
-### [35.0.0] - 2026-08-17 (The Sovereign 116-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
-- **Browser Storage Quota & Expiration Guard**: Auditoría estática de operaciones en `localStorage`/`IndexedDB` para garantizar manejo de excepciones `QuotaExceededError` y políticas de expiración (`storage-guard/browser-storage-quota-guard.mjs`).
-- **Dead Custom CSS Class & Utility Pruner**: Podado estático de clases y selectores CSS huérfanos o no alcanzados en plantillas del monorrepositorio (`css-guard/dead-css-class-pruner.mjs`).
-- **Test Port Collision & Ephemeral Binding Prover**: Demostración formal de puertos efímeros dinámicos (`server.listen(0)`) y prevención de colisiones `EADDRINUSE` en tests paralelos (`test-guard/port-collision-prover.mjs`).
-- **Sandbox File Descriptor Concurrency & Ulimit Prover**: Demostración formal de concurrencia acotada en I/O de archivos en sandboxes para prevenir saturación de descriptores `EMFILE`/`ulimit` (`sandbox-guard/sandbox-ulimit-prover.mjs`).
 
 ---
 

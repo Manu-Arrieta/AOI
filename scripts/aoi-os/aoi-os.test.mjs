@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v46 pipeline with 160 pillars', async () => {
+test('createAoiOsPipeline initializes full v47 pipeline with 164 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v46',
-    taskId: 'TASK-2026-46',
+    feature: 'aoi-os-v47',
+    taskId: 'TASK-2026-47',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v46 pipeline with 160 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic Stream Chunk UTF-8 Boundary Guard
-  const chunkCheck = pipeline.auditStreamChunkBoundaries("import { StringDecoder } from 'node:string_decoder'; const dec = new StringDecoder('utf8'); stream.on('data', (d) => dec.write(d));")
-  assert.equal(chunkCheck.safe, true)
-  assert.equal(chunkCheck.boundaryProof, 'SAFE_UTF8_STREAM_BOUNDARY_DECODING_ENFORCED')
+  // 2. Atomic Temporary Symlink Clashing & Race Guard
+  const symlinkCheck = pipeline.auditTempSymlinkClashes("const tempLink = path.join(dir, `.stg-${crypto.randomUUID()}`); if (fs.existsSync(tempLink)) fs.unlinkSync(tempLink); fs.symlinkSync(target, tempLink);")
+  assert.equal(symlinkCheck.safe, true)
+  assert.equal(symlinkCheck.symlinkProof, 'SAFE_ATOMIC_SYMLINK_CREATION_ENFORCED')
 
-  // 3. Dead TypeScript Project Reference Pruner
-  const tsconfigCheck = pipeline.auditTsconfigReferences({ references: [{ path: './packages/core' }] }, ['packages/core'])
-  assert.equal(tsconfigCheck.clean, true)
-  assert.equal(tsconfigCheck.referenceProof, 'TSCONFIG_PROJECT_REFERENCES_CANONICAL')
+  // 3. Dead Workspace TypeScript Include Path Pruner
+  const includeCheck = pipeline.auditTsconfigIncludes({ include: ['src/**/*'] }, ['src/index.ts'])
+  assert.equal(includeCheck.clean, true)
+  assert.equal(includeCheck.includeProof, 'TSCONFIG_INCLUDE_PATHS_CANONICAL')
 
-  // 4. Safe Cryptographic TLS Minimum Protocol Version Guard
-  const tlsCheck = pipeline.auditCryptoTlsVersions("const s = https.createServer({ minVersion: 'TLSv1.3', key, cert });")
-  assert.equal(tlsCheck.safe, true)
-  assert.equal(tlsCheck.tlsProof, 'MODERN_TLS_MIN_VERSION_ENFORCED')
+  // 4. Safe Cryptographic PBKDF2 Digest Algorithm Hardness Guard
+  const pbkdf2Check = pipeline.auditCryptoPbkdf2Digests("const k = crypto.pbkdf2Sync(pass, salt, 100000, 64, 'sha512');")
+  assert.equal(pbkdf2Check.safe, true)
+  assert.equal(pbkdf2Check.digestProof, 'ROBUST_PBKDF2_DIGEST_ENFORCED')
 
-  // 5. Sandbox Child Process Stdio Buffer Flush Prover
-  const stdioCheck = pipeline.auditSandboxStdioFlush("const child = spawn(cmd); child.on('close', (c) => resolve(c));")
-  assert.equal(stdioCheck.safe, true)
-  assert.equal(stdioCheck.flushProof, 'COMPLETE_STDIO_STREAM_FLUSH_ENFORCED')
+  // 5. Sandbox Child Process Stdin Stream Closure Prover
+  const stdinCheck = pipeline.auditSandboxStdinClosure("child.stdin.write(payload); child.stdin.end();")
+  assert.equal(stdinCheck.safe, true)
+  assert.equal(stdinCheck.stdinProof, 'DETERMINISTIC_STDIN_EOF_CLOSURE_ENFORCED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v46 transcendent 160-pillar omnipresent singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+160 lines)',
+    decisions: ['Use deterministic v47 sovereign 164-pillar infinite singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+164 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
