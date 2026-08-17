@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v62 pipeline with 224 pillars', async () => {
+test('createAoiOsPipeline initializes full v63 pipeline with 228 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v62',
-    taskId: 'TASK-2026-62',
+    feature: 'aoi-os-v63',
+    taskId: 'TASK-2026-63',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,35 +34,30 @@ test('createAoiOsPipeline initializes full v62 pipeline with 224 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic File Watcher BigInt Stat Precision Guard
-  const watcherBigIntCheck = pipeline.auditFileWatcherBigInts('const s = fs.statSync(file, { bigint: true }); if (s.mtimeNs > prevNs) {}')
-  assert.equal(watcherBigIntCheck.safe, true)
-  assert.equal(watcherBigIntCheck.watcherBigIntProof, 'STAT_TIMESTAMP_BIGINT_PRECISION_ENFORCED')
+  // 2. Atomic File Watcher Error Listener Guard
+  const watcherErrCheck = pipeline.auditFileWatcherErrors("const w = fs.watch(dir); w.on('error', (e) => log(e));")
+  assert.equal(watcherErrCheck.safe, true)
+  assert.equal(watcherErrCheck.watcherErrorProof, 'WATCHER_ERROR_HANDLER_VERIFIED')
 
-  // 3. Dead TypeScript CheckJs Redundancy Pruner
-  const checkJsCheck = pipeline.auditTsconfigCheckJsFlags({ compilerOptions: { allowJs: true, checkJs: true } })
-  assert.equal(checkJsCheck.clean, true)
-  assert.equal(checkJsCheck.checkJsProof, 'TSCONFIG_CHECK_JS_CONSISTENT')
+  // 3. Dead TypeScript Composite Project Redundancy Pruner
+  const compositeCheck = pipeline.auditTsconfigComposites({ compilerOptions: { composite: true, declaration: true } })
+  assert.equal(compositeCheck.clean, true)
+  assert.equal(compositeCheck.compositeProof, 'TSCONFIG_COMPOSITE_VALID')
 
-  // 4. Safe Cryptographic TLS OCSP Stapling Verification Guard
-  const tlsOcspCheck = pipeline.auditCryptoTlsOcsps("const s = tls.connect({ requestOCSP: true }); s.on('OCSPResponse', (r) => {});")
-  assert.equal(tlsOcspCheck.safe, true)
-  assert.equal(tlsOcspCheck.tlsOcspProof, 'TLS_OCSP_STAPLING_VERIFIED')
+  // 4. Safe Cryptographic TLS Renegotiation DoS Guard
+  const tlsRenegCheck = pipeline.auditCryptoTlsRenegotiations("const s = tls.createServer({ minVersion: 'TLSv1.3' });")
+  assert.equal(tlsRenegCheck.safe, true)
+  assert.equal(tlsRenegCheck.tlsRenegotiationProof, 'TLS_RENEGOTIATION_DEFENSE_VERIFIED')
 
-  // 5. Sandbox Process Windows Batch Metacharacter Escaping Prover
-  const winBatchCheck = pipeline.auditSandboxProcessWindowsBatchEscapes(`
-function escapeBatchArg(a) {
-  return a.replace(/([\\^&|<>\'%"])/g, '^$1');
-}
-const c = spawn('run.bat', args.map(escapeBatchArg));
-`)
-  assert.equal(winBatchCheck.safe, true)
-  assert.equal(winBatchCheck.batchEscapeProof, 'WINDOWS_BATCH_METACHARACTERS_ESCAPED')
+  // 5. Sandbox Process POSIX Shell Word Splitting Prover
+  const posixShellCheck = pipeline.auditSandboxProcessPosixShells("const c = spawn('/bin/sh', ['-c', 'cat \"$FILE_PATH\"']);")
+  assert.equal(posixShellCheck.safe, true)
+  assert.equal(posixShellCheck.posixShellProof, 'POSIX_SHELL_VARIABLES_PROPERLY_QUOTED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v62 sovereign 224-pillar master core'],
-    diffSummary: 'server/api/tasks.ts (+224 lines)',
+    decisions: ['Use deterministic v63 sovereign 228-pillar master core'],
+    diffSummary: 'server/api/tasks.ts (+228 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
