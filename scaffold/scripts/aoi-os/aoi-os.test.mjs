@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v51 pipeline with 180 pillars', async () => {
+test('createAoiOsPipeline initializes full v52 pipeline with 184 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v51',
-    taskId: 'TASK-2026-51',
+    feature: 'aoi-os-v52',
+    taskId: 'TASK-2026-52',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v51 pipeline with 180 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic Stream Pipe Auto-Destroy Guard
-  const pipeCheck = pipeline.auditStreamPipeDestroys("import { pipeline } from 'node:stream/promises'; await pipeline(r, w);")
-  assert.equal(pipeCheck.safe, true)
-  assert.equal(pipeCheck.pipeProof, 'STREAM_PIPE_AUTO_DESTROY_ENFORCED')
+  // 2. Atomic Stream Transform _final & _flush Cleanup Guard
+  const finalCheck = pipeline.auditStreamTransformFinals("class MyTransform extends Transform { _flush(cb) { cb(); } }")
+  assert.equal(finalCheck.safe, true)
+  assert.equal(finalCheck.finalProof, 'DETERMINISTIC_TRANSFORM_FINAL_ENFORCED')
 
-  // 3. Dead TypeScript Compiler Options lib Pruner
-  const libCheck = pipeline.auditTsconfigLibs({ compilerOptions: { lib: ['ESNext'] } }, { isNodeOnly: true })
-  assert.equal(libCheck.clean, true)
-  assert.equal(libCheck.libProof, 'TSCONFIG_LIBS_CANONICAL')
+  // 3. Dead TypeScript JSX Configuration Pruner
+  const jsxCheck = pipeline.auditTsconfigJsx({ compilerOptions: { jsx: 'react-jsx' } }, ['src/App.tsx'])
+  assert.equal(jsxCheck.clean, true)
+  assert.equal(jsxCheck.jsxProof, 'TSCONFIG_JSX_CANONICAL')
 
-  // 4. Safe Cryptographic Scrypt Cost & Parameter Guard
-  const scryptCheck = pipeline.auditCryptoScryptParams("const k = crypto.scryptSync(p, s, 64, { N: 16384, r: 8, p: 1 });")
-  assert.equal(scryptCheck.safe, true)
-  assert.equal(scryptCheck.scryptProof, 'ROBUST_SCRYPT_PARAMETERS_ENFORCED')
+  // 4. Safe Cryptographic ChaCha20-Poly1305 Nonce & Auth Guard
+  const chachaCheck = pipeline.auditCryptoChachaNonces("const c = crypto.createCipheriv('chacha20-poly1305', k, iv, { authTagLength: 16 }); c.getAuthTag();")
+  assert.equal(chachaCheck.safe, true)
+  assert.equal(chachaCheck.chachaProof, 'CHACHA20_POLY1305_AEAD_ENFORCED')
 
-  // 5. Sandbox Process PATH Variable Sanitization Prover
-  const pathCheck = pipeline.auditSandboxPathEnvs("const env = { ...process.env, PATH: '/usr/local/bin:/usr/bin:/bin' };")
-  assert.equal(pathCheck.safe, true)
-  assert.equal(pathCheck.pathProof, 'CANONICAL_TRUSTED_PATH_ENFORCED')
+  // 5. Sandbox Child Process NODE_OPTIONS Sanitization Prover
+  const nodeOptCheck = pipeline.auditSandboxNodeOptions("const env = { ...process.env, NODE_OPTIONS: '--max-old-space-size=512' };")
+  assert.equal(nodeOptCheck.safe, true)
+  assert.equal(nodeOptCheck.nodeOptionsProof, 'SANITIZED_NODE_OPTIONS_ENFORCED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v51 sovereign 180-pillar infinite singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+180 lines)',
+    decisions: ['Use deterministic v52 transcendent 184-pillar omnipresent singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+184 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
