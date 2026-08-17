@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v38 (The Transcendent 128-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v39 (The Sovereign 132-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Sensitive Data & PII Masking Guard (`telemetry/pii-masking-guard.mjs`)**: Auditoría estática de declaraciones de telemetría y logs (`console.log`, `logger.info`) para garantizar enmascaramiento de contraseñas, tokens y PII (0 LLM tokens).
-- **Dead Gitignore Entry & Duplicate Exclusion Rule Pruner (`repo-guard/dead-gitignore-pruner.mjs`)**: Podado estático de reglas duplicadas y redundantes en el archivo `.gitignore` del repositorio (0 LLM tokens).
-- **Safe Cryptographic Hash Algorithm Guard (`security-guard/crypto-algorithm-guard.mjs`)**: Auditoría estática contra algoritmos criptográficos vulnerables/deprecados (`md5`, `sha1`, `des`) en favor de estándares robustos (`sha256`, `aes-256-gcm`) (0 LLM tokens).
-- **Sandbox Child Process Resource Limit (RLimit CPU & AS) Prover (`sandbox-guard/sandbox-rlimit-prover.mjs`)**: Demostración formal de configuración de `ulimit -t` / `RLIMIT_CPU` en sandboxes para prevenir saturación de CPU por subprocesos desbocados (0 LLM tokens).
+- **Unhandled Rejection & Process Exception Guard (`async-guard/unhandled-rejection-guard.mjs`)**: Auditoría estática de puntos de entrada de procesos y workers para garantizar captura de `unhandledRejection` y `uncaughtException` (0 LLM tokens).
+- **Dead Monorepo Workspace Package Pruner (`package-guard/dead-workspace-package-pruner.mjs`)**: Podado estático de paquetes y módulos huérfanos o no alcanzados en el monorrepositorio (0 LLM tokens).
+- **Safe Cryptographic Randomness (CSPRNG) Guard (`security-guard/crypto-random-guard.mjs`)**: Auditoría estática contra generadores pseudo-aleatorios débiles (`Math.random()`) en tokens/secretos en favor de CSPRNG (`crypto.randomBytes()`, `crypto.randomUUID()`) (0 LLM tokens).
+- **Sandbox Child Process File Descriptor Isolation Prover (`sandbox-guard/sandbox-fd-cloexec-prover.mjs`)**: Demostración formal de aislamiento estricto de descriptores de archivos (`stdio: ['ignore', 'pipe', 'pipe']`) en sandboxes para prevenir herencia de sockets privilegiados (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 128 Pilares (AOI-OS v38)
+## 🏛️ Matriz Arquitectónica Maestra de 132 Pilares (AOI-OS v39)
 
 ```text
-AOI-OS v38 Architecture Matrix (128 Pillars)
+AOI-OS v39 Architecture Matrix (132 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -240,11 +240,17 @@ AOI-OS v38 Architecture Matrix (128 Pillars)
 │   ├── regex-timeout-guard.mjs: Demostración formal de acotamiento de longitud en expresiones regulares dinámicas en runtime.
 │   └── sandbox-coredump-prover.mjs: Demostración formal de desactivación de volcados de memoria (ulimit -c 0) en sandboxes.
 │
-└── 125-128. Núcleo Transcendent 128-Pillar Genesis Core v38 (telemetry/, repo-guard/, security-guard/, sandbox-guard/)
-    ├── pii-masking-guard.mjs: Auditoría estática de telemetría y logs para enmascarar contraseñas, tokens y PII.
-    ├── dead-gitignore-pruner.mjs: Podado estático de reglas duplicadas y redundantes en el archivo .gitignore.
-    ├── crypto-algorithm-guard.mjs: Auditoría estática contra algoritmos criptográficos obsoletos (md5, sha1, des).
-    └── sandbox-rlimit-prover.mjs: Demostración formal de límites de CPU y memoria (ulimit -t) en subprocesos de sandbox.
+├── 125-128. Núcleo Transcendent 128-Pillar Genesis Core (telemetry/, repo-guard/, security-guard/, sandbox-guard/)
+│   ├── pii-masking-guard.mjs: Auditoría estática de telemetría y logs para enmascarar contraseñas, tokens y PII.
+│   ├── dead-gitignore-pruner.mjs: Podado estático de reglas duplicadas y redundantes en el archivo .gitignore.
+│   ├── crypto-algorithm-guard.mjs: Auditoría estática contra algoritmos criptográficos obsoletos (md5, sha1, des).
+│   └── sandbox-rlimit-prover.mjs: Demostración formal de límites de CPU y memoria (ulimit -t) en subprocesos de sandbox.
+│
+└── 129-132. Núcleo Sovereign 132-Pillar Genesis Matrix v39 (async-guard/, package-guard/, security-guard/, sandbox-guard/)
+    ├── unhandled-rejection-guard.mjs: Auditoría estática de puntos de entrada para garantizar ganchos unhandledRejection y uncaughtException.
+    ├── dead-workspace-package-pruner.mjs: Podado estático de paquetes y módulos huérfanos o no alcanzados en el monorrepositorio.
+    ├── crypto-random-guard.mjs: Auditoría estática contra generadores pseudo-aleatorios (Math.random()) en tokens/secretos.
+    └── sandbox-fd-cloexec-prover.mjs: Demostración formal de aislamiento estricto de descriptores de archivos (stdio array) en sandbox.
 ```
 
 ---
@@ -287,12 +293,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [39.0.0] - 2026-08-17 (The Sovereign 132-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
+- **Unhandled Rejection & Process Exception Guard**: Auditoría estática de puntos de entrada de procesos y workers para garantizar captura de `unhandledRejection` y `uncaughtException` (`async-guard/unhandled-rejection-guard.mjs`).
+- **Dead Monorepo Workspace Package Pruner**: Podado estático de paquetes y módulos huérfanos o no alcanzados en el monorrepositorio (`package-guard/dead-workspace-package-pruner.mjs`).
+- **Safe Cryptographic Randomness (CSPRNG) Guard**: Auditoría estática contra generadores pseudo-aleatorios débiles (`Math.random()`) en tokens/secretos en favor de CSPRNG (`crypto.randomBytes()`, `crypto.randomUUID()`) (`security-guard/crypto-random-guard.mjs`).
+- **Sandbox Child Process File Descriptor Isolation Prover**: Demostración formal de aislamiento estricto de descriptores de archivos (`stdio: ['ignore', 'pipe', 'pipe']`) en sandboxes para prevenir herencia de sockets privilegiados (`sandbox-guard/sandbox-fd-cloexec-prover.mjs`).
+- **374/374 Tests Pasando al 100%** y **451 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [38.0.0] - 2026-08-17 (The Transcendent 128-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
 - **Sensitive Data & PII Masking Guard**: Auditoría estática de declaraciones de telemetría y logs (`console.log`, `logger.info`) para garantizar enmascaramiento de contraseñas, tokens y PII (`telemetry/pii-masking-guard.mjs`).
 - **Dead Gitignore Entry & Duplicate Exclusion Rule Pruner**: Podado estático de reglas duplicadas y redundantes en el archivo `.gitignore` del repositorio (`repo-guard/dead-gitignore-pruner.mjs`).
 - **Safe Cryptographic Hash Algorithm Guard**: Auditoría estática contra algoritmos criptográficos vulnerables/deprecados (`md5`, `sha1`, `des`) en favor de estándares robustos (`sha256`, `aes-256-gcm`) (`security-guard/crypto-algorithm-guard.mjs`).
 - **Sandbox Child Process Resource Limit (RLimit CPU & AS) Prover**: Demostración formal de configuración de `ulimit -t` / `RLIMIT_CPU` en sandboxes para prevenir saturación de CPU por subprocesos desbocados (`sandbox-guard/sandbox-rlimit-prover.mjs`).
-- **366/366 Tests Pasando al 100%** y **443 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [37.0.0] - 2026-08-17 (The Sovereign 124-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
 - **Outbound HTTP Request Timeout & AbortSignal Guard**: Auditoría estática de peticiones de red salientes (`fetch`, `$fetch`, `axios`) para garantizar límites de tiempo explícitos o señales de aborto (`stream-guard/http-timeout-guard.mjs`).

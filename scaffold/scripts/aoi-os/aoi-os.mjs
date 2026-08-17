@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v38 (The Transcendent 128-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core).
+ * Master Orchestrator Engine for AOI-OS v39 (The Sovereign 132-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -54,6 +54,8 @@
  * Dynamic RegExp Length & ReDoS Timeout Guard, Sandbox Process Core Dump Prevention Prover,
  * Sensitive Data & PII Masking Guard, Dead Gitignore Pattern Pruner,
  * Safe Cryptographic Algorithm Guard, Sandbox Process Resource Limit (RLimit CPU & AS) Prover,
+ * Unhandled Rejection & Process Exception Guard, Dead Monorepo Workspace Package Pruner,
+ * Safe Cryptographic Randomness (CSPRNG) Guard, Sandbox Process File Descriptor Isolation Prover,
  * and ICM Memory Linking.
  */
 
@@ -93,6 +95,7 @@ import { auditQueryDepthSafety } from './security-guard/query-depth-guard.mjs'
 import { auditHtmlSanitizationSafety } from './security-guard/html-sanitization-guard.mjs'
 import { auditDynamicRegexSafety } from './security-guard/regex-timeout-guard.mjs'
 import { auditCryptoAlgorithmSafety } from './security-guard/crypto-algorithm-guard.mjs'
+import { auditCryptoRandomSafety } from './security-guard/crypto-random-guard.mjs'
 import { auditCacheInvalidation } from './cache-guard/cache-invalidation-guard.mjs'
 import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
 import { auditDeadEnvFlags } from './env-guard/dead-env-pruner.mjs'
@@ -108,6 +111,7 @@ import { auditDeadTypeAliases } from './type-guard/dead-type-alias-pruner.mjs'
 import { auditDeadEnums } from './enum-guard/dead-enum-pruner.mjs'
 import { auditDeadPackageExports } from './export-guard/dead-export-package-pruner.mjs'
 import { auditDeadPackageScripts } from './package-guard/dead-script-pruner.mjs'
+import { auditDeadWorkspacePackages } from './package-guard/dead-workspace-package-pruner.mjs'
 import { auditDeadI18nKeys } from './i18n-guard/dead-i18n-pruner.mjs'
 import { proveDbPoolDrainSafety } from './db-guard/db-pool-drain-prover.mjs'
 import { auditTransactionRollbackSafety } from './db-guard/transaction-rollback-guard.mjs'
@@ -124,6 +128,7 @@ import { proveSandboxUlimitSafety } from './sandbox-guard/sandbox-ulimit-prover.
 import { proveSandboxEnvIsolationSafety } from './sandbox-guard/sandbox-env-isolation-prover.mjs'
 import { proveSandboxCoreDumpSafety } from './sandbox-guard/sandbox-coredump-prover.mjs'
 import { proveSandboxRLimitSafety } from './sandbox-guard/sandbox-rlimit-prover.mjs'
+import { proveSandboxFdIsolationSafety } from './sandbox-guard/sandbox-fd-cloexec-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -199,6 +204,7 @@ import { auditPayloadDrift } from './payload-guard/payload-drift-guard.mjs'
 import { auditBarrelExports } from './export-guard/barrel-export-neutralizer.mjs'
 import { proveFilePermissions } from './sandbox-guard/file-permission-prover.mjs'
 import { auditAsyncSafety } from './async-guard/promise-cascade-guard.mjs'
+import { auditUnhandledRejectionSafety } from './async-guard/unhandled-rejection-guard.mjs'
 import { auditSchemaSunset } from './schema-guard/schema-sunset-sentinel.mjs'
 import { proveHeapAllocations } from './memory-guard/heap-allocation-prover.mjs'
 import { auditNetworkEgress } from './sandbox-guard/egress-interceptor.mjs'
@@ -335,6 +341,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits process entrypoint for unhandled rejection and exception safety.
+   *
+   * @param {string} sourceCode
+   */
+  function auditUnhandledRejections(sourceCode) {
+    return auditUnhandledRejectionSafety(sourceCode)
+  }
+
+  /**
+   * Audits monorepo workspace packages for dead unreferenced packages.
+   *
+   * @param {string[]} declaredPackages
+   * @param {string} consumerReferences
+   */
+  function auditWorkspacePackages(declaredPackages = [], consumerReferences = '') {
+    return auditDeadWorkspacePackages(declaredPackages, consumerReferences)
+  }
+
+  /**
+   * Audits CSPRNG cryptographic randomness enforcement in tokens/secrets.
+   *
+   * @param {string} sourceCode
+   */
+  function auditCryptoRandomness(sourceCode) {
+    return auditCryptoRandomSafety(sourceCode)
+  }
+
+  /**
+   * Proves file descriptor isolation in sandbox subprocess spawns.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxFdIsolation(sourceCode) {
+    return proveSandboxFdIsolationSafety(sourceCode)
   }
 
   /**
@@ -1113,7 +1156,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '38.0.0',
+      version: '39.0.0',
       components,
     })
   }
@@ -1662,6 +1705,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditUnhandledRejections,
+    auditWorkspacePackages,
+    auditCryptoRandomness,
+    auditSandboxFdIsolation,
     auditPiiMasking,
     auditGitignore,
     auditCryptoAlgorithms,
@@ -1806,7 +1853,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v38: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v39: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v38 pipeline with 128 pillars', async () => {
+test('createAoiOsPipeline initializes full v39 pipeline with 132 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v38',
-    taskId: 'TASK-2026-38',
+    feature: 'aoi-os-v39',
+    taskId: 'TASK-2026-39',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,29 +34,29 @@ test('createAoiOsPipeline initializes full v38 pipeline with 128 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Sensitive Data & PII Masking Guard
-  const piiCheck = pipeline.auditPiiMasking("logger.info({ user: 'alice', password: maskSecret(pwd) })")
-  assert.equal(piiCheck.safe, true)
-  assert.equal(piiCheck.piiProof, 'SENSITIVE_DATA_LOGGING_MASKED')
+  // 2. Unhandled Rejection & Exception Guard
+  const unhandledCheck = pipeline.auditUnhandledRejections("process.on('unhandledRejection', () => process.exit(1)); async function main() { await startDaemon(); }")
+  assert.equal(unhandledCheck.safe, true)
+  assert.equal(unhandledCheck.rejectionProof, 'PROCESS_EXCEPTIONS_GOVERNED')
 
-  // 3. Dead Gitignore Pruner
-  const gitignoreCheck = pipeline.auditGitignore(['node_modules', '.output'])
-  assert.equal(gitignoreCheck.clean, true)
-  assert.equal(gitignoreCheck.gitignoreProof, 'GITIGNORE_RULES_CANONICAL')
+  // 3. Dead Workspace Package Pruner
+  const workspacePkgCheck = pipeline.auditWorkspacePackages(['agentic-ops-dashboard'], 'pnpm --filter agentic-ops-dashboard dev')
+  assert.equal(workspacePkgCheck.clean, true)
+  assert.equal(workspacePkgCheck.packageProof, 'WORKSPACE_PACKAGES_GOVERNED')
 
-  // 4. Safe Cryptographic Algorithm Guard
-  const cryptoCheck = pipeline.auditCryptoAlgorithms("crypto.createHash('sha256').update(data).digest('hex')")
-  assert.equal(cryptoCheck.safe, true)
-  assert.equal(cryptoCheck.cryptoProof, 'SAFE_CRYPTO_ALGORITHMS_ENFORCED')
+  // 4. Safe Cryptographic Randomness (CSPRNG) Guard
+  const randomCheck = pipeline.auditCryptoRandomness("function generateToken() { return crypto.randomBytes(32).toString('hex'); }")
+  assert.equal(randomCheck.safe, true)
+  assert.equal(randomCheck.randomProof, 'CSPRNG_RANDOMNESS_ENFORCED')
 
-  // 5. Sandbox Process Resource Limit (RLimit) Prover
-  const rlimitCheck = pipeline.auditSandboxRLimits("exec('ulimit -t 30 && node build.js')")
-  assert.equal(rlimitCheck.safe, true)
-  assert.equal(rlimitCheck.rlimitProof, 'SANDBOX_RLIMIT_ENFORCED')
+  // 5. Sandbox FD Isolation Prover
+  const fdCheck = pipeline.auditSandboxFdIsolation("spawn('node', ['worker.js'], { stdio: ['ignore', 'pipe', 'pipe'] })")
+  assert.equal(fdCheck.safe, true)
+  assert.equal(fdCheck.fdProof, 'SANDBOX_FD_ISOLATION_ENFORCED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v38 transcendent 128-pillar omnipresent singularity master suite'],
+    decisions: ['Use deterministic v39 sovereign 132-pillar infinite singularity master suite'],
     diffSummary: 'server/api/tasks.ts (+100 lines)',
   }, async () => ({ stdout: 'OK' }))
 
