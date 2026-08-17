@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v31 (The Centurial 100-Pillar Omnipresent Singularity & Universal Transcendence Genesis Master Engine)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v32 (The Sovereign 104-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **WebSocket Ping/Pong Heartbeat Teardown Guard (`stream-guard/websocket-heartbeat-guard.mjs`)**: Demostración formal de limpieza de temporizadores de heartbeat en eventos de cierre o error de sockets (0 LLM tokens).
-- **Dead Type Alias Pruner (`type-guard/dead-type-alias-pruner.mjs`)**: Podado estático de alias de tipos TypeScript y parámetros genéricos no alcanzados en el monorrepositorio (0 LLM tokens).
-- **Content-Type & Payload Serialization Guard (`security-guard/content-type-guard.mjs`)**: Auditoría estática de validación de esquemas y deserialización segura de cargas útiles HTTP (0 LLM tokens).
-- **Sandbox Network Socket Unbind Prover (`sandbox-guard/sandbox-socket-unbind-prover.mjs`)**: Demostración formal de cierre y desvinculación de sockets TCP/HTTP en ganchos de teardown (0 LLM tokens).
+- **Database Pool Drain Prover (`db-guard/db-pool-drain-prover.mjs`)**: Demostración formal de cierre y drenaje de pools de conexión a bases de datos (`pg.Pool`, `mysql2.createPool`, `prisma.$disconnect`) en hooks de teardown (0 LLM tokens).
+- **Dead i18n Key Pruner (`i18n-guard/dead-i18n-pruner.mjs`)**: Podado estático de claves de traducción y diccionarios de internacionalización no alcanzados en el monorrepositorio (0 LLM tokens).
+- **JWT Expiration Guard (`security-guard/jwt-expiration-guard.mjs`)**: Auditoría estática de firmas JWT para garantizar políticas de expiración acotadas y prevenir tokens perpetuos (0 LLM tokens).
+- **Sandbox Symlink Escape Prover (`sandbox-guard/sandbox-symlink-escape-prover.mjs`)**: Demostración formal de confinamiento estricto de enlaces simbólicos dentro de la raíz del sandbox (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 100 Pilares (AOI-OS v31)
+## 🏛️ Matriz Arquitectónica Maestra de 104 Pilares (AOI-OS v32)
 
 ```text
-AOI-OS v31 Architecture Matrix (100 Pillars)
+AOI-OS v32 Architecture Matrix (104 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -198,11 +198,17 @@ AOI-OS v31 Architecture Matrix (100 Pillars)
 │   ├── hydration-mismatch-guard.mjs: Auditoría estática de determinismo en componentes Vue SFC para prevenir desajustes SSR.
 │   └── sandbox-temp-cleanup-prover.mjs: Demostración formal de desvinculación recursiva de directorios temporales en sandboxes.
 │
-└── 97-100. Núcleo Centurial 100-Pillar Omnipresent Master Engine v31 (stream-guard/, type-guard/, security-guard/, sandbox-guard/)
-    ├── websocket-heartbeat-guard.mjs: Demostración formal de limpieza de temporizadores de heartbeat en WebSockets.
-    ├── dead-type-alias-pruner.mjs: Podado estático de alias de tipos TypeScript y parámetros genéricos no alcanzados.
-    ├── content-type-guard.mjs: Auditoría estática de validación de esquemas y deserialización segura de cargas útiles HTTP.
-    └── sandbox-socket-unbind-prover.mjs: Demostración formal de cierre y desvinculación de sockets TCP/HTTP en teardown.
+├── 97-100. Núcleo Centurial 100-Pillar Omnipresent Master Engine (stream-guard/, type-guard/, security-guard/, sandbox-guard/)
+│   ├── websocket-heartbeat-guard.mjs: Demostración formal de limpieza de temporizadores de heartbeat en WebSockets.
+│   ├── dead-type-alias-pruner.mjs: Podado estático de alias de tipos TypeScript y parámetros genéricos no alcanzados.
+│   ├── content-type-guard.mjs: Auditoría estática de validación de esquemas y deserialización segura de cargas útiles HTTP.
+│   └── sandbox-socket-unbind-prover.mjs: Demostración formal de cierre y desvinculación de sockets TCP/HTTP en teardown.
+│
+└── 101-104. Núcleo Sovereign 104-Pillar Infinite Singularity Matrix v32 (db-guard/, i18n-guard/, security-guard/, sandbox-guard/)
+    ├── db-pool-drain-prover.mjs: Demostración formal de cierre y drenaje de pools de conexión a bases de datos en teardown.
+    ├── dead-i18n-pruner.mjs: Podado estático de claves de traducción y diccionarios de internacionalización no alcanzados.
+    ├── jwt-expiration-guard.mjs: Auditoría estática de firmas JWT para garantizar políticas de expiración acotadas.
+    └── sandbox-symlink-escape-prover.mjs: Demostración formal de confinamiento estricto de enlaces simbólicos en sandbox.
 ```
 
 ---
@@ -245,12 +251,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [32.0.0] - 2026-08-17 (The Sovereign 104-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
+- **Database Pool Drain Prover**: Demostración formal de cierre y drenaje de pools de conexión a bases de datos (`pg.Pool`, `mysql2.createPool`, `prisma.$disconnect`) en hooks de teardown (`db-guard/db-pool-drain-prover.mjs`).
+- **Dead i18n Key Pruner**: Podado estático de claves de traducción y diccionarios de internacionalización no alcanzados en el monorrepositorio (`i18n-guard/dead-i18n-pruner.mjs`).
+- **JWT Expiration Guard**: Auditoría estática de firmas JWT para garantizar políticas de expiración acotadas y prevenir tokens perpetuos (`security-guard/jwt-expiration-guard.mjs`).
+- **Sandbox Symlink Escape Prover**: Demostración formal de confinamiento estricto de enlaces simbólicos dentro de la raíz del sandbox (`sandbox-guard/sandbox-symlink-escape-prover.mjs`).
+- **318/318 Tests Pasando al 100%** y **395 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [31.0.0] - 2026-08-16 (The Centurial 100-Pillar Omnipresent Singularity & Universal Transcendence Genesis Master Engine)
 - **WebSocket Ping/Pong Heartbeat Teardown Guard**: Demostración formal de limpieza de temporizadores de heartbeat en eventos de cierre o error de sockets (`stream-guard/websocket-heartbeat-guard.mjs`).
 - **Dead Type Alias Pruner**: Podado estático de alias de tipos TypeScript y parámetros genéricos no alcanzados en el monorrepositorio (`type-guard/dead-type-alias-pruner.mjs`).
 - **Content-Type & Payload Serialization Guard**: Auditoría estática de validación de esquemas y deserialización segura de cargas útiles HTTP (`security-guard/content-type-guard.mjs`).
 - **Sandbox Network Socket Unbind Prover**: Demostración formal de cierre y desvinculación de sockets TCP/HTTP en ganchos de teardown (`sandbox-guard/sandbox-socket-unbind-prover.mjs`).
-- **310/310 Tests Pasando al 100%** y **387 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [30.0.0] - 2026-08-16 (The Supreme 96-Pillar Infinite Singularity & Universal Autonomous Meta-Genesis Matrix)
 - **Rate Limit Guard**: Demostración formal de protección de tasa de peticiones y defensa anti-DoS en endpoints públicos y de autenticación (`security-guard/rate-limit-guard.mjs`).

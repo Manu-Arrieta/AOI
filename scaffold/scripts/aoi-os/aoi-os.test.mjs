@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v31 pipeline with 100 pillars', async () => {
+test('createAoiOsPipeline initializes full v32 pipeline with 104 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v31',
-    taskId: 'TASK-2026-31',
+    feature: 'aoi-os-v32',
+    taskId: 'TASK-2026-32',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,29 +34,29 @@ test('createAoiOsPipeline initializes full v31 pipeline with 100 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. WebSocket Heartbeat Guard
-  const wsCheck = pipeline.auditWebSocketHeartbeats("wss.on('connection', (ws) => { const t = setInterval(() => ws.ping(), 1000); ws.on('close', () => clearInterval(t)); });")
-  assert.equal(wsCheck.safe, true)
-  assert.equal(wsCheck.heartbeatProof, 'WEBSOCKET_HEARTBEAT_TEARDOWN_PROVEN')
+  // 2. Database Pool Drain Prover
+  const dbCheck = pipeline.auditDbPoolTeardown("const p = new Pool(); afterAll(async () => await p.end());")
+  assert.equal(dbCheck.safe, true)
+  assert.equal(dbCheck.drainProof, 'DATABASE_POOL_DRAIN_GUARANTEED')
 
-  // 3. Dead Type Alias Pruner
-  const aliasCheck = pipeline.auditDeadTypeAliasHierarchy(['UserSummary'], 'function render(u: UserSummary) {}')
-  assert.equal(aliasCheck.allReferenced, true)
-  assert.equal(aliasCheck.aliasProof, 'ALL_TYPE_ALIASES_REFERENCED')
+  // 3. Dead i18n Key Pruner
+  const i18nCheck = pipeline.auditDeadI18nKeyCoverage(['dashboard.title'], "const t = $t('dashboard.title');")
+  assert.equal(i18nCheck.allReferenced, true)
+  assert.equal(i18nCheck.i18nProof, 'ALL_I18N_KEYS_REFERENCED')
 
-  // 4. Content-Type & Payload Serialization Guard
-  const payloadCheck = pipeline.auditPayloadDeserialization("export default defineEventHandler(async (e) => { const b = await readValidatedBody(e, (x) => schema.safeParse(x)); });")
-  assert.equal(payloadCheck.safe, true)
-  assert.equal(payloadCheck.payloadProof, 'PAYLOAD_DESERIALIZATION_SAFE_AND_VALIDATED')
+  // 4. JWT Expiration Guard
+  const jwtCheck = pipeline.auditJwtExpiration("jwt.sign({ id: 1 }, secret, { expiresIn: '1h' });")
+  assert.equal(jwtCheck.safe, true)
+  assert.equal(jwtCheck.jwtProof, 'JWT_EXPIRATION_INVARIANT_PROVEN')
 
-  // 5. Sandbox Socket Unbind Prover
-  const socketCheck = pipeline.auditSocketUnbind("const s = http.createServer(); s.listen(3000); afterAll(() => s.close());")
-  assert.equal(socketCheck.safe, true)
-  assert.equal(socketCheck.socketProof, 'NETWORK_SOCKET_UNBIND_GUARANTEED')
+  // 5. Sandbox Symlink Containment Prover
+  const symlinkCheck = pipeline.auditSymlinkContainment("/workspace/.sandboxes/aoi-os-tmp-task1", "src/file.ts")
+  assert.equal(symlinkCheck.contained, true)
+  assert.equal(symlinkCheck.symlinkProof, 'SYMLINK_CONFINEMENT_PROVEN')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v31 centurial 100-pillar omnipresent singularity master suite'],
+    decisions: ['Use deterministic v32 sovereign 104-pillar infinite singularity master suite'],
     diffSummary: 'server/api/tasks.ts (+80 lines)',
   }, async () => ({ stdout: 'OK' }))
 

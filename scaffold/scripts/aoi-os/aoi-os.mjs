@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v31 (The Centurial 100-Pillar Omnipresent Singularity & Universal Transcendence Genesis Master Engine).
+ * Master Orchestrator Engine for AOI-OS v32 (The Sovereign 104-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -39,7 +39,9 @@
  * Path Traversal Guard, Sandbox Subprocess Drain Prover, Rate Limiting & DoS Defense Guard,
  * Dead Export Package Entrypoint Pruner, SSR Hydration Mismatch Guard, Sandbox Temp Directory Cleanup Prover,
  * WebSocket Ping/Pong Heartbeat Teardown Guard, Dead Type Alias & Generic Parameter Pruner,
- * Content-Type & Payload Serialization Guard, Sandbox Network Socket Unbind Prover, and ICM Memory Linking.
+ * Content-Type & Payload Serialization Guard, Sandbox Network Socket Unbind Prover,
+ * Database Connection Pool Drain Prover, Dead i18n & Localization Key Pruner,
+ * JWT & Auth Token Expiration Guard, Sandbox Symlink Traversal Escape Prover, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -73,6 +75,7 @@ import { auditSqlSecurity } from './security-guard/sql-injection-guard.mjs'
 import { auditPathTraversalSafety } from './security-guard/path-traversal-guard.mjs'
 import { auditRateLimiting } from './security-guard/rate-limit-guard.mjs'
 import { auditPayloadDeserializationSafety } from './security-guard/content-type-guard.mjs'
+import { auditJwtExpirationSafety } from './security-guard/jwt-expiration-guard.mjs'
 import { auditCacheInvalidation } from './cache-guard/cache-invalidation-guard.mjs'
 import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
 import { validateStructuralConfig } from './config-guard/structural-config-guard.mjs'
@@ -83,11 +86,14 @@ import { auditDeadTypes } from './type-guard/dead-type-pruner.mjs'
 import { auditDeadTypeAliases } from './type-guard/dead-type-alias-pruner.mjs'
 import { auditDeadEnums } from './enum-guard/dead-enum-pruner.mjs'
 import { auditDeadPackageExports } from './export-guard/dead-export-package-pruner.mjs'
+import { auditDeadI18nKeys } from './i18n-guard/dead-i18n-pruner.mjs'
+import { proveDbPoolDrainSafety } from './db-guard/db-pool-drain-prover.mjs'
 import { proveStreamTeardownSafety } from './stream-guard/stream-teardown-prover.mjs'
 import { auditWebSocketHeartbeat } from './stream-guard/websocket-heartbeat-guard.mjs'
 import { proveSignalTeardown } from './sandbox-guard/signal-teardown-prover.mjs'
 import { provePipeCleanupSafety } from './sandbox-guard/pipe-cleanup-prover.mjs'
 import { provePathContainment } from './sandbox-guard/sandbox-path-escape-prover.mjs'
+import { proveSymlinkContainment } from './sandbox-guard/sandbox-symlink-escape-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -292,6 +298,44 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Proves explicit database connection pool drain and teardown.
+   *
+   * @param {string} sourceCode
+   */
+  function auditDbPoolTeardown(sourceCode) {
+    return proveDbPoolDrainSafety(sourceCode)
+  }
+
+  /**
+   * Audits translation keys to detect dead and unreferenced i18n keys.
+   *
+   * @param {string[]} translationKeys
+   * @param {string} consumerSourceCode
+   */
+  function auditDeadI18nKeyCoverage(translationKeys = [], consumerSourceCode = '') {
+    return auditDeadI18nKeys(translationKeys, consumerSourceCode)
+  }
+
+  /**
+   * Audits JWT signing calls to ensure an explicit expiration policy is declared.
+   *
+   * @param {string} sourceCode
+   */
+  function auditJwtExpiration(sourceCode) {
+    return auditJwtExpirationSafety(sourceCode)
+  }
+
+  /**
+   * Proves that symlink operations remain strictly contained inside the sandbox.
+   *
+   * @param {string} sandboxRoot
+   * @param {string} symlinkTarget
+   */
+  function auditSymlinkContainment(sandboxRoot, symlinkTarget) {
+    return proveSymlinkContainment(sandboxRoot, symlinkTarget)
   }
 
   /**
@@ -811,7 +855,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '31.0.0',
+      version: '32.0.0',
       components,
     })
   }
@@ -1360,6 +1404,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditDbPoolTeardown,
+    auditDeadI18nKeyCoverage,
+    auditJwtExpiration,
+    auditSymlinkContainment,
     auditWebSocketHeartbeats,
     auditDeadTypeAliasHierarchy,
     auditPayloadDeserialization,
@@ -1476,7 +1524,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v31: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v32: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
