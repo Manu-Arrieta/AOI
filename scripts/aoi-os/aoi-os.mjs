@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v60 (The Grand Epistemic Bicentennial-Decade 216-Pillar Omnipresent Singularity & Universal Transcendence Master Core).
+ * Master Orchestrator Engine for AOI-OS v62 (The Grand Epistemic Bicentennial-Quadrans 224-Pillar Omnipresent Singularity & Universal Transcendence Master Core).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -98,6 +98,10 @@
  * Safe Cryptographic TLS SAN Guard, Sandbox Process Windows Batch File Prover,
  * Atomic File Watcher Debounce Guard, Dead TypeScript Exact Optional Pruner,
  * Safe Cryptographic TLS SNI Guard, Sandbox Process Windows Path Prover,
+ * Atomic File Watcher Recursive Depth Guard, Dead TypeScript Verbatim Module Syntax Pruner,
+ * Safe Cryptographic TLS ALPN Guard, Sandbox Process Windows Shell Injection Prover,
+ * Atomic File Watcher BigInt Stat Precision Guard, Dead TypeScript CheckJs Pruner,
+ * Safe Cryptographic TLS OCSP Stapling Guard, Sandbox Process Windows Batch Escape Prover,
  * and ICM Memory Linking.
  */
 
@@ -159,6 +163,8 @@ import { auditCryptoDecipherAuthTagSafety } from './security-guard/crypto-deciph
 import { auditCryptoX509CertSafety } from './security-guard/crypto-x509-cert-guard.mjs'
 import { auditCryptoTlsSanSafety } from './security-guard/crypto-tls-san-guard.mjs'
 import { auditCryptoTlsSniSafety } from './security-guard/crypto-tls-sni-guard.mjs'
+import { auditCryptoTlsAlpnSafety } from './security-guard/crypto-tls-alpn-guard.mjs'
+import { auditCryptoTlsOcspSafety } from './security-guard/crypto-tls-ocsp-guard.mjs'
 import { auditCacheInvalidation } from './cache-guard/cache-invalidation-guard.mjs'
 import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
 import { auditDeadEnvFlags } from './env-guard/dead-env-pruner.mjs'
@@ -179,6 +185,8 @@ import { auditDeadTsconfigJsonModule } from './config-guard/dead-tsconfig-json-m
 import { auditDeadTsconfigRootTypes } from './config-guard/dead-tsconfig-root-types-pruner.mjs'
 import { auditDeadTsconfigDeclarationMap } from './config-guard/dead-tsconfig-declaration-map-pruner.mjs'
 import { auditDeadTsconfigExactOptional } from './config-guard/dead-tsconfig-exact-optional-pruner.mjs'
+import { auditDeadTsconfigVerbatimModule } from './config-guard/dead-tsconfig-verbatim-module-pruner.mjs'
+import { auditDeadTsconfigCheckJs } from './config-guard/dead-tsconfig-checkjs-pruner.mjs'
 import { auditDeadRoutes } from './route-guard/dead-route-pruner.mjs'
 import { auditDeadMarkdownDocLinks } from './doc-guard/dead-doc-link-pruner.mjs'
 import { auditDeadGitignoreRules } from './repo-guard/dead-gitignore-pruner.mjs'
@@ -215,6 +223,8 @@ import { auditStreamObjectModeHighWaterMarkSafety } from './storage-guard/stream
 import { auditFileAppendLockSafety } from './storage-guard/file-append-lock-guard.mjs'
 import { auditFileTruncateBoundarySafety } from './storage-guard/file-truncate-boundary-guard.mjs'
 import { auditFileWatcherDebounceSafety } from './storage-guard/file-watcher-debounce-guard.mjs'
+import { auditFileWatcherRecursiveSafety } from './storage-guard/file-watcher-recursive-guard.mjs'
+import { auditFileWatcherBigIntSafety } from './storage-guard/file-watcher-bigint-guard.mjs'
 import { proveSignalTeardown } from './sandbox-guard/signal-teardown-prover.mjs'
 import { provePipeCleanupSafety } from './sandbox-guard/pipe-cleanup-prover.mjs'
 import { provePathContainment } from './sandbox-guard/sandbox-path-escape-prover.mjs'
@@ -246,6 +256,8 @@ import { proveSandboxProcessSerializationSafety } from './sandbox-guard/sandbox-
 import { proveSandboxProcessDetachedTeardownSafety } from './sandbox-guard/sandbox-process-detached-teardown-prover.mjs'
 import { proveSandboxProcessBatCmdSafety } from './sandbox-guard/sandbox-process-bat-cmd-prover.mjs'
 import { proveSandboxProcessWindowsPathSafety } from './sandbox-guard/sandbox-process-windows-path-prover.mjs'
+import { proveSandboxProcessWindowsShellSafety } from './sandbox-guard/sandbox-process-windows-shell-prover.mjs'
+import { proveSandboxProcessWindowsBatchEscapeSafety } from './sandbox-guard/sandbox-process-windows-batch-escape-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -467,6 +479,78 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits filesystem stat and polling source code for BigInt timestamp precision safety.
+   *
+   * @param {string} sourceCode
+   */
+  function auditFileWatcherBigInts(sourceCode) {
+    return auditFileWatcherBigIntSafety(sourceCode)
+  }
+
+  /**
+   * Audits tsconfig.json compilerOptions for inert checkJs: true declarations when allowJs is not active.
+   *
+   * @param {object} tsconfigJson
+   */
+  function auditTsconfigCheckJsFlags(tsconfigJson = {}) {
+    return auditDeadTsconfigCheckJs(tsconfigJson)
+  }
+
+  /**
+   * Audits TLS source code for explicit OCSP stapling request and response verification.
+   *
+   * @param {string} sourceCode
+   */
+  function auditCryptoTlsOcsps(sourceCode) {
+    return auditCryptoTlsOcspSafety(sourceCode)
+  }
+
+  /**
+   * Audits child process batch execution source code for metacharacter escaping routines.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxProcessWindowsBatchEscapes(sourceCode) {
+    return proveSandboxProcessWindowsBatchEscapeSafety(sourceCode)
+  }
+
+  /**
+   * Audits filesystem watcher source code for cross-platform recursive depth safety.
+   *
+   * @param {string} sourceCode
+   */
+  function auditFileWatcherRecursives(sourceCode) {
+    return auditFileWatcherRecursiveSafety(sourceCode)
+  }
+
+  /**
+   * Audits tsconfig.json compilerOptions for deprecated import flags when verbatimModuleSyntax is active.
+   *
+   * @param {object} tsconfigJson
+   */
+  function auditTsconfigVerbatimModules(tsconfigJson = {}) {
+    return auditDeadTsconfigVerbatimModule(tsconfigJson)
+  }
+
+  /**
+   * Audits TLS source code for standard Application-Layer Protocol Negotiation (ALPN) configuration.
+   *
+   * @param {string} sourceCode
+   */
+  function auditCryptoTlsAlpns(sourceCode) {
+    return auditCryptoTlsAlpnSafety(sourceCode)
+  }
+
+  /**
+   * Audits child process spawn source code for dangerous shell: true injection patterns.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxProcessWindowsShells(sourceCode) {
+    return proveSandboxProcessWindowsShellSafety(sourceCode)
   }
 
   /**
@@ -2051,7 +2135,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '60.0.0',
+      version: '62.0.0',
       components,
     })
   }
@@ -2600,6 +2684,14 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditFileWatcherBigInts,
+    auditTsconfigCheckJsFlags,
+    auditCryptoTlsOcsps,
+    auditSandboxProcessWindowsBatchEscapes,
+    auditFileWatcherRecursives,
+    auditTsconfigVerbatimModules,
+    auditCryptoTlsAlpns,
+    auditSandboxProcessWindowsShells,
     auditFileWatcherDebounces,
     auditTsconfigExactOptionals,
     auditCryptoTlsSnis,
@@ -2832,7 +2924,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v60: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v62: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

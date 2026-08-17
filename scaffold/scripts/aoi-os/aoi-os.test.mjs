@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v60 pipeline with 216 pillars', async () => {
+test('createAoiOsPipeline initializes full v62 pipeline with 224 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v60',
-    taskId: 'TASK-2026-60',
+    feature: 'aoi-os-v62',
+    taskId: 'TASK-2026-62',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,35 @@ test('createAoiOsPipeline initializes full v60 pipeline with 216 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic File Watcher Debounce Guard
-  const watcherCheck = pipeline.auditFileWatcherDebounces("let t; const w = fs.watch('/src', () => { clearTimeout(t); t = setTimeout(run, 100); }); function close() { w.close(); }")
-  assert.equal(watcherCheck.safe, true)
-  assert.equal(watcherCheck.watcherProof, 'FILE_WATCHER_DEBOUNCED_AND_DISPOSED')
+  // 2. Atomic File Watcher BigInt Stat Precision Guard
+  const watcherBigIntCheck = pipeline.auditFileWatcherBigInts('const s = fs.statSync(file, { bigint: true }); if (s.mtimeNs > prevNs) {}')
+  assert.equal(watcherBigIntCheck.safe, true)
+  assert.equal(watcherBigIntCheck.watcherBigIntProof, 'STAT_TIMESTAMP_BIGINT_PRECISION_ENFORCED')
 
-  // 3. Dead TypeScript Exact Optional Properties Pruner
-  const exactOptCheck = pipeline.auditTsconfigExactOptionals({ compilerOptions: { strict: true, exactOptionalPropertyTypes: true } })
-  assert.equal(exactOptCheck.clean, true)
-  assert.equal(exactOptCheck.exactOptionalProof, 'TSCONFIG_EXACT_OPTIONAL_CANONICAL')
+  // 3. Dead TypeScript CheckJs Redundancy Pruner
+  const checkJsCheck = pipeline.auditTsconfigCheckJsFlags({ compilerOptions: { allowJs: true, checkJs: true } })
+  assert.equal(checkJsCheck.clean, true)
+  assert.equal(checkJsCheck.checkJsProof, 'TSCONFIG_CHECK_JS_CONSISTENT')
 
-  // 4. Safe Cryptographic TLS SNI Guard
-  const tlsSniCheck = pipeline.auditCryptoTlsSnis("const s = tls.connect({ host: '10.0.0.1', port: 443, servername: 'api.example.com' });")
-  assert.equal(tlsSniCheck.safe, true)
-  assert.equal(tlsSniCheck.tlsSniProof, 'TLS_SNI_RFC6066_ENFORCED')
+  // 4. Safe Cryptographic TLS OCSP Stapling Verification Guard
+  const tlsOcspCheck = pipeline.auditCryptoTlsOcsps("const s = tls.connect({ requestOCSP: true }); s.on('OCSPResponse', (r) => {});")
+  assert.equal(tlsOcspCheck.safe, true)
+  assert.equal(tlsOcspCheck.tlsOcspProof, 'TLS_OCSP_STAPLING_VERIFIED')
 
-  // 5. Sandbox Process Windows Path Normalization Prover
-  const winPathCheck = pipeline.auditSandboxProcessWindowsPaths("const bin = path.resolve('./bin/runner.exe'); spawn(bin, []);")
-  assert.equal(winPathCheck.safe, true)
-  assert.equal(winPathCheck.windowsPathProof, 'CROSS_PLATFORM_SPAWN_PATH_NORMALIZED')
+  // 5. Sandbox Process Windows Batch Metacharacter Escaping Prover
+  const winBatchCheck = pipeline.auditSandboxProcessWindowsBatchEscapes(`
+function escapeBatchArg(a) {
+  return a.replace(/([\\^&|<>\'%"])/g, '^$1');
+}
+const c = spawn('run.bat', args.map(escapeBatchArg));
+`)
+  assert.equal(winBatchCheck.safe, true)
+  assert.equal(winBatchCheck.batchEscapeProof, 'WINDOWS_BATCH_METACHARACTERS_ESCAPED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v60 grand epistemic 216-pillar master core'],
-    diffSummary: 'server/api/tasks.ts (+216 lines)',
+    decisions: ['Use deterministic v62 sovereign 224-pillar master core'],
+    diffSummary: 'server/api/tasks.ts (+224 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)

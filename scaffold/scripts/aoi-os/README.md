@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v60 (The Grand Epistemic Bicentennial-Decade 216-Pillar Omnipresent Singularity & Universal Transcendence Master Core)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v62 (The Grand Epistemic Bicentennial-Quadrans 224-Pillar Omnipresent Singularity & Universal Transcendence Master Core)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Atomic File Watcher Debounce Guard (`storage-guard/file-watcher-debounce-guard.mjs`)**: Auditoría estática de watchers de sistema de archivos (`fs.watch`, `fs.watchFile`, `chokidar`) para certificar debouncing/throttling explícito y ganchos de cierre deterministas (`watcher.close()`), previniendo ráfagas de eventos duplicados y fugas de inodos (0 LLM tokens).
-- **Dead TypeScript Exact Optional Properties Pruner (`config-guard/dead-tsconfig-exact-optional-pruner.mjs`)**: Podado estático de directivas redundantes `exactOptionalPropertyTypes: false` en `tsconfig.json` cuando `strict: false` o no está definido, eliminando flags muertas y promoviendo el tipado estricto canónico (0 LLM tokens).
-- **Safe Cryptographic TLS SNI Guard (`security-guard/crypto-tls-sni-guard.mjs`)**: Auditoría estática de conexiones y sockets TLS (`tls.connect`, `https.request`) para garantizar la especificación explícita de `servername` (SNI según RFC 6066), evitando fallos de enrutamiento y ambigüedades de domain fronting (0 LLM tokens).
-- **Sandbox Process Windows Path Prover (`sandbox-guard/sandbox-process-windows-path-prover.mjs`)**: Demostración formal de normalización canónica de rutas (`path.normalize()` / `path.resolve()`) en comandos y ejecutables de subprocesos en sandboxes para garantizar compatibilidad multiplataforma y cero errores `ENOENT` en Windows (0 LLM tokens).
+- **Atomic File Watcher BigInt Stat Precision Guard (`storage-guard/file-watcher-bigint-guard.mjs`)**: Auditoría estática de sondeo y comparación de marcas de tiempo en el sistema de archivos (`fs.watchFile`, `fs.stat({ bigint: true })`) para certificar que las comparaciones de timestamps de alta frecuencia utilicen precisión BigInt (`mtimeNs`), evitando eventos de modificación omitidos en escrituras atómicas sucesivas (0 LLM tokens).
+- **Dead TypeScript CheckJs Redundancy Pruner (`config-guard/dead-tsconfig-checkjs-pruner.mjs`)**: Podado estático de directivas `checkJs: true` inertes en `tsconfig.json` cuando `allowJs: false` o no está definido en proyectos TypeScript puros, eliminando flags de compilador redundantes (0 LLM tokens).
+- **Safe Cryptographic TLS OCSP Stapling Guard (`security-guard/crypto-tls-ocsp-guard.mjs`)**: Auditoría estática de opciones TLS (`requestOCSP: true`) en conexiones de clientes para certificar la vinculación explícita de manejadores de eventos `'OCSPResponse'`, garantizando la verificación en tiempo real de revocación de certificados sin latencia síncrona (0 LLM tokens).
+- **Sandbox Process Windows Batch Shell Escaping Prover (`sandbox-guard/sandbox-process-windows-batch-escape-prover.mjs`)**: Demostración formal de que las ejecuciones de scripts batch (`.bat`/`.cmd`) en sandboxes con `windowsVerbatimArguments: true` apliquen rutinas de escape de metacaracteres específicos de Windows (`^`, `&`, `|`, `<`, `>`, `%`, `"`), neutralizando escapes e inyecciones de comandos (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 216 Pilares (AOI-OS v60)
+## 🏛️ Matriz Arquitectónica Maestra de 220 Pilares (AOI-OS v62)
 
 ```text
-AOI-OS v60 Architecture Matrix (216 Pillars)
+AOI-OS v62 Architecture Matrix (224 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -372,11 +372,23 @@ AOI-OS v60 Architecture Matrix (216 Pillars)
 │   ├── crypto-tls-san-guard.mjs: Auditoría estática de validación de host TLS para certificar uso exclusivo de Subject Alternative Names (SAN/RFC 6125).
 │   └── sandbox-process-bat-cmd-prover.mjs: Demostración formal de sanitización de argumentos en ejecuciones de archivos batch (.bat/.cmd) de sandbox.
 │
-└── 213-216. Núcleo Gran Epistémico 216-Pillar Master Matrix v60 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-    ├── file-watcher-debounce-guard.mjs: Auditoría estática de watchers de archivos (fs.watch/chokidar) para certificar debouncing y teardown (close).
-    ├── dead-tsconfig-exact-optional-pruner.mjs: Podado estático de exactOptionalPropertyTypes: false redundante en configuraciones no estrictas de tsconfig.json.
-    ├── crypto-tls-sni-guard.mjs: Auditoría estática de conexiones TLS/HTTPS para certificar especificación de Server Name Indication (SNI/RFC 6066).
-    └── sandbox-process-windows-path-prover.mjs: Demostración formal de normalización canónica de rutas de ejecutables de sandbox (path.resolve/normalize).
+├── 213-216. Núcleo Gran Epistémico 216-Pillar Master Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+│   ├── file-watcher-debounce-guard.mjs: Auditoría estática de watchers de archivos (fs.watch/chokidar) para certificar debouncing y teardown (close).
+│   ├── dead-tsconfig-exact-optional-pruner.mjs: Podado estático de exactOptionalPropertyTypes: false redundante en configuraciones no estrictas de tsconfig.json.
+│   ├── crypto-tls-sni-guard.mjs: Auditoría estática de conexiones TLS/HTTPS para certificar especificación de Server Name Indication (SNI/RFC 6066).
+│   └── sandbox-process-windows-path-prover.mjs: Demostración formal de normalización canónica de rutas de ejecutables de sandbox (path.resolve/normalize).
+│
+├── 217-220. Núcleo Soberano 220-Pillar Master Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+│   ├── file-watcher-recursive-guard.mjs: Auditoría estática de watchers recursivos para certificar compatibilidad multiplataforma en Linux/inotify.
+│   ├── dead-tsconfig-verbatim-module-pruner.mjs: Podado estático de flags obsoletas de importación bajo verbatimModuleSyntax en tsconfig.json.
+│   ├── crypto-tls-alpn-guard.mjs: Auditoría estática de ALPNProtocols para certificar negociación de protocolos estándar IANA (h2/http1.1).
+│   └── sandbox-process-windows-shell-prover.mjs: Demostración formal de prohibición de shell: true con interpolación dinámica en sandboxes.
+│
+└── 221-224. Núcleo Gran Epistémico 224-Pillar Master Matrix v62 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+    ├── file-watcher-bigint-guard.mjs: Auditoría estática de timestamps para certificar precisión BigInt (mtimeNs) en detección de escrituras ultrarrápidas.
+    ├── dead-tsconfig-checkjs-pruner.mjs: Podado estático de checkJs: true inerte sin allowJs en configuraciones de tsconfig.json.
+    ├── crypto-tls-ocsp-guard.mjs: Auditoría estática de requestOCSP y manejador OCSPResponse para validación en tiempo real de revocación TLS.
+    └── sandbox-process-windows-batch-escape-prover.mjs: Demostración formal de escape de metacaracteres batch (^&|<>%") en sandboxes de Windows.
 ```
 
 ---
@@ -419,18 +431,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
-### [60.0.0] - 2026-08-17 (The Grand Epistemic Bicentennial-Decade 216-Pillar Omnipresent Singularity & Universal Transcendence Master Core)
-- **Atomic File Watcher Debounce Guard**: Auditoría estática de watchers de sistema de archivos (`fs.watch`, `fs.watchFile`, `chokidar`) para certificar debouncing/throttling explícito y ganchos de cierre deterministas (`watcher.close()`), previniendo ráfagas de eventos duplicados y fugas de inodos (`storage-guard/file-watcher-debounce-guard.mjs`).
-- **Dead TypeScript Exact Optional Properties Pruner**: Podado estático de directivas redundantes `exactOptionalPropertyTypes: false` en `tsconfig.json` cuando `strict: false` o no está definido, eliminando flags muertas y promoviendo el tipado estricto canónico (`config-guard/dead-tsconfig-exact-optional-pruner.mjs`).
-- **Safe Cryptographic TLS SNI Guard**: Auditoría estática de conexiones y sockets TLS (`tls.connect`, `https.request`) para garantizar la especificación explícita de `servername` (SNI según RFC 6066), evitando fallos de enrutamiento y ambigüedades de domain fronting (`security-guard/crypto-tls-sni-guard.mjs`).
-- **Sandbox Process Windows Path Prover**: Demostración formal de normalización canónica de rutas (`path.normalize()` / `path.resolve()`) en comandos y ejecutables de subprocesos en sandboxes para garantizar compatibilidad multiplataforma y cero errores `ENOENT` en Windows (`sandbox-guard/sandbox-process-windows-path-prover.mjs`).
-- **542/542 Tests Pasando al 100%** y **619 archivos gobernados en paridad absoluta con scaffold/**.
+### [62.0.0] - 2026-08-17 (The Grand Epistemic Bicentennial-Quadrans 224-Pillar Omnipresent Singularity & Universal Transcendence Master Core)
+- **Atomic File Watcher BigInt Stat Precision Guard**: Auditoría estática de sondeo y comparación de marcas de tiempo en el sistema de archivos (`fs.watchFile`, `fs.stat({ bigint: true })`) para certificar que las comparaciones de timestamps de alta frecuencia utilicen precisión BigInt (`mtimeNs`), evitando eventos de modificación omitidos en escrituras atómicas sucesivas (`storage-guard/file-watcher-bigint-guard.mjs`).
+- **Dead TypeScript CheckJs Redundancy Pruner**: Podado estático de directivas `checkJs: true` inertes en `tsconfig.json` cuando `allowJs: false` o no está definido en proyectos TypeScript puros, eliminando flags de compilador redundantes (`config-guard/dead-tsconfig-checkjs-pruner.mjs`).
+- **Safe Cryptographic TLS OCSP Stapling Guard**: Auditoría estática de opciones TLS (`requestOCSP: true`) en conexiones de clientes para certificar la vinculación explícita de manejadores de eventos `'OCSPResponse'`, garantizando la verificación en tiempo real de revocación de certificados sin latencia síncrona (`security-guard/crypto-tls-ocsp-guard.mjs`).
+- **Sandbox Process Windows Batch Shell Escaping Prover**: Demostración formal de que las ejecuciones de scripts batch (`.bat`/`.cmd`) en sandboxes con `windowsVerbatimArguments: true` apliquen rutinas de escape de metacaracteres específicos de Windows (`^`, `&`, `|`, `<`, `>`, `%`, `"`), neutralizando escapes e inyecciones de comandos (`sandbox-guard/sandbox-process-windows-batch-escape-prover.mjs`).
+- **558/558 Tests Pasando al 100%** y **635 archivos gobernados en paridad absoluta con scaffold/**.
 
-### [59.0.0] - 2026-08-17 (The Sovereign 212-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
-- **Atomic File Truncate Boundary Guard**: Auditoría estática de operaciones de truncado (`fs.truncate`, `fs.promises.truncate`, `fs.ftruncate`) en persistencia para certificar protección con bloqueo exclusivo o reemplazo atómico en dos fases (`storage-guard/file-truncate-boundary-guard.mjs`).
-- **Dead TypeScript Declaration Map Pruner**: Podado estático de directivas huérfanas `declarationMap: true` en `tsconfig.json` cuando `declaration` está en `false` (`config-guard/dead-tsconfig-declaration-map-pruner.mjs`).
-- **Safe Cryptographic TLS SAN Guard**: Auditoría estática de comprobaciones de identidad de host en TLS para certificar el cumplimiento de Subject Alternative Names (SAN) según RFC 6125 (`security-guard/crypto-tls-san-guard.mjs`).
-- **Sandbox Process Windows Batch File Prover**: Demostración formal de que las invocaciones a archivos batch (.bat / .cmd) apliquen sanitización estricta de argumentos contra inyecciones shell (CVE-2024-27980) (`sandbox-guard/sandbox-process-bat-cmd-prover.mjs`).
+### [61.0.0] - 2026-08-17 (The Sovereign 220-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
+- **Atomic File Watcher Recursive Depth Guard**: Auditoría estática de watchers de archivos recursivos para certificar compatibilidad multiplataforma en Linux/inotify (`storage-guard/file-watcher-recursive-guard.mjs`).
+- **Dead TypeScript Verbatim Module Syntax Pruner**: Podado estático de directivas deprecadas bajo `verbatimModuleSyntax: true` (`config-guard/dead-tsconfig-verbatim-module-pruner.mjs`).
+- **Safe Cryptographic TLS ALPN Guard**: Auditoría estática de `ALPNProtocols` para certificar negociación de protocolos estándar IANA (`security-guard/crypto-tls-alpn-guard.mjs`).
+- **Sandbox Process Windows Shell Injection Prover**: Demostración formal de prohibición de `shell: true` con interpolación dinámica (`sandbox-guard/sandbox-process-windows-shell-prover.mjs`).
 
 ---
 
