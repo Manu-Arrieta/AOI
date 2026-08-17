@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v56 pipeline with 200 pillars', async () => {
+test('createAoiOsPipeline initializes full v57 pipeline with 204 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v56',
-    taskId: 'TASK-2026-56',
+    feature: 'aoi-os-v57',
+    taskId: 'TASK-2026-57',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v56 pipeline with 200 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic Stream Duplex & Half-Close Socket Guard
-  const halfCloseCheck = pipeline.auditStreamHalfCloses("const s = net.createConnection({ port: 80, allowHalfOpen: true }); s.on('end', () => s.destroy());")
-  assert.equal(halfCloseCheck.safe, true)
-  assert.equal(halfCloseCheck.halfCloseProof, 'HALF_OPEN_SOCKET_TEARDOWN_ENFORCED')
+  // 2. Atomic Stream objectMode & HighWaterMark Scale Guard
+  const objectModeCheck = pipeline.auditStreamObjectModeHighWaterMarks("const s = new Transform({ objectMode: true, highWaterMark: 16 });")
+  assert.equal(objectModeCheck.safe, true)
+  assert.equal(objectModeCheck.objectModeProof, 'OBJECT_MODE_HIGHWATERMARK_SCALED')
 
-  // 3. Dead TypeScript Target-Lib Consistency Pruner
-  const targetLibCheck = pipeline.auditTsconfigTargetLibs({ compilerOptions: { target: 'ES2022', lib: ['DOM'] } })
-  assert.equal(targetLibCheck.clean, true)
-  assert.equal(targetLibCheck.targetLibProof, 'TARGET_LIB_CANONICAL')
+  // 3. Dead TypeScript resolveJsonModule Pruner
+  const jsonModuleCheck = pipeline.auditTsconfigJsonModules({ compilerOptions: { moduleResolution: 'bundler' } })
+  assert.equal(jsonModuleCheck.clean, true)
+  assert.equal(jsonModuleCheck.jsonModuleProof, 'TSCONFIG_JSON_MODULE_CANONICAL')
 
-  // 4. Safe Cryptographic RSA-PSS Padding & Salt Guard
-  const rsaPssCheck = pipeline.auditCryptoRsaPssPaddings("const sig = crypto.sign('sha256', d, { key: k, padding: crypto.constants.RSA_PKCS1_PSS_PADDING, saltLength: crypto.constants.RSA_PSS_SALTLEN_DIGEST });")
-  assert.equal(rsaPssCheck.safe, true)
-  assert.equal(rsaPssCheck.rsaPssProof, 'RSA_PSS_PADDING_CANONICAL')
+  // 4. Safe Cryptographic Decipher AuthTag Order Guard
+  const decipherCheck = pipeline.auditCryptoDecipherAuthTags("const d = crypto.createDecipheriv('aes-256-gcm', k, iv); d.setAuthTag(tag); d.final();")
+  assert.equal(decipherCheck.safe, true)
+  assert.equal(decipherCheck.authTagOrderProof, 'AEAD_DECIPHER_AUTH_TAG_ORDER_VERIFIED')
 
-  // 5. Sandbox Process windowsHide Isolation Prover
-  const windowsHideCheck = pipeline.auditSandboxProcessWindowsHide("const p = spawn('node', ['app.js'], { cwd: '/s', windowsHide: true });")
-  assert.equal(windowsHideCheck.safe, true)
-  assert.equal(windowsHideCheck.windowsHideProof, 'CROSS_PLATFORM_HEADLESS_PROCESS_ENFORCED')
+  // 5. Sandbox Process IPC Serialization Prover
+  const ipcCheck = pipeline.auditSandboxProcessSerializations("const p = fork('./worker.js', [], { cwd: '/s', serialization: 'advanced' });")
+  assert.equal(ipcCheck.safe, true)
+  assert.equal(ipcCheck.serializationProof, 'V8_ADVANCED_IPC_SERIALIZATION_ENFORCED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v56 bicentennial 200-pillar omnipresent singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+200 lines)',
+    decisions: ['Use deterministic v57 sovereign 204-pillar infinite singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+204 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
