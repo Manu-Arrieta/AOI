@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v36 (The Centurial 120-Pillar Omnipresent Singularity & Universal Transcendence Genesis Master Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v37 (The Sovereign 124-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Database Transaction Rollback & Commit Lifecycle Guard (`db-guard/transaction-rollback-guard.mjs`)**: Demostración formal de rollback garantizado en excepciones para transacciones de base de datos (`BEGIN`, `db.transaction`) (0 LLM tokens).
-- **Dead Package Script & npm Run Pruner (`package-guard/dead-script-pruner.mjs`)**: Podado estático de scripts y comandos npm huérfanos o no alcanzados en el manifiesto `package.json` (0 LLM tokens).
-- **Safe HTML & DOM Sanitization Guard (`security-guard/html-sanitization-guard.mjs`)**: Auditoría estática de renderizado HTML dinámico (`v-html`, `innerHTML`) para certificar sanitización anti-XSS con DOMPurify (0 LLM tokens).
-- **Sandbox Process Environment Variable Isolation Prover (`sandbox-guard/sandbox-env-isolation-prover.mjs`)**: Demostración formal de paso explícito y filtrado de variables `env` en subprocesos de sandbox para prevenir fugas de secretos del host (0 LLM tokens).
+- **Outbound HTTP Request Timeout & AbortSignal Guard (`stream-guard/http-timeout-guard.mjs`)**: Auditoría estática de peticiones de red salientes (`fetch`, `$fetch`, `axios`) para garantizar límites de tiempo explícitos o señales de aborto (0 LLM tokens).
+- **Dead Markdown Anchor & Cross-Doc Link Pruner (`doc-guard/dead-doc-link-pruner.mjs`)**: Podado y validación estática de hipervínculos relativos y referencias cruzadas entre documentos markdown (0 LLM tokens).
+- **Dynamic RegExp Length & ReDoS Timeout Guard (`security-guard/regex-timeout-guard.mjs`)**: Demostración formal de acotamiento de longitud en expresiones regulares dinámicas instanciadas en tiempo de ejecución (0 LLM tokens).
+- **Sandbox Process Core Dump Prevention Prover (`sandbox-guard/sandbox-coredump-prover.mjs`)**: Demostración formal de configuración de `ulimit -c 0` / `RLIMIT_CORE: 0` en sandboxes para prevenir volcados de memoria y fugas de secretos en disco (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 120 Pilares (AOI-OS v36)
+## 🏛️ Matriz Arquitectónica Maestra de 124 Pilares (AOI-OS v37)
 
 ```text
-AOI-OS v36 Architecture Matrix (120 Pillars)
+AOI-OS v37 Architecture Matrix (124 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -228,11 +228,17 @@ AOI-OS v36 Architecture Matrix (120 Pillars)
 │   ├── port-collision-prover.mjs: Demostración formal de puertos efímeros dinámicos (server.listen(0)) contra colisiones EADDRINUSE.
 │   └── sandbox-ulimit-prover.mjs: Demostración formal de concurrencia acotada de descriptores de archivos para prevenir EMFILE/ulimit.
 │
-└── 117-120. Núcleo Centurial 120-Pillar Genesis Master Matrix v36 (db-guard/, package-guard/, security-guard/, sandbox-guard/)
-    ├── transaction-rollback-guard.mjs: Demostración formal de rollback garantizado en excepciones para transacciones de base de datos.
-    ├── dead-script-pruner.mjs: Podado estático de scripts y comandos npm huérfanos o no alcanzados en package.json.
-    ├── html-sanitization-guard.mjs: Auditoría estática de renderizado HTML dinámico (v-html, innerHTML) contra vulnerabilidades XSS.
-    └── sandbox-env-isolation-prover.mjs: Demostración formal de paso explícito y filtrado de variables env en subprocesos de sandbox.
+├── 117-120. Núcleo Centurial 120-Pillar Genesis Master Matrix (db-guard/, package-guard/, security-guard/, sandbox-guard/)
+│   ├── transaction-rollback-guard.mjs: Demostración formal de rollback garantizado en excepciones para transacciones de base de datos.
+│   ├── dead-script-pruner.mjs: Podado estático de scripts y comandos npm huérfanos o no alcanzados en package.json.
+│   ├── html-sanitization-guard.mjs: Auditoría estática de renderizado HTML dinámico (v-html, innerHTML) contra vulnerabilidades XSS.
+│   └── sandbox-env-isolation-prover.mjs: Demostración formal de paso explícito y filtrado de variables env en subprocesos de sandbox.
+│
+└── 121-124. Núcleo Sovereign 124-Pillar Genesis Matrix v37 (stream-guard/, doc-guard/, security-guard/, sandbox-guard/)
+    ├── http-timeout-guard.mjs: Auditoría estática de peticiones de red salientes para garantizar límites de tiempo o AbortSignal.
+    ├── dead-doc-link-pruner.mjs: Podado y validación estática de hipervínculos relativos y referencias cruzadas en markdown.
+    ├── regex-timeout-guard.mjs: Demostración formal de acotamiento de longitud en expresiones regulares dinámicas en runtime.
+    └── sandbox-coredump-prover.mjs: Demostración formal de desactivación de volcados de memoria (ulimit -c 0) en sandboxes.
 ```
 
 ---
@@ -275,12 +281,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [37.0.0] - 2026-08-17 (The Sovereign 124-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
+- **Outbound HTTP Request Timeout & AbortSignal Guard**: Auditoría estática de peticiones de red salientes (`fetch`, `$fetch`, `axios`) para garantizar límites de tiempo explícitos o señales de aborto (`stream-guard/http-timeout-guard.mjs`).
+- **Dead Markdown Anchor & Cross-Doc Link Pruner**: Podado y validación estática de hipervínculos relativos y referencias cruzadas entre documentos markdown (`doc-guard/dead-doc-link-pruner.mjs`).
+- **Dynamic RegExp Length & ReDoS Timeout Guard**: Demostración formal de acotamiento de longitud en expresiones regulares dinámicas instanciadas en tiempo de ejecución (`security-guard/regex-timeout-guard.mjs`).
+- **Sandbox Process Core Dump Prevention Prover**: Demostración formal de configuración de `ulimit -c 0` / `RLIMIT_CORE: 0` en sandboxes para prevenir volcados de memoria y fugas de secretos en disco (`sandbox-guard/sandbox-coredump-prover.mjs`).
+- **358/358 Tests Pasando al 100%** y **435 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [36.0.0] - 2026-08-17 (The Centurial 120-Pillar Omnipresent Singularity & Universal Transcendence Genesis Master Matrix)
 - **Database Transaction Rollback & Commit Lifecycle Guard**: Demostración formal de rollback garantizado en excepciones para transacciones de base de datos (`BEGIN`, `db.transaction`) (`db-guard/transaction-rollback-guard.mjs`).
 - **Dead Package Script & npm Run Pruner**: Podado estático de scripts y comandos npm huérfanos o no alcanzados en el manifiesto `package.json` (`package-guard/dead-script-pruner.mjs`).
 - **Safe HTML & DOM Sanitization Guard**: Auditoría estática de renderizado HTML dinámico (`v-html`, `innerHTML`) para certificar sanitización anti-XSS con DOMPurify (`security-guard/html-sanitization-guard.mjs`).
 - **Sandbox Process Environment Variable Isolation Prover**: Demostración formal de paso explícito y filtrado de variables `env` en subprocesos de sandbox para prevenir fugas de secretos del host (`sandbox-guard/sandbox-env-isolation-prover.mjs`).
-- **350/350 Tests Pasando al 100%** y **427 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [35.0.0] - 2026-08-17 (The Sovereign 116-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
 - **Browser Storage Quota & Expiration Guard**: Auditoría estática de operaciones en `localStorage`/`IndexedDB` para garantizar manejo de excepciones `QuotaExceededError` y políticas de expiración (`storage-guard/browser-storage-quota-guard.mjs`).

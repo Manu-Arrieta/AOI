@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v36 pipeline with 120 pillars', async () => {
+test('createAoiOsPipeline initializes full v37 pipeline with 124 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v36',
-    taskId: 'TASK-2026-36',
+    feature: 'aoi-os-v37',
+    taskId: 'TASK-2026-37',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v36 pipeline with 120 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Database Transaction Rollback Guard
-  const dbTxCheck = pipeline.auditDbTransactionSafety("try { await client.query('BEGIN'); await client.query('COMMIT'); } catch(e) { await client.query('ROLLBACK'); }")
-  assert.equal(dbTxCheck.safe, true)
-  assert.equal(dbTxCheck.transactionProof, 'TRANSACTION_LIFECYCLE_PROTECTED')
+  // 2. Outbound HTTP Request Timeout Guard
+  const httpCheck = pipeline.auditHttpTimeouts("fetch('https://api.example.com', { signal: AbortSignal.timeout(3000) })")
+  assert.equal(httpCheck.safe, true)
+  assert.equal(httpCheck.timeoutProof, 'HTTP_REQUEST_TIMEOUT_PROTECTED')
 
-  // 3. Dead Script Pruner
-  const scriptCheck = pipeline.auditDeadScriptCoverage(['test:parity'], 'pnpm test:parity')
-  assert.equal(scriptCheck.allReferenced, true)
-  assert.equal(scriptCheck.scriptProof, 'ALL_PACKAGE_SCRIPTS_REFERENCED')
+  // 3. Dead Markdown Doc Link Pruner
+  const docCheck = pipeline.auditMarkdownDocLinks('[Guide](docs/guide.md)', ['docs/guide.md'])
+  assert.equal(docCheck.allValid, true)
+  assert.equal(docCheck.docProof, 'ALL_DOC_LINKS_REACHABLE')
 
-  // 4. Safe HTML & DOM Sanitization Guard
-  const htmlCheck = pipeline.auditHtmlSanitization('<div v-html="DOMPurify.sanitize(userInput)"></div>')
-  assert.equal(htmlCheck.safe, true)
-  assert.equal(htmlCheck.xssProof, 'HTML_SANITIZATION_PROVEN')
+  // 4. Dynamic RegExp ReDoS Timeout Guard
+  const regexCheck = pipeline.auditDynamicRegExps('const safe = pattern.slice(0, 50); new RegExp(safe);')
+  assert.equal(regexCheck.safe, true)
+  assert.equal(regexCheck.regexProof, 'DYNAMIC_REGEXP_LENGTH_BOUNDED')
 
-  // 5. Sandbox Env Isolation Prover
-  const envIsoCheck = pipeline.auditSandboxEnvIsolation("spawn('cmd', [], { env: { PATH: process.env.PATH } })")
-  assert.equal(envIsoCheck.safe, true)
-  assert.equal(envIsoCheck.isolationProof, 'SANDBOX_ENV_ISOLATION_PROVEN')
+  // 5. Sandbox Process Core Dump Prevention Prover
+  const coredumpCheck = pipeline.auditSandboxCoreDumps("exec('ulimit -c 0 && node script.js')")
+  assert.equal(coredumpCheck.safe, true)
+  assert.equal(coredumpCheck.coreDumpProof, 'SANDBOX_CORE_DUMP_DISABLED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v36 centurial 120-pillar omnipresent singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+80 lines)',
+    decisions: ['Use deterministic v37 sovereign 124-pillar infinite singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+90 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
