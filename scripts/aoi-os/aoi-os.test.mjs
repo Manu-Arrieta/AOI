@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v54 pipeline with 192 pillars', async () => {
+test('createAoiOsPipeline initializes full v55 pipeline with 196 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v54',
-    taskId: 'TASK-2026-54',
+    feature: 'aoi-os-v55',
+    taskId: 'TASK-2026-55',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v54 pipeline with 192 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic Stream pause & resume Flow Control Guard
-  const pauseCheck = pipeline.auditStreamPauseResumes("readable.pause(); doWork(); readable.resume();")
-  assert.equal(pauseCheck.safe, true)
-  assert.equal(pauseCheck.pauseProof, 'DETERMINISTIC_STREAM_RESUME_ENFORCED')
+  // 2. Atomic Stream pipeline & finished Async Await Guard
+  const pipelineCheck = pipeline.auditStreamPipelineAsync("import { pipeline } from 'node:stream/promises'; async function run() { await pipeline(a, b); }")
+  assert.equal(pipelineCheck.safe, true)
+  assert.equal(pipelineCheck.pipelineProof, 'STREAM_PIPELINE_PROMISE_AWAITED')
 
-  // 3. Dead TypeScript Interop Flag Pruner
-  const interopCheck = pipeline.auditTsconfigInterops({ compilerOptions: { esModuleInterop: true, allowSyntheticDefaultImports: false } })
-  assert.equal(interopCheck.clean, true)
-  assert.equal(interopCheck.interopProof, 'TSCONFIG_INTEROP_CANONICAL')
+  // 3. Dead TypeScript Redundant Strict Sub-Flags Pruner
+  const strictCheck = pipeline.auditTsconfigStrictFlags({ compilerOptions: { strict: true, target: 'es2022' } })
+  assert.equal(strictCheck.clean, true)
+  assert.equal(strictCheck.strictProof, 'TSCONFIG_STRICT_FLAGS_CANONICAL')
 
-  // 4. Safe Cryptographic EdDSA Signature & Algorithm Guard
-  const eddsaCheck = pipeline.auditCryptoEddsaVerifications("const isValid = crypto.verify(null, data, ed25519Key, signature);")
-  assert.equal(eddsaCheck.safe, true)
-  assert.equal(eddsaCheck.eddsaProof, 'EDDSA_VERIFY_ALGORITHM_CANONICAL')
+  // 4. Safe Cryptographic Key Pair Generation Guard
+  const keyPairCheck = pipeline.auditCryptoKeyPairs("crypto.generateKeyPair('ed25519', (err, pub, priv) => {});")
+  assert.equal(keyPairCheck.safe, true)
+  assert.equal(keyPairCheck.keyPairProof, 'KEYPAIR_PARAMETERS_CANONICAL')
 
-  // 5. Sandbox Worker Resource Limits & Heap Cap Prover
-  const workerHeapCheck = pipeline.auditSandboxWorkerHeapLimits("const w = new Worker('./w.js', { resourceLimits: { maxOldGenerationSizeMb: 256 } });")
-  assert.equal(workerHeapCheck.safe, true)
-  assert.equal(workerHeapCheck.workerHeapProof, 'BOUNDED_WORKER_HEAP_ENFORCED')
+  // 5. Sandbox Worker TransferList & Zero-Copy Prover
+  const transferCheck = pipeline.auditSandboxWorkerTransferLists("parentPort.postMessage(buffer, [buffer]);")
+  assert.equal(transferCheck.safe, true)
+  assert.equal(transferCheck.transferProof, 'ZERO_COPY_TRANSFER_LIST_ENFORCED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v54 transcendent 192-pillar omnipresent singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+192 lines)',
+    decisions: ['Use deterministic v55 sovereign 196-pillar infinite singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+196 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
