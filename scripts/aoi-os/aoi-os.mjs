@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v65 (The Sovereign 236-Pillar Intent-Integrity & High-Assurance Runtime Matrix).
+ * Master Orchestrator Engine for AOI-OS v66 (The Sovereign 240-Pillar Omnipresent Master & Quantum Epistemic Hyper-Nexus Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -108,6 +108,8 @@
  * Story Acceptance Criteria Alignment Prover, Interactive SDD Interview Prover,
  * User Intent Drift Sentinel, Dead TypeScript ModuleResolution Pruner,
  * Safe Cryptographic RSA-PSS MGF1 Guard, Sandbox Process POSIX Direct Exec Prover,
+ * Atomic File fsync Persistence Guard, Dead TypeScript isolatedDeclarations Pruner,
+ * Safe Cryptographic AES-GCM AuthTag Length Guard, Sandbox Process SIGTERM/SIGKILL Grace Prover,
  * and ICM Memory Linking.
  */
 
@@ -276,6 +278,10 @@ import { auditUserIntentDrift } from './hitl-guard/user-intent-drift-sentinel.mj
 import { auditDeadTsconfigModuleResolution } from './config-guard/dead-tsconfig-module-resolution-pruner.mjs'
 import { auditCryptoRsaPssMgf1Safety } from './security-guard/crypto-rsa-pss-mgf1-guard.mjs'
 import { proveSandboxProcessPosixExecSafety } from './sandbox-guard/sandbox-process-posix-exec-prover.mjs'
+import { auditAtomicFileFsyncSafety } from './storage-guard/file-atomic-fsync-guard.mjs'
+import { auditDeadTsconfigIsolatedDeclarations } from './config-guard/dead-tsconfig-isolated-declarations-pruner.mjs'
+import { auditCryptoAesGcmTagLengthSafety } from './security-guard/crypto-aes-gcm-tag-length-guard.mjs'
+import { proveSandboxProcessSigkillGraceSafety } from './sandbox-guard/sandbox-process-posix-signal-sigkill-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -572,6 +578,42 @@ export function createAoiOsPipeline(options) {
    */
   function auditSandboxProcessPosixExecs(sourceCode) {
     return proveSandboxProcessPosixExecSafety(sourceCode)
+  }
+
+  /**
+   * Audits atomic file writing source code for explicit physical disk sync (fsync) guarantees.
+   *
+   * @param {string} sourceCode
+   */
+  function auditAtomicFileFsyncs(sourceCode) {
+    return auditAtomicFileFsyncSafety(sourceCode)
+  }
+
+  /**
+   * Audits tsconfig.json compilerOptions for isolatedDeclarations validity in TypeScript 5.5+.
+   *
+   * @param {object} tsconfigJson
+   */
+  function auditTsconfigIsolatedDeclarations(tsconfigJson = {}) {
+    return auditDeadTsconfigIsolatedDeclarations(tsconfigJson)
+  }
+
+  /**
+   * Audits AES-GCM AEAD cipher code for strict 16-byte authentication tag lengths.
+   *
+   * @param {string} sourceCode
+   */
+  function auditCryptoAesGcmTagLengths(sourceCode) {
+    return auditCryptoAesGcmTagLengthSafety(sourceCode)
+  }
+
+  /**
+   * Proves that process terminations with SIGKILL follow a preceding graceful SIGTERM with timeout.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxProcessSigkillGraces(sourceCode) {
+    return proveSandboxProcessSigkillGraceSafety(sourceCode)
   }
 
   /**
@@ -2821,6 +2863,10 @@ export function createAoiOsPipeline(options) {
     auditTsconfigModuleResolutions,
     auditCryptoRsaPssMgf1,
     auditSandboxProcessPosixExecs,
+    auditAtomicFileFsyncs,
+    auditTsconfigIsolatedDeclarations,
+    auditCryptoAesGcmTagLengths,
+    auditSandboxProcessSigkillGraces,
     auditFileWatcherErrors,
     auditTsconfigComposites,
     auditCryptoTlsRenegotiations,
@@ -3065,7 +3111,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v65: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v66: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

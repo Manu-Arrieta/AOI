@@ -18,12 +18,12 @@ As an operator, I want JWT authentication.
 ### Scenario: User logs in with valid email password credentials returning JWT
 `
 
-test('createAoiOsPipeline initializes full v65 pipeline with 236 pillars including Intent Sentinel & Direct Exec Prover', async () => {
+test('createAoiOsPipeline initializes full v66 pipeline with 240 pillars including fsync Guard & SIGTERM Grace Prover', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v65',
-    taskId: 'TASK-2026-65',
+    feature: 'aoi-os-v66',
+    taskId: 'TASK-2026-66',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -40,33 +40,39 @@ test('createAoiOsPipeline initializes full v65 pipeline with 236 pillars includi
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. User Intent Drift Sentinel
-  const driftCode = 'export function loginUserWithValidCredentials(email, password) { return createOperatorJwtSession({ email, password }); }'
-  const driftCheck = pipeline.auditUserIntentDrifts(SAMPLE_SPEC_MD, driftCode)
-  assert.equal(driftCheck.safe, true)
-  assert.equal(driftCheck.intentDriftProof, 'USER_INTENT_ALIGNMENT_PROVEN')
+  // 2. Atomic File Persistence fsync Guard
+  const fsyncCheck = pipeline.auditAtomicFileFsyncs(`
+    fs.writeFileSync(fd, content);
+    fs.fsyncSync(fd);
+    fs.renameSync(tempFile, targetFile);
+  `)
+  assert.equal(fsyncCheck.safe, true)
+  assert.equal(fsyncCheck.atomicFsyncProof, 'ATOMIC_FILE_FSYNC_FLUSH_VERIFIED')
 
-  // 3. Dead TypeScript ModuleResolution Incompatibility Pruner
-  const modResCheck = pipeline.auditTsconfigModuleResolutions({
-    compilerOptions: { module: 'NodeNext', moduleResolution: 'NodeNext' },
+  // 3. Dead tsconfig.json isolatedDeclarations Pruner
+  const isoDeclCheck = pipeline.auditTsconfigIsolatedDeclarations({
+    compilerOptions: { isolatedDeclarations: true, declaration: true },
   })
-  assert.equal(modResCheck.clean, true)
-  assert.equal(modResCheck.moduleResolutionProof, 'TSCONFIG_MODULE_RESOLUTION_VALID')
+  assert.equal(isoDeclCheck.clean, true)
+  assert.equal(isoDeclCheck.isolatedDeclarationsProof, 'TSCONFIG_ISOLATED_DECLARATIONS_VALID')
 
-  // 4. Safe Cryptographic RSA-PSS MGF1 Hash Guard
-  const rsaMgf1Check = pipeline.auditCryptoRsaPssMgf1("crypto.sign('sha256', buf, { key, padding: RSA_PKCS1_PSS_PADDING, mgf1Hash: 'sha256' });")
-  assert.equal(rsaMgf1Check.safe, true)
-  assert.equal(rsaMgf1Check.rsaPssMgf1Proof, 'SECURE_RSA_PSS_MGF1_HASH_VERIFIED')
+  // 4. Safe Cryptographic AES-GCM AuthTag Length Guard
+  const aesGcmCheck = pipeline.auditCryptoAesGcmTagLengths("const cipher = crypto.createCipheriv('aes-256-gcm', key, iv, { authTagLength: 16 });")
+  assert.equal(aesGcmCheck.safe, true)
+  assert.equal(aesGcmCheck.aesGcmTagLengthProof, 'STRICT_16_BYTE_AES_GCM_AUTHTAG_VERIFIED')
 
-  // 5. Direct Binary Execution Prover (No Intermediate Subshell)
-  const directExecCheck = pipeline.auditSandboxProcessPosixExecs("const child = execFile('/bin/ls', ['-la']);")
-  assert.equal(directExecCheck.safe, true)
-  assert.equal(directExecCheck.posixExecProof, 'DIRECT_BINARY_EXECUTION_VERIFIED')
+  // 5. Tiered SIGTERM/SIGKILL Process Teardown Prover
+  const sigkillCheck = pipeline.auditSandboxProcessSigkillGraces(`
+    child.kill('SIGTERM');
+    setTimeout(() => { if (!child.killed) child.kill('SIGKILL'); }, 5000);
+  `)
+  assert.equal(sigkillCheck.safe, true)
+  assert.equal(sigkillCheck.sigkillGraceProof, 'TIERED_SIGTERM_SIGKILL_GRACE_VERIFIED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v65 sovereign 236-pillar master core with Intent-Integrity runtime'],
-    diffSummary: 'server/api/tasks.ts (+236 lines)',
+    decisions: ['Use deterministic v66 sovereign 240-pillar master core with High-Assurance runtime'],
+    diffSummary: 'server/api/tasks.ts (+240 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
