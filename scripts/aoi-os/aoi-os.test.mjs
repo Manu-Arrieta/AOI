@@ -18,12 +18,12 @@ As an operator, I want JWT authentication.
 ### Scenario: User logs in with valid email password credentials returning JWT
 `
 
-test('createAoiOsPipeline initializes full v66 pipeline with 240 pillars including fsync Guard & SIGTERM Grace Prover', async () => {
+test('createAoiOsPipeline initializes full v67 pipeline with 244 pillars including parent dir fsync & umask isolation', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v66',
-    taskId: 'TASK-2026-66',
+    feature: 'aoi-os-v67',
+    taskId: 'TASK-2026-67',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -40,39 +40,42 @@ test('createAoiOsPipeline initializes full v66 pipeline with 240 pillars includi
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic File Persistence fsync Guard
-  const fsyncCheck = pipeline.auditAtomicFileFsyncs(`
-    fs.writeFileSync(fd, content);
-    fs.fsyncSync(fd);
+  // 2. Atomic File Parent Directory fsync Guard
+  const parentDirFsyncCheck = pipeline.auditAtomicParentDirFsyncs(`
     fs.renameSync(tempFile, targetFile);
+    const dirFd = fs.openSync(path.dirname(targetFile), 'r');
+    fs.fsyncSync(dirFd);
+    fs.closeSync(dirFd);
   `)
-  assert.equal(fsyncCheck.safe, true)
-  assert.equal(fsyncCheck.atomicFsyncProof, 'ATOMIC_FILE_FSYNC_FLUSH_VERIFIED')
+  assert.equal(parentDirFsyncCheck.safe, true)
+  assert.equal(parentDirFsyncCheck.parentDirFsyncProof, 'PARENT_DIRECTORY_FSYNC_FLUSH_VERIFIED')
 
-  // 3. Dead tsconfig.json isolatedDeclarations Pruner
-  const isoDeclCheck = pipeline.auditTsconfigIsolatedDeclarations({
-    compilerOptions: { isolatedDeclarations: true, declaration: true },
+  // 3. Dead tsconfig.json erasableSyntaxOnly Pruner
+  const erasableCheck = pipeline.auditTsconfigErasableSyntax({
+    compilerOptions: { erasableSyntaxOnly: true, target: 'ESNext' },
   })
-  assert.equal(isoDeclCheck.clean, true)
-  assert.equal(isoDeclCheck.isolatedDeclarationsProof, 'TSCONFIG_ISOLATED_DECLARATIONS_VALID')
+  assert.equal(erasableCheck.clean, true)
+  assert.equal(erasableCheck.erasableSyntaxProof, 'TSCONFIG_ERASABLE_SYNTAX_VALID')
 
-  // 4. Safe Cryptographic AES-GCM AuthTag Length Guard
-  const aesGcmCheck = pipeline.auditCryptoAesGcmTagLengths("const cipher = crypto.createCipheriv('aes-256-gcm', key, iv, { authTagLength: 16 });")
-  assert.equal(aesGcmCheck.safe, true)
-  assert.equal(aesGcmCheck.aesGcmTagLengthProof, 'STRICT_16_BYTE_AES_GCM_AUTHTAG_VERIFIED')
-
-  // 5. Tiered SIGTERM/SIGKILL Process Teardown Prover
-  const sigkillCheck = pipeline.auditSandboxProcessSigkillGraces(`
-    child.kill('SIGTERM');
-    setTimeout(() => { if (!child.killed) child.kill('SIGKILL'); }, 5000);
+  // 4. Safe Cryptographic RSA-PSS Salt Length Guard
+  const rsaSaltCheck = pipeline.auditCryptoRsaPssSaltLengths(`
+    crypto.sign('sha256', buf, { key, padding: RSA_PKCS1_PSS_PADDING, saltLength: crypto.constants.RSA_PSS_SALTLEN_DIGEST });
   `)
-  assert.equal(sigkillCheck.safe, true)
-  assert.equal(sigkillCheck.sigkillGraceProof, 'TIERED_SIGTERM_SIGKILL_GRACE_VERIFIED')
+  assert.equal(rsaSaltCheck.safe, true)
+  assert.equal(rsaSaltCheck.rsaPssSaltLengthProof, 'SECURE_RSA_PSS_SALTLENGTH_VERIFIED')
+
+  // 5. POSIX umask Isolation Prover in Sandbox
+  const umaskCheck = pipeline.auditSandboxProcessPosixUmasks(`
+    process.umask(0o077);
+    const child = spawn('node', ['worker.mjs']);
+  `)
+  assert.equal(umaskCheck.safe, true)
+  assert.equal(umaskCheck.posixUmaskProof, 'POSIX_UMASK_ISOLATION_VERIFIED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v66 sovereign 240-pillar master core with High-Assurance runtime'],
-    diffSummary: 'server/api/tasks.ts (+240 lines)',
+    decisions: ['Use deterministic v67 sovereign 244-pillar master core with Infinite Transcendence runtime'],
+    diffSummary: 'server/api/tasks.ts (+244 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)

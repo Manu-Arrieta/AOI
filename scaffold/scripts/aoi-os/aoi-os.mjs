@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v66 (The Sovereign 240-Pillar Omnipresent Master & Quantum Epistemic Hyper-Nexus Matrix).
+ * Master Orchestrator Engine for AOI-OS v67 (The Sovereign 244-Pillar Infinite Transcendence & Autonomous Quantum Fabric Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -110,6 +110,8 @@
  * Safe Cryptographic RSA-PSS MGF1 Guard, Sandbox Process POSIX Direct Exec Prover,
  * Atomic File fsync Persistence Guard, Dead TypeScript isolatedDeclarations Pruner,
  * Safe Cryptographic AES-GCM AuthTag Length Guard, Sandbox Process SIGTERM/SIGKILL Grace Prover,
+ * Atomic File Parent Directory fsync Guard, Dead TypeScript erasableSyntaxOnly Pruner,
+ * Safe Cryptographic RSA-PSS Salt Length Guard, Sandbox Process POSIX umask Isolation Prover,
  * and ICM Memory Linking.
  */
 
@@ -282,6 +284,10 @@ import { auditAtomicFileFsyncSafety } from './storage-guard/file-atomic-fsync-gu
 import { auditDeadTsconfigIsolatedDeclarations } from './config-guard/dead-tsconfig-isolated-declarations-pruner.mjs'
 import { auditCryptoAesGcmTagLengthSafety } from './security-guard/crypto-aes-gcm-tag-length-guard.mjs'
 import { proveSandboxProcessSigkillGraceSafety } from './sandbox-guard/sandbox-process-posix-signal-sigkill-prover.mjs'
+import { auditAtomicParentDirFsyncSafety } from './storage-guard/file-atomic-parent-dir-fsync-guard.mjs'
+import { auditDeadTsconfigErasableSyntaxOnly } from './config-guard/dead-tsconfig-erasable-syntax-only-pruner.mjs'
+import { auditCryptoRsaPssSaltLengthSafety } from './security-guard/crypto-rsa-pss-salt-length-guard.mjs'
+import { proveSandboxProcessPosixUmaskSafety } from './sandbox-guard/sandbox-process-posix-umask-inheritance-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -614,6 +620,42 @@ export function createAoiOsPipeline(options) {
    */
   function auditSandboxProcessSigkillGraces(sourceCode) {
     return proveSandboxProcessSigkillGraceSafety(sourceCode)
+  }
+
+  /**
+   * Audits atomic file rename routines for explicit parent directory descriptor fsync persistence.
+   *
+   * @param {string} sourceCode
+   */
+  function auditAtomicParentDirFsyncs(sourceCode) {
+    return auditAtomicParentDirFsyncSafety(sourceCode)
+  }
+
+  /**
+   * Audits tsconfig.json compilerOptions for erasableSyntaxOnly validity in TypeScript 5.8+.
+   *
+   * @param {object} tsconfigJson
+   */
+  function auditTsconfigErasableSyntax(tsconfigJson = {}) {
+    return auditDeadTsconfigErasableSyntaxOnly(tsconfigJson)
+  }
+
+  /**
+   * Audits cryptographic RSA-PSS operations for standard saltLength constants.
+   *
+   * @param {string} sourceCode
+   */
+  function auditCryptoRsaPssSaltLengths(sourceCode) {
+    return auditCryptoRsaPssSaltLengthSafety(sourceCode)
+  }
+
+  /**
+   * Proves that child process spawning routines in the sandbox isolate file creation masks (umask).
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxProcessPosixUmasks(sourceCode) {
+    return proveSandboxProcessPosixUmaskSafety(sourceCode)
   }
 
   /**
@@ -2867,6 +2909,10 @@ export function createAoiOsPipeline(options) {
     auditTsconfigIsolatedDeclarations,
     auditCryptoAesGcmTagLengths,
     auditSandboxProcessSigkillGraces,
+    auditAtomicParentDirFsyncs,
+    auditTsconfigErasableSyntax,
+    auditCryptoRsaPssSaltLengths,
+    auditSandboxProcessPosixUmasks,
     auditFileWatcherErrors,
     auditTsconfigComposites,
     auditCryptoTlsRenegotiations,
@@ -3111,7 +3157,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v66: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v67: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

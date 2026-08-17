@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v66 (The Sovereign 240-Pillar Omnipresent Master & Quantum Epistemic Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v67 (The Sovereign 244-Pillar Infinite Transcendence & Autonomous Quantum Fabric Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable con gobernanza activa Human-in-the-Loop (HITL)** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente, re-orienta las olas de ejecución a partir de historias de usuario y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Guardián de fsync en Escrituras Atómicas en Disco (`storage-guard/file-atomic-fsync-guard.mjs`)**: Audita estáticamente que los flujos de escritura atómica en dos fases (staging -> rename) ejecuten un volcado físico a disco (`fs.fsyncSync(fd)` / `fileHandle.sync()`) antes de la operación renameSync, evitando la pérdida de manifiestos y estados por caché de I/O del sistema operativo (0 LLM tokens).
-- **Podador de isolatedDeclarations Incompatible en tsconfig (`config-guard/dead-tsconfig-isolated-declarations-pruner.mjs`)**: Podado estático en `tsconfig.json` para directivas `isolatedDeclarations: true` (TypeScript 5.5+), certificando que `declaration: true` esté activo y evitando errores TS5110/TS5111 (0 LLM tokens).
-- **Guardián de Longitud Estricta de AuthTag en AES-GCM (`security-guard/crypto-aes-gcm-tag-length-guard.mjs`)**: Auditoría estática de cifrados AEAD (`crypto.createCipheriv` / `createDecipheriv` con AES-GCM) para certificar que la longitud del authentication tag sea estrictamente de 16 bytes (128 bits / `authTagLength: 16`), previniendo ataques de falsificación criptográfica por truncamiento de tags (0 LLM tokens).
-- **Probador de Teardown Escalonado SIGTERM/SIGKILL en Sandbox (`sandbox-guard/sandbox-process-posix-signal-sigkill-prover.mjs`)**: Demostración formal de que la terminación de subprocesos en sandboxes implemente un protocolo escalonado (envío inicial de `SIGTERM` con temporizador de gracia antes de emitir `SIGKILL` forzoso), garantizando el cierre limpio de descriptores y journals de bases de datos (0 LLM tokens).
+- **Guardián de fsync en Directorio Padre en Operaciones Atómicas (`storage-guard/file-atomic-parent-dir-fsync-guard.mjs`)**: Audita estáticamente que tras la operación `fs.renameSync(tempFile, targetFile)`, el descriptor del directorio padre sea volcado a disco (`fs.fsyncSync(dirFd)`), garantizando la persistencia estricta de las entradas de directorio en sistemas de archivos POSIX transaccionales (0 LLM tokens).
+- **Podador de erasableSyntaxOnly Incompatible en tsconfig (`config-guard/dead-tsconfig-erasable-syntax-only-pruner.mjs`)**: Podado estático en `tsconfig.json` para la directiva `erasableSyntaxOnly: true` (TypeScript 5.8+ para Node.js type stripping nativo), certificando que no coexista con constructos no borrables como enum o namespace legados sin flags compatibles (0 LLM tokens).
+- **Guardián de Constantes Seguras de Salt Length en RSA-PSS (`security-guard/crypto-rsa-pss-salt-length-guard.mjs`)**: Auditoría estática de firmas y verificaciones RSA-PSS para certificar el uso de constantes estándar (`crypto.constants.RSA_PSS_SALTLEN_DIGEST` o `RSA_PSS_SALTLEN_MAX_SIGN`), previniendo vulnerabilidades de longitud de sal arbitraria o no acotada (0 LLM tokens).
+- **Probador de Aislamiento de umask en Subprocesos de Sandbox (`sandbox-guard/sandbox-process-posix-umask-inheritance-prover.mjs`)**: Demostración formal de que los subprocesos ejecutados en sandboxes aíslen su máscara de creación de archivos (`umask 0o027` o `0o077`) y no hereden máscaras permisivas del proceso padre del host (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 240 Pilares (AOI-OS v66)
+## 🏛️ Matriz Arquitectónica Maestra de 244 Pilares (AOI-OS v67)
 
 ```text
-AOI-OS v66 Architecture Matrix (240 Pillars)
+AOI-OS v67 Architecture Matrix (244 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -408,11 +408,17 @@ AOI-OS v66 Architecture Matrix (240 Pillars)
 │   ├── crypto-rsa-pss-mgf1-guard.mjs: Auditoría estática de firmas RSA-PSS para certificar especificación explícita de digest MGF1 seguro (SHA-2).
 │   └── sandbox-process-posix-exec-prover.mjs: Demostración formal de ejecución binaria directa (execFile/spawn) sin subshells intermedias (CWE-78).
 │
-└── 237-240. Núcleo Soberano 240-Pillar Omnipresent Master Matrix v66 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-    ├── file-atomic-fsync-guard.mjs: Auditoría estática de escrituras atómicas en disco para certificar fsyncSync previo a renameSync.
-    ├── dead-tsconfig-isolated-declarations-pruner.mjs: Podado estático de isolatedDeclarations: true sin declaration: true en tsconfig.json (TS5110).
-    ├── crypto-aes-gcm-tag-length-guard.mjs: Auditoría estática de cifrado AES-GCM para certificar longitud estricta de auth tag de 16 bytes (128 bits).
-    └── sandbox-process-posix-signal-sigkill-prover.mjs: Demostración formal de terminación escalonada (SIGTERM con gracia antes de SIGKILL) en sandbox.
+├── 237-240. Núcleo Soberano 240-Pillar Omnipresent Master Matrix v66 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+│   ├── file-atomic-fsync-guard.mjs: Auditoría estática de escrituras atómicas en disco para certificar fsyncSync previo a renameSync.
+│   ├── dead-tsconfig-isolated-declarations-pruner.mjs: Podado estático de isolatedDeclarations: true sin declaration: true en tsconfig.json (TS5110).
+│   ├── crypto-aes-gcm-tag-length-guard.mjs: Auditoría estática de cifrado AES-GCM para certificar longitud estricta de auth tag de 16 bytes (128 bits).
+│   └── sandbox-process-posix-signal-sigkill-prover.mjs: Demostración formal de terminación escalonada (SIGTERM con gracia antes de SIGKILL) en sandbox.
+│
+└── 241-244. Núcleo Soberano 244-Pillar Infinite Transcendence Matrix v67 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+    ├── file-atomic-parent-dir-fsync-guard.mjs: Auditoría estática de persistencia de directorio padre tras renameSync con fsyncSync(dirFd).
+    ├── dead-tsconfig-erasable-syntax-only-pruner.mjs: Podado estático de flags incompatibles con erasableSyntaxOnly: true (TS 5.8+).
+    ├── crypto-rsa-pss-salt-length-guard.mjs: Auditoría estática de RSA-PSS para certificar constantes seguras de saltLength (RSA_PSS_SALTLEN_DIGEST).
+    └── sandbox-process-posix-umask-inheritance-prover.mjs: Demostración formal de aislamiento explícito de umask (0o027/0o077) en sandbox.
 ```
 
 ---
@@ -455,18 +461,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [67.0.0] - 2026-08-17 (The Sovereign 244-Pillar Infinite Transcendence & Autonomous Quantum Fabric Matrix)
+- **Atomic File Parent Directory fsync Guard**: Audita estáticamente que tras la operación `fs.renameSync(tempFile, targetFile)`, el descriptor del directorio padre sea volcado a disco (`fs.fsyncSync(dirFd)`), garantizando la persistencia estricta de las entradas de directorio en sistemas POSIX (`storage-guard/file-atomic-parent-dir-fsync-guard.mjs`).
+- **Dead TypeScript erasableSyntaxOnly Pruner**: Podado estático en `tsconfig.json` para la directiva `erasableSyntaxOnly: true` (TypeScript 5.8+), certificando que no coexista con constructos no borrables legados (`config-guard/dead-tsconfig-erasable-syntax-only-pruner.mjs`).
+- **Safe Cryptographic RSA-PSS Salt Length Guard**: Auditoría estática de firmas y verificaciones RSA-PSS para certificar el uso de constantes estándar (`crypto.constants.RSA_PSS_SALTLEN_DIGEST` o `RSA_PSS_SALTLEN_MAX_SIGN`) (`security-guard/crypto-rsa-pss-salt-length-guard.mjs`).
+- **Sandbox Process POSIX umask Isolation Prover**: Demostración formal de que los subprocesos ejecutados en sandboxes aíslen su máscara de creación de archivos (`umask 0o027` o `0o077`) y no hereden máscaras permisivas del host (`sandbox-guard/sandbox-process-posix-umask-inheritance-prover.mjs`).
+- **598/598 Tests Pasando al 100%** y **675 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [66.0.0] - 2026-08-17 (The Sovereign 240-Pillar Omnipresent Master & Quantum Epistemic Hyper-Nexus Matrix)
 - **Atomic File Persistence fsync Guard**: Audita estáticamente que los flujos de escritura atómica en dos fases ejecuten un volcado físico a disco (`fs.fsyncSync(fd)` / `fileHandle.sync()`) antes de `renameSync` (`storage-guard/file-atomic-fsync-guard.mjs`).
 - **Dead TypeScript isolatedDeclarations Pruner**: Podado estático en `tsconfig.json` para directivas `isolatedDeclarations: true` (TypeScript 5.5+), certificando que `declaration: true` esté activo (`config-guard/dead-tsconfig-isolated-declarations-pruner.mjs`).
 - **Safe Cryptographic AES-GCM AuthTag Length Guard**: Auditoría estática de cifrados AEAD (`crypto.createCipheriv` / `createDecipheriv` con AES-GCM) para certificar que la longitud del authentication tag sea estrictamente de 16 bytes (`security-guard/crypto-aes-gcm-tag-length-guard.mjs`).
 - **Sandbox Process Tiered SIGTERM/SIGKILL Grace Prover**: Demostración formal de que la terminación de subprocesos en sandboxes implemente un protocolo escalonado (`SIGTERM` con gracia antes de `SIGKILL`) (`sandbox-guard/sandbox-process-posix-signal-sigkill-prover.mjs`).
-- **590/590 Tests Pasando al 100%** y **667 archivos gobernados en paridad absoluta con scaffold/**.
-
-### [65.0.0] - 2026-08-17 (The Sovereign 236-Pillar Intent-Integrity & High-Assurance Runtime Matrix)
-- **User Intent Drift Sentinel**: Audita estáticamente que el código implementado y los tests generados no sufran "Scope Creep" o deriva semántica respecto al objetivo central declarado por el usuario en `spec.md` (`hitl-guard/user-intent-drift-sentinel.mjs`).
-- **Dead TypeScript ModuleResolution Pruner**: Podado estático de combinaciones obsoletas o incompatibles de `module` y `moduleResolution` en `tsconfig.json` (`config-guard/dead-tsconfig-module-resolution-pruner.mjs`).
-- **Safe Cryptographic RSA-PSS MGF1 Hash Guard**: Auditoría estática de operaciones de firma y verificación RSA-PSS (`crypto.sign` / `verify`) para certificar la especificación explícita y segura de la función generadora de máscaras MGF1 (`security-guard/crypto-rsa-pss-mgf1-guard.mjs`).
-- **Sandbox Process POSIX Direct Exec Prover**: Demostración formal de que las ejecuciones de binarios y utilidades en el sandbox utilicen ejecución directa (`execFile` / `spawn` con vector de argumentos) sin subshells intermedias (`sandbox-guard/sandbox-process-posix-exec-prover.mjs`).
 
 ---
 
