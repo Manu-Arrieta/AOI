@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v35 (The Sovereign 116-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix).
+ * Master Orchestrator Engine for AOI-OS v36 (The Centurial 120-Pillar Omnipresent Singularity & Universal Transcendence Genesis Master Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -48,6 +48,8 @@
  * SSE & WebSocket Stream Backpressure Guard, Sandbox Privilege Escalation & Setuid Prover,
  * Browser Storage Quota & Expiration Guard, Dead Custom CSS Class & Utility Pruner,
  * Test Network Port Collision & Ephemeral Binding Prover, Sandbox File Descriptor Concurrency & Ulimit Prover,
+ * Database Transaction Rollback & Commit Lifecycle Guard, Dead Package Script & npm Run Pruner,
+ * Safe HTML & DOM Sanitization Guard, Sandbox Process Environment Variable Isolation Prover,
  * and ICM Memory Linking.
  */
 
@@ -84,6 +86,7 @@ import { auditRateLimiting } from './security-guard/rate-limit-guard.mjs'
 import { auditPayloadDeserializationSafety } from './security-guard/content-type-guard.mjs'
 import { auditJwtExpirationSafety } from './security-guard/jwt-expiration-guard.mjs'
 import { auditQueryDepthSafety } from './security-guard/query-depth-guard.mjs'
+import { auditHtmlSanitizationSafety } from './security-guard/html-sanitization-guard.mjs'
 import { auditCacheInvalidation } from './cache-guard/cache-invalidation-guard.mjs'
 import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
 import { auditDeadEnvFlags } from './env-guard/dead-env-pruner.mjs'
@@ -96,8 +99,10 @@ import { auditDeadTypes } from './type-guard/dead-type-pruner.mjs'
 import { auditDeadTypeAliases } from './type-guard/dead-type-alias-pruner.mjs'
 import { auditDeadEnums } from './enum-guard/dead-enum-pruner.mjs'
 import { auditDeadPackageExports } from './export-guard/dead-export-package-pruner.mjs'
+import { auditDeadPackageScripts } from './package-guard/dead-script-pruner.mjs'
 import { auditDeadI18nKeys } from './i18n-guard/dead-i18n-pruner.mjs'
 import { proveDbPoolDrainSafety } from './db-guard/db-pool-drain-prover.mjs'
+import { auditTransactionRollbackSafety } from './db-guard/transaction-rollback-guard.mjs'
 import { proveStreamTeardownSafety } from './stream-guard/stream-teardown-prover.mjs'
 import { auditStreamBackpressureSafety } from './stream-guard/stream-backpressure-guard.mjs'
 import { auditWebSocketHeartbeat } from './stream-guard/websocket-heartbeat-guard.mjs'
@@ -107,6 +112,7 @@ import { provePathContainment } from './sandbox-guard/sandbox-path-escape-prover
 import { proveSymlinkContainment } from './sandbox-guard/sandbox-symlink-escape-prover.mjs'
 import { provePrivilegeEscalationSafety } from './sandbox-guard/sandbox-privilege-escalation-prover.mjs'
 import { proveSandboxUlimitSafety } from './sandbox-guard/sandbox-ulimit-prover.mjs'
+import { proveSandboxEnvIsolationSafety } from './sandbox-guard/sandbox-env-isolation-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -317,6 +323,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits database transactions for guaranteed rollback on failure.
+   *
+   * @param {string} sourceCode
+   */
+  function auditDbTransactionSafety(sourceCode) {
+    return auditTransactionRollbackSafety(sourceCode)
+  }
+
+  /**
+   * Audits package.json scripts against monorepo codebase to prune dead scripts.
+   *
+   * @param {string[]} declaredScripts
+   * @param {string} consumerCodebase
+   */
+  function auditDeadScriptCoverage(declaredScripts = [], consumerCodebase = '') {
+    return auditDeadPackageScripts(declaredScripts, consumerCodebase)
+  }
+
+  /**
+   * Audits HTML bindings to enforce DOMPurify/sanitization against XSS.
+   *
+   * @param {string} sourceCode
+   */
+  function auditHtmlSanitization(sourceCode) {
+    return auditHtmlSanitizationSafety(sourceCode)
+  }
+
+  /**
+   * Proves explicit environment variable isolation in sandbox subprocesses.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxEnvIsolation(sourceCode) {
+    return proveSandboxEnvIsolationSafety(sourceCode)
   }
 
   /**
@@ -985,7 +1028,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '35.0.0',
+      version: '36.0.0',
       components,
     })
   }
@@ -1534,6 +1577,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditDbTransactionSafety,
+    auditDeadScriptCoverage,
+    auditHtmlSanitization,
+    auditSandboxEnvIsolation,
     auditBrowserStorage,
     auditDeadCssClassCoverage,
     auditPortCollisions,
@@ -1666,7 +1713,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v35: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v36: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

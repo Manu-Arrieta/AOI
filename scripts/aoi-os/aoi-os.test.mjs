@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v35 pipeline with 116 pillars', async () => {
+test('createAoiOsPipeline initializes full v36 pipeline with 120 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v35',
-    taskId: 'TASK-2026-35',
+    feature: 'aoi-os-v36',
+    taskId: 'TASK-2026-36',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,29 +34,29 @@ test('createAoiOsPipeline initializes full v35 pipeline with 116 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Browser Storage Quota Guard
-  const storageCheck = pipeline.auditBrowserStorage("try { localStorage.setItem('k', 'v'); } catch(e) {}")
-  assert.equal(storageCheck.safe, true)
-  assert.equal(storageCheck.storageProof, 'BROWSER_STORAGE_QUOTA_SAFE')
+  // 2. Database Transaction Rollback Guard
+  const dbTxCheck = pipeline.auditDbTransactionSafety("try { await client.query('BEGIN'); await client.query('COMMIT'); } catch(e) { await client.query('ROLLBACK'); }")
+  assert.equal(dbTxCheck.safe, true)
+  assert.equal(dbTxCheck.transactionProof, 'TRANSACTION_LIFECYCLE_PROTECTED')
 
-  // 3. Dead CSS Class Pruner
-  const cssCheck = pipeline.auditDeadCssClassCoverage(['hero-title'], '<h1 class="hero-title">Title</h1>')
-  assert.equal(cssCheck.allReferenced, true)
-  assert.equal(cssCheck.cssClassProof, 'ALL_CSS_CLASSES_REFERENCED')
+  // 3. Dead Script Pruner
+  const scriptCheck = pipeline.auditDeadScriptCoverage(['test:parity'], 'pnpm test:parity')
+  assert.equal(scriptCheck.allReferenced, true)
+  assert.equal(scriptCheck.scriptProof, 'ALL_PACKAGE_SCRIPTS_REFERENCED')
 
-  // 4. Port Collision Prover
-  const portCheck = pipeline.auditPortCollisions("const server = http.createServer(); server.listen(0);")
-  assert.equal(portCheck.safe, true)
-  assert.equal(portCheck.portProof, 'EPHEMERAL_PORT_BINDING_PROVEN')
+  // 4. Safe HTML & DOM Sanitization Guard
+  const htmlCheck = pipeline.auditHtmlSanitization('<div v-html="DOMPurify.sanitize(userInput)"></div>')
+  assert.equal(htmlCheck.safe, true)
+  assert.equal(htmlCheck.xssProof, 'HTML_SANITIZATION_PROVEN')
 
-  // 5. Sandbox Ulimit Prover
-  const ulimitCheck = pipeline.auditSandboxUlimit("for (const f of files) { const c = await fs.readFile(f); }")
-  assert.equal(ulimitCheck.safe, true)
-  assert.equal(ulimitCheck.ulimitProof, 'BOUNDED_DESCRIPTOR_CONCURRENCY_PROVEN')
+  // 5. Sandbox Env Isolation Prover
+  const envIsoCheck = pipeline.auditSandboxEnvIsolation("spawn('cmd', [], { env: { PATH: process.env.PATH } })")
+  assert.equal(envIsoCheck.safe, true)
+  assert.equal(envIsoCheck.isolationProof, 'SANDBOX_ENV_ISOLATION_PROVEN')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v35 sovereign 116-pillar infinite singularity master suite'],
+    decisions: ['Use deterministic v36 centurial 120-pillar omnipresent singularity master suite'],
     diffSummary: 'server/api/tasks.ts (+80 lines)',
   }, async () => ({ stdout: 'OK' }))
 
