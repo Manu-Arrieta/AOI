@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v43 pipeline with 148 pillars', async () => {
+test('createAoiOsPipeline initializes full v44 pipeline with 152 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v43',
-    taskId: 'TASK-2026-43',
+    feature: 'aoi-os-v44',
+    taskId: 'TASK-2026-44',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v43 pipeline with 148 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic Temporary File Collision & Cryptographic Prefix Guard
-  const tmpCheck = pipeline.auditTempFiles("function createTmp(dir) { return path.join(dir, '.tmp-' + crypto.randomUUID() + '.json'); }")
-  assert.equal(tmpCheck.safe, true)
-  assert.equal(tmpCheck.tempFileProof, 'COLLISION_FREE_CSPRNG_TEMP_IDENTIFIER_ENFORCED')
+  // 2. Atomic Directory Traversal Boundary & Canonical Realpath Guard
+  const dirCheck = pipeline.auditDirectoryBoundaries("function readFile(root, p) { const r = fs.realpathSync(path.resolve(root, p)); if (!r.startsWith(root)) throw new Error(); return fs.readFileSync(r); }")
+  assert.equal(dirCheck.safe, true)
+  assert.equal(dirCheck.boundaryProof, 'CANONICAL_WORKSPACE_BOUNDARY_ANCHORED')
 
-  // 3. Dead Lifecycle Script Hook Pruner
-  const hookCheck = pipeline.auditScriptHooks({ scripts: { prepare: 'pnpm run build', build: 'tsc' } }, ['build'])
-  assert.equal(hookCheck.clean, true)
-  assert.equal(hookCheck.hookProof, 'LIFECYCLE_HOOKS_CANONICAL')
+  // 3. Dead Package Export Condition Pruner
+  const expCheck = pipeline.auditExportConditions({ exports: { '.': { import: './dist/index.mjs' } } }, ['dist/index.mjs'])
+  assert.equal(expCheck.clean, true)
+  assert.equal(expCheck.exportConditionProof, 'PACKAGE_EXPORT_CONDITIONS_CANONICAL')
 
-  // 4. Safe Cryptographic Cipher Mode & GCM Auth Tag Guard
-  const cipherCheck = pipeline.auditCipherModes("const c = crypto.createCipheriv('aes-256-gcm', k, iv); const tag = c.getAuthTag();")
-  assert.equal(cipherCheck.safe, true)
-  assert.equal(cipherCheck.cipherProof, 'AUTHENTICATED_AEAD_CIPHER_ENFORCED')
+  // 4. Safe Cryptographic Timing-Safe Buffer Comparison Guard
+  const timeBufCheck = pipeline.auditTimingSafeBuffers("function verifySignature(a, b) { const bA = Buffer.from(a); const bB = Buffer.from(b); if (bA.length !== bB.length) return false; return crypto.timingSafeEqual(bA, bB); }")
+  assert.equal(timeBufCheck.safe, true)
+  assert.equal(timeBufCheck.timingSafeProof, 'CONSTANT_TIME_BUFFER_COMPARISON_ENFORCED')
 
-  // 5. Sandbox Child Process IPC Message Length Prover
-  const ipcCheck = pipeline.auditSandboxIpcPayloads("function send(c, m) { if (Buffer.byteLength(JSON.stringify(m)) > 1024) throw new Error(); c.send(m); }")
-  assert.equal(ipcCheck.safe, true)
-  assert.equal(ipcCheck.ipcPayloadProof, 'BOUNDED_IPC_MESSAGE_PAYLOAD_ENFORCED')
+  // 5. Sandbox Worker AbortController Cancellation Prover
+  const abortCheck = pipeline.auditAbortControllers("async function runJob(data, signal) { signal.throwIfAborted(); return compute(data); }")
+  assert.equal(abortCheck.safe, true)
+  assert.equal(abortCheck.abortProof, 'RESPONSIVE_ABORT_CONTROLLER_CANCELLATION_ENFORCED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v43 sovereign 148-pillar infinite singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+148 lines)',
+    decisions: ['Use deterministic v44 transcendent 152-pillar omnipresent singularity genesis suite'],
+    diffSummary: 'server/api/tasks.ts (+152 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
