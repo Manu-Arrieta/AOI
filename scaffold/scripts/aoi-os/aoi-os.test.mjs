@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v50 pipeline with 176 pillars', async () => {
+test('createAoiOsPipeline initializes full v51 pipeline with 180 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v50',
-    taskId: 'TASK-2026-50',
+    feature: 'aoi-os-v51',
+    taskId: 'TASK-2026-51',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v50 pipeline with 176 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic Stream highWaterMark Memory Bounding Guard
-  const hwmCheck = pipeline.auditStreamHighWaterMarks("const stream = fs.createReadStream('/data.bin', { highWaterMark: 64 * 1024 });")
-  assert.equal(hwmCheck.safe, true)
-  assert.equal(hwmCheck.highWaterMarkProof, 'SAFE_HIGHWATERMARK_BOUNDING_ENFORCED')
+  // 2. Atomic Stream Pipe Auto-Destroy Guard
+  const pipeCheck = pipeline.auditStreamPipeDestroys("import { pipeline } from 'node:stream/promises'; await pipeline(r, w);")
+  assert.equal(pipeCheck.safe, true)
+  assert.equal(pipeCheck.pipeProof, 'STREAM_PIPE_AUTO_DESTROY_ENFORCED')
 
-  // 3. Dead TypeScript Exclude Pattern Pruner
-  const excludeCheck = pipeline.auditTsconfigExcludes({ exclude: ['dist', 'coverage'] }, ['dist/index.js', 'coverage/lcov.info'])
-  assert.equal(excludeCheck.clean, true)
-  assert.equal(excludeCheck.excludeProof, 'TSCONFIG_EXCLUDE_PATTERNS_CANONICAL')
+  // 3. Dead TypeScript Compiler Options lib Pruner
+  const libCheck = pipeline.auditTsconfigLibs({ compilerOptions: { lib: ['ESNext'] } }, { isNodeOnly: true })
+  assert.equal(libCheck.clean, true)
+  assert.equal(libCheck.libProof, 'TSCONFIG_LIBS_CANONICAL')
 
-  // 4. Safe Cryptographic HKDF Parameter & Digest Guard
-  const hkdfCheck = pipeline.auditCryptoHkdfParams("const key = crypto.hkdfSync('sha512', ikm, salt, info, 64);")
-  assert.equal(hkdfCheck.safe, true)
-  assert.equal(hkdfCheck.hkdfProof, 'ROBUST_HKDF_PARAMETERS_ENFORCED')
+  // 4. Safe Cryptographic Scrypt Cost & Parameter Guard
+  const scryptCheck = pipeline.auditCryptoScryptParams("const k = crypto.scryptSync(p, s, 64, { N: 16384, r: 8, p: 1 });")
+  assert.equal(scryptCheck.safe, true)
+  assert.equal(scryptCheck.scryptProof, 'ROBUST_SCRYPT_PARAMETERS_ENFORCED')
 
-  // 5. Sandbox Child Process Unref & Detach Prover
-  const unrefCheck = pipeline.auditSandboxIpcUnrefs("const child = spawn('node', ['./daemon.js'], { detached: true }); child.unref();")
-  assert.equal(unrefCheck.safe, true)
-  assert.equal(unrefCheck.unrefProof, 'DETERMINISTIC_DETACHED_UNREF_ENFORCED')
+  // 5. Sandbox Process PATH Variable Sanitization Prover
+  const pathCheck = pipeline.auditSandboxPathEnvs("const env = { ...process.env, PATH: '/usr/local/bin:/usr/bin:/bin' };")
+  assert.equal(pathCheck.safe, true)
+  assert.equal(pathCheck.pathProof, 'CANONICAL_TRUSTED_PATH_ENFORCED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v50 centurial 176-pillar omnipresent singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+176 lines)',
+    decisions: ['Use deterministic v51 sovereign 180-pillar infinite singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+180 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)

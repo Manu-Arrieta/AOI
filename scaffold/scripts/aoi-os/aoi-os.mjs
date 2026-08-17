@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v50 (The Centurial 176-Pillar Omnipresent Singularity & Universal Transcendence Master Matrix).
+ * Master Orchestrator Engine for AOI-OS v51 (The Sovereign 180-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -78,6 +78,8 @@
  * Safe Cryptographic Diffie-Hellman Group & Prime Length Guard, Sandbox Child Process IPC Channel Disconnect Prover,
  * Atomic Stream highWaterMark Memory Bounding Guard, Dead TypeScript Exclude Pattern Pruner,
  * Safe Cryptographic HKDF Parameter & Digest Guard, Sandbox Child Process Unref & Detach Prover,
+ * Atomic Stream Pipe & Pipeline Auto-Destroy Guard, Dead TypeScript Compiler Options lib Pruner,
+ * Safe Cryptographic Scrypt Cost & Parameter Guard, Sandbox Process PATH Variable Sanitization Prover,
  * and ICM Memory Linking.
  */
 
@@ -129,6 +131,7 @@ import { auditCryptoPbkdf2DigestSafety } from './security-guard/crypto-pbkdf2-di
 import { auditCryptoRsaKeyLengthSafety } from './security-guard/crypto-rsa-key-length-guard.mjs'
 import { auditCryptoDhGroupSafety } from './security-guard/crypto-dh-group-guard.mjs'
 import { auditCryptoHkdfParamSafety } from './security-guard/crypto-hkdf-param-guard.mjs'
+import { auditCryptoScryptParamSafety } from './security-guard/crypto-scrypt-param-guard.mjs'
 import { auditCacheInvalidation } from './cache-guard/cache-invalidation-guard.mjs'
 import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
 import { auditDeadEnvFlags } from './env-guard/dead-env-pruner.mjs'
@@ -139,6 +142,7 @@ import { auditDeadTsconfigIncludes } from './config-guard/dead-tsconfig-include-
 import { auditDeadTsconfigTypes } from './config-guard/dead-tsconfig-types-pruner.mjs'
 import { auditDeadTsconfigPathPrefixes } from './config-guard/dead-tsconfig-path-prefix-pruner.mjs'
 import { auditDeadTsconfigExcludes } from './config-guard/dead-tsconfig-exclude-pruner.mjs'
+import { auditDeadTsconfigLibs } from './config-guard/dead-tsconfig-lib-pruner.mjs'
 import { auditDeadRoutes } from './route-guard/dead-route-pruner.mjs'
 import { auditDeadMarkdownDocLinks } from './doc-guard/dead-doc-link-pruner.mjs'
 import { auditDeadGitignoreRules } from './repo-guard/dead-gitignore-pruner.mjs'
@@ -165,6 +169,7 @@ import { auditWebSocketHeartbeat } from './stream-guard/websocket-heartbeat-guar
 import { auditHttpRequestTimeoutSafety } from './stream-guard/http-timeout-guard.mjs'
 import { auditStreamMaxListenersSafety } from './storage-guard/stream-max-listeners-guard.mjs'
 import { auditStreamHighWaterMarkSafety } from './storage-guard/stream-highwatermark-guard.mjs'
+import { auditStreamPipeDestroySafety } from './storage-guard/stream-pipe-destroy-guard.mjs'
 import { proveSignalTeardown } from './sandbox-guard/signal-teardown-prover.mjs'
 import { provePipeCleanupSafety } from './sandbox-guard/pipe-cleanup-prover.mjs'
 import { provePathContainment } from './sandbox-guard/sandbox-path-escape-prover.mjs'
@@ -186,6 +191,7 @@ import { proveSandboxStdinClosureSafety } from './sandbox-guard/sandbox-stdin-cl
 import { proveSandboxPortTransferSafety } from './sandbox-guard/sandbox-port-transfer-prover.mjs'
 import { proveSandboxIpcDisconnectSafety } from './sandbox-guard/sandbox-ipc-disconnect-prover.mjs'
 import { proveSandboxIpcUnrefSafety } from './sandbox-guard/sandbox-ipc-unref-prover.mjs'
+import { proveSandboxPathEnvSafety } from './sandbox-guard/sandbox-path-env-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -407,6 +413,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits stream piping for auto-destruction and error propagation safety.
+   *
+   * @param {string} sourceCode
+   */
+  function auditStreamPipeDestroys(sourceCode) {
+    return auditStreamPipeDestroySafety(sourceCode)
+  }
+
+  /**
+   * Audits tsconfig.json compilerOptions.lib for redundant or incompatible libraries.
+   *
+   * @param {object} tsconfigJson
+   * @param {object} [options]
+   */
+  function auditTsconfigLibs(tsconfigJson = {}, options = {}) {
+    return auditDeadTsconfigLibs(tsconfigJson, options)
+  }
+
+  /**
+   * Audits Scrypt key derivation calls for robust cost parameters (N >= 16384).
+   *
+   * @param {string} sourceCode
+   */
+  function auditCryptoScryptParams(sourceCode) {
+    return auditCryptoScryptParamSafety(sourceCode)
+  }
+
+  /**
+   * Proves sanitized canonical PATH environment variable definitions in sandboxes.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxPathEnvs(sourceCode) {
+    return proveSandboxPathEnvSafety(sourceCode)
   }
 
   /**
@@ -1628,7 +1671,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '50.0.0',
+      version: '51.0.0',
       components,
     })
   }
@@ -2177,6 +2220,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditStreamPipeDestroys,
+    auditTsconfigLibs,
+    auditCryptoScryptParams,
+    auditSandboxPathEnvs,
     auditStreamHighWaterMarks,
     auditTsconfigExcludes,
     auditCryptoHkdfParams,
@@ -2369,7 +2416,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v50: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v51: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
