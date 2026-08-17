@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v53 pipeline with 188 pillars', async () => {
+test('createAoiOsPipeline initializes full v54 pipeline with 192 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v53',
-    taskId: 'TASK-2026-53',
+    feature: 'aoi-os-v54',
+    taskId: 'TASK-2026-54',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v53 pipeline with 188 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic Stream cork & uncork Memory Flush Guard
-  const corkCheck = pipeline.auditStreamCorkUncorks("writable.cork(); writable.write('chunk'); process.nextTick(() => writable.uncork());")
-  assert.equal(corkCheck.safe, true)
-  assert.equal(corkCheck.corkProof, 'DETERMINISTIC_STREAM_UNCORK_ENFORCED')
+  // 2. Atomic Stream pause & resume Flow Control Guard
+  const pauseCheck = pipeline.auditStreamPauseResumes("readable.pause(); doWork(); readable.resume();")
+  assert.equal(pauseCheck.safe, true)
+  assert.equal(pauseCheck.pauseProof, 'DETERMINISTIC_STREAM_RESUME_ENFORCED')
 
-  // 3. Dead TypeScript BaseUrl Configuration Pruner
-  const baseUrlCheck = pipeline.auditTsconfigBaseUrls({ compilerOptions: { moduleResolution: 'bundler', baseUrl: '.', paths: { '@/*': ['./src/*'] } } })
-  assert.equal(baseUrlCheck.clean, true)
-  assert.equal(baseUrlCheck.baseUrlProof, 'TSCONFIG_BASE_URL_CANONICAL')
+  // 3. Dead TypeScript Interop Flag Pruner
+  const interopCheck = pipeline.auditTsconfigInterops({ compilerOptions: { esModuleInterop: true, allowSyntheticDefaultImports: false } })
+  assert.equal(interopCheck.clean, true)
+  assert.equal(interopCheck.interopProof, 'TSCONFIG_INTEROP_CANONICAL')
 
-  // 4. Safe Cryptographic ECDH Curve Hardness Guard
-  const ecdhCheck = pipeline.auditCryptoEcdhCurves("const ecdh = crypto.createECDH('x25519');")
-  assert.equal(ecdhCheck.safe, true)
-  assert.equal(ecdhCheck.ecdhProof, 'ECDH_CURVE_HARDNESS_ENFORCED')
+  // 4. Safe Cryptographic EdDSA Signature & Algorithm Guard
+  const eddsaCheck = pipeline.auditCryptoEddsaVerifications("const isValid = crypto.verify(null, data, ed25519Key, signature);")
+  assert.equal(eddsaCheck.safe, true)
+  assert.equal(eddsaCheck.eddsaProof, 'EDDSA_VERIFY_ALGORITHM_CANONICAL')
 
-  // 5. Sandbox Dynamic Linker Preload Sanitization Prover
-  const ldCheck = pipeline.auditSandboxLdPreloads("const env = { ...process.env, PATH: '/usr/bin:/bin' };")
-  assert.equal(ldCheck.safe, true)
-  assert.equal(ldCheck.linkerProof, 'SANITIZED_DYNAMIC_LINKER_ENFORCED')
+  // 5. Sandbox Worker Resource Limits & Heap Cap Prover
+  const workerHeapCheck = pipeline.auditSandboxWorkerHeapLimits("const w = new Worker('./w.js', { resourceLimits: { maxOldGenerationSizeMb: 256 } });")
+  assert.equal(workerHeapCheck.safe, true)
+  assert.equal(workerHeapCheck.workerHeapProof, 'BOUNDED_WORKER_HEAP_ENFORCED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v53 sovereign 188-pillar infinite singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+188 lines)',
+    decisions: ['Use deterministic v54 transcendent 192-pillar omnipresent singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+192 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
