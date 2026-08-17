@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v39 pipeline with 132 pillars', async () => {
+test('createAoiOsPipeline initializes full v40 pipeline with 136 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v39',
-    taskId: 'TASK-2026-39',
+    feature: 'aoi-os-v40',
+    taskId: 'TASK-2026-40',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,29 +34,29 @@ test('createAoiOsPipeline initializes full v39 pipeline with 132 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Unhandled Rejection & Exception Guard
-  const unhandledCheck = pipeline.auditUnhandledRejections("process.on('unhandledRejection', () => process.exit(1)); async function main() { await startDaemon(); }")
-  assert.equal(unhandledCheck.safe, true)
-  assert.equal(unhandledCheck.rejectionProof, 'PROCESS_EXCEPTIONS_GOVERNED')
+  // 2. Atomic File Write Guard
+  const atomicCheck = pipeline.auditAtomicWrites("function saveState(file, data) { fs.writeFileSync(file + '.tmp', data); fs.renameSync(file + '.tmp', file); }")
+  assert.equal(atomicCheck.safe, true)
+  assert.equal(atomicCheck.atomicProof, 'ATOMIC_FILE_WRITES_ENFORCED')
 
-  // 3. Dead Workspace Package Pruner
-  const workspacePkgCheck = pipeline.auditWorkspacePackages(['agentic-ops-dashboard'], 'pnpm --filter agentic-ops-dashboard dev')
-  assert.equal(workspacePkgCheck.clean, true)
-  assert.equal(workspacePkgCheck.packageProof, 'WORKSPACE_PACKAGES_GOVERNED')
+  // 3. Dead Config Path Alias Pruner
+  const aliasCheck = pipeline.auditConfigAliases(['@components/*'], "import Button from '@components/Button.vue'")
+  assert.equal(aliasCheck.clean, true)
+  assert.equal(aliasCheck.aliasProof, 'CONFIG_ALIASES_CANONICAL')
 
-  // 4. Safe Cryptographic Randomness (CSPRNG) Guard
-  const randomCheck = pipeline.auditCryptoRandomness("function generateToken() { return crypto.randomBytes(32).toString('hex'); }")
-  assert.equal(randomCheck.safe, true)
-  assert.equal(randomCheck.randomProof, 'CSPRNG_RANDOMNESS_ENFORCED')
+  // 4. Safe Regular Expression Unicode Flag Guard
+  const unicodeCheck = pipeline.auditRegexUnicode("const pattern = /^[\\p{Letter}\\d]+$/u;")
+  assert.equal(unicodeCheck.safe, true)
+  assert.equal(unicodeCheck.unicodeProof, 'UNICODE_REGEX_SAFETY_ENFORCED')
 
-  // 5. Sandbox FD Isolation Prover
-  const fdCheck = pipeline.auditSandboxFdIsolation("spawn('node', ['worker.js'], { stdio: ['ignore', 'pipe', 'pipe'] })")
-  assert.equal(fdCheck.safe, true)
-  assert.equal(fdCheck.fdProof, 'SANDBOX_FD_ISOLATION_ENFORCED')
+  // 5. Sandbox Process Priority Prover
+  const priorityCheck = pipeline.auditSandboxPriority("function launchCompiler(cmd) { return exec('nice -n 10 ' + cmd); }")
+  assert.equal(priorityCheck.safe, true)
+  assert.equal(priorityCheck.priorityProof, 'SCHEDULING_PRIORITY_GOVERNED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v39 sovereign 132-pillar infinite singularity master suite'],
+    decisions: ['Use deterministic v40 transcendent 136-pillar omnipresent singularity master suite'],
     diffSummary: 'server/api/tasks.ts (+100 lines)',
   }, async () => ({ stdout: 'OK' }))
 

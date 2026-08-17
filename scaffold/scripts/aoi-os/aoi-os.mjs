@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v39 (The Sovereign 132-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix).
+ * Master Orchestrator Engine for AOI-OS v40 (The Transcendent 136-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -56,6 +56,8 @@
  * Safe Cryptographic Algorithm Guard, Sandbox Process Resource Limit (RLimit CPU & AS) Prover,
  * Unhandled Rejection & Process Exception Guard, Dead Monorepo Workspace Package Pruner,
  * Safe Cryptographic Randomness (CSPRNG) Guard, Sandbox Process File Descriptor Isolation Prover,
+ * Atomic File Replace & Staged Write Guard, Dead Config Path Alias Pruner,
+ * Safe Regular Expression Unicode Flag Guard, Sandbox Process Scheduling Priority & Niceness Prover,
  * and ICM Memory Linking.
  */
 
@@ -96,10 +98,12 @@ import { auditHtmlSanitizationSafety } from './security-guard/html-sanitization-
 import { auditDynamicRegexSafety } from './security-guard/regex-timeout-guard.mjs'
 import { auditCryptoAlgorithmSafety } from './security-guard/crypto-algorithm-guard.mjs'
 import { auditCryptoRandomSafety } from './security-guard/crypto-random-guard.mjs'
+import { auditRegexUnicodeSafety } from './security-guard/regex-flag-guard.mjs'
 import { auditCacheInvalidation } from './cache-guard/cache-invalidation-guard.mjs'
 import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
 import { auditDeadEnvFlags } from './env-guard/dead-env-pruner.mjs'
 import { validateStructuralConfig } from './config-guard/structural-config-guard.mjs'
+import { auditDeadConfigAliases } from './config-guard/dead-alias-pruner.mjs'
 import { auditDeadRoutes } from './route-guard/dead-route-pruner.mjs'
 import { auditDeadMarkdownDocLinks } from './doc-guard/dead-doc-link-pruner.mjs'
 import { auditDeadGitignoreRules } from './repo-guard/dead-gitignore-pruner.mjs'
@@ -129,11 +133,13 @@ import { proveSandboxEnvIsolationSafety } from './sandbox-guard/sandbox-env-isol
 import { proveSandboxCoreDumpSafety } from './sandbox-guard/sandbox-coredump-prover.mjs'
 import { proveSandboxRLimitSafety } from './sandbox-guard/sandbox-rlimit-prover.mjs'
 import { proveSandboxFdIsolationSafety } from './sandbox-guard/sandbox-fd-cloexec-prover.mjs'
+import { proveSandboxPrioritySafety } from './sandbox-guard/sandbox-priority-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
 import { proveShmChannelCleanupSafety } from './sandbox-guard/sandbox-shm-cleanup-prover.mjs'
 import { auditBrowserStorageQuotaSafety } from './storage-guard/browser-storage-quota-guard.mjs'
+import { auditAtomicFileWriteSafety } from './storage-guard/atomic-file-write-guard.mjs'
 import { auditDeadCssClasses } from './css-guard/dead-css-class-pruner.mjs'
 import { provePortCollisionSafety } from './test-guard/port-collision-prover.mjs'
 import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-estimator.mjs'
@@ -341,6 +347,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits state writes for staged atomic temp-file-and-rename safety.
+   *
+   * @param {string} sourceCode
+   */
+  function auditAtomicWrites(sourceCode) {
+    return auditAtomicFileWriteSafety(sourceCode)
+  }
+
+  /**
+   * Audits declared config aliases against consumer codebase to prune dead aliases.
+   *
+   * @param {string[]} declaredAliases
+   * @param {string} consumerCodebase
+   */
+  function auditConfigAliases(declaredAliases = [], consumerCodebase = '') {
+    return auditDeadConfigAliases(declaredAliases, consumerCodebase)
+  }
+
+  /**
+   * Audits RegExp declarations for Unicode u/v flag safety.
+   *
+   * @param {string} sourceCode
+   */
+  function auditRegexUnicode(sourceCode) {
+    return auditRegexUnicodeSafety(sourceCode)
+  }
+
+  /**
+   * Proves worker scheduling priority and niceness in sandbox executions.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxPriority(sourceCode) {
+    return proveSandboxPrioritySafety(sourceCode)
   }
 
   /**
@@ -1156,7 +1199,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '39.0.0',
+      version: '40.0.0',
       components,
     })
   }
@@ -1705,6 +1748,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditAtomicWrites,
+    auditConfigAliases,
+    auditRegexUnicode,
+    auditSandboxPriority,
     auditUnhandledRejections,
     auditWorkspacePackages,
     auditCryptoRandomness,
@@ -1853,7 +1900,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v39: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v40: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
