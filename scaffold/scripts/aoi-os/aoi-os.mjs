@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v63 (The Sovereign 228-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix).
+ * Master Orchestrator Engine for AOI-OS v64 (The Sovereign 232-Pillar Human-in-the-Loop & Dynamic Steering Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -104,6 +104,8 @@
  * Safe Cryptographic TLS OCSP Stapling Guard, Sandbox Process Windows Batch Escape Prover,
  * Atomic File Watcher Error Listener Guard, Dead TypeScript Composite Pruner,
  * Safe Cryptographic TLS Renegotiation DoS Guard, Sandbox Process POSIX Shell Word Splitting Prover,
+ * User Story Steering Bridge, Human Gate Escalation Guard,
+ * Story Acceptance Criteria Alignment Prover, Interactive SDD Interview Prover,
  * and ICM Memory Linking.
  */
 
@@ -264,6 +266,10 @@ import { proveSandboxProcessWindowsPathSafety } from './sandbox-guard/sandbox-pr
 import { proveSandboxProcessWindowsShellSafety } from './sandbox-guard/sandbox-process-windows-shell-prover.mjs'
 import { proveSandboxProcessWindowsBatchEscapeSafety } from './sandbox-guard/sandbox-process-windows-batch-escape-prover.mjs'
 import { proveSandboxProcessPosixShellSafety } from './sandbox-guard/sandbox-process-posix-shell-prover.mjs'
+import { steerDagWithUserStoryFeedback } from './hitl-guard/user-story-steering-bridge.mjs'
+import { evaluateHumanGateEscalation } from './hitl-guard/human-gate-escalation-guard.mjs'
+import { proveStoryAcceptanceCriteriaAlignment } from './hitl-guard/story-acceptance-criteria-auditor.mjs'
+import { auditSddInterviewClarification } from './hitl-guard/interactive-sdd-interview-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -485,6 +491,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Steers and re-weights DAG tasks with human user story feedback directives.
+   *
+   * @param {object} steeringFeedback
+   */
+  function steerDagWithUserStories(steeringFeedback = {}) {
+    return steerDagWithUserStoryFeedback(rawNodes, steeringFeedback)
+  }
+
+  /**
+   * Audits execution state and triggers human escalation gates when critical thresholds are reached.
+   *
+   * @param {object} params
+   */
+  function auditHumanGateEscalations(params = {}) {
+    return evaluateHumanGateEscalation(params)
+  }
+
+  /**
+   * Proves 100% mathematical alignment between spec.md acceptance criteria and task test requirements.
+   *
+   * @param {string} specMarkdown
+   */
+  function auditStoryAcceptanceCriteria(specMarkdown = '') {
+    return proveStoryAcceptanceCriteriaAlignment(specMarkdown, rawNodes)
+  }
+
+  /**
+   * Audits feature intention and story specifications for ambiguity requiring interactive interview clarification.
+   *
+   * @param {string} text
+   * @param {object} [options]
+   */
+  function auditSddInterviews(text = '', options = {}) {
+    return auditSddInterviewClarification(text, options)
   }
 
   /**
@@ -2726,6 +2769,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    steerDagWithUserStories,
+    auditHumanGateEscalations,
+    auditStoryAcceptanceCriteria,
+    auditSddInterviews,
     auditFileWatcherErrors,
     auditTsconfigComposites,
     auditCryptoTlsRenegotiations,
@@ -2970,7 +3017,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v63: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v64: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

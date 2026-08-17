@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v63 (The Sovereign 228-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v64 (The Sovereign 232-Pillar Human-in-the-Loop & Dynamic Steering Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
-Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
+Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable con gobernanza activa Human-in-the-Loop (HITL)** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente, re-orienta las olas de ejecución a partir de historias de usuario y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Atomic File Watcher Error Listener Guard (`storage-guard/file-watcher-error-guard.mjs`)**: Auditoría estática de watchers de archivos (`fs.watch`, `chokidar.watch`) para certificar que adjunten obligatoriamente un listener de errores (`watcher.on('error', ...)`), evitando caídas silenciosas en daemons agénticos de larga duración (0 LLM tokens).
-- **Dead TypeScript Composite Project Pruner (`config-guard/dead-tsconfig-composite-pruner.mjs`)**: Podado estático de directivas `composite: true` incompatibles en `tsconfig.json` cuando `declaration: false` está configurado, eliminando errores TS5069/TS6307 en TypeScript 5.0+ (0 LLM tokens).
-- **Safe Cryptographic TLS Renegotiation DoS Guard (`security-guard/crypto-tls-renegotiation-guard.mjs`)**: Auditoría estática de configuraciones de servidores TLS/HTTPS (`tls.createServer`) para certificar que el protocolo base sea TLSv1.3 o limite la renegociación de sesiones, mitigando vulnerabilidades DoS por agotamiento de CPU (CVE-2011-1473 / CVE-2011-5094) (0 LLM tokens).
-- **Sandbox Process POSIX Shell Word Splitting Prover (`sandbox-guard/sandbox-process-posix-shell-prover.mjs`)**: Demostración formal de que las ejecuciones de subprocesos a través de shells POSIX (`/bin/sh`, `/bin/bash`) encierren estrictamente todas las variables en comillas dobles (`"$VAR"`), neutralizando la división de palabras y expansión accidental de rutas (0 LLM tokens).
+- **Puente de Retroalimentación y Dirección de Historias de Usuario (`hitl-guard/user-story-steering-bridge.mjs`)**: Ingesta retroalimentación humana, notas de historias de usuario y cambios en criterios de aceptación de `spec.md` para re-ponderar y orientar dinámicamente las olas de ejecución de micro-agentes (0 LLM tokens).
+- **Guardián de Compuertas de Escalación Humana (`hitl-guard/human-gate-escalation-guard.mjs`)**: Audita estáticamente el estado de ejecución para pausar de inmediato y requerir aprobación humana explícita ante radio de impacto crítico, cambios de contratos públicos o agotamiento de reintentos de auto-sanación (0 LLM tokens).
+- **Probador de Alineación 1:1 de Criterios de Aceptación (`hitl-guard/story-acceptance-criteria-auditor.mjs`)**: Demuestra matemáticamente que cada criterio de aceptación y escenario de las historias de usuario de `spec.md` tenga cobertura del 100% en los requisitos de prueba del DAG (`tasks.md`) (0 LLM tokens).
+- **Probador de Entrevista Interactiva en `/sdd-new` (`hitl-guard/interactive-sdd-interview-prover.mjs`)**: Audita la intención del usuario y términos ambiguos ("maybe", "tbd", "optional") para obligar a una clarificación interactiva antes de fijar la especificación formal (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 228 Pilares (AOI-OS v63)
+## 🏛️ Matriz Arquitectónica Maestra de 232 Pilares (AOI-OS v64)
 
 ```text
-AOI-OS v63 Architecture Matrix (228 Pillars)
+AOI-OS v64 Architecture Matrix (232 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -390,11 +390,17 @@ AOI-OS v63 Architecture Matrix (228 Pillars)
 │   ├── crypto-tls-ocsp-guard.mjs: Auditoría estática de requestOCSP y manejador OCSPResponse para validación en tiempo real de revocación TLS.
 │   └── sandbox-process-windows-batch-escape-prover.mjs: Demostración formal de escape de metacaracteres batch (^&|<>%") en sandboxes de Windows.
 │
-└── 225-228. Núcleo Soberano 228-Pillar Master Matrix v63 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-    ├── file-watcher-error-guard.mjs: Auditoría estática de error event listeners en watchers de archivos para resiliencia total de daemons.
-    ├── dead-tsconfig-composite-pruner.mjs: Podado estático de composite: true inválido sin declaration: true en tsconfig.json (TS5069).
-    ├── crypto-tls-renegotiation-guard.mjs: Auditoría estática de servidores TLS para mitigación de ataques DoS por renegociación (CVE-2011-1473).
-    └── sandbox-process-posix-shell-prover.mjs: Demostración formal de entrecomillado estricto ("$VAR") en subprocesos POSIX para evitar word splitting.
+├── 225-228. Núcleo Soberano 228-Pillar Master Matrix v63 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+│   ├── file-watcher-error-guard.mjs: Auditoría estática de error event listeners en watchers de archivos para resiliencia total de daemons.
+│   ├── dead-tsconfig-composite-pruner.mjs: Podado estático de composite: true inválido sin declaration: true en tsconfig.json (TS5069).
+│   ├── crypto-tls-renegotiation-guard.mjs: Auditoría estática de servidores TLS para mitigación de ataques DoS por renegociación (CVE-2011-1473).
+│   └── sandbox-process-posix-shell-prover.mjs: Demostración formal de entrecomillado estricto ("$VAR") en subprocesos POSIX para evitar word splitting.
+│
+└── 229-232. Núcleo Soberano 232-Pillar Human-in-the-Loop & Dynamic Steering Matrix v64 (hitl-guard/)
+    ├── user-story-steering-bridge.mjs: Ingesta de feedback y notas de historias de usuario para re-ponderar y orientar olas del DAG.
+    ├── human-gate-escalation-guard.mjs: Pausa y compuerta de aprobación humana ante blast radius crítico o agotamiento de auto-sanación.
+    ├── story-acceptance-criteria-auditor.mjs: Demostración formal de cobertura 100% de criterios de aceptación de spec.md en el DAG.
+    └── interactive-sdd-interview-prover.mjs: Auditoría de términos ambiguos en /sdd-new para forzar entrevista interactiva de clarificación.
 ```
 
 ---
@@ -437,18 +443,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
-### [63.0.0] - 2026-08-17 (The Sovereign 228-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
-- **Atomic File Watcher Error Listener Guard**: Auditoría estática de watchers de archivos (`fs.watch`, `chokidar.watch`) para certificar que adjunten obligatoriamente un listener de errores (`watcher.on('error', ...)`), evitando caídas silenciosas en daemons agénticos de larga duración (`storage-guard/file-watcher-error-guard.mjs`).
-- **Dead TypeScript Composite Project Pruner**: Podado estático de directivas `composite: true` incompatibles en `tsconfig.json` cuando `declaration: false` está configurado, eliminando errores TS5069/TS6307 en TypeScript 5.0+ (`config-guard/dead-tsconfig-composite-pruner.mjs`).
-- **Safe Cryptographic TLS Renegotiation DoS Guard**: Auditoría estática de configuraciones de servidores TLS/HTTPS (`tls.createServer`) para certificar que el protocolo base sea TLSv1.3 o limite la renegociación de sesiones, mitigando vulnerabilidades DoS por agotamiento de CPU (CVE-2011-1473 / CVE-2011-5094) (`security-guard/crypto-tls-renegotiation-guard.mjs`).
-- **Sandbox Process POSIX Shell Word Splitting Prover**: Demostración formal de que las ejecuciones de subprocesos a través de shells POSIX (`/bin/sh`, `/bin/bash`) encierren estrictamente todas las variables en comillas dobles (`"$VAR"`), neutralizando la división de palabras y expansión accidental de rutas (`sandbox-guard/sandbox-process-posix-shell-prover.mjs`).
-- **566/566 Tests Pasando al 100%** y **643 archivos gobernados en paridad absoluta con scaffold/**.
+### [64.0.0] - 2026-08-17 (The Sovereign 232-Pillar Human-in-the-Loop & Dynamic Steering Matrix)
+- **User Story Steering Feedback Bridge**: Ingesta retroalimentación humana, notas de historias de usuario y cambios en criterios de aceptación de `spec.md` para re-ponderar y orientar dinámicamente las olas de ejecución de micro-agentes (`hitl-guard/user-story-steering-bridge.mjs`).
+- **Human Gate Escalation Guard**: Audita estáticamente el estado de ejecución para pausar de inmediato y requerir aprobación humana explícita ante radio de impacto crítico, cambios de contratos públicos o agotamiento de reintentos de auto-sanación (`hitl-guard/human-gate-escalation-guard.mjs`).
+- **Story Acceptance Criteria Alignment Prover**: Demuestra matemáticamente que cada criterio de aceptación y escenario de las historias de usuario de `spec.md` tenga cobertura del 100% en los requisitos de prueba del DAG (`tasks.md`) (`hitl-guard/story-acceptance-criteria-auditor.mjs`).
+- **Interactive SDD Interview Clarification Prover**: Audita la intención del usuario y términos ambiguos ("maybe", "tbd", "optional") para obligar a una clarificación interactiva antes de fijar la especificación formal (`hitl-guard/interactive-sdd-interview-prover.mjs`).
+- **574/574 Tests Pasando al 100%** y **651 archivos gobernados en paridad absoluta con scaffold/**.
 
-### [62.0.0] - 2026-08-17 (The Grand Epistemic Bicentennial-Quadrans 224-Pillar Omnipresent Singularity & Universal Transcendence Master Core)
-- **Atomic File Watcher BigInt Stat Precision Guard**: Auditoría estática de timestamps para certificar precisión BigInt (`mtimeNs`) (`storage-guard/file-watcher-bigint-guard.mjs`).
-- **Dead TypeScript CheckJs Redundancy Pruner**: Podado estático de `checkJs: true` inerte sin `allowJs` en `tsconfig.json` (`config-guard/dead-tsconfig-checkjs-pruner.mjs`).
-- **Safe Cryptographic TLS OCSP Stapling Guard**: Auditoría estática de `requestOCSP: true` y manejador `OCSPResponse` (`security-guard/crypto-tls-ocsp-guard.mjs`).
-- **Sandbox Process Windows Batch Shell Escaping Prover**: Demostración formal de escape de metacaracteres batch (`^&|<>%"`) (`sandbox-guard/sandbox-process-windows-batch-escape-prover.mjs`).
+### [63.0.0] - 2026-08-17 (The Sovereign 228-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
+- **Atomic File Watcher Error Listener Guard**: Auditoría estática de watchers de archivos (`fs.watch`, `chokidar.watch`) (`storage-guard/file-watcher-error-guard.mjs`).
+- **Dead TypeScript Composite Project Pruner**: Podado estático de directivas `composite: true` incompatibles en `tsconfig.json` (`config-guard/dead-tsconfig-composite-pruner.mjs`).
+- **Safe Cryptographic TLS Renegotiation DoS Guard**: Auditoría estática de configuraciones de servidores TLS/HTTPS (`security-guard/crypto-tls-renegotiation-guard.mjs`).
+- **Sandbox Process POSIX Shell Word Splitting Prover**: Demostración formal de variables entrecomilladas (`"$VAR"`) en shells POSIX (`sandbox-guard/sandbox-process-posix-shell-prover.mjs`).
 
 ---
 

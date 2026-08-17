@@ -6,18 +6,24 @@ const SAMPLE_TASKS_MD = `
 ### Task T-1: Build API route [backend]
 - Target: \`server/api/tasks.ts\`
 - ## Test Requirements:
-  - Return 200 OK
+  - User logs in with valid email password credentials returning JWT
 
 ### Task T-2: Build C# Core Service [backend] (Depends on: T-1)
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v63 pipeline with 228 pillars', async () => {
+const SAMPLE_SPEC_MD = `
+## User Story 1
+As an operator, I want JWT authentication.
+### Scenario: User logs in with valid email password credentials returning JWT
+`
+
+test('createAoiOsPipeline initializes full v64 pipeline with 232 pillars including HITL subsystem', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v63',
-    taskId: 'TASK-2026-63',
+    feature: 'aoi-os-v64',
+    taskId: 'TASK-2026-64',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +40,37 @@ test('createAoiOsPipeline initializes full v63 pipeline with 228 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic File Watcher Error Listener Guard
-  const watcherErrCheck = pipeline.auditFileWatcherErrors("const w = fs.watch(dir); w.on('error', (e) => log(e));")
-  assert.equal(watcherErrCheck.safe, true)
-  assert.equal(watcherErrCheck.watcherErrorProof, 'WATCHER_ERROR_HANDLER_VERIFIED')
+  // 2. User Story Steering Bridge
+  const steerResult = pipeline.steerDagWithUserStories({
+    globalNotes: ['Always apply strict schema validation'],
+    taskDirectives: { 'T-1': ['Use RS256 for signing'] },
+  })
+  assert.equal(steerResult.steered, true)
+  assert.equal(steerResult.steeringProof, 'HUMAN_STORY_STEERING_INJECTED')
 
-  // 3. Dead TypeScript Composite Project Redundancy Pruner
-  const compositeCheck = pipeline.auditTsconfigComposites({ compilerOptions: { composite: true, declaration: true } })
-  assert.equal(compositeCheck.clean, true)
-  assert.equal(compositeCheck.compositeProof, 'TSCONFIG_COMPOSITE_VALID')
+  // 3. Human Gate Escalation Guard
+  const gateCheck = pipeline.auditHumanGateEscalations({
+    taskId: 'T-1',
+    blastRadius: 'critical',
+    hasExplicitHumanApproval: true,
+  })
+  assert.equal(gateCheck.canProceed, true)
+  assert.equal(gateCheck.gateProof, 'HUMAN_OVERRIDE_APPROVED')
 
-  // 4. Safe Cryptographic TLS Renegotiation DoS Guard
-  const tlsRenegCheck = pipeline.auditCryptoTlsRenegotiations("const s = tls.createServer({ minVersion: 'TLSv1.3' });")
-  assert.equal(tlsRenegCheck.safe, true)
-  assert.equal(tlsRenegCheck.tlsRenegotiationProof, 'TLS_RENEGOTIATION_DEFENSE_VERIFIED')
+  // 4. Story Acceptance Criteria Alignment Prover
+  const storyCheck = pipeline.auditStoryAcceptanceCriteria(SAMPLE_SPEC_MD)
+  assert.equal(storyCheck.aligned, true)
+  assert.equal(storyCheck.alignmentProof, 'ACCEPTANCE_CRITERIA_100_PERCENT_COVERED')
 
-  // 5. Sandbox Process POSIX Shell Word Splitting Prover
-  const posixShellCheck = pipeline.auditSandboxProcessPosixShells("const c = spawn('/bin/sh', ['-c', 'cat \"$FILE_PATH\"']);")
-  assert.equal(posixShellCheck.safe, true)
-  assert.equal(posixShellCheck.posixShellProof, 'POSIX_SHELL_VARIABLES_PROPERLY_QUOTED')
+  // 5. Interactive SDD Interview Prover
+  const interviewCheck = pipeline.auditSddInterviews('The endpoint must strictly validate JWT RS256.')
+  assert.equal(interviewCheck.valid, true)
+  assert.equal(interviewCheck.clarificationProof, 'INTENT_SPECIFICATION_FULLY_DETERMINISTIC')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v63 sovereign 228-pillar master core'],
-    diffSummary: 'server/api/tasks.ts (+228 lines)',
+    decisions: ['Use deterministic v64 sovereign 232-pillar master core with HITL governance'],
+    diffSummary: 'server/api/tasks.ts (+232 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
