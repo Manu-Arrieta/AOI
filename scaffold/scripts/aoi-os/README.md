@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v52 (The Transcendent 184-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v53 (The Sovereign 188-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Atomic Stream Transform _final & _flush Cleanup Guard (`storage-guard/stream-transform-final-guard.mjs`)**: Auditoría estática de implementaciones personalizadas de `Transform` y `Writable` para certificar la invocación determinista de `callback()` en hooks `_final` y `_flush`, evitando pipelines congelados (0 LLM tokens).
-- **Dead TypeScript JSX Configuration Pruner (`config-guard/dead-tsconfig-jsx-pruner.mjs`)**: Podado estático de directivas `jsx` / `jsxImportSource` en `tsconfig.json` cuando no existen archivos `.tsx`/`.jsx` en el espacio de trabajo, optimizando el rendimiento de parseo de `tsc` y LSP (0 LLM tokens).
-- **Safe Cryptographic ChaCha20-Poly1305 Nonce & Auth Guard (`security-guard/crypto-chacha-nonce-guard.mjs`)**: Auditoría estática de cifrado autenticado AEAD ChaCha20-Poly1305 (`crypto.createCipheriv` / RFC 8439) para certificar vector de inicialización de 12 bytes (96 bits) y manejo obligatorio de auth tag (0 LLM tokens).
-- **Sandbox Child Process NODE_OPTIONS Sanitization Prover (`sandbox-guard/sandbox-node-options-prover.mjs`)**: Demostración formal de sanitización y prohibición de flags peligrosas (`--require`, `--import`, `--inspect`) en la variable `NODE_OPTIONS` dentro del sandbox contra escapes y ejecución de código no autorizado (0 LLM tokens).
+- **Atomic Stream cork & uncork Memory Flush Guard (`storage-guard/stream-cork-uncork-guard.mjs`)**: Auditoría estática de flujos de escritura por lotes que emplean `.cork()` para verificar que exista una llamada emparejada determinista a `.uncork()` (ej. en `process.nextTick` o bloque `finally`), evitando retención indefinida de buffers en memoria (0 LLM tokens).
+- **Dead TypeScript BaseUrl Configuration Pruner (`config-guard/dead-tsconfig-baseurl-pruner.mjs`)**: Podado estático de directivas `baseUrl: "."` redundantes en `tsconfig.json` cuando se usan resolutores modernos (`"moduleResolution": "bundler" | "node16" | "nodenext"`) sin mapeos `paths`, evitando ambigüedades en resolución no relativa (0 LLM tokens).
+- **Safe Cryptographic ECDH Curve Hardness Guard (`security-guard/crypto-ecdh-curve-guard.mjs`)**: Auditoría estática de acuerdos de claves ECDH (`crypto.createECDH` / `crypto.diffieHellman`) para certificar el uso de curvas robustas modernas (Montgomery `x25519`, `x448` o NIST `prime256v1`/`secp384r1`) y prohibir curvas débiles (< 256 bits) (0 LLM tokens).
+- **Sandbox Dynamic Linker Preload Sanitization Prover (`sandbox-guard/sandbox-ld-preload-prover.mjs`)**: Demostración formal de sanitización y purga de variables del cargador dinámico (`LD_PRELOAD`, `DYLD_INSERT_LIBRARIES`, `LD_LIBRARY_PATH`) en subprocesos de sandbox contra DLL hijacking o inyección de rootkits (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 184 Pilares (AOI-OS v52)
+## 🏛️ Matriz Arquitectónica Maestra de 188 Pilares (AOI-OS v53)
 
 ```text
-AOI-OS v52 Architecture Matrix (184 Pillars)
+AOI-OS v53 Architecture Matrix (188 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -324,11 +324,17 @@ AOI-OS v52 Architecture Matrix (184 Pillars)
 │   ├── crypto-scrypt-param-guard.mjs: Auditoría estática de parámetros Scrypt para certificar costo N >= 16384 y cota en maxmem.
 │   └── sandbox-path-env-prover.mjs: Demostración formal de sanitización y directorios canónicos confiables en la variable PATH del sandbox.
 │
-└── 181-184. Núcleo Transcendent 184-Pillar Master Matrix v52 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-    ├── stream-transform-final-guard.mjs: Auditoría estática de implementaciones Transform/Writable para certificar invocación de callback en _final/_flush.
-    ├── dead-tsconfig-jsx-pruner.mjs: Podado estático de directivas jsx/jsxImportSource huérfanas en tsconfig.json.
-    ├── crypto-chacha-nonce-guard.mjs: Auditoría estática de ChaCha20-Poly1305 para certificar nonce de 12 bytes y manejo de auth tag.
-    └── sandbox-node-options-prover.mjs: Demostración formal de sanitización de NODE_OPTIONS y bloqueo de flags de precarga (--require/--import) en sandbox.
+├── 181-184. Núcleo Transcendent 184-Pillar Genesis Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+│   ├── stream-transform-final-guard.mjs: Auditoría estática de implementaciones Transform/Writable para certificar invocación de callback en _final/_flush.
+│   ├── dead-tsconfig-jsx-pruner.mjs: Podado estático de directivas jsx/jsxImportSource huérfanas en tsconfig.json.
+│   ├── crypto-chacha-nonce-guard.mjs: Auditoría estática de ChaCha20-Poly1305 para certificar nonce de 12 bytes y manejo de auth tag.
+│   └── sandbox-node-options-prover.mjs: Demostración formal de sanitización de NODE_OPTIONS y bloqueo de flags de precarga (--require/--import) en sandbox.
+│
+└── 185-188. Núcleo Sovereign 188-Pillar Master Matrix v53 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+    ├── stream-cork-uncork-guard.mjs: Auditoría estática de flujos de escritura con .cork() para certificar llamada emparejada determinista a .uncork().
+    ├── dead-tsconfig-baseurl-pruner.mjs: Podado estático de baseUrl: "." redundante bajo resolución moderna de módulos en tsconfig.json.
+    ├── crypto-ecdh-curve-guard.mjs: Auditoría estática de acuerdos ECDH para certificar uso de curvas seguras (x25519/x448/prime256v1).
+    └── sandbox-ld-preload-prover.mjs: Demostración formal de purga y sanitización de variables del cargador dinámico (LD_PRELOAD/DYLD_INSERT_LIBRARIES) en sandbox.
 ```
 
 ---
@@ -371,18 +377,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [53.0.0] - 2026-08-17 (The Sovereign 188-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
+- **Atomic Stream cork & uncork Memory Flush Guard**: Auditoría estática de flujos de escritura por lotes que emplean `.cork()` para verificar que exista una llamada emparejada determinista a `.uncork()` (ej. en `process.nextTick` o bloque `finally`), evitando retención indefinida de buffers en memoria (`storage-guard/stream-cork-uncork-guard.mjs`).
+- **Dead TypeScript BaseUrl Configuration Pruner**: Podado estático de directivas `baseUrl: "."` redundantes en `tsconfig.json` cuando se usan resolutores modernos (`"moduleResolution": "bundler" | "node16" | "nodenext"`) sin mapeos `paths`, evitando ambigüedades en resolución no relativa (`config-guard/dead-tsconfig-baseurl-pruner.mjs`).
+- **Safe Cryptographic ECDH Curve Hardness Guard**: Auditoría estática de acuerdos de claves ECDH (`crypto.createECDH` / `crypto.diffieHellman`) para certificar el uso de curvas robustas modernas (Montgomery `x25519`, `x448` o NIST `prime256v1`/`secp384r1`) y prohibir curvas débiles (< 256 bits) (`security-guard/crypto-ecdh-curve-guard.mjs`).
+- **Sandbox Dynamic Linker Preload Sanitization Prover**: Demostración formal de sanitización y purga de variables del cargador dinámico (`LD_PRELOAD`, `DYLD_INSERT_LIBRARIES`, `LD_LIBRARY_PATH`) en subprocesos de sandbox contra DLL hijacking o inyección de rootkits (`sandbox-guard/sandbox-ld-preload-prover.mjs`).
+- **486/486 Tests Pasando al 100%** y **563 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [52.0.0] - 2026-08-17 (The Transcendent 184-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
 - **Atomic Stream Transform _final & _flush Cleanup Guard**: Auditoría estática de implementaciones personalizadas de `Transform` y `Writable` para certificar la invocación determinista de `callback()` en hooks `_final` y `_flush`, evitando pipelines congelados (`storage-guard/stream-transform-final-guard.mjs`).
 - **Dead TypeScript JSX Configuration Pruner**: Podado estático de directivas `jsx` / `jsxImportSource` en `tsconfig.json` cuando no existen archivos `.tsx`/`.jsx` en el espacio de trabajo, optimizando el rendimiento de parseo de `tsc` y LSP (`config-guard/dead-tsconfig-jsx-pruner.mjs`).
 - **Safe Cryptographic ChaCha20-Poly1305 Nonce & Auth Guard**: Auditoría estática de cifrado autenticado AEAD ChaCha20-Poly1305 (`crypto.createCipheriv` / RFC 8439) para certificar vector de inicialización de 12 bytes (96 bits) y manejo obligatorio de auth tag (`security-guard/crypto-chacha-nonce-guard.mjs`).
 - **Sandbox Child Process NODE_OPTIONS Sanitization Prover**: Demostración formal de sanitización y prohibición de flags peligrosas (`--require`, `--import`, `--inspect`) en la variable `NODE_OPTIONS` dentro del sandbox contra escapes y ejecución de código no autorizado (`sandbox-guard/sandbox-node-options-prover.mjs`).
-- **478/478 Tests Pasando al 100%** y **555 archivos gobernados en paridad absoluta con scaffold/**.
-
-### [51.0.0] - 2026-08-17 (The Sovereign 180-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
-- **Atomic Stream Pipe & Pipeline Auto-Destroy Guard**: Auditoría estática de tuberías de streams (`readable.pipe(writable)`, `stream.pipeline`) para verificar la gestión de errores y auto-destrucción de ambos extremos (`stream.pipeline(r, w, cb)` / `pipeline`), previniendo file descriptors y sockets zombi (`storage-guard/stream-pipe-destroy-guard.mjs`).
-- **Dead TypeScript Compiler Options `lib` Pruner**: Podado estático de librerías duplicadas o incompatibles en `"compilerOptions": { "lib": [...] }` de `tsconfig.json` (ej. DOM en proyectos backend de Node), optimizando el consumo de memoria del compilador `tsc` y LSP (`config-guard/dead-tsconfig-lib-pruner.mjs`).
-- **Safe Cryptographic Scrypt Cost & Parameter Guard**: Auditoría estática de derivación de claves Scrypt (`crypto.scrypt`, `crypto.scryptSync` / RFC 7914 / OWASP) para certificar que el parámetro de costo `N` sea $\ge 16384$ (o $2^{14}$), $r \ge 8$, $p \ge 1$ y con límite acotado en `maxmem` (`security-guard/crypto-scrypt-param-guard.mjs`).
-- **Sandbox Process PATH Variable Sanitization Prover**: Demostración formal de sanitización estricta de la variable `PATH` en subprocesos de sandbox, prohibiendo directorios relativos (`.`) o rutas temporales de escritura abierta (`/tmp`) contra secuestro de binarios (`sandbox-guard/sandbox-path-env-prover.mjs`).
 
 ---
 
