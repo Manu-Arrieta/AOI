@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v58 (The Transcendent 208-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v59 (The Sovereign 212-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Atomic File Append Sequential Lock Guard (`storage-guard/file-append-lock-guard.mjs`)**: Auditoría estática de flujos de escritura asíncronos (`fs.appendFile`, `fs.promises.appendFile`) en logs y almacenes de eventos para certificar la presencia de una cola secuencial, mutex en memoria o sincronismo garantizado, evitando entrelazado de bytes y líneas corruptas bajo alta concurrencia (0 LLM tokens).
-- **Dead TypeScript Root Types Leakage Pruner (`config-guard/dead-tsconfig-root-types-pruner.mjs`)**: Podado estático de declaraciones de tipos de Node (`"types": ["node"]`) en `tsconfig.json` de paquetes cliente/frontend, asegurando aislamiento total entre APIs del navegador y del runtime del servidor y evitando el uso inadvertido de globales de Node (`Buffer`, `process`, `fs`) en el cliente (0 LLM tokens).
-- **Safe Cryptographic X.509 Certificate Guard (`security-guard/crypto-x509-cert-guard.mjs`)**: Auditoría estática de instanciaciones `crypto.X509Certificate` para certificar que el código invoque explícitamente comprobaciones de identidad de host (`.checkHost()`), emisor (`.checkIssued()`) o periodos de validez (`.validTo`/`.validFrom`) antes de otorgar confianza criptográfica, previniendo vulnerabilidades MITM (0 LLM tokens).
-- **Sandbox Process Detached Teardown Prover (`sandbox-guard/sandbox-process-detached-teardown-prover.mjs`)**: Demostración formal de que los subprocesos lanzados con `detached: true` en sandboxes implementen destrucción explícita de todo el grupo de procesos mediante PID negativo (`process.kill(-child.pid, 'SIGTERM')`) en los ganchos de limpieza, impidiendo la persistencia de procesos demonio huérfanos (0 LLM tokens).
+- **Atomic File Truncate Boundary Guard (`storage-guard/file-truncate-boundary-guard.mjs`)**: Auditoría estática de operaciones de truncado (`fs.truncate`, `fs.promises.truncate`, `fs.ftruncate`) en persistencia para certificar protección con bloqueo exclusivo o reemplazo atómico en dos fases (`temp + rename`), evitando desajustes de puntero y lecturas corruptas de bytes NULL (0 LLM tokens).
+- **Dead TypeScript Declaration Map Pruner (`config-guard/dead-tsconfig-declaration-map-pruner.mjs`)**: Podado estático de directivas huérfanas `declarationMap: true` en `tsconfig.json` cuando `declaration` está en `false` o no está definido, eliminando directivas muertas del compilador y optimizando la configuración de empaquetado (0 LLM tokens).
+- **Safe Cryptographic TLS SAN Guard (`security-guard/crypto-tls-san-guard.mjs`)**: Auditoría estática de comprobaciones de identidad de host en TLS (`crypto`, `tls`, `checkServerIdentity`) para certificar el cumplimiento de Subject Alternative Names (SAN / `subjectAltName` / `.checkHost()`) según RFC 6125 / RFC 9525, desaconsejando el uso obsoleto y vulnerable de Common Name (CN) (0 LLM tokens).
+- **Sandbox Process Windows Batch File Prover (`sandbox-guard/sandbox-process-bat-cmd-prover.mjs`)**: Demostración formal de que las invocaciones a archivos batch (.bat / .cmd) mediante `spawn()` / `execFile()` en sandboxes apliquen sanitización estricta de argumentos, banderas de escape seguras o encapsulamiento seguro contra inyecciones de comandos shell (CVE-2024-27980) (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 208 Pilares (AOI-OS v58)
+## 🏛️ Matriz Arquitectónica Maestra de 212 Pilares (AOI-OS v59)
 
 ```text
-AOI-OS v58 Architecture Matrix (208 Pillars)
+AOI-OS v59 Architecture Matrix (212 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -360,11 +360,17 @@ AOI-OS v58 Architecture Matrix (208 Pillars)
 │   ├── crypto-decipher-authtag-guard.mjs: Auditoría estática de descifrado AEAD para certificar que setAuthTag preceda estrictamente a decipher.final().
 │   └── sandbox-process-serialization-prover.mjs: Demostración formal de definición explícita de serialization: 'advanced' en llamadas fork de sandbox.
 │
-└── 205-208. Núcleo Transcendente 208-Pillar Master Matrix v58 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-    ├── file-append-lock-guard.mjs: Auditoría estática de escrituras asíncronas appendFile para certificar colas secuenciales o mutex en logs y journals.
-    ├── dead-tsconfig-root-types-pruner.mjs: Podado estático de tipos node redundantes y con fuga en configuraciones frontend de tsconfig.json.
-    ├── crypto-x509-cert-guard.mjs: Auditoría estática de crypto.X509Certificate para certificar validación explícita de host/emisor (checkHost, checkIssued).
-    └── sandbox-process-detached-teardown-prover.mjs: Demostración formal de destrucción explícita de grupo de procesos (-pid) en subprocesos detached de sandbox.
+├── 205-208. Núcleo Transcendente 208-Pillar Master Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+│   ├── file-append-lock-guard.mjs: Auditoría estática de escrituras asíncronas appendFile para certificar colas secuenciales o mutex en logs y journals.
+│   ├── dead-tsconfig-root-types-pruner.mjs: Podado estático de tipos node redundantes y con fuga en configuraciones frontend de tsconfig.json.
+│   ├── crypto-x509-cert-guard.mjs: Auditoría estática de crypto.X509Certificate para certificar validación explícita de host/emisor (checkHost, checkIssued).
+│   └── sandbox-process-detached-teardown-prover.mjs: Demostración formal de destrucción explícita de grupo de procesos (-pid) en subprocesos detached de sandbox.
+│
+└── 209-212. Núcleo Soberano 212-Pillar Master Matrix v59 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+    ├── file-truncate-boundary-guard.mjs: Auditoría estática de operaciones de truncado (truncate/ftruncate) para certificar bloqueo exclusivo o staging.
+    ├── dead-tsconfig-declaration-map-pruner.mjs: Podado estático de declarationMap huérfano cuando declaration está desactivado en tsconfig.json.
+    ├── crypto-tls-san-guard.mjs: Auditoría estática de validación de host TLS para certificar uso exclusivo de Subject Alternative Names (SAN/RFC 6125).
+    └── sandbox-process-bat-cmd-prover.mjs: Demostración formal de sanitización de argumentos en ejecuciones de archivos batch (.bat/.cmd) de sandbox.
 ```
 
 ---
@@ -407,18 +413,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
-### [58.0.0] - 2026-08-17 (The Transcendent 208-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
-- **Atomic File Append Sequential Lock Guard**: Auditoría estática de flujos de escritura asíncronos (`fs.appendFile`, `fs.promises.appendFile`) en logs y almacenes de eventos para certificar la presencia de una cola secuencial, mutex en memoria o sincronismo garantizado, evitando entrelazado de bytes y líneas corruptas bajo alta concurrencia (`storage-guard/file-append-lock-guard.mjs`).
-- **Dead TypeScript Root Types Leakage Pruner**: Podado estático de declaraciones de tipos de Node (`"types": ["node"]`) en `tsconfig.json` de paquetes cliente/frontend, asegurando aislamiento total entre APIs del navegador y del runtime del servidor y evitando el uso inadvertido de globales de Node (`Buffer`, `process`, `fs`) en el cliente (`config-guard/dead-tsconfig-root-types-pruner.mjs`).
-- **Safe Cryptographic X.509 Certificate Guard**: Auditoría estática de instanciaciones `crypto.X509Certificate` para certificar que el código invoque explícitamente comprobaciones de identidad de host (`.checkHost()`), emisor (`.checkIssued()`) o periodos de validez (`.validTo`/`.validFrom`) antes de otorgar confianza criptográfica, previniendo vulnerabilidades MITM (`security-guard/crypto-x509-cert-guard.mjs`).
-- **Sandbox Process Detached Teardown Prover**: Demostración formal de que los subprocesos lanzados con `detached: true` en sandboxes implementen destrucción explícita de todo el grupo de procesos mediante PID negativo (`process.kill(-child.pid, 'SIGTERM')`) en los ganchos de limpieza, impidiendo la persistencia de procesos demonio huérfanos (`sandbox-guard/sandbox-process-detached-teardown-prover.mjs`).
-- **526/526 Tests Pasando al 100%** y **603 archivos gobernados en paridad absoluta con scaffold/**.
+### [59.0.0] - 2026-08-17 (The Sovereign 212-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
+- **Atomic File Truncate Boundary Guard**: Auditoría estática de operaciones de truncado (`fs.truncate`, `fs.promises.truncate`, `fs.ftruncate`) en persistencia para certificar protección con bloqueo exclusivo o reemplazo atómico en dos fases (`temp + rename`), evitando desajustes de puntero y lecturas corruptas de bytes NULL (`storage-guard/file-truncate-boundary-guard.mjs`).
+- **Dead TypeScript Declaration Map Pruner**: Podado estático de directivas huérfanas `declarationMap: true` en `tsconfig.json` cuando `declaration` está en `false` o no está definido, eliminando directivas muertas del compilador y optimizando la configuración de empaquetado (`config-guard/dead-tsconfig-declaration-map-pruner.mjs`).
+- **Safe Cryptographic TLS SAN Guard**: Auditoría estática de comprobaciones de identidad de host en TLS (`crypto`, `tls`, `checkServerIdentity`) para certificar el cumplimiento de Subject Alternative Names (SAN / `subjectAltName` / `.checkHost()`) según RFC 6125 / RFC 9525, desaconsejando el uso obsoleto y vulnerable de Common Name (CN) (`security-guard/crypto-tls-san-guard.mjs`).
+- **Sandbox Process Windows Batch File Prover**: Demostración formal de que las invocaciones a archivos batch (.bat / .cmd) mediante `spawn()` / `execFile()` en sandboxes apliquen sanitización estricta de argumentos, banderas de escape seguras o encapsulamiento seguro contra inyecciones de comandos shell (CVE-2024-27980) (`sandbox-guard/sandbox-process-bat-cmd-prover.mjs`).
+- **534/534 Tests Pasando al 100%** y **611 archivos gobernados en paridad absoluta con scaffold/**.
 
-### [57.0.0] - 2026-08-17 (The Sovereign 204-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
-- **Atomic Stream objectMode & HighWaterMark Scale Guard**: Auditoría estática de streams `objectMode` para certificar cota proporcional a objetos (`highWaterMark <= 1024`), evitando OOM (`storage-guard/stream-objectmode-highwatermark-guard.mjs`).
-- **Dead TypeScript resolveJsonModule Pruner**: Podado estático de `resolveJsonModule: true` redundante bajo `moduleResolution` moderno (`config-guard/dead-tsconfig-json-module-pruner.mjs`).
-- **Safe Cryptographic Decipher AuthTag Order Guard**: Auditoría estática de flujos de descifrado AEAD para certificar que `setAuthTag()` preceda a `decipher.final()` (`security-guard/crypto-decipher-authtag-guard.mjs`).
-- **Sandbox Process IPC Serialization Prover**: Demostración formal de `serialization: 'advanced'` en llamadas `fork()` de sandbox (`sandbox-guard/sandbox-process-serialization-prover.mjs`).
+### [58.0.0] - 2026-08-17 (The Transcendent 208-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
+- **Atomic File Append Sequential Lock Guard**: Auditoría estática de escrituras asíncronas `appendFile` para certificar colas secuenciales o mutex en logs y journals (`storage-guard/file-append-lock-guard.mjs`).
+- **Dead TypeScript Root Types Leakage Pruner**: Podado estático de tipos node redundantes y con fuga en configuraciones frontend de `tsconfig.json` (`config-guard/dead-tsconfig-root-types-pruner.mjs`).
+- **Safe Cryptographic X.509 Certificate Guard**: Auditoría estática de `crypto.X509Certificate` para certificar validación explícita de host/emisor (`security-guard/crypto-x509-cert-guard.mjs`).
+- **Sandbox Process Detached Teardown Prover**: Demostración formal de destrucción explícita de grupo de procesos (`-pid`) en subprocesos detached de sandbox (`sandbox-guard/sandbox-process-detached-teardown-prover.mjs`).
 
 ---
 
