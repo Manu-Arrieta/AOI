@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v64 (The Sovereign 232-Pillar Human-in-the-Loop & Dynamic Steering Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v65 (The Sovereign 236-Pillar Intent-Integrity & High-Assurance Runtime Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable con gobernanza activa Human-in-the-Loop (HITL)** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente, re-orienta las olas de ejecución a partir de historias de usuario y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Puente de Retroalimentación y Dirección de Historias de Usuario (`hitl-guard/user-story-steering-bridge.mjs`)**: Ingesta retroalimentación humana, notas de historias de usuario y cambios en criterios de aceptación de `spec.md` para re-ponderar y orientar dinámicamente las olas de ejecución de micro-agentes (0 LLM tokens).
-- **Guardián de Compuertas de Escalación Humana (`hitl-guard/human-gate-escalation-guard.mjs`)**: Audita estáticamente el estado de ejecución para pausar de inmediato y requerir aprobación humana explícita ante radio de impacto crítico, cambios de contratos públicos o agotamiento de reintentos de auto-sanación (0 LLM tokens).
-- **Probador de Alineación 1:1 de Criterios de Aceptación (`hitl-guard/story-acceptance-criteria-auditor.mjs`)**: Demuestra matemáticamente que cada criterio de aceptación y escenario de las historias de usuario de `spec.md` tenga cobertura del 100% en los requisitos de prueba del DAG (`tasks.md`) (0 LLM tokens).
-- **Probador de Entrevista Interactiva en `/sdd-new` (`hitl-guard/interactive-sdd-interview-prover.mjs`)**: Audita la intención del usuario y términos ambiguos ("maybe", "tbd", "optional") para obligar a una clarificación interactiva antes de fijar la especificación formal (0 LLM tokens).
+- **Guardián Centinela de Deriva de Intención Humana (`hitl-guard/user-intent-drift-sentinel.mjs`)**: Audita estáticamente que el código implementado y los tests generados no sufran "Scope Creep" o deriva semántica respecto al objetivo central declarado por el usuario en `spec.md` (0 LLM tokens).
+- **Podador de ModuleResolution Incompatible en tsconfig (`config-guard/dead-tsconfig-module-resolution-pruner.mjs`)**: Podado estático de combinaciones obsoletas o incompatibles de `module` y `moduleResolution` en `tsconfig.json` (ej. `module: "ESNext"` con `moduleResolution: "classic"` / `"node10"` que provocan TS5109/TS5095) (0 LLM tokens).
+- **Guardián de Hash MGF1 en Criptografía RSA-PSS (`security-guard/crypto-rsa-pss-mgf1-guard.mjs`)**: Auditoría estática de operaciones de firma y verificación RSA-PSS (`crypto.sign` / `verify`) para certificar la especificación explícita y segura de la función generadora de máscaras MGF1 (ej. `mgf1Hash: 'sha256'`), impidiendo degradaciones silenciosas a SHA-1 legacy (0 LLM tokens).
+- **Probador de Ejecución Directa execFile sin Subshell (`sandbox-guard/sandbox-process-posix-exec-prover.mjs`)**: Demostración formal de que las ejecuciones de binarios y utilidades en el sandbox utilicen ejecución directa (`execFile` / `spawn` con vector de argumentos) en lugar de subshells intermedias (`/bin/sh -c`), eliminando superficies de escape de comandos (CWE-78) (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 232 Pilares (AOI-OS v64)
+## 🏛️ Matriz Arquitectónica Maestra de 236 Pilares (AOI-OS v65)
 
 ```text
-AOI-OS v64 Architecture Matrix (232 Pillars)
+AOI-OS v65 Architecture Matrix (236 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -396,11 +396,17 @@ AOI-OS v64 Architecture Matrix (232 Pillars)
 │   ├── crypto-tls-renegotiation-guard.mjs: Auditoría estática de servidores TLS para mitigación de ataques DoS por renegociación (CVE-2011-1473).
 │   └── sandbox-process-posix-shell-prover.mjs: Demostración formal de entrecomillado estricto ("$VAR") en subprocesos POSIX para evitar word splitting.
 │
-└── 229-232. Núcleo Soberano 232-Pillar Human-in-the-Loop & Dynamic Steering Matrix v64 (hitl-guard/)
-    ├── user-story-steering-bridge.mjs: Ingesta de feedback y notas de historias de usuario para re-ponderar y orientar olas del DAG.
-    ├── human-gate-escalation-guard.mjs: Pausa y compuerta de aprobación humana ante blast radius crítico o agotamiento de auto-sanación.
-    ├── story-acceptance-criteria-auditor.mjs: Demostración formal de cobertura 100% de criterios de aceptación de spec.md en el DAG.
-    └── interactive-sdd-interview-prover.mjs: Auditoría de términos ambiguos en /sdd-new para forzar entrevista interactiva de clarificación.
+├── 229-232. Núcleo Soberano 232-Pillar Human-in-the-Loop & Dynamic Steering Matrix v64 (hitl-guard/)
+│   ├── user-story-steering-bridge.mjs: Ingesta de feedback y notas de historias de usuario para re-ponderar y orientar olas del DAG.
+│   ├── human-gate-escalation-guard.mjs: Pausa y compuerta de aprobación humana ante blast radius crítico o agotamiento de auto-sanación.
+│   ├── story-acceptance-criteria-auditor.mjs: Demostración formal de cobertura 100% de criterios de aceptación de spec.md en el DAG.
+│   └── interactive-sdd-interview-prover.mjs: Auditoría de términos ambiguos en /sdd-new para forzar entrevista interactiva de clarificación.
+│
+└── 233-236. Núcleo Soberano 236-Pillar Intent-Integrity & High-Assurance Runtime Matrix v65 (hitl-guard/, config-guard/, security-guard/, sandbox-guard/)
+    ├── user-intent-drift-sentinel.mjs: Auditoría estática contra scope creep o deriva de intención respecto al vocabulario de spec.md.
+    ├── dead-tsconfig-module-resolution-pruner.mjs: Podado estático de combinaciones incompatibles de module y moduleResolution en tsconfig.json (TS5095).
+    ├── crypto-rsa-pss-mgf1-guard.mjs: Auditoría estática de firmas RSA-PSS para certificar especificación explícita de digest MGF1 seguro (SHA-2).
+    └── sandbox-process-posix-exec-prover.mjs: Demostración formal de ejecución binaria directa (execFile/spawn) sin subshells intermedias (CWE-78).
 ```
 
 ---
@@ -443,18 +449,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
-### [64.0.0] - 2026-08-17 (The Sovereign 232-Pillar Human-in-the-Loop & Dynamic Steering Matrix)
-- **User Story Steering Feedback Bridge**: Ingesta retroalimentación humana, notas de historias de usuario y cambios en criterios de aceptación de `spec.md` para re-ponderar y orientar dinámicamente las olas de ejecución de micro-agentes (`hitl-guard/user-story-steering-bridge.mjs`).
-- **Human Gate Escalation Guard**: Audita estáticamente el estado de ejecución para pausar de inmediato y requerir aprobación humana explícita ante radio de impacto crítico, cambios de contratos públicos o agotamiento de reintentos de auto-sanación (`hitl-guard/human-gate-escalation-guard.mjs`).
-- **Story Acceptance Criteria Alignment Prover**: Demuestra matemáticamente que cada criterio de aceptación y escenario de las historias de usuario de `spec.md` tenga cobertura del 100% en los requisitos de prueba del DAG (`tasks.md`) (`hitl-guard/story-acceptance-criteria-auditor.mjs`).
-- **Interactive SDD Interview Clarification Prover**: Audita la intención del usuario y términos ambiguos ("maybe", "tbd", "optional") para obligar a una clarificación interactiva antes de fijar la especificación formal (`hitl-guard/interactive-sdd-interview-prover.mjs`).
-- **574/574 Tests Pasando al 100%** y **651 archivos gobernados en paridad absoluta con scaffold/**.
+### [65.0.0] - 2026-08-17 (The Sovereign 236-Pillar Intent-Integrity & High-Assurance Runtime Matrix)
+- **User Intent Drift Sentinel**: Audita estáticamente que el código implementado y los tests generados no sufran "Scope Creep" o deriva semántica respecto al objetivo central declarado por el usuario en `spec.md` (`hitl-guard/user-intent-drift-sentinel.mjs`).
+- **Dead TypeScript ModuleResolution Pruner**: Podado estático de combinaciones obsoletas o incompatibles de `module` y `moduleResolution` en `tsconfig.json` (`config-guard/dead-tsconfig-module-resolution-pruner.mjs`).
+- **Safe Cryptographic RSA-PSS MGF1 Hash Guard**: Auditoría estática de operaciones de firma y verificación RSA-PSS (`crypto.sign` / `verify`) para certificar la especificación explícita y segura de la función generadora de máscaras MGF1 (`security-guard/crypto-rsa-pss-mgf1-guard.mjs`).
+- **Sandbox Process POSIX Direct Exec Prover**: Demostración formal de que las ejecuciones de binarios y utilidades en el sandbox utilicen ejecución directa (`execFile` / `spawn` con vector de argumentos) sin subshells intermedias (`sandbox-guard/sandbox-process-posix-exec-prover.mjs`).
+- **582/582 Tests Pasando al 100%** y **659 archivos gobernados en paridad absoluta con scaffold/**.
 
-### [63.0.0] - 2026-08-17 (The Sovereign 228-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
-- **Atomic File Watcher Error Listener Guard**: Auditoría estática de watchers de archivos (`fs.watch`, `chokidar.watch`) (`storage-guard/file-watcher-error-guard.mjs`).
-- **Dead TypeScript Composite Project Pruner**: Podado estático de directivas `composite: true` incompatibles en `tsconfig.json` (`config-guard/dead-tsconfig-composite-pruner.mjs`).
-- **Safe Cryptographic TLS Renegotiation DoS Guard**: Auditoría estática de configuraciones de servidores TLS/HTTPS (`security-guard/crypto-tls-renegotiation-guard.mjs`).
-- **Sandbox Process POSIX Shell Word Splitting Prover**: Demostración formal de variables entrecomilladas (`"$VAR"`) en shells POSIX (`sandbox-guard/sandbox-process-posix-shell-prover.mjs`).
+### [64.0.0] - 2026-08-17 (The Sovereign 232-Pillar Human-in-the-Loop & Dynamic Steering Matrix)
+- **User Story Steering Feedback Bridge**: Ingesta retroalimentación humana, notas de historias de usuario y cambios en criterios de aceptación de `spec.md` (`hitl-guard/user-story-steering-bridge.mjs`).
+- **Human Gate Escalation Guard**: Audita estáticamente el estado de ejecución para pausar de inmediato y requerir aprobación humana explícita ante radio de impacto crítico (`hitl-guard/human-gate-escalation-guard.mjs`).
+- **Story Acceptance Criteria Alignment Prover**: Demuestra matemáticamente que cada criterio de aceptación de `spec.md` tenga cobertura del 100% en `tasks.md` (`hitl-guard/story-acceptance-criteria-auditor.mjs`).
+- **Interactive SDD Interview Clarification Prover**: Audita la intención del usuario y términos ambiguos para obligar a una clarificación interactiva (`hitl-guard/interactive-sdd-interview-prover.mjs`).
 
 ---
 

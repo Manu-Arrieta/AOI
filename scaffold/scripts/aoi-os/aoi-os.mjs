@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v64 (The Sovereign 232-Pillar Human-in-the-Loop & Dynamic Steering Matrix).
+ * Master Orchestrator Engine for AOI-OS v65 (The Sovereign 236-Pillar Intent-Integrity & High-Assurance Runtime Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -106,6 +106,8 @@
  * Safe Cryptographic TLS Renegotiation DoS Guard, Sandbox Process POSIX Shell Word Splitting Prover,
  * User Story Steering Bridge, Human Gate Escalation Guard,
  * Story Acceptance Criteria Alignment Prover, Interactive SDD Interview Prover,
+ * User Intent Drift Sentinel, Dead TypeScript ModuleResolution Pruner,
+ * Safe Cryptographic RSA-PSS MGF1 Guard, Sandbox Process POSIX Direct Exec Prover,
  * and ICM Memory Linking.
  */
 
@@ -270,6 +272,10 @@ import { steerDagWithUserStoryFeedback } from './hitl-guard/user-story-steering-
 import { evaluateHumanGateEscalation } from './hitl-guard/human-gate-escalation-guard.mjs'
 import { proveStoryAcceptanceCriteriaAlignment } from './hitl-guard/story-acceptance-criteria-auditor.mjs'
 import { auditSddInterviewClarification } from './hitl-guard/interactive-sdd-interview-prover.mjs'
+import { auditUserIntentDrift } from './hitl-guard/user-intent-drift-sentinel.mjs'
+import { auditDeadTsconfigModuleResolution } from './config-guard/dead-tsconfig-module-resolution-pruner.mjs'
+import { auditCryptoRsaPssMgf1Safety } from './security-guard/crypto-rsa-pss-mgf1-guard.mjs'
+import { proveSandboxProcessPosixExecSafety } from './sandbox-guard/sandbox-process-posix-exec-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -528,6 +534,44 @@ export function createAoiOsPipeline(options) {
    */
   function auditSddInterviews(text = '', options = {}) {
     return auditSddInterviewClarification(text, options)
+  }
+
+  /**
+   * Audits in-flight code changes against spec.md intent to detect scope creep or semantic drift.
+   *
+   * @param {string} specMarkdown
+   * @param {string} code
+   * @param {object} [options]
+   */
+  function auditUserIntentDrifts(specMarkdown = '', code = '', options = {}) {
+    return auditUserIntentDrift(specMarkdown, code, options)
+  }
+
+  /**
+   * Audits tsconfig.json compilerOptions for incompatible module and moduleResolution combinations.
+   *
+   * @param {object} tsconfigJson
+   */
+  function auditTsconfigModuleResolutions(tsconfigJson = {}) {
+    return auditDeadTsconfigModuleResolution(tsconfigJson)
+  }
+
+  /**
+   * Audits RSA-PSS cryptographic code for explicit and secure MGF1 hash specifications.
+   *
+   * @param {string} sourceCode
+   */
+  function auditCryptoRsaPssMgf1(sourceCode) {
+    return auditCryptoRsaPssMgf1Safety(sourceCode)
+  }
+
+  /**
+   * Proves that child process executions utilize direct binary execution (execFile/spawn) without intermediate subshells.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxProcessPosixExecs(sourceCode) {
+    return proveSandboxProcessPosixExecSafety(sourceCode)
   }
 
   /**
@@ -2773,6 +2817,10 @@ export function createAoiOsPipeline(options) {
     auditHumanGateEscalations,
     auditStoryAcceptanceCriteria,
     auditSddInterviews,
+    auditUserIntentDrifts,
+    auditTsconfigModuleResolutions,
+    auditCryptoRsaPssMgf1,
+    auditSandboxProcessPosixExecs,
     auditFileWatcherErrors,
     auditTsconfigComposites,
     auditCryptoTlsRenegotiations,
@@ -3017,7 +3065,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v64: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v65: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
