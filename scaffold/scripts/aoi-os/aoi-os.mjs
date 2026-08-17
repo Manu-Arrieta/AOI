@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v32 (The Sovereign 104-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix).
+ * Master Orchestrator Engine for AOI-OS v33 (The Transcendent 108-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -41,7 +41,9 @@
  * WebSocket Ping/Pong Heartbeat Teardown Guard, Dead Type Alias & Generic Parameter Pruner,
  * Content-Type & Payload Serialization Guard, Sandbox Network Socket Unbind Prover,
  * Database Connection Pool Drain Prover, Dead i18n & Localization Key Pruner,
- * JWT & Auth Token Expiration Guard, Sandbox Symlink Traversal Escape Prover, and ICM Memory Linking.
+ * JWT & Auth Token Expiration Guard, Sandbox Symlink Traversal Escape Prover,
+ * OpenTelemetry Tracer Span Lifecycle Guard, Dead Environment Variable & Config Flag Pruner,
+ * Query Depth & Algorithmic Complexity Guard, Sandbox Shared Memory & IPC Channel Cleanup Prover, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -76,8 +78,10 @@ import { auditPathTraversalSafety } from './security-guard/path-traversal-guard.
 import { auditRateLimiting } from './security-guard/rate-limit-guard.mjs'
 import { auditPayloadDeserializationSafety } from './security-guard/content-type-guard.mjs'
 import { auditJwtExpirationSafety } from './security-guard/jwt-expiration-guard.mjs'
+import { auditQueryDepthSafety } from './security-guard/query-depth-guard.mjs'
 import { auditCacheInvalidation } from './cache-guard/cache-invalidation-guard.mjs'
 import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
+import { auditDeadEnvFlags } from './env-guard/dead-env-pruner.mjs'
 import { validateStructuralConfig } from './config-guard/structural-config-guard.mjs'
 import { auditDeadRoutes } from './route-guard/dead-route-pruner.mjs'
 import { auditDeadComponents } from './component-guard/dead-component-pruner.mjs'
@@ -97,6 +101,7 @@ import { proveSymlinkContainment } from './sandbox-guard/sandbox-symlink-escape-
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
+import { proveShmChannelCleanupSafety } from './sandbox-guard/sandbox-shm-cleanup-prover.mjs'
 import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-estimator.mjs'
 import { synthesizeOpenApiSpec } from './contract-docgen/openapi-synthesizer.mjs'
 import { synthesizeE2eTestFlow } from './contract-docgen/e2e-flow-synthesizer.mjs'
@@ -115,6 +120,7 @@ import {
 } from './contract-transpiler/polyglot-transpiler.mjs'
 import { virtualizeControlFlow } from './virtualizer/branchless-virtualizer.mjs'
 import { createFlightRecorder } from './telemetry/flight-recorder.mjs'
+import { auditSpanLifecycleSafety } from './telemetry/span-lifecycle-guard.mjs'
 import { createSemanticFabric } from './ontology/semantic-fabric.mjs'
 import { optimizeAstRepresentation } from './ast-optimizer/ast-inliner.mjs'
 import { evaluateSuperpositionBranches } from './quantum-synthesis/superposition-matrix.mjs'
@@ -298,6 +304,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits OpenTelemetry spans for guaranteed termination in finally blocks.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSpanLifecycle(sourceCode) {
+    return auditSpanLifecycleSafety(sourceCode)
+  }
+
+  /**
+   * Audits declared environment variables to detect dead unreferenced ones.
+   *
+   * @param {string[]} declaredEnvKeys
+   * @param {string} consumerSourceCode
+   */
+  function auditDeadEnvFlagCoverage(declaredEnvKeys = [], consumerSourceCode = '') {
+    return auditDeadEnvFlags(declaredEnvKeys, consumerSourceCode)
+  }
+
+  /**
+   * Audits GraphQL / API query handlers for depth limit protection.
+   *
+   * @param {string} sourceCode
+   */
+  function auditQueryDepth(sourceCode) {
+    return auditQueryDepthSafety(sourceCode)
+  }
+
+  /**
+   * Proves MessageChannel and shared memory handle closure in teardown hooks.
+   *
+   * @param {string} sourceCode
+   */
+  function auditShmChannelCleanup(sourceCode) {
+    return proveShmChannelCleanupSafety(sourceCode)
   }
 
   /**
@@ -855,7 +898,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '32.0.0',
+      version: '33.0.0',
       components,
     })
   }
@@ -1404,6 +1447,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditSpanLifecycle,
+    auditDeadEnvFlagCoverage,
+    auditQueryDepth,
+    auditShmChannelCleanup,
     auditDbPoolTeardown,
     auditDeadI18nKeyCoverage,
     auditJwtExpiration,
@@ -1524,7 +1571,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v32: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v33: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

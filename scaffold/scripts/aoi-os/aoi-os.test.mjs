@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v32 pipeline with 104 pillars', async () => {
+test('createAoiOsPipeline initializes full v33 pipeline with 108 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v32',
-    taskId: 'TASK-2026-32',
+    feature: 'aoi-os-v33',
+    taskId: 'TASK-2026-33',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,29 +34,29 @@ test('createAoiOsPipeline initializes full v32 pipeline with 104 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Database Pool Drain Prover
-  const dbCheck = pipeline.auditDbPoolTeardown("const p = new Pool(); afterAll(async () => await p.end());")
-  assert.equal(dbCheck.safe, true)
-  assert.equal(dbCheck.drainProof, 'DATABASE_POOL_DRAIN_GUARANTEED')
+  // 2. OpenTelemetry Span Lifecycle Guard
+  const spanCheck = pipeline.auditSpanLifecycle("const s = tracer.startSpan('task'); try { await doWork(); } finally { s.end(); }")
+  assert.equal(spanCheck.safe, true)
+  assert.equal(spanCheck.spanProof, 'SPAN_LIFECYCLE_TERMINATION_PROVEN')
 
-  // 3. Dead i18n Key Pruner
-  const i18nCheck = pipeline.auditDeadI18nKeyCoverage(['dashboard.title'], "const t = $t('dashboard.title');")
-  assert.equal(i18nCheck.allReferenced, true)
-  assert.equal(i18nCheck.i18nProof, 'ALL_I18N_KEYS_REFERENCED')
+  // 3. Dead Env Flag Pruner
+  const envCheck = pipeline.auditDeadEnvFlagCoverage(['PORT'], 'const p = process.env.PORT || 3000;')
+  assert.equal(envCheck.allReferenced, true)
+  assert.equal(envCheck.envProof, 'ALL_ENV_FLAGS_REFERENCED')
 
-  // 4. JWT Expiration Guard
-  const jwtCheck = pipeline.auditJwtExpiration("jwt.sign({ id: 1 }, secret, { expiresIn: '1h' });")
-  assert.equal(jwtCheck.safe, true)
-  assert.equal(jwtCheck.jwtProof, 'JWT_EXPIRATION_INVARIANT_PROVEN')
+  // 4. Query Depth & Algorithmic Complexity Guard
+  const depthCheck = pipeline.auditQueryDepth("const server = new ApolloServer({ schema, validationRules: [depthLimit(5)] });")
+  assert.equal(depthCheck.safe, true)
+  assert.equal(depthCheck.queryDepthProof, 'QUERY_DEPTH_RESTRICTION_PROVEN')
 
-  // 5. Sandbox Symlink Containment Prover
-  const symlinkCheck = pipeline.auditSymlinkContainment("/workspace/.sandboxes/aoi-os-tmp-task1", "src/file.ts")
-  assert.equal(symlinkCheck.contained, true)
-  assert.equal(symlinkCheck.symlinkProof, 'SYMLINK_CONFINEMENT_PROVEN')
+  // 5. Sandbox Shm & IPC Channel Cleanup Prover
+  const shmCheck = pipeline.auditShmChannelCleanup("const { port1, port2 } = new MessageChannel(); afterAll(() => { port1.close(); port2.close(); });")
+  assert.equal(shmCheck.safe, true)
+  assert.equal(shmCheck.shmProof, 'IPC_CHANNEL_CLEANUP_GUARANTEED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v32 sovereign 104-pillar infinite singularity master suite'],
+    decisions: ['Use deterministic v33 transcendent 108-pillar omnipresent singularity master suite'],
     diffSummary: 'server/api/tasks.ts (+80 lines)',
   }, async () => ({ stdout: 'OK' }))
 
