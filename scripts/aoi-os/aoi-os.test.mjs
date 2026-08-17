@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v45 pipeline with 156 pillars', async () => {
+test('createAoiOsPipeline initializes full v46 pipeline with 160 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v45',
-    taskId: 'TASK-2026-45',
+    feature: 'aoi-os-v46',
+    taskId: 'TASK-2026-46',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v45 pipeline with 156 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic Hardlink Recursion & Inode Loop Guard
-  const hardlinkCheck = pipeline.auditHardlinkRecursions("function walk(dir, seen = new Set()) { const s = fs.statSync(dir); if (seen.has(s.ino)) return; seen.add(s.ino); }")
-  assert.equal(hardlinkCheck.safe, true)
-  assert.equal(hardlinkCheck.recursionProof, 'BOUNDED_INODE_RECURSION_ENFORCED')
+  // 2. Atomic Stream Chunk UTF-8 Boundary Guard
+  const chunkCheck = pipeline.auditStreamChunkBoundaries("import { StringDecoder } from 'node:string_decoder'; const dec = new StringDecoder('utf8'); stream.on('data', (d) => dec.write(d));")
+  assert.equal(chunkCheck.safe, true)
+  assert.equal(chunkCheck.boundaryProof, 'SAFE_UTF8_STREAM_BOUNDARY_DECODING_ENFORCED')
 
-  // 3. Dead Package Binary Entrypoint Pruner
-  const binCheck = pipeline.auditPackageBinaries({ bin: { 'aoi-cli': './dist/cli.mjs' } }, ['dist/cli.mjs'])
-  assert.equal(binCheck.clean, true)
-  assert.equal(binCheck.binaryProof, 'PACKAGE_BINARIES_CANONICAL')
+  // 3. Dead TypeScript Project Reference Pruner
+  const tsconfigCheck = pipeline.auditTsconfigReferences({ references: [{ path: './packages/core' }] }, ['packages/core'])
+  assert.equal(tsconfigCheck.clean, true)
+  assert.equal(tsconfigCheck.referenceProof, 'TSCONFIG_PROJECT_REFERENCES_CANONICAL')
 
-  // 4. Safe Cryptographic Elliptic Curve Hardness Guard
-  const ecCheck = pipeline.auditEcCurves("const ecdh = crypto.createECDH('prime256v1');")
-  assert.equal(ecCheck.safe, true)
-  assert.equal(ecCheck.curveProof, 'ROBUST_ELLIPTIC_CURVE_HARDNESS_ENFORCED')
+  // 4. Safe Cryptographic TLS Minimum Protocol Version Guard
+  const tlsCheck = pipeline.auditCryptoTlsVersions("const s = https.createServer({ minVersion: 'TLSv1.3', key, cert });")
+  assert.equal(tlsCheck.safe, true)
+  assert.equal(tlsCheck.tlsProof, 'MODERN_TLS_MIN_VERSION_ENFORCED')
 
-  // 5. Sandbox Dynamic Import Subresource Integrity (SRI) Prover
-  const sriCheck = pipeline.auditSriIntegrity("function loadScript(url, sha) { const s = document.createElement('script'); s.src = url; s.integrity = sha; }")
-  assert.equal(sriCheck.safe, true)
-  assert.equal(sriCheck.sriProof, 'CRYPTOGRAPHIC_SUBRESOURCE_INTEGRITY_ENFORCED')
+  // 5. Sandbox Child Process Stdio Buffer Flush Prover
+  const stdioCheck = pipeline.auditSandboxStdioFlush("const child = spawn(cmd); child.on('close', (c) => resolve(c));")
+  assert.equal(stdioCheck.safe, true)
+  assert.equal(stdioCheck.flushProof, 'COMPLETE_STDIO_STREAM_FLUSH_ENFORCED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v45 sovereign 156-pillar infinite singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+156 lines)',
+    decisions: ['Use deterministic v46 transcendent 160-pillar omnipresent singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+160 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)

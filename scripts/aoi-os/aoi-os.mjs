@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v45 (The Sovereign 156-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix).
+ * Master Orchestrator Engine for AOI-OS v46 (The Transcendent 160-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -68,6 +68,8 @@
  * Safe Cryptographic Timing-Safe Buffer Comparison Guard, Sandbox Worker AbortController Cancellation Prover,
  * Atomic Hardlink Recursion & Inode Loop Guard, Dead Package Binary Entrypoint Pruner,
  * Safe Cryptographic Elliptic Curve Hardness Guard, Sandbox Dynamic Import Subresource Integrity (SRI) Prover,
+ * Atomic Stream Chunk UTF-8 Boundary Guard, Dead TypeScript Project Reference Pruner,
+ * Safe Cryptographic TLS Minimum Protocol Version Guard, Sandbox Child Process Stdio Buffer Flush Prover,
  * and ICM Memory Linking.
  */
 
@@ -114,11 +116,13 @@ import { auditCryptoKdfSafety } from './security-guard/crypto-kdf-guard.mjs'
 import { auditCryptoCipherModeSafety } from './security-guard/crypto-cipher-mode-guard.mjs'
 import { auditCryptoTimingSafeBufferSafety } from './security-guard/crypto-timing-safe-buffer-guard.mjs'
 import { auditCryptoEcCurveSafety } from './security-guard/crypto-ec-curve-guard.mjs'
+import { auditCryptoTlsVersionSafety } from './security-guard/crypto-tls-version-guard.mjs'
 import { auditCacheInvalidation } from './cache-guard/cache-invalidation-guard.mjs'
 import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
 import { auditDeadEnvFlags } from './env-guard/dead-env-pruner.mjs'
 import { validateStructuralConfig } from './config-guard/structural-config-guard.mjs'
 import { auditDeadConfigAliases } from './config-guard/dead-alias-pruner.mjs'
+import { auditDeadTsconfigReferences } from './config-guard/dead-tsconfig-reference-pruner.mjs'
 import { auditDeadRoutes } from './route-guard/dead-route-pruner.mjs'
 import { auditDeadMarkdownDocLinks } from './doc-guard/dead-doc-link-pruner.mjs'
 import { auditDeadGitignoreRules } from './repo-guard/dead-gitignore-pruner.mjs'
@@ -159,6 +163,7 @@ import { proveSandboxMaxBufferSafety } from './sandbox-guard/sandbox-maxbuffer-p
 import { proveSandboxIpcPayloadSafety } from './sandbox-guard/sandbox-ipc-payload-prover.mjs'
 import { proveSandboxAbortControllerSafety } from './sandbox-guard/sandbox-abort-controller-prover.mjs'
 import { proveSandboxSriIntegritySafety } from './sandbox-guard/sandbox-sri-integrity-prover.mjs'
+import { proveSandboxStdioFlushSafety } from './sandbox-guard/sandbox-stdio-flush-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -170,6 +175,7 @@ import { auditFileUmaskSafety } from './storage-guard/file-umask-guard.mjs'
 import { auditTempFileCollisionSafety } from './storage-guard/temp-file-collision-guard.mjs'
 import { auditDirectoryTraversalBoundarySafety } from './storage-guard/directory-traversal-boundary-guard.mjs'
 import { auditHardlinkRecursionSafety } from './storage-guard/hardlink-recursion-guard.mjs'
+import { auditStreamChunkBoundarySafety } from './storage-guard/stream-chunk-boundary-guard.mjs'
 import { auditDeadCssClasses } from './css-guard/dead-css-class-pruner.mjs'
 import { provePortCollisionSafety } from './test-guard/port-collision-prover.mjs'
 import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-estimator.mjs'
@@ -377,6 +383,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits stream data reading for safe multi-byte UTF-8 chunk boundary decoding.
+   *
+   * @param {string} sourceCode
+   */
+  function auditStreamChunkBoundaries(sourceCode) {
+    return auditStreamChunkBoundarySafety(sourceCode)
+  }
+
+  /**
+   * Audits tsconfig.json project references against existing workspace directories.
+   *
+   * @param {object} tsconfigJson
+   * @param {string[]} existingProjectPaths
+   */
+  function auditTsconfigReferences(tsconfigJson = {}, existingProjectPaths = []) {
+    return auditDeadTsconfigReferences(tsconfigJson, existingProjectPaths)
+  }
+
+  /**
+   * Audits TLS/HTTPS socket and agent configurations for secure minimum TLS version.
+   *
+   * @param {string} sourceCode
+   */
+  function auditCryptoTlsVersions(sourceCode) {
+    return auditCryptoTlsVersionSafety(sourceCode)
+  }
+
+  /**
+   * Proves complete stdio stream flush before process exit in sandboxes.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxStdioFlush(sourceCode) {
+    return proveSandboxStdioFlushSafety(sourceCode)
   }
 
   /**
@@ -1413,7 +1456,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '45.0.0',
+      version: '46.0.0',
       components,
     })
   }
@@ -1962,6 +2005,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditStreamChunkBoundaries,
+    auditTsconfigReferences,
+    auditCryptoTlsVersions,
+    auditSandboxStdioFlush,
     auditHardlinkRecursions,
     auditPackageBinaries,
     auditEcCurves,
@@ -2134,7 +2181,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v45: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v46: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
