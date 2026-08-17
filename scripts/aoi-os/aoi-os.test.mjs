@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v34 pipeline with 112 pillars', async () => {
+test('createAoiOsPipeline initializes full v35 pipeline with 116 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v34',
-    taskId: 'TASK-2026-34',
+    feature: 'aoi-os-v35',
+    taskId: 'TASK-2026-35',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,29 +34,29 @@ test('createAoiOsPipeline initializes full v34 pipeline with 112 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Worker Thread Termination Guard
-  const workerCheck = pipeline.auditWorkerTeardown("const w = new Worker('./w.js'); afterAll(async () => await w.terminate());")
-  assert.equal(workerCheck.safe, true)
-  assert.equal(workerCheck.workerProof, 'WORKER_TERMINATION_GUARANTEED')
+  // 2. Browser Storage Quota Guard
+  const storageCheck = pipeline.auditBrowserStorage("try { localStorage.setItem('k', 'v'); } catch(e) {}")
+  assert.equal(storageCheck.safe, true)
+  assert.equal(storageCheck.storageProof, 'BROWSER_STORAGE_QUOTA_SAFE')
 
-  // 3. Dead Store State Pruner
-  const storeCheck = pipeline.auditDeadStoreStateCoverage(['activeFilter'], 'const f = store.activeFilter;')
-  assert.equal(storeCheck.allReferenced, true)
-  assert.equal(storeCheck.storeProof, 'ALL_STORE_PROPERTIES_REFERENCED')
+  // 3. Dead CSS Class Pruner
+  const cssCheck = pipeline.auditDeadCssClassCoverage(['hero-title'], '<h1 class="hero-title">Title</h1>')
+  assert.equal(cssCheck.allReferenced, true)
+  assert.equal(cssCheck.cssClassProof, 'ALL_CSS_CLASSES_REFERENCED')
 
-  // 4. Stream Backpressure Guard
-  const backpressureCheck = pipeline.auditStreamBackpressure("const ok = stream.push(chunk); if (!ok) stream.once('drain', () => {});")
-  assert.equal(backpressureCheck.safe, true)
-  assert.equal(backpressureCheck.backpressureProof, 'STREAMING_BACKPRESSURE_HANDLED')
+  // 4. Port Collision Prover
+  const portCheck = pipeline.auditPortCollisions("const server = http.createServer(); server.listen(0);")
+  assert.equal(portCheck.safe, true)
+  assert.equal(portCheck.portProof, 'EPHEMERAL_PORT_BINDING_PROVEN')
 
-  // 5. Sandbox Privilege Escalation Prover
-  const escalationCheck = pipeline.auditPrivilegeEscalation("chmod 755 ./run.sh && node ./run.sh")
-  assert.equal(escalationCheck.safe, true)
-  assert.equal(escalationCheck.escalationProof, 'PRIVILEGE_ESCALATION_CONTAINMENT_PROVEN')
+  // 5. Sandbox Ulimit Prover
+  const ulimitCheck = pipeline.auditSandboxUlimit("for (const f of files) { const c = await fs.readFile(f); }")
+  assert.equal(ulimitCheck.safe, true)
+  assert.equal(ulimitCheck.ulimitProof, 'BOUNDED_DESCRIPTOR_CONCURRENCY_PROVEN')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v34 absolute 112-pillar universal omniverse master suite'],
+    decisions: ['Use deterministic v35 sovereign 116-pillar infinite singularity master suite'],
     diffSummary: 'server/api/tasks.ts (+80 lines)',
   }, async () => ({ stdout: 'OK' }))
 

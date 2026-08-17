@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v34 (The Absolute 112-Pillar Universal Omniverse Kernel & Autonomous Transcendence Super-Matrix).
+ * Master Orchestrator Engine for AOI-OS v35 (The Sovereign 116-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -45,7 +45,10 @@
  * OpenTelemetry Tracer Span Lifecycle Guard, Dead Environment Variable & Config Flag Pruner,
  * Query Depth & Algorithmic Complexity Guard, Sandbox Shared Memory & IPC Channel Cleanup Prover,
  * Web Worker & Worker Thread Termination Guard, Dead Store State & Pinia Property Pruner,
- * SSE & WebSocket Stream Backpressure Guard, Sandbox Privilege Escalation & Setuid Prover, and ICM Memory Linking.
+ * SSE & WebSocket Stream Backpressure Guard, Sandbox Privilege Escalation & Setuid Prover,
+ * Browser Storage Quota & Expiration Guard, Dead Custom CSS Class & Utility Pruner,
+ * Test Network Port Collision & Ephemeral Binding Prover, Sandbox File Descriptor Concurrency & Ulimit Prover,
+ * and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -103,10 +106,14 @@ import { provePipeCleanupSafety } from './sandbox-guard/pipe-cleanup-prover.mjs'
 import { provePathContainment } from './sandbox-guard/sandbox-path-escape-prover.mjs'
 import { proveSymlinkContainment } from './sandbox-guard/sandbox-symlink-escape-prover.mjs'
 import { provePrivilegeEscalationSafety } from './sandbox-guard/sandbox-privilege-escalation-prover.mjs'
+import { proveSandboxUlimitSafety } from './sandbox-guard/sandbox-ulimit-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
 import { proveShmChannelCleanupSafety } from './sandbox-guard/sandbox-shm-cleanup-prover.mjs'
+import { auditBrowserStorageQuotaSafety } from './storage-guard/browser-storage-quota-guard.mjs'
+import { auditDeadCssClasses } from './css-guard/dead-css-class-pruner.mjs'
+import { provePortCollisionSafety } from './test-guard/port-collision-prover.mjs'
 import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-estimator.mjs'
 import { synthesizeOpenApiSpec } from './contract-docgen/openapi-synthesizer.mjs'
 import { synthesizeE2eTestFlow } from './contract-docgen/e2e-flow-synthesizer.mjs'
@@ -310,6 +317,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits browser storage operations for quota and exception handling.
+   *
+   * @param {string} sourceCode
+   */
+  function auditBrowserStorage(sourceCode) {
+    return auditBrowserStorageQuotaSafety(sourceCode)
+  }
+
+  /**
+   * Audits custom CSS classes against consumer templates to prune dead ones.
+   *
+   * @param {string[]} declaredClasses
+   * @param {string} consumerTemplateCode
+   */
+  function auditDeadCssClassCoverage(declaredClasses = [], consumerTemplateCode = '') {
+    return auditDeadCssClasses(declaredClasses, consumerTemplateCode)
+  }
+
+  /**
+   * Proves ephemeral port binding to prevent parallel test port collisions.
+   *
+   * @param {string} sourceCode
+   */
+  function auditPortCollisions(sourceCode) {
+    return provePortCollisionSafety(sourceCode)
+  }
+
+  /**
+   * Proves bounded file descriptor concurrency to prevent ulimit/EMFILE exhaustion.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxUlimit(sourceCode) {
+    return proveSandboxUlimitSafety(sourceCode)
   }
 
   /**
@@ -941,7 +985,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '34.0.0',
+      version: '35.0.0',
       components,
     })
   }
@@ -1490,6 +1534,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditBrowserStorage,
+    auditDeadCssClassCoverage,
+    auditPortCollisions,
+    auditSandboxUlimit,
     auditWorkerTeardown,
     auditDeadStoreStateCoverage,
     auditStreamBackpressure,
@@ -1618,7 +1666,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v34: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v35: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

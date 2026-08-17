@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v34 (The Absolute 112-Pillar Universal Omniverse Kernel & Autonomous Transcendence Super-Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v35 (The Sovereign 116-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Worker Thread Termination Guard (`runtime-kernel/worker-termination-guard.mjs`)**: Demostración formal de terminación y destrucción de hilos de trabajo (`worker.terminate()`, `pool.destroy()`) en hooks de teardown (0 LLM tokens).
-- **Dead Store State Pruner (`component-guard/dead-store-pruner.mjs`)**: Podado estático de propiedades reactivas huérfanas en stores Pinia/Vuex no alcanzadas en el monorrepositorio (0 LLM tokens).
-- **Stream Backpressure Guard (`stream-guard/stream-backpressure-guard.mjs`)**: Auditoría estática de flujos de emisión SSE y WebSockets para verificar control de flujo por contrapresión (`drain`, `bufferedAmount`) (0 LLM tokens).
-- **Sandbox Privilege Escalation Prover (`sandbox-guard/sandbox-privilege-escalation-prover.mjs`)**: Demostración formal de prohibición de bits setuid/setgid y comandos de elevación de privilegios en sandboxes (0 LLM tokens).
+- **Browser Storage Quota & Expiration Guard (`storage-guard/browser-storage-quota-guard.mjs`)**: Auditoría estática de operaciones en `localStorage`/`IndexedDB` para garantizar manejo de excepciones `QuotaExceededError` y políticas de expiración (0 LLM tokens).
+- **Dead Custom CSS Class & Utility Pruner (`css-guard/dead-css-class-pruner.mjs`)**: Podado estático de clases y selectores CSS huérfanos o no alcanzados en plantillas del monorrepositorio (0 LLM tokens).
+- **Test Port Collision & Ephemeral Binding Prover (`test-guard/port-collision-prover.mjs`)**: Demostración formal de puertos efímeros dinámicos (`server.listen(0)`) y prevención de colisiones `EADDRINUSE` en tests paralelos (0 LLM tokens).
+- **Sandbox File Descriptor Concurrency & Ulimit Prover (`sandbox-guard/sandbox-ulimit-prover.mjs`)**: Demostración formal de concurrencia acotada en I/O de archivos en sandboxes para prevenir saturación de descriptores `EMFILE`/`ulimit` (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 112 Pilares (AOI-OS v34)
+## 🏛️ Matriz Arquitectónica Maestra de 116 Pilares (AOI-OS v35)
 
 ```text
-AOI-OS v34 Architecture Matrix (112 Pillars)
+AOI-OS v35 Architecture Matrix (116 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -216,11 +216,17 @@ AOI-OS v34 Architecture Matrix (112 Pillars)
 │   ├── query-depth-guard.mjs: Auditoría estática de límites de profundidad de consultas GraphQL / REST contra ataques DoS.
 │   └── sandbox-shm-cleanup-prover.mjs: Demostración formal de cierre de canales MessageChannel y descriptores IPC en teardown.
 │
-└── 109-112. Núcleo Absolute 112-Pillar Omniverse Matrix v34 (runtime-kernel/, component-guard/, stream-guard/, sandbox-guard/)
-    ├── worker-termination-guard.mjs: Demostración formal de terminación y destrucción de hilos de trabajo Worker Threads.
-    ├── dead-store-pruner.mjs: Podado estático de propiedades reactivas huérfanas en stores Pinia/Vuex no alcanzadas.
-    ├── stream-backpressure-guard.mjs: Auditoría estática de flujos SSE y WebSockets para verificar contrapresión de búferes.
-    └── sandbox-privilege-escalation-prover.mjs: Demostración formal de prohibición de bits setuid/setgid en sandboxes.
+├── 109-112. Núcleo Absolute 112-Pillar Omniverse Matrix (runtime-kernel/, component-guard/, stream-guard/, sandbox-guard/)
+│   ├── worker-termination-guard.mjs: Demostración formal de terminación y destrucción de hilos de trabajo Worker Threads.
+│   ├── dead-store-pruner.mjs: Podado estático de propiedades reactivas huérfanas en stores Pinia/Vuex no alcanzadas.
+│   ├── stream-backpressure-guard.mjs: Auditoría estática de flujos SSE y WebSockets para verificar contrapresión de búferes.
+│   └── sandbox-privilege-escalation-prover.mjs: Demostración formal de prohibición de bits setuid/setgid en sandboxes.
+│
+└── 113-116. Núcleo Sovereign 116-Pillar Genesis Matrix v35 (storage-guard/, css-guard/, test-guard/, sandbox-guard/)
+    ├── browser-storage-quota-guard.mjs: Auditoría estática de localStorage/IndexedDB contra QuotaExceededError.
+    ├── dead-css-class-pruner.mjs: Podado estático de clases y utilidades CSS huérfanas no alcanzadas en plantillas.
+    ├── port-collision-prover.mjs: Demostración formal de puertos efímeros dinámicos (server.listen(0)) contra colisiones EADDRINUSE.
+    └── sandbox-ulimit-prover.mjs: Demostración formal de concurrencia acotada de descriptores de archivos para prevenir EMFILE/ulimit.
 ```
 
 ---
@@ -263,12 +269,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [35.0.0] - 2026-08-17 (The Sovereign 116-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
+- **Browser Storage Quota & Expiration Guard**: Auditoría estática de operaciones en `localStorage`/`IndexedDB` para garantizar manejo de excepciones `QuotaExceededError` y políticas de expiración (`storage-guard/browser-storage-quota-guard.mjs`).
+- **Dead Custom CSS Class & Utility Pruner**: Podado estático de clases y selectores CSS huérfanos o no alcanzados en plantillas del monorrepositorio (`css-guard/dead-css-class-pruner.mjs`).
+- **Test Port Collision & Ephemeral Binding Prover**: Demostración formal de puertos efímeros dinámicos (`server.listen(0)`) y prevención de colisiones `EADDRINUSE` en tests paralelos (`test-guard/port-collision-prover.mjs`).
+- **Sandbox File Descriptor Concurrency & Ulimit Prover**: Demostración formal de concurrencia acotada en I/O de archivos en sandboxes para prevenir saturación de descriptores `EMFILE`/`ulimit` (`sandbox-guard/sandbox-ulimit-prover.mjs`).
+- **342/342 Tests Pasando al 100%** y **419 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [34.0.0] - 2026-08-17 (The Absolute 112-Pillar Universal Omniverse Kernel & Autonomous Transcendence Super-Matrix)
 - **Worker Thread Termination Guard**: Demostración formal de terminación y destrucción de hilos de trabajo (`worker.terminate()`, `pool.destroy()`) en hooks de teardown (`runtime-kernel/worker-termination-guard.mjs`).
 - **Dead Store State Pruner**: Podado estático de propiedades reactivas huérfanas en stores Pinia/Vuex no alcanzadas en el monorrepositorio (`component-guard/dead-store-pruner.mjs`).
 - **Stream Backpressure Guard**: Auditoría estática de flujos de emisión SSE y WebSockets para verificar control de flujo por contrapresión (`drain`, `bufferedAmount`) (`stream-guard/stream-backpressure-guard.mjs`).
 - **Sandbox Privilege Escalation Prover**: Demostración formal de prohibición de bits setuid/setgid y comandos de elevación de privilegios en sandboxes (`sandbox-guard/sandbox-privilege-escalation-prover.mjs`).
-- **334/334 Tests Pasando al 100%** y **411 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [33.0.0] - 2026-08-17 (The Transcendent 108-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
 - **OpenTelemetry Tracer Span Lifecycle Guard**: Demostración formal de cierre y finalización de spans de telemetría (`span.end()`) en bloques `finally` (`telemetry/span-lifecycle-guard.mjs`).
