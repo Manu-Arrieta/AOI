@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v59 pipeline with 212 pillars', async () => {
+test('createAoiOsPipeline initializes full v60 pipeline with 216 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v59',
-    taskId: 'TASK-2026-59',
+    feature: 'aoi-os-v60',
+    taskId: 'TASK-2026-60',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v59 pipeline with 212 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic File Truncate Boundary Guard
-  const truncateCheck = pipeline.auditFileTruncateBoundaries("async function clear(fd) { await acquireLock('f'); await fs.promises.ftruncate(fd, 0); }")
-  assert.equal(truncateCheck.safe, true)
-  assert.equal(truncateCheck.truncateProof, 'FILE_TRUNCATE_BOUNDARY_LOCKED')
+  // 2. Atomic File Watcher Debounce Guard
+  const watcherCheck = pipeline.auditFileWatcherDebounces("let t; const w = fs.watch('/src', () => { clearTimeout(t); t = setTimeout(run, 100); }); function close() { w.close(); }")
+  assert.equal(watcherCheck.safe, true)
+  assert.equal(watcherCheck.watcherProof, 'FILE_WATCHER_DEBOUNCED_AND_DISPOSED')
 
-  // 3. Dead TypeScript Declaration Map Pruner
-  const declMapCheck = pipeline.auditTsconfigDeclarationMaps({ compilerOptions: { declaration: true, declarationMap: true } })
-  assert.equal(declMapCheck.clean, true)
-  assert.equal(declMapCheck.declarationMapProof, 'TSCONFIG_DECLARATION_MAP_CONSISTENT')
+  // 3. Dead TypeScript Exact Optional Properties Pruner
+  const exactOptCheck = pipeline.auditTsconfigExactOptionals({ compilerOptions: { strict: true, exactOptionalPropertyTypes: true } })
+  assert.equal(exactOptCheck.clean, true)
+  assert.equal(exactOptCheck.exactOptionalProof, 'TSCONFIG_EXACT_OPTIONAL_CANONICAL')
 
-  // 4. Safe Cryptographic TLS SAN Guard
-  const tlsSanCheck = pipeline.auditCryptoTlsSans("const s = tls.connect(443, 'a.com', { checkServerIdentity: (h, c) => c.subjectaltname ? undefined : tls.checkServerIdentity(h, c) });")
-  assert.equal(tlsSanCheck.safe, true)
-  assert.equal(tlsSanCheck.tlsSanProof, 'TLS_SAN_RFC6125_VERIFIED')
+  // 4. Safe Cryptographic TLS SNI Guard
+  const tlsSniCheck = pipeline.auditCryptoTlsSnis("const s = tls.connect({ host: '10.0.0.1', port: 443, servername: 'api.example.com' });")
+  assert.equal(tlsSniCheck.safe, true)
+  assert.equal(tlsSniCheck.tlsSniProof, 'TLS_SNI_RFC6066_ENFORCED')
 
-  // 5. Sandbox Process Windows Batch File Prover
-  const batCheck = pipeline.auditSandboxProcessBatCmds("const args = raw.map(escape); spawn('run.bat', args, { windowsVerbatimArguments: true });")
-  assert.equal(batCheck.safe, true)
-  assert.equal(batCheck.batchCmdProof, 'WINDOWS_BATCH_ARGS_SANITIZED')
+  // 5. Sandbox Process Windows Path Normalization Prover
+  const winPathCheck = pipeline.auditSandboxProcessWindowsPaths("const bin = path.resolve('./bin/runner.exe'); spawn(bin, []);")
+  assert.equal(winPathCheck.safe, true)
+  assert.equal(winPathCheck.windowsPathProof, 'CROSS_PLATFORM_SPAWN_PATH_NORMALIZED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v59 sovereign 212-pillar infinite singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+212 lines)',
+    decisions: ['Use deterministic v60 grand epistemic 216-pillar master core'],
+    diffSummary: 'server/api/tasks.ts (+216 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
