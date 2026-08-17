@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v57 (The Sovereign 204-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix).
+ * Master Orchestrator Engine for AOI-OS v58 (The Transcendent 208-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -92,6 +92,8 @@
  * Safe Cryptographic RSA-PSS Padding & Salt Guard, Sandbox Process windowsHide Isolation Prover,
  * Atomic Stream objectMode & HighWaterMark Scale Guard, Dead TypeScript resolveJsonModule Pruner,
  * Safe Cryptographic Decipher AuthTag Order Guard, Sandbox Process IPC Serialization Prover,
+ * Atomic File Append Sequential Lock Guard, Dead TypeScript Root Types Leakage Pruner,
+ * Safe Cryptographic X.509 Certificate Guard, Sandbox Process Detached Teardown Prover,
  * and ICM Memory Linking.
  */
 
@@ -150,6 +152,7 @@ import { auditCryptoEddsaVerifySafety } from './security-guard/crypto-eddsa-veri
 import { auditCryptoKeyPairSafety } from './security-guard/crypto-key-pair-curve-guard.mjs'
 import { auditCryptoRsaPssPaddingSafety } from './security-guard/crypto-rsa-pss-padding-guard.mjs'
 import { auditCryptoDecipherAuthTagSafety } from './security-guard/crypto-decipher-authtag-guard.mjs'
+import { auditCryptoX509CertSafety } from './security-guard/crypto-x509-cert-guard.mjs'
 import { auditCacheInvalidation } from './cache-guard/cache-invalidation-guard.mjs'
 import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
 import { auditDeadEnvFlags } from './env-guard/dead-env-pruner.mjs'
@@ -167,6 +170,7 @@ import { auditDeadTsconfigInterop } from './config-guard/dead-tsconfig-interop-p
 import { auditDeadTsconfigStrictFlags } from './config-guard/dead-tsconfig-strict-flag-pruner.mjs'
 import { auditDeadTsconfigTargetLib } from './config-guard/dead-tsconfig-target-lib-pruner.mjs'
 import { auditDeadTsconfigJsonModule } from './config-guard/dead-tsconfig-json-module-pruner.mjs'
+import { auditDeadTsconfigRootTypes } from './config-guard/dead-tsconfig-root-types-pruner.mjs'
 import { auditDeadRoutes } from './route-guard/dead-route-pruner.mjs'
 import { auditDeadMarkdownDocLinks } from './doc-guard/dead-doc-link-pruner.mjs'
 import { auditDeadGitignoreRules } from './repo-guard/dead-gitignore-pruner.mjs'
@@ -200,6 +204,7 @@ import { auditStreamPauseResumeSafety } from './storage-guard/stream-pause-resum
 import { auditStreamPipelineAsyncSafety } from './storage-guard/stream-pipeline-async-guard.mjs'
 import { auditStreamHalfCloseSafety } from './storage-guard/stream-half-close-guard.mjs'
 import { auditStreamObjectModeHighWaterMarkSafety } from './storage-guard/stream-objectmode-highwatermark-guard.mjs'
+import { auditFileAppendLockSafety } from './storage-guard/file-append-lock-guard.mjs'
 import { proveSignalTeardown } from './sandbox-guard/signal-teardown-prover.mjs'
 import { provePipeCleanupSafety } from './sandbox-guard/pipe-cleanup-prover.mjs'
 import { provePathContainment } from './sandbox-guard/sandbox-path-escape-prover.mjs'
@@ -228,6 +233,7 @@ import { proveSandboxWorkerHeapLimitSafety } from './sandbox-guard/sandbox-worke
 import { proveSandboxWorkerTransferListSafety } from './sandbox-guard/sandbox-worker-transfer-list-prover.mjs'
 import { proveSandboxProcessWindowsHideSafety } from './sandbox-guard/sandbox-process-windows-hide-prover.mjs'
 import { proveSandboxProcessSerializationSafety } from './sandbox-guard/sandbox-process-serialization-prover.mjs'
+import { proveSandboxProcessDetachedTeardownSafety } from './sandbox-guard/sandbox-process-detached-teardown-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -449,6 +455,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits file append source code for sequential locking or serialized queue protection.
+   *
+   * @param {string} sourceCode
+   */
+  function auditFileAppendLocks(sourceCode) {
+    return auditFileAppendLockSafety(sourceCode)
+  }
+
+  /**
+   * Audits tsconfig.json compilerOptions for leaking Node types in frontend projects.
+   *
+   * @param {object} tsconfigJson
+   * @param {boolean} [isFrontendPackage=false]
+   */
+  function auditTsconfigRootTypes(tsconfigJson = {}, isFrontendPackage = false) {
+    return auditDeadTsconfigRootTypes(tsconfigJson, isFrontendPackage)
+  }
+
+  /**
+   * Audits X.509 certificate handling source code for explicit host/issuer/validity verification.
+   *
+   * @param {string} sourceCode
+   */
+  function auditCryptoX509Certs(sourceCode) {
+    return auditCryptoX509CertSafety(sourceCode)
+  }
+
+  /**
+   * Proves explicit negative PID process group teardown on detached child processes.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxProcessDetachedTeardowns(sourceCode) {
+    return proveSandboxProcessDetachedTeardownSafety(sourceCode)
   }
 
   /**
@@ -1924,7 +1967,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '57.0.0',
+      version: '58.0.0',
       components,
     })
   }
@@ -2473,6 +2516,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditFileAppendLocks,
+    auditTsconfigRootTypes,
+    auditCryptoX509Certs,
+    auditSandboxProcessDetachedTeardowns,
     auditStreamObjectModeHighWaterMarks,
     auditTsconfigJsonModules,
     auditCryptoDecipherAuthTags,
@@ -2693,7 +2740,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v57: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v58: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

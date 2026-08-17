@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v57 (The Sovereign 204-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v58 (The Transcendent 208-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Atomic Stream objectMode & HighWaterMark Scale Guard (`storage-guard/stream-objectmode-highwatermark-guard.mjs`)**: Auditoría estática de opciones de instanciación de streams (`Readable`, `Writable`, `Transform`) cuando `objectMode: true` está activo para certificar que `highWaterMark` no exceda límites proporcionales a objetos (`<= 1024`), evitando retención masiva de objetos en el heap y caídas por OOM (0 LLM tokens).
-- **Dead TypeScript resolveJsonModule Pruner (`config-guard/dead-tsconfig-json-module-pruner.mjs`)**: Podado estático de declaraciones redundantes de `resolveJsonModule: true` en `tsconfig.json` cuando `moduleResolution` se configura como `"bundler"`, `"node16"` o `"nodenext"` (donde el soporte de JSON es nativo), manteniendo la configuración limpia y concisa (0 LLM tokens).
-- **Safe Cryptographic Decipher AuthTag Order Guard (`security-guard/crypto-decipher-authtag-guard.mjs`)**: Auditoría estática de flujos de descifrado autenticado (`crypto.createDecipheriv` con GCM, CCM, OCB, ChaCha20-Poly1305) para certificar que `decipher.setAuthTag(authTag)` se invoque estrictamente antes de `decipher.final()`, garantizando verificación previa de autenticidad e integridad (0 LLM tokens).
-- **Sandbox Process IPC Serialization Prover (`sandbox-guard/sandbox-process-serialization-prover.mjs`)**: Demostración formal de definición explícita de `serialization: 'advanced'` en llamadas `fork()` dentro de sandboxes, habilitando serialización nativa V8 para transferencias complejas (`Map`, `Set`, `BigInt`, `Error`) sin caídas de serialización JSON (0 LLM tokens).
+- **Atomic File Append Sequential Lock Guard (`storage-guard/file-append-lock-guard.mjs`)**: Auditoría estática de flujos de escritura asíncronos (`fs.appendFile`, `fs.promises.appendFile`) en logs y almacenes de eventos para certificar la presencia de una cola secuencial, mutex en memoria o sincronismo garantizado, evitando entrelazado de bytes y líneas corruptas bajo alta concurrencia (0 LLM tokens).
+- **Dead TypeScript Root Types Leakage Pruner (`config-guard/dead-tsconfig-root-types-pruner.mjs`)**: Podado estático de declaraciones de tipos de Node (`"types": ["node"]`) en `tsconfig.json` de paquetes cliente/frontend, asegurando aislamiento total entre APIs del navegador y del runtime del servidor y evitando el uso inadvertido de globales de Node (`Buffer`, `process`, `fs`) en el cliente (0 LLM tokens).
+- **Safe Cryptographic X.509 Certificate Guard (`security-guard/crypto-x509-cert-guard.mjs`)**: Auditoría estática de instanciaciones `crypto.X509Certificate` para certificar que el código invoque explícitamente comprobaciones de identidad de host (`.checkHost()`), emisor (`.checkIssued()`) o periodos de validez (`.validTo`/`.validFrom`) antes de otorgar confianza criptográfica, previniendo vulnerabilidades MITM (0 LLM tokens).
+- **Sandbox Process Detached Teardown Prover (`sandbox-guard/sandbox-process-detached-teardown-prover.mjs`)**: Demostración formal de que los subprocesos lanzados con `detached: true` en sandboxes implementen destrucción explícita de todo el grupo de procesos mediante PID negativo (`process.kill(-child.pid, 'SIGTERM')`) en los ganchos de limpieza, impidiendo la persistencia de procesos demonio huérfanos (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 204 Pilares (AOI-OS v57)
+## 🏛️ Matriz Arquitectónica Maestra de 208 Pilares (AOI-OS v58)
 
 ```text
-AOI-OS v57 Architecture Matrix (204 Pillars)
+AOI-OS v58 Architecture Matrix (208 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -354,11 +354,17 @@ AOI-OS v57 Architecture Matrix (204 Pillars)
 │   ├── crypto-rsa-pss-padding-guard.mjs: Auditoría estática de crypto.sign/verify con RSA_PKCS1_PSS_PADDING para certificar especificación explícita de saltLength.
 │   └── sandbox-process-windows-hide-prover.mjs: Demostración formal de definición explícita de windowsHide: true en subprocesos de sandbox multiplataforma.
 │
-└── 201-204. Núcleo Sovereign 204-Pillar Master Matrix v57 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-    ├── stream-objectmode-highwatermark-guard.mjs: Auditoría estática de streams objectMode para certificar cota proporcional a objetos (highWaterMark <= 1024).
-    ├── dead-tsconfig-json-module-pruner.mjs: Podado estático de resolveJsonModule redundante bajo resoluciones modernas (bundler, node16, nodenext) en tsconfig.json.
-    ├── crypto-decipher-authtag-guard.mjs: Auditoría estática de descifrado AEAD para certificar que setAuthTag preceda estrictamente a decipher.final().
-    └── sandbox-process-serialization-prover.mjs: Demostración formal de definición explícita de serialization: 'advanced' en llamadas fork de sandbox.
+├── 201-204. Núcleo Sovereign 204-Pillar Master Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+│   ├── stream-objectmode-highwatermark-guard.mjs: Auditoría estática de streams objectMode para certificar cota proporcional a objetos (highWaterMark <= 1024).
+│   ├── dead-tsconfig-json-module-pruner.mjs: Podado estático de resolveJsonModule redundante bajo resoluciones modernas (bundler, node16, nodenext) en tsconfig.json.
+│   ├── crypto-decipher-authtag-guard.mjs: Auditoría estática de descifrado AEAD para certificar que setAuthTag preceda estrictamente a decipher.final().
+│   └── sandbox-process-serialization-prover.mjs: Demostración formal de definición explícita de serialization: 'advanced' en llamadas fork de sandbox.
+│
+└── 205-208. Núcleo Transcendente 208-Pillar Master Matrix v58 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+    ├── file-append-lock-guard.mjs: Auditoría estática de escrituras asíncronas appendFile para certificar colas secuenciales o mutex en logs y journals.
+    ├── dead-tsconfig-root-types-pruner.mjs: Podado estático de tipos node redundantes y con fuga en configuraciones frontend de tsconfig.json.
+    ├── crypto-x509-cert-guard.mjs: Auditoría estática de crypto.X509Certificate para certificar validación explícita de host/emisor (checkHost, checkIssued).
+    └── sandbox-process-detached-teardown-prover.mjs: Demostración formal de destrucción explícita de grupo de procesos (-pid) en subprocesos detached de sandbox.
 ```
 
 ---
@@ -401,18 +407,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
-### [57.0.0] - 2026-08-17 (The Sovereign 204-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
-- **Atomic Stream objectMode & HighWaterMark Scale Guard**: Auditoría estática de opciones de instanciación de streams (`Readable`, `Writable`, `Transform`) cuando `objectMode: true` está activo para certificar que `highWaterMark` no exceda límites proporcionales a objetos (`<= 1024`), evitando retención masiva de objetos en el heap y caídas por OOM (`storage-guard/stream-objectmode-highwatermark-guard.mjs`).
-- **Dead TypeScript resolveJsonModule Pruner**: Podado estático de declaraciones redundantes de `resolveJsonModule: true` en `tsconfig.json` cuando `moduleResolution` se configura como `"bundler"`, `"node16"` o `"nodenext"` (donde el soporte de JSON es nativo), manteniendo la configuración limpia y concisa (`config-guard/dead-tsconfig-json-module-pruner.mjs`).
-- **Safe Cryptographic Decipher AuthTag Order Guard**: Auditoría estática de flujos de descifrado autenticado (`crypto.createDecipheriv` con GCM, CCM, OCB, ChaCha20-Poly1305) para certificar que `decipher.setAuthTag(authTag)` se invoque estrictamente antes de `decipher.final()`, garantizando verificación previa de autenticidad e integridad (`security-guard/crypto-decipher-authtag-guard.mjs`).
-- **Sandbox Process IPC Serialization Prover**: Demostración formal de definición explícita de `serialization: 'advanced'` en llamadas `fork()` dentro de sandboxes, habilitando serialización nativa V8 para transferencias complejas (`Map`, `Set`, `BigInt`, `Error`) sin caídas de serialización JSON (`sandbox-guard/sandbox-process-serialization-prover.mjs`).
-- **518/518 Tests Pasando al 100%** y **595 archivos gobernados en paridad absoluta con scaffold/**.
+### [58.0.0] - 2026-08-17 (The Transcendent 208-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
+- **Atomic File Append Sequential Lock Guard**: Auditoría estática de flujos de escritura asíncronos (`fs.appendFile`, `fs.promises.appendFile`) en logs y almacenes de eventos para certificar la presencia de una cola secuencial, mutex en memoria o sincronismo garantizado, evitando entrelazado de bytes y líneas corruptas bajo alta concurrencia (`storage-guard/file-append-lock-guard.mjs`).
+- **Dead TypeScript Root Types Leakage Pruner**: Podado estático de declaraciones de tipos de Node (`"types": ["node"]`) en `tsconfig.json` de paquetes cliente/frontend, asegurando aislamiento total entre APIs del navegador y del runtime del servidor y evitando el uso inadvertido de globales de Node (`Buffer`, `process`, `fs`) en el cliente (`config-guard/dead-tsconfig-root-types-pruner.mjs`).
+- **Safe Cryptographic X.509 Certificate Guard**: Auditoría estática de instanciaciones `crypto.X509Certificate` para certificar que el código invoque explícitamente comprobaciones de identidad de host (`.checkHost()`), emisor (`.checkIssued()`) o periodos de validez (`.validTo`/`.validFrom`) antes de otorgar confianza criptográfica, previniendo vulnerabilidades MITM (`security-guard/crypto-x509-cert-guard.mjs`).
+- **Sandbox Process Detached Teardown Prover**: Demostración formal de que los subprocesos lanzados con `detached: true` en sandboxes implementen destrucción explícita de todo el grupo de procesos mediante PID negativo (`process.kill(-child.pid, 'SIGTERM')`) en los ganchos de limpieza, impidiendo la persistencia de procesos demonio huérfanos (`sandbox-guard/sandbox-process-detached-teardown-prover.mjs`).
+- **526/526 Tests Pasando al 100%** y **603 archivos gobernados en paridad absoluta con scaffold/**.
 
-### [56.0.0] - 2026-08-17 (The Bicentennial 200-Pillar Omnipresent Singularity & Universal Transcendence Master Matrix)
-- **Atomic Stream Duplex & Half-Close Socket Guard**: Auditoría estática de sockets TCP/TLS y streams Duplex (`net.Socket`, `tls.TLSSocket`, `stream.Duplex`) configurados con `allowHalfOpen: true` para certificar la presencia de manejadores de evento `end`/`close` o llamadas deterministas a `.destroy()`, evitando sockets estancados en `CLOSE_WAIT` y fugas de descriptores de archivos del sistema operativo (`storage-guard/stream-half-close-guard.mjs`).
-- **Dead TypeScript Target-Lib Consistency Pruner**: Podado estático de entradas redundantes en `compilerOptions.lib` (ej. `"lib": ["ES2022"]`) cuando `"target": "ES2022"` ya está configurado en `tsconfig.json` (dado que `target` incluye implícitamente su propia librería estándar), reduciendo la memoria del parser de `tsc` y LSP (`config-guard/dead-tsconfig-target-lib-pruner.mjs`).
-- **Safe Cryptographic RSA-PSS Padding & Salt Guard**: Auditoría estática de llamadas a `crypto.sign()` y `crypto.verify()` cuando se utiliza `RSA_PKCS1_PSS_PADDING` para certificar que el parámetro `saltLength` esté configurado explícitamente (ej. `crypto.constants.RSA_PSS_SALTLEN_DIGEST`), previniendo vulnerabilidades de maleabilidad de firmas RSA (RFC 8017 / NIST SP 800-56B) (`security-guard/crypto-rsa-pss-padding-guard.mjs`).
-- **Sandbox Process windowsHide Isolation Prover**: Demostración formal de definición explícita de `windowsHide: true` en opciones de `spawn()` / `exec()` / `fork()` para subprocesos de sandbox, garantizando ejecución headless, silenciosa y hermética en entornos multiplataforma (Windows/macOS/Linux) (`sandbox-guard/sandbox-process-windows-hide-prover.mjs`).
+### [57.0.0] - 2026-08-17 (The Sovereign 204-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
+- **Atomic Stream objectMode & HighWaterMark Scale Guard**: Auditoría estática de streams `objectMode` para certificar cota proporcional a objetos (`highWaterMark <= 1024`), evitando OOM (`storage-guard/stream-objectmode-highwatermark-guard.mjs`).
+- **Dead TypeScript resolveJsonModule Pruner**: Podado estático de `resolveJsonModule: true` redundante bajo `moduleResolution` moderno (`config-guard/dead-tsconfig-json-module-pruner.mjs`).
+- **Safe Cryptographic Decipher AuthTag Order Guard**: Auditoría estática de flujos de descifrado AEAD para certificar que `setAuthTag()` preceda a `decipher.final()` (`security-guard/crypto-decipher-authtag-guard.mjs`).
+- **Sandbox Process IPC Serialization Prover**: Demostración formal de `serialization: 'advanced'` en llamadas `fork()` de sandbox (`sandbox-guard/sandbox-process-serialization-prover.mjs`).
 
 ---
 

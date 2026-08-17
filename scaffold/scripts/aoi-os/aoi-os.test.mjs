@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v57 pipeline with 204 pillars', async () => {
+test('createAoiOsPipeline initializes full v58 pipeline with 208 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v57',
-    taskId: 'TASK-2026-57',
+    feature: 'aoi-os-v58',
+    taskId: 'TASK-2026-58',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v57 pipeline with 204 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic Stream objectMode & HighWaterMark Scale Guard
-  const objectModeCheck = pipeline.auditStreamObjectModeHighWaterMarks("const s = new Transform({ objectMode: true, highWaterMark: 16 });")
-  assert.equal(objectModeCheck.safe, true)
-  assert.equal(objectModeCheck.objectModeProof, 'OBJECT_MODE_HIGHWATERMARK_SCALED')
+  // 2. Atomic File Append Sequential Lock Guard
+  const appendLockCheck = pipeline.auditFileAppendLocks("const q = Promise.resolve(); async function append(d) { q = q.then(() => fs.promises.appendFile('/f', d)); }")
+  assert.equal(appendLockCheck.safe, true)
+  assert.equal(appendLockCheck.appendLockProof, 'FILE_APPEND_CONCURRENCY_LOCKED')
 
-  // 3. Dead TypeScript resolveJsonModule Pruner
-  const jsonModuleCheck = pipeline.auditTsconfigJsonModules({ compilerOptions: { moduleResolution: 'bundler' } })
-  assert.equal(jsonModuleCheck.clean, true)
-  assert.equal(jsonModuleCheck.jsonModuleProof, 'TSCONFIG_JSON_MODULE_CANONICAL')
+  // 3. Dead TypeScript Root Types Leakage Pruner
+  const rootTypesCheck = pipeline.auditTsconfigRootTypes({ compilerOptions: { lib: ['DOM'], types: ['vite/client'] } }, true)
+  assert.equal(rootTypesCheck.clean, true)
+  assert.equal(rootTypesCheck.rootTypesProof, 'FRONTEND_TYPES_CONFINED')
 
-  // 4. Safe Cryptographic Decipher AuthTag Order Guard
-  const decipherCheck = pipeline.auditCryptoDecipherAuthTags("const d = crypto.createDecipheriv('aes-256-gcm', k, iv); d.setAuthTag(tag); d.final();")
-  assert.equal(decipherCheck.safe, true)
-  assert.equal(decipherCheck.authTagOrderProof, 'AEAD_DECIPHER_AUTH_TAG_ORDER_VERIFIED')
+  // 4. Safe Cryptographic X.509 Certificate Guard
+  const x509Check = pipeline.auditCryptoX509Certs("const c = new crypto.X509Certificate(pem); if (c.checkHost('a.com')) trust(c);")
+  assert.equal(x509Check.safe, true)
+  assert.equal(x509Check.x509Proof, 'X509_CERTIFICATE_VALIDATED')
 
-  // 5. Sandbox Process IPC Serialization Prover
-  const ipcCheck = pipeline.auditSandboxProcessSerializations("const p = fork('./worker.js', [], { cwd: '/s', serialization: 'advanced' });")
-  assert.equal(ipcCheck.safe, true)
-  assert.equal(ipcCheck.serializationProof, 'V8_ADVANCED_IPC_SERIALIZATION_ENFORCED')
+  // 5. Sandbox Process Detached Teardown Prover
+  const detachedCheck = pipeline.auditSandboxProcessDetachedTeardowns("const p = spawn('d', [], { detached: true }); function exit() { process.kill(-p.pid, 'SIGTERM'); }")
+  assert.equal(detachedCheck.safe, true)
+  assert.equal(detachedCheck.detachedTeardownProof, 'DETACHED_PROCESS_GROUP_TEARDOWN_ENFORCED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v57 sovereign 204-pillar infinite singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+204 lines)',
+    decisions: ['Use deterministic v58 sovereign 208-pillar infinite singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+208 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
