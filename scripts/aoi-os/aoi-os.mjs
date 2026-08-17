@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v42 (The Transcendent 144-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core).
+ * Master Orchestrator Engine for AOI-OS v43 (The Sovereign 148-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -62,6 +62,8 @@
  * Safe Shell Command Argument Quoting Guard, Sandbox Process Group Signal Trap Prover,
  * Atomic File Permissions & umask Guard, Dead Workspace Protocol Dependency Pruner,
  * Safe Cryptographic KDF (PBKDF2/Scrypt) Guard, Sandbox Child Process MaxBuffer Overflow Prover,
+ * Atomic Temporary File Collision & Cryptographic Prefix Guard, Dead Lifecycle Script Hook Pruner,
+ * Safe Cryptographic Cipher Mode & GCM Auth Tag Guard, Sandbox Child Process IPC Message Bounds Prover,
  * and ICM Memory Linking.
  */
 
@@ -105,6 +107,7 @@ import { auditCryptoRandomSafety } from './security-guard/crypto-random-guard.mj
 import { auditRegexUnicodeSafety } from './security-guard/regex-flag-guard.mjs'
 import { auditShellQuoteSafety } from './security-guard/shell-quote-guard.mjs'
 import { auditCryptoKdfSafety } from './security-guard/crypto-kdf-guard.mjs'
+import { auditCryptoCipherModeSafety } from './security-guard/crypto-cipher-mode-guard.mjs'
 import { auditCacheInvalidation } from './cache-guard/cache-invalidation-guard.mjs'
 import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
 import { auditDeadEnvFlags } from './env-guard/dead-env-pruner.mjs'
@@ -123,6 +126,7 @@ import { auditDeadPackageExports } from './export-guard/dead-export-package-prun
 import { auditDeadPackageScripts } from './package-guard/dead-script-pruner.mjs'
 import { auditDeadWorkspacePackages } from './package-guard/dead-workspace-package-pruner.mjs'
 import { auditDeadWorkspaceProtocols } from './package-guard/dead-workspace-protocol-pruner.mjs'
+import { auditDeadScriptHooks } from './package-guard/dead-script-hook-pruner.mjs'
 import { auditDeadBarrelDuplicates } from './export-guard/dead-barrel-duplicate-pruner.mjs'
 import { auditDeadI18nKeys } from './i18n-guard/dead-i18n-pruner.mjs'
 import { proveDbPoolDrainSafety } from './db-guard/db-pool-drain-prover.mjs'
@@ -144,6 +148,7 @@ import { proveSandboxFdIsolationSafety } from './sandbox-guard/sandbox-fd-cloexe
 import { proveSandboxPrioritySafety } from './sandbox-guard/sandbox-priority-prover.mjs'
 import { proveSandboxSignalTrapSafety } from './sandbox-guard/sandbox-signal-trap-prover.mjs'
 import { proveSandboxMaxBufferSafety } from './sandbox-guard/sandbox-maxbuffer-prover.mjs'
+import { proveSandboxIpcPayloadSafety } from './sandbox-guard/sandbox-ipc-payload-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -152,6 +157,7 @@ import { auditBrowserStorageQuotaSafety } from './storage-guard/browser-storage-
 import { auditAtomicFileWriteSafety } from './storage-guard/atomic-file-write-guard.mjs'
 import { auditFileLockLeaseSafety } from './storage-guard/file-lock-lease-guard.mjs'
 import { auditFileUmaskSafety } from './storage-guard/file-umask-guard.mjs'
+import { auditTempFileCollisionSafety } from './storage-guard/temp-file-collision-guard.mjs'
 import { auditDeadCssClasses } from './css-guard/dead-css-class-pruner.mjs'
 import { provePortCollisionSafety } from './test-guard/port-collision-prover.mjs'
 import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-estimator.mjs'
@@ -359,6 +365,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits temporary file creation for cryptographically non-colliding prefixes.
+   *
+   * @param {string} sourceCode
+   */
+  function auditTempFiles(sourceCode) {
+    return auditTempFileCollisionSafety(sourceCode)
+  }
+
+  /**
+   * Audits package.json for dead or broken lifecycle script hooks.
+   *
+   * @param {object} packageJson
+   * @param {string[]} validCommandsOrScripts
+   */
+  function auditScriptHooks(packageJson = {}, validCommandsOrScripts = []) {
+    return auditDeadScriptHooks(packageJson, validCommandsOrScripts)
+  }
+
+  /**
+   * Audits symmetric encryption for modern authenticated AEAD/GCM cipher modes.
+   *
+   * @param {string} sourceCode
+   */
+  function auditCipherModes(sourceCode) {
+    return auditCryptoCipherModeSafety(sourceCode)
+  }
+
+  /**
+   * Proves bounded IPC payload size and prevents V8 serialization crashes in sandboxes.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxIpcPayloads(sourceCode) {
+    return proveSandboxIpcPayloadSafety(sourceCode)
   }
 
   /**
@@ -1284,7 +1327,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '42.0.0',
+      version: '43.0.0',
       components,
     })
   }
@@ -1833,6 +1876,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditTempFiles,
+    auditScriptHooks,
+    auditCipherModes,
+    auditSandboxIpcPayloads,
     auditFileUmask,
     auditWorkspaceProtocols,
     auditCryptoKdf,
@@ -1993,7 +2040,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v42: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v43: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

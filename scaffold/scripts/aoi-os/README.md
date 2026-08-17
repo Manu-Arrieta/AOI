@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v42 (The Transcendent 144-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v43 (The Sovereign 148-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Atomic File Permissions & umask Guard (`storage-guard/file-umask-guard.mjs`)**: Auditoría estática de operaciones de creación de archivos sensibles para certificar permisos POSIX restrictivos (`mode: 0o600`) o `process.umask(0o077)` (0 LLM tokens).
-- **Dead Workspace Protocol Dependency Pruner (`package-guard/dead-workspace-protocol-pruner.mjs`)**: Podado estático de dependencias rotas del tipo `workspace:*` / `workspace:^` en `package.json` no presentes en el monorrepositorio (0 LLM tokens).
-- **Safe Cryptographic KDF Salt & Iteration Guard (`security-guard/crypto-kdf-guard.mjs`)**: Auditoría estática de funciones de derivación de claves (PBKDF2/Scrypt) para garantizar sales de 16+ bytes e iteraciones OWASP (≥100,000) (0 LLM tokens).
-- **Sandbox Child Process MaxBuffer Overflow Prover (`sandbox-guard/sandbox-maxbuffer-prover.mjs`)**: Demostración formal de configuración de límites `maxBuffer` explícitos en subprocesos para prevenir caídas fatales `ERR_CHILD_PROCESS_STDIO_MAXBUFFER` (0 LLM tokens).
+- **Atomic Temporary File Collision & Cryptographic Prefix Guard (`storage-guard/temp-file-collision-guard.mjs`)**: Auditoría estática de rutinas de generación de archivos temporales para garantizar prefijos criptográficos no colisionantes (`crypto.randomUUID()`) contra carreras TOCTOU (0 LLM tokens).
+- **Dead Lifecycle Script Hook Pruner (`package-guard/dead-script-hook-pruner.mjs`)**: Podado estático de hooks de ciclo de vida (`preinstall`, `postinstall`, `prepare`) en `package.json` que referencian scripts inexistentes (0 LLM tokens).
+- **Safe Cryptographic Cipher Mode & GCM Auth Tag Guard (`security-guard/crypto-cipher-mode-guard.mjs`)**: Auditoría estática de cifrado simétrico para garantizar modos autenticados AEAD (`aes-256-gcm`) y extracción/verificación de auth tag (0 LLM tokens).
+- **Sandbox Child Process IPC Message Length Prover (`sandbox-guard/sandbox-ipc-payload-prover.mjs`)**: Demostración formal de validación de límites de tamaño en mensajes IPC de subprocesos contra caídas de serialización V8 (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 144 Pilares (AOI-OS v42)
+## 🏛️ Matriz Arquitectónica Maestra de 148 Pilares (AOI-OS v43)
 
 ```text
-AOI-OS v42 Architecture Matrix (144 Pillars)
+AOI-OS v43 Architecture Matrix (148 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -264,11 +264,17 @@ AOI-OS v42 Architecture Matrix (144 Pillars)
 │   ├── shell-quote-guard.mjs: Auditoría estática contra inyección de comandos shell mediante comillado y escape seguro.
 │   └── sandbox-signal-trap-prover.mjs: Demostración formal de creación de grupos de procesos independientes y trampa de señales SIGTERM.
 │
-└── 141-144. Núcleo Transcendent 144-Pillar Genesis Core v42 (storage-guard/, package-guard/, security-guard/, sandbox-guard/)
-    ├── file-umask-guard.mjs: Auditoría estática de creación de archivos sensibles para garantizar permisos POSIX restrictivos (0o600/0o700).
-    ├── dead-workspace-protocol-pruner.mjs: Podado estático de dependencias workspace:* huérfanas en monorrepositorio.
-    ├── crypto-kdf-guard.mjs: Auditoría estática de funciones KDF (PBKDF2/Scrypt) para certificar sales seguras e iteraciones OWASP.
-    └── sandbox-maxbuffer-prover.mjs: Demostración formal de cotas maxBuffer explícitas en subprocesos de sandbox contra desbordamientos.
+├── 141-144. Núcleo Transcendent 144-Pillar Genesis Core (storage-guard/, package-guard/, security-guard/, sandbox-guard/)
+│   ├── file-umask-guard.mjs: Auditoría estática de creación de archivos sensibles para garantizar permisos POSIX restrictivos (0o600/0o700).
+│   ├── dead-workspace-protocol-pruner.mjs: Podado estático de dependencias workspace:* huérfanas en monorrepositorio.
+│   ├── crypto-kdf-guard.mjs: Auditoría estática de funciones KDF (PBKDF2/Scrypt) para certificar sales seguras e iteraciones OWASP.
+│   └── sandbox-maxbuffer-prover.mjs: Demostración formal de cotas maxBuffer explícitas en subprocesos de sandbox contra desbordamientos.
+│
+└── 145-148. Núcleo Sovereign 148-Pillar Genesis Matrix v43 (storage-guard/, package-guard/, security-guard/, sandbox-guard/)
+    ├── temp-file-collision-guard.mjs: Auditoría estática de nombres de archivos temporales para garantizar prefijos criptográficos CSPRNG.
+    ├── dead-script-hook-pruner.mjs: Podado estático de hooks de ciclo de vida huérfanos en package.json.
+    ├── crypto-cipher-mode-guard.mjs: Auditoría estática de cifrado simétrico para certificar modos AEAD/GCM y manejo de auth tag.
+    └── sandbox-ipc-payload-prover.mjs: Demostración formal de cotas de carga útil en mensajes IPC de sandbox contra caídas de serialización.
 ```
 
 ---
@@ -311,12 +317,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [43.0.0] - 2026-08-17 (The Sovereign 148-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
+- **Atomic Temporary File Collision & Cryptographic Prefix Guard**: Auditoría estática de rutinas de generación de archivos temporales para garantizar prefijos criptográficos no colisionantes (`crypto.randomUUID()`) contra carreras TOCTOU (`storage-guard/temp-file-collision-guard.mjs`).
+- **Dead Lifecycle Script Hook Pruner**: Podado estático de hooks de ciclo de vida (`preinstall`, `postinstall`, `prepare`) en `package.json` que referencian scripts inexistentes (`package-guard/dead-script-hook-pruner.mjs`).
+- **Safe Cryptographic Cipher Mode & GCM Auth Tag Guard**: Auditoría estática de cifrado simétrico para garantizar modos autenticados AEAD (`aes-256-gcm`) y extracción/verificación de auth tag (`security-guard/crypto-cipher-mode-guard.mjs`).
+- **Sandbox Child Process IPC Message Length Prover**: Demostración formal de validación de límites de tamaño en mensajes IPC de subprocesos contra caídas de serialización V8 (`sandbox-guard/sandbox-ipc-payload-prover.mjs`).
+- **406/406 Tests Pasando al 100%** y **483 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [42.0.0] - 2026-08-17 (The Transcendent 144-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
 - **Atomic File Permissions & umask Guard**: Auditoría estática de operaciones de creación de archivos sensibles para certificar permisos POSIX restrictivos (`mode: 0o600`) o `process.umask(0o077)` (`storage-guard/file-umask-guard.mjs`).
 - **Dead Workspace Protocol Dependency Pruner**: Podado estático de dependencias rotas del tipo `workspace:*` / `workspace:^` en `package.json` no presentes en el monorrepositorio (`package-guard/dead-workspace-protocol-pruner.mjs`).
 - **Safe Cryptographic KDF Salt & Iteration Guard**: Auditoría estática de funciones de derivación de claves (PBKDF2/Scrypt) para garantizar sales de 16+ bytes e iteraciones OWASP (≥100,000) (`security-guard/crypto-kdf-guard.mjs`).
 - **Sandbox Child Process MaxBuffer Overflow Prover**: Demostración formal de configuración de límites `maxBuffer` explícitos en subprocesos para prevenir caídas fatales `ERR_CHILD_PROCESS_STDIO_MAXBUFFER` (`sandbox-guard/sandbox-maxbuffer-prover.mjs`).
-- **398/398 Tests Pasando al 100%** y **475 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [41.0.0] - 2026-08-17 (The Sovereign 140-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
 - **Atomic File Lock & PID Lease Guard**: Auditoría estática de rutinas de bloqueo por archivo para certificar detección de locks huérfanos (`process.kill(pid, 0)`) y políticas de expiración TTL (`storage-guard/file-lock-lease-guard.mjs`).
