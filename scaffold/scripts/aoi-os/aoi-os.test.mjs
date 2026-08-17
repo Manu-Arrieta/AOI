@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v41 pipeline with 140 pillars', async () => {
+test('createAoiOsPipeline initializes full v42 pipeline with 144 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v41',
-    taskId: 'TASK-2026-41',
+    feature: 'aoi-os-v42',
+    taskId: 'TASK-2026-42',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v41 pipeline with 140 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic File Lock & PID Lease Guard
-  const lockCheck = pipeline.auditFileLocks("function acquire(p) { process.kill(pid, 0); fs.writeFileSync(p, pid); }")
-  assert.equal(lockCheck.safe, true)
-  assert.equal(lockCheck.lockLeaseProof, 'FILE_LOCK_LEASE_EXPIRATION_ENFORCED')
+  // 2. Atomic File Permissions & umask Guard
+  const umaskCheck = pipeline.auditFileUmask("function saveKey(p, k) { fs.writeFileSync(p, k, { mode: 0o600 }); }")
+  assert.equal(umaskCheck.safe, true)
+  assert.equal(umaskCheck.umaskProof, 'RESTRICTIVE_FILE_PERMISSIONS_ENFORCED')
 
-  // 3. Dead Barrel Duplicate Re-Export Pruner
-  const barrelCheck = pipeline.auditBarrelDuplicates("export { foo } from './foo.mjs';\nexport { bar } from './bar.mjs';")
-  assert.equal(barrelCheck.clean, true)
-  assert.equal(barrelCheck.barrelProof, 'BARREL_EXPORTS_DEDUPLICATED')
+  // 3. Dead Workspace Protocol Dependency Pruner
+  const wsProtoCheck = pipeline.auditWorkspaceProtocols({ dependencies: { '@aoi/core': 'workspace:*' } }, ['@aoi/core'])
+  assert.equal(wsProtoCheck.clean, true)
+  assert.equal(wsProtoCheck.protocolProof, 'WORKSPACE_PROTOCOLS_CANONICAL')
 
-  // 4. Safe Shell Command Argument Quoting Guard
-  const shellCheck = pipeline.auditShellCommands("const safe = escapeShellArg(arg); execSync(`git checkout ${safe}`);")
-  assert.equal(shellCheck.safe, true)
-  assert.equal(shellCheck.shellProof, 'SHELL_COMMAND_QUOTING_ENFORCED')
+  // 4. Safe Cryptographic KDF Guard
+  const kdfCheck = pipeline.auditCryptoKdf("const h = crypto.pbkdf2Sync(pwd, salt, 120000, 64, 'sha512');")
+  assert.equal(kdfCheck.safe, true)
+  assert.equal(kdfCheck.kdfProof, 'SAFE_KDF_PARAMETERS_ENFORCED')
 
-  // 5. Sandbox Process Group Signal Trap Prover
-  const trapCheck = pipeline.auditSandboxSignalTraps("function launchIsolatedProcess(cmd) { const c = spawn(cmd, { detached: true }); process.on('SIGTERM', () => process.kill(-c.pid)); return c; }")
-  assert.equal(trapCheck.safe, true)
-  assert.equal(trapCheck.groupSignalProof, 'PROCESS_GROUP_SIGNAL_TRAP_ENFORCED')
+  // 5. Sandbox Child Process MaxBuffer Overflow Prover
+  const maxBufCheck = pipeline.auditSandboxMaxBuffer("const out = execSync(cmd, { maxBuffer: 10 * 1024 * 1024 });")
+  assert.equal(maxBufCheck.safe, true)
+  assert.equal(maxBufCheck.maxBufferProof, 'MAXBUFFER_OVERFLOW_PREVENTED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v41 sovereign 140-pillar infinite singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+120 lines)',
+    decisions: ['Use deterministic v42 transcendent 144-pillar omnipresent singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+140 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)

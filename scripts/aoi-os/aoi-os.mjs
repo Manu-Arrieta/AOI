@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v41 (The Sovereign 140-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix).
+ * Master Orchestrator Engine for AOI-OS v42 (The Transcendent 144-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -60,6 +60,8 @@
  * Safe Regular Expression Unicode Flag Guard, Sandbox Process Scheduling Priority & Niceness Prover,
  * Atomic File Lock & PID Lease Guard, Dead Barrel Duplicate Re-Export Pruner,
  * Safe Shell Command Argument Quoting Guard, Sandbox Process Group Signal Trap Prover,
+ * Atomic File Permissions & umask Guard, Dead Workspace Protocol Dependency Pruner,
+ * Safe Cryptographic KDF (PBKDF2/Scrypt) Guard, Sandbox Child Process MaxBuffer Overflow Prover,
  * and ICM Memory Linking.
  */
 
@@ -102,6 +104,7 @@ import { auditCryptoAlgorithmSafety } from './security-guard/crypto-algorithm-gu
 import { auditCryptoRandomSafety } from './security-guard/crypto-random-guard.mjs'
 import { auditRegexUnicodeSafety } from './security-guard/regex-flag-guard.mjs'
 import { auditShellQuoteSafety } from './security-guard/shell-quote-guard.mjs'
+import { auditCryptoKdfSafety } from './security-guard/crypto-kdf-guard.mjs'
 import { auditCacheInvalidation } from './cache-guard/cache-invalidation-guard.mjs'
 import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
 import { auditDeadEnvFlags } from './env-guard/dead-env-pruner.mjs'
@@ -119,6 +122,7 @@ import { auditDeadEnums } from './enum-guard/dead-enum-pruner.mjs'
 import { auditDeadPackageExports } from './export-guard/dead-export-package-pruner.mjs'
 import { auditDeadPackageScripts } from './package-guard/dead-script-pruner.mjs'
 import { auditDeadWorkspacePackages } from './package-guard/dead-workspace-package-pruner.mjs'
+import { auditDeadWorkspaceProtocols } from './package-guard/dead-workspace-protocol-pruner.mjs'
 import { auditDeadBarrelDuplicates } from './export-guard/dead-barrel-duplicate-pruner.mjs'
 import { auditDeadI18nKeys } from './i18n-guard/dead-i18n-pruner.mjs'
 import { proveDbPoolDrainSafety } from './db-guard/db-pool-drain-prover.mjs'
@@ -139,6 +143,7 @@ import { proveSandboxRLimitSafety } from './sandbox-guard/sandbox-rlimit-prover.
 import { proveSandboxFdIsolationSafety } from './sandbox-guard/sandbox-fd-cloexec-prover.mjs'
 import { proveSandboxPrioritySafety } from './sandbox-guard/sandbox-priority-prover.mjs'
 import { proveSandboxSignalTrapSafety } from './sandbox-guard/sandbox-signal-trap-prover.mjs'
+import { proveSandboxMaxBufferSafety } from './sandbox-guard/sandbox-maxbuffer-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -146,6 +151,7 @@ import { proveShmChannelCleanupSafety } from './sandbox-guard/sandbox-shm-cleanu
 import { auditBrowserStorageQuotaSafety } from './storage-guard/browser-storage-quota-guard.mjs'
 import { auditAtomicFileWriteSafety } from './storage-guard/atomic-file-write-guard.mjs'
 import { auditFileLockLeaseSafety } from './storage-guard/file-lock-lease-guard.mjs'
+import { auditFileUmaskSafety } from './storage-guard/file-umask-guard.mjs'
 import { auditDeadCssClasses } from './css-guard/dead-css-class-pruner.mjs'
 import { provePortCollisionSafety } from './test-guard/port-collision-prover.mjs'
 import { estimateTokenComplexity } from './sandbox-runtime/token-complexity-estimator.mjs'
@@ -353,6 +359,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits file and directory creation for secure POSIX permissions and umask enforcement.
+   *
+   * @param {string} sourceCode
+   */
+  function auditFileUmask(sourceCode) {
+    return auditFileUmaskSafety(sourceCode)
+  }
+
+  /**
+   * Audits package.json for dead workspace protocol dependencies.
+   *
+   * @param {object} packageJson
+   * @param {string[]} registeredWorkspacePackages
+   */
+  function auditWorkspaceProtocols(packageJson = {}, registeredWorkspacePackages = []) {
+    return auditDeadWorkspaceProtocols(packageJson, registeredWorkspacePackages)
+  }
+
+  /**
+   * Audits key derivation calls for safe salt length and OWASP iteration counts.
+   *
+   * @param {string} sourceCode
+   */
+  function auditCryptoKdf(sourceCode) {
+    return auditCryptoKdfSafety(sourceCode)
+  }
+
+  /**
+   * Proves maxBuffer bounds on subprocess execution in sandboxes.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxMaxBuffer(sourceCode) {
+    return proveSandboxMaxBufferSafety(sourceCode)
   }
 
   /**
@@ -1241,7 +1284,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '41.0.0',
+      version: '42.0.0',
       components,
     })
   }
@@ -1790,6 +1833,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditFileUmask,
+    auditWorkspaceProtocols,
+    auditCryptoKdf,
+    auditSandboxMaxBuffer,
     auditFileLocks,
     auditBarrelDuplicates,
     auditShellCommands,
@@ -1946,7 +1993,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v41: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v42: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

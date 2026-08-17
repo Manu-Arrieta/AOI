@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v41 (The Sovereign 140-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v42 (The Transcendent 144-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Atomic File Lock & PID Lease Guard (`storage-guard/file-lock-lease-guard.mjs`)**: Auditoría estática de rutinas de bloqueo por archivo para certificar detección de locks huérfanos (`process.kill(pid, 0)`) y políticas de expiración TTL (0 LLM tokens).
-- **Dead Barrel Duplicate Re-Export Pruner (`export-guard/dead-barrel-duplicate-pruner.mjs`)**: Podado estático de re-exportaciones redundantes y símbolos duplicados en archivos índice barril (`index.ts`/`index.mjs`) (0 LLM tokens).
-- **Safe Shell Command Argument Quoting Guard (`security-guard/shell-quote-guard.mjs`)**: Auditoría estática de comandos del sistema (`exec`, `execSync`) para garantizar comillado seguro y sanitización anti-inyección shell (0 LLM tokens).
-- **Sandbox Process Group Signal Trap Prover (`sandbox-guard/sandbox-signal-trap-prover.mjs`)**: Demostración formal de creación de grupos de procesos independientes (`detached: true`) y captura de señales (`kill(-pid)`) para prevenir subprocesos huérfanos (0 LLM tokens).
+- **Atomic File Permissions & umask Guard (`storage-guard/file-umask-guard.mjs`)**: Auditoría estática de operaciones de creación de archivos sensibles para certificar permisos POSIX restrictivos (`mode: 0o600`) o `process.umask(0o077)` (0 LLM tokens).
+- **Dead Workspace Protocol Dependency Pruner (`package-guard/dead-workspace-protocol-pruner.mjs`)**: Podado estático de dependencias rotas del tipo `workspace:*` / `workspace:^` en `package.json` no presentes en el monorrepositorio (0 LLM tokens).
+- **Safe Cryptographic KDF Salt & Iteration Guard (`security-guard/crypto-kdf-guard.mjs`)**: Auditoría estática de funciones de derivación de claves (PBKDF2/Scrypt) para garantizar sales de 16+ bytes e iteraciones OWASP (≥100,000) (0 LLM tokens).
+- **Sandbox Child Process MaxBuffer Overflow Prover (`sandbox-guard/sandbox-maxbuffer-prover.mjs`)**: Demostración formal de configuración de límites `maxBuffer` explícitos en subprocesos para prevenir caídas fatales `ERR_CHILD_PROCESS_STDIO_MAXBUFFER` (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 140 Pilares (AOI-OS v41)
+## 🏛️ Matriz Arquitectónica Maestra de 144 Pilares (AOI-OS v42)
 
 ```text
-AOI-OS v41 Architecture Matrix (140 Pillars)
+AOI-OS v42 Architecture Matrix (144 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -258,11 +258,17 @@ AOI-OS v41 Architecture Matrix (140 Pillars)
 │   ├── regex-flag-guard.mjs: Auditoría estática de expresiones regulares de validación para garantizar flags Unicode (u / v).
 │   └── sandbox-priority-prover.mjs: Demostración formal de prioridad y niceness de procesos (nice -n) en workers de sandbox.
 │
-└── 137-140. Núcleo Sovereign 140-Pillar Genesis Matrix v41 (storage-guard/, export-guard/, security-guard/, sandbox-guard/)
-    ├── file-lock-lease-guard.mjs: Auditoría estática de bloqueos de archivo para garantizar detección de locks huérfanos y TTL.
-    ├── dead-barrel-duplicate-pruner.mjs: Podado estático de re-exportaciones redundantes y duplicados en índices barril.
-    ├── shell-quote-guard.mjs: Auditoría estática contra inyección de comandos shell mediante comillado y escape seguro.
-    └── sandbox-signal-trap-prover.mjs: Demostración formal de creación de grupos de procesos independientes y trampa de señales SIGTERM.
+├── 137-140. Núcleo Sovereign 140-Pillar Genesis Matrix (storage-guard/, export-guard/, security-guard/, sandbox-guard/)
+│   ├── file-lock-lease-guard.mjs: Auditoría estática de bloqueos de archivo para garantizar detección de locks huérfanos y TTL.
+│   ├── dead-barrel-duplicate-pruner.mjs: Podado estático de re-exportaciones redundantes y duplicados en índices barril.
+│   ├── shell-quote-guard.mjs: Auditoría estática contra inyección de comandos shell mediante comillado y escape seguro.
+│   └── sandbox-signal-trap-prover.mjs: Demostración formal de creación de grupos de procesos independientes y trampa de señales SIGTERM.
+│
+└── 141-144. Núcleo Transcendent 144-Pillar Genesis Core v42 (storage-guard/, package-guard/, security-guard/, sandbox-guard/)
+    ├── file-umask-guard.mjs: Auditoría estática de creación de archivos sensibles para garantizar permisos POSIX restrictivos (0o600/0o700).
+    ├── dead-workspace-protocol-pruner.mjs: Podado estático de dependencias workspace:* huérfanas en monorrepositorio.
+    ├── crypto-kdf-guard.mjs: Auditoría estática de funciones KDF (PBKDF2/Scrypt) para certificar sales seguras e iteraciones OWASP.
+    └── sandbox-maxbuffer-prover.mjs: Demostración formal de cotas maxBuffer explícitas en subprocesos de sandbox contra desbordamientos.
 ```
 
 ---
@@ -305,12 +311,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [42.0.0] - 2026-08-17 (The Transcendent 144-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
+- **Atomic File Permissions & umask Guard**: Auditoría estática de operaciones de creación de archivos sensibles para certificar permisos POSIX restrictivos (`mode: 0o600`) o `process.umask(0o077)` (`storage-guard/file-umask-guard.mjs`).
+- **Dead Workspace Protocol Dependency Pruner**: Podado estático de dependencias rotas del tipo `workspace:*` / `workspace:^` en `package.json` no presentes en el monorrepositorio (`package-guard/dead-workspace-protocol-pruner.mjs`).
+- **Safe Cryptographic KDF Salt & Iteration Guard**: Auditoría estática de funciones de derivación de claves (PBKDF2/Scrypt) para garantizar sales de 16+ bytes e iteraciones OWASP (≥100,000) (`security-guard/crypto-kdf-guard.mjs`).
+- **Sandbox Child Process MaxBuffer Overflow Prover**: Demostración formal de configuración de límites `maxBuffer` explícitos en subprocesos para prevenir caídas fatales `ERR_CHILD_PROCESS_STDIO_MAXBUFFER` (`sandbox-guard/sandbox-maxbuffer-prover.mjs`).
+- **398/398 Tests Pasando al 100%** y **475 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [41.0.0] - 2026-08-17 (The Sovereign 140-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
 - **Atomic File Lock & PID Lease Guard**: Auditoría estática de rutinas de bloqueo por archivo para certificar detección de locks huérfanos (`process.kill(pid, 0)`) y políticas de expiración TTL (`storage-guard/file-lock-lease-guard.mjs`).
 - **Dead Barrel Duplicate Re-Export Pruner**: Podado estático de re-exportaciones redundantes y símbolos duplicados en archivos índice barril (`index.ts`/`index.mjs`) (`export-guard/dead-barrel-duplicate-pruner.mjs`).
 - **Safe Shell Command Argument Quoting Guard**: Auditoría estática de comandos del sistema (`exec`, `execSync`) para garantizar comillado seguro y sanitización anti-inyección shell (`security-guard/shell-quote-guard.mjs`).
 - **Sandbox Process Group Signal Trap Prover**: Demostración formal de creación de grupos de procesos independientes (`detached: true`) y captura de señales (`kill(-pid)`) para prevenir subprocesos huérfanos (`sandbox-guard/sandbox-signal-trap-prover.mjs`).
-- **390/390 Tests Pasando al 100%** y **467 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [40.0.0] - 2026-08-17 (The Transcendent 136-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
 - **Atomic File Replace & Staged Write Guard**: Auditoría estática de operaciones de guardado de estado/manifiestos para garantizar escritura atómica en dos fases (`temp + rename`) (`storage-guard/atomic-file-write-guard.mjs`).
