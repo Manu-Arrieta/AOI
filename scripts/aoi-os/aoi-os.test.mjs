@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v37 pipeline with 124 pillars', async () => {
+test('createAoiOsPipeline initializes full v38 pipeline with 128 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v37',
-    taskId: 'TASK-2026-37',
+    feature: 'aoi-os-v38',
+    taskId: 'TASK-2026-38',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v37 pipeline with 124 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Outbound HTTP Request Timeout Guard
-  const httpCheck = pipeline.auditHttpTimeouts("fetch('https://api.example.com', { signal: AbortSignal.timeout(3000) })")
-  assert.equal(httpCheck.safe, true)
-  assert.equal(httpCheck.timeoutProof, 'HTTP_REQUEST_TIMEOUT_PROTECTED')
+  // 2. Sensitive Data & PII Masking Guard
+  const piiCheck = pipeline.auditPiiMasking("logger.info({ user: 'alice', password: maskSecret(pwd) })")
+  assert.equal(piiCheck.safe, true)
+  assert.equal(piiCheck.piiProof, 'SENSITIVE_DATA_LOGGING_MASKED')
 
-  // 3. Dead Markdown Doc Link Pruner
-  const docCheck = pipeline.auditMarkdownDocLinks('[Guide](docs/guide.md)', ['docs/guide.md'])
-  assert.equal(docCheck.allValid, true)
-  assert.equal(docCheck.docProof, 'ALL_DOC_LINKS_REACHABLE')
+  // 3. Dead Gitignore Pruner
+  const gitignoreCheck = pipeline.auditGitignore(['node_modules', '.output'])
+  assert.equal(gitignoreCheck.clean, true)
+  assert.equal(gitignoreCheck.gitignoreProof, 'GITIGNORE_RULES_CANONICAL')
 
-  // 4. Dynamic RegExp ReDoS Timeout Guard
-  const regexCheck = pipeline.auditDynamicRegExps('const safe = pattern.slice(0, 50); new RegExp(safe);')
-  assert.equal(regexCheck.safe, true)
-  assert.equal(regexCheck.regexProof, 'DYNAMIC_REGEXP_LENGTH_BOUNDED')
+  // 4. Safe Cryptographic Algorithm Guard
+  const cryptoCheck = pipeline.auditCryptoAlgorithms("crypto.createHash('sha256').update(data).digest('hex')")
+  assert.equal(cryptoCheck.safe, true)
+  assert.equal(cryptoCheck.cryptoProof, 'SAFE_CRYPTO_ALGORITHMS_ENFORCED')
 
-  // 5. Sandbox Process Core Dump Prevention Prover
-  const coredumpCheck = pipeline.auditSandboxCoreDumps("exec('ulimit -c 0 && node script.js')")
-  assert.equal(coredumpCheck.safe, true)
-  assert.equal(coredumpCheck.coreDumpProof, 'SANDBOX_CORE_DUMP_DISABLED')
+  // 5. Sandbox Process Resource Limit (RLimit) Prover
+  const rlimitCheck = pipeline.auditSandboxRLimits("exec('ulimit -t 30 && node build.js')")
+  assert.equal(rlimitCheck.safe, true)
+  assert.equal(rlimitCheck.rlimitProof, 'SANDBOX_RLIMIT_ENFORCED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v37 sovereign 124-pillar infinite singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+90 lines)',
+    decisions: ['Use deterministic v38 transcendent 128-pillar omnipresent singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+100 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)

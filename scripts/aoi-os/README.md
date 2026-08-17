@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v37 (The Sovereign 124-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v38 (The Transcendent 128-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Outbound HTTP Request Timeout & AbortSignal Guard (`stream-guard/http-timeout-guard.mjs`)**: Auditoría estática de peticiones de red salientes (`fetch`, `$fetch`, `axios`) para garantizar límites de tiempo explícitos o señales de aborto (0 LLM tokens).
-- **Dead Markdown Anchor & Cross-Doc Link Pruner (`doc-guard/dead-doc-link-pruner.mjs`)**: Podado y validación estática de hipervínculos relativos y referencias cruzadas entre documentos markdown (0 LLM tokens).
-- **Dynamic RegExp Length & ReDoS Timeout Guard (`security-guard/regex-timeout-guard.mjs`)**: Demostración formal de acotamiento de longitud en expresiones regulares dinámicas instanciadas en tiempo de ejecución (0 LLM tokens).
-- **Sandbox Process Core Dump Prevention Prover (`sandbox-guard/sandbox-coredump-prover.mjs`)**: Demostración formal de configuración de `ulimit -c 0` / `RLIMIT_CORE: 0` en sandboxes para prevenir volcados de memoria y fugas de secretos en disco (0 LLM tokens).
+- **Sensitive Data & PII Masking Guard (`telemetry/pii-masking-guard.mjs`)**: Auditoría estática de declaraciones de telemetría y logs (`console.log`, `logger.info`) para garantizar enmascaramiento de contraseñas, tokens y PII (0 LLM tokens).
+- **Dead Gitignore Entry & Duplicate Exclusion Rule Pruner (`repo-guard/dead-gitignore-pruner.mjs`)**: Podado estático de reglas duplicadas y redundantes en el archivo `.gitignore` del repositorio (0 LLM tokens).
+- **Safe Cryptographic Hash Algorithm Guard (`security-guard/crypto-algorithm-guard.mjs`)**: Auditoría estática contra algoritmos criptográficos vulnerables/deprecados (`md5`, `sha1`, `des`) en favor de estándares robustos (`sha256`, `aes-256-gcm`) (0 LLM tokens).
+- **Sandbox Child Process Resource Limit (RLimit CPU & AS) Prover (`sandbox-guard/sandbox-rlimit-prover.mjs`)**: Demostración formal de configuración de `ulimit -t` / `RLIMIT_CPU` en sandboxes para prevenir saturación de CPU por subprocesos desbocados (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 124 Pilares (AOI-OS v37)
+## 🏛️ Matriz Arquitectónica Maestra de 128 Pilares (AOI-OS v38)
 
 ```text
-AOI-OS v37 Architecture Matrix (124 Pillars)
+AOI-OS v38 Architecture Matrix (128 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -234,11 +234,17 @@ AOI-OS v37 Architecture Matrix (124 Pillars)
 │   ├── html-sanitization-guard.mjs: Auditoría estática de renderizado HTML dinámico (v-html, innerHTML) contra vulnerabilidades XSS.
 │   └── sandbox-env-isolation-prover.mjs: Demostración formal de paso explícito y filtrado de variables env en subprocesos de sandbox.
 │
-└── 121-124. Núcleo Sovereign 124-Pillar Genesis Matrix v37 (stream-guard/, doc-guard/, security-guard/, sandbox-guard/)
-    ├── http-timeout-guard.mjs: Auditoría estática de peticiones de red salientes para garantizar límites de tiempo o AbortSignal.
-    ├── dead-doc-link-pruner.mjs: Podado y validación estática de hipervínculos relativos y referencias cruzadas en markdown.
-    ├── regex-timeout-guard.mjs: Demostración formal de acotamiento de longitud en expresiones regulares dinámicas en runtime.
-    └── sandbox-coredump-prover.mjs: Demostración formal de desactivación de volcados de memoria (ulimit -c 0) en sandboxes.
+├── 121-124. Núcleo Sovereign 124-Pillar Genesis Matrix (stream-guard/, doc-guard/, security-guard/, sandbox-guard/)
+│   ├── http-timeout-guard.mjs: Auditoría estática de peticiones de red salientes para garantizar límites de tiempo o AbortSignal.
+│   ├── dead-doc-link-pruner.mjs: Podado y validación estática de hipervínculos relativos y referencias cruzadas en markdown.
+│   ├── regex-timeout-guard.mjs: Demostración formal de acotamiento de longitud en expresiones regulares dinámicas en runtime.
+│   └── sandbox-coredump-prover.mjs: Demostración formal de desactivación de volcados de memoria (ulimit -c 0) en sandboxes.
+│
+└── 125-128. Núcleo Transcendent 128-Pillar Genesis Core v38 (telemetry/, repo-guard/, security-guard/, sandbox-guard/)
+    ├── pii-masking-guard.mjs: Auditoría estática de telemetría y logs para enmascarar contraseñas, tokens y PII.
+    ├── dead-gitignore-pruner.mjs: Podado estático de reglas duplicadas y redundantes en el archivo .gitignore.
+    ├── crypto-algorithm-guard.mjs: Auditoría estática contra algoritmos criptográficos obsoletos (md5, sha1, des).
+    └── sandbox-rlimit-prover.mjs: Demostración formal de límites de CPU y memoria (ulimit -t) en subprocesos de sandbox.
 ```
 
 ---
@@ -281,12 +287,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [38.0.0] - 2026-08-17 (The Transcendent 128-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
+- **Sensitive Data & PII Masking Guard**: Auditoría estática de declaraciones de telemetría y logs (`console.log`, `logger.info`) para garantizar enmascaramiento de contraseñas, tokens y PII (`telemetry/pii-masking-guard.mjs`).
+- **Dead Gitignore Entry & Duplicate Exclusion Rule Pruner**: Podado estático de reglas duplicadas y redundantes en el archivo `.gitignore` del repositorio (`repo-guard/dead-gitignore-pruner.mjs`).
+- **Safe Cryptographic Hash Algorithm Guard**: Auditoría estática contra algoritmos criptográficos vulnerables/deprecados (`md5`, `sha1`, `des`) en favor de estándares robustos (`sha256`, `aes-256-gcm`) (`security-guard/crypto-algorithm-guard.mjs`).
+- **Sandbox Child Process Resource Limit (RLimit CPU & AS) Prover**: Demostración formal de configuración de `ulimit -t` / `RLIMIT_CPU` en sandboxes para prevenir saturación de CPU por subprocesos desbocados (`sandbox-guard/sandbox-rlimit-prover.mjs`).
+- **366/366 Tests Pasando al 100%** y **443 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [37.0.0] - 2026-08-17 (The Sovereign 124-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
 - **Outbound HTTP Request Timeout & AbortSignal Guard**: Auditoría estática de peticiones de red salientes (`fetch`, `$fetch`, `axios`) para garantizar límites de tiempo explícitos o señales de aborto (`stream-guard/http-timeout-guard.mjs`).
 - **Dead Markdown Anchor & Cross-Doc Link Pruner**: Podado y validación estática de hipervínculos relativos y referencias cruzadas entre documentos markdown (`doc-guard/dead-doc-link-pruner.mjs`).
 - **Dynamic RegExp Length & ReDoS Timeout Guard**: Demostración formal de acotamiento de longitud en expresiones regulares dinámicas instanciadas en tiempo de ejecución (`security-guard/regex-timeout-guard.mjs`).
 - **Sandbox Process Core Dump Prevention Prover**: Demostración formal de configuración de `ulimit -c 0` / `RLIMIT_CORE: 0` en sandboxes para prevenir volcados de memoria y fugas de secretos en disco (`sandbox-guard/sandbox-coredump-prover.mjs`).
-- **358/358 Tests Pasando al 100%** y **435 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [36.0.0] - 2026-08-17 (The Centurial 120-Pillar Omnipresent Singularity & Universal Transcendence Genesis Master Matrix)
 - **Database Transaction Rollback & Commit Lifecycle Guard**: Demostración formal de rollback garantizado en excepciones para transacciones de base de datos (`BEGIN`, `db.transaction`) (`db-guard/transaction-rollback-guard.mjs`).

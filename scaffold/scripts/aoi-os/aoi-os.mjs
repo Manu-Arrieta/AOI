@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v37 (The Sovereign 124-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix).
+ * Master Orchestrator Engine for AOI-OS v38 (The Transcendent 128-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -52,6 +52,8 @@
  * Safe HTML & DOM Sanitization Guard, Sandbox Process Environment Variable Isolation Prover,
  * Outbound HTTP Request Timeout & AbortSignal Guard, Dead Markdown Anchor & Cross-Doc Link Pruner,
  * Dynamic RegExp Length & ReDoS Timeout Guard, Sandbox Process Core Dump Prevention Prover,
+ * Sensitive Data & PII Masking Guard, Dead Gitignore Pattern Pruner,
+ * Safe Cryptographic Algorithm Guard, Sandbox Process Resource Limit (RLimit CPU & AS) Prover,
  * and ICM Memory Linking.
  */
 
@@ -90,12 +92,14 @@ import { auditJwtExpirationSafety } from './security-guard/jwt-expiration-guard.
 import { auditQueryDepthSafety } from './security-guard/query-depth-guard.mjs'
 import { auditHtmlSanitizationSafety } from './security-guard/html-sanitization-guard.mjs'
 import { auditDynamicRegexSafety } from './security-guard/regex-timeout-guard.mjs'
+import { auditCryptoAlgorithmSafety } from './security-guard/crypto-algorithm-guard.mjs'
 import { auditCacheInvalidation } from './cache-guard/cache-invalidation-guard.mjs'
 import { auditEnvAndSecrets } from './env-guard/env-secret-prover.mjs'
 import { auditDeadEnvFlags } from './env-guard/dead-env-pruner.mjs'
 import { validateStructuralConfig } from './config-guard/structural-config-guard.mjs'
 import { auditDeadRoutes } from './route-guard/dead-route-pruner.mjs'
 import { auditDeadMarkdownDocLinks } from './doc-guard/dead-doc-link-pruner.mjs'
+import { auditDeadGitignoreRules } from './repo-guard/dead-gitignore-pruner.mjs'
 import { auditDeadComponents } from './component-guard/dead-component-pruner.mjs'
 import { auditDeadStoreState } from './component-guard/dead-store-pruner.mjs'
 import { auditHydrationSafety } from './component-guard/hydration-mismatch-guard.mjs'
@@ -119,6 +123,7 @@ import { provePrivilegeEscalationSafety } from './sandbox-guard/sandbox-privileg
 import { proveSandboxUlimitSafety } from './sandbox-guard/sandbox-ulimit-prover.mjs'
 import { proveSandboxEnvIsolationSafety } from './sandbox-guard/sandbox-env-isolation-prover.mjs'
 import { proveSandboxCoreDumpSafety } from './sandbox-guard/sandbox-coredump-prover.mjs'
+import { proveSandboxRLimitSafety } from './sandbox-guard/sandbox-rlimit-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -146,6 +151,7 @@ import {
 import { virtualizeControlFlow } from './virtualizer/branchless-virtualizer.mjs'
 import { createFlightRecorder } from './telemetry/flight-recorder.mjs'
 import { auditSpanLifecycleSafety } from './telemetry/span-lifecycle-guard.mjs'
+import { auditPiiMaskingSafety } from './telemetry/pii-masking-guard.mjs'
 import { createSemanticFabric } from './ontology/semantic-fabric.mjs'
 import { optimizeAstRepresentation } from './ast-optimizer/ast-inliner.mjs'
 import { evaluateSuperpositionBranches } from './quantum-synthesis/superposition-matrix.mjs'
@@ -329,6 +335,42 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits logging and telemetry statements for unmasked PII and credentials.
+   *
+   * @param {string} sourceCode
+   */
+  function auditPiiMasking(sourceCode) {
+    return auditPiiMaskingSafety(sourceCode)
+  }
+
+  /**
+   * Audits .gitignore patterns to prune duplicates and redundant rules.
+   *
+   * @param {string[]} rules
+   */
+  function auditGitignore(rules = []) {
+    return auditDeadGitignoreRules(rules)
+  }
+
+  /**
+   * Audits cryptographic hash functions for unsafe legacy algorithms.
+   *
+   * @param {string} sourceCode
+   */
+  function auditCryptoAlgorithms(sourceCode) {
+    return auditCryptoAlgorithmSafety(sourceCode)
+  }
+
+  /**
+   * Proves CPU and memory bounds on sandbox subprocesses.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxRLimits(sourceCode) {
+    return proveSandboxRLimitSafety(sourceCode)
   }
 
   /**
@@ -1071,7 +1113,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '37.0.0',
+      version: '38.0.0',
       components,
     })
   }
@@ -1620,6 +1662,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditPiiMasking,
+    auditGitignore,
+    auditCryptoAlgorithms,
+    auditSandboxRLimits,
     auditHttpTimeouts,
     auditMarkdownDocLinks,
     auditDynamicRegExps,
@@ -1760,7 +1806,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v37: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v38: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
