@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v40 pipeline with 136 pillars', async () => {
+test('createAoiOsPipeline initializes full v41 pipeline with 140 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v40',
-    taskId: 'TASK-2026-40',
+    feature: 'aoi-os-v41',
+    taskId: 'TASK-2026-41',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v40 pipeline with 136 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic File Write Guard
-  const atomicCheck = pipeline.auditAtomicWrites("function saveState(file, data) { fs.writeFileSync(file + '.tmp', data); fs.renameSync(file + '.tmp', file); }")
-  assert.equal(atomicCheck.safe, true)
-  assert.equal(atomicCheck.atomicProof, 'ATOMIC_FILE_WRITES_ENFORCED')
+  // 2. Atomic File Lock & PID Lease Guard
+  const lockCheck = pipeline.auditFileLocks("function acquire(p) { process.kill(pid, 0); fs.writeFileSync(p, pid); }")
+  assert.equal(lockCheck.safe, true)
+  assert.equal(lockCheck.lockLeaseProof, 'FILE_LOCK_LEASE_EXPIRATION_ENFORCED')
 
-  // 3. Dead Config Path Alias Pruner
-  const aliasCheck = pipeline.auditConfigAliases(['@components/*'], "import Button from '@components/Button.vue'")
-  assert.equal(aliasCheck.clean, true)
-  assert.equal(aliasCheck.aliasProof, 'CONFIG_ALIASES_CANONICAL')
+  // 3. Dead Barrel Duplicate Re-Export Pruner
+  const barrelCheck = pipeline.auditBarrelDuplicates("export { foo } from './foo.mjs';\nexport { bar } from './bar.mjs';")
+  assert.equal(barrelCheck.clean, true)
+  assert.equal(barrelCheck.barrelProof, 'BARREL_EXPORTS_DEDUPLICATED')
 
-  // 4. Safe Regular Expression Unicode Flag Guard
-  const unicodeCheck = pipeline.auditRegexUnicode("const pattern = /^[\\p{Letter}\\d]+$/u;")
-  assert.equal(unicodeCheck.safe, true)
-  assert.equal(unicodeCheck.unicodeProof, 'UNICODE_REGEX_SAFETY_ENFORCED')
+  // 4. Safe Shell Command Argument Quoting Guard
+  const shellCheck = pipeline.auditShellCommands("const safe = escapeShellArg(arg); execSync(`git checkout ${safe}`);")
+  assert.equal(shellCheck.safe, true)
+  assert.equal(shellCheck.shellProof, 'SHELL_COMMAND_QUOTING_ENFORCED')
 
-  // 5. Sandbox Process Priority Prover
-  const priorityCheck = pipeline.auditSandboxPriority("function launchCompiler(cmd) { return exec('nice -n 10 ' + cmd); }")
-  assert.equal(priorityCheck.safe, true)
-  assert.equal(priorityCheck.priorityProof, 'SCHEDULING_PRIORITY_GOVERNED')
+  // 5. Sandbox Process Group Signal Trap Prover
+  const trapCheck = pipeline.auditSandboxSignalTraps("function launchIsolatedProcess(cmd) { const c = spawn(cmd, { detached: true }); process.on('SIGTERM', () => process.kill(-c.pid)); return c; }")
+  assert.equal(trapCheck.safe, true)
+  assert.equal(trapCheck.groupSignalProof, 'PROCESS_GROUP_SIGNAL_TRAP_ENFORCED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v40 transcendent 136-pillar omnipresent singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+100 lines)',
+    decisions: ['Use deterministic v41 sovereign 140-pillar infinite singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+120 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)

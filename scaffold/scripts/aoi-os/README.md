@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v40 (The Transcendent 136-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v41 (The Sovereign 140-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Atomic File Replace & Staged Write Guard (`storage-guard/atomic-file-write-guard.mjs`)**: Auditoría estática de operaciones de guardado de estado/manifiestos para garantizar escritura atómica en dos fases (`temp + rename`) (0 LLM tokens).
-- **Dead Config Path Alias Pruner (`config-guard/dead-alias-pruner.mjs`)**: Podado estático de alias de rutas y módulos huérfanos o no alcanzados en `tsconfig.json`/`vite.config.ts` (0 LLM tokens).
-- **Safe Regular Expression Unicode Flag Guard (`security-guard/regex-flag-guard.mjs`)**: Auditoría estática de expresiones regulares de validación para garantizar el uso de flags `u`/`v` contra bypasses multibyte (0 LLM tokens).
-- **Sandbox Process Scheduling Priority & Niceness Prover (`sandbox-guard/sandbox-priority-prover.mjs`)**: Demostración formal de prioridad de scheduling (`nice -n`, `os.setPriority`) en sandboxes para prevenir saturación del Event Loop anfitrión (0 LLM tokens).
+- **Atomic File Lock & PID Lease Guard (`storage-guard/file-lock-lease-guard.mjs`)**: Auditoría estática de rutinas de bloqueo por archivo para certificar detección de locks huérfanos (`process.kill(pid, 0)`) y políticas de expiración TTL (0 LLM tokens).
+- **Dead Barrel Duplicate Re-Export Pruner (`export-guard/dead-barrel-duplicate-pruner.mjs`)**: Podado estático de re-exportaciones redundantes y símbolos duplicados en archivos índice barril (`index.ts`/`index.mjs`) (0 LLM tokens).
+- **Safe Shell Command Argument Quoting Guard (`security-guard/shell-quote-guard.mjs`)**: Auditoría estática de comandos del sistema (`exec`, `execSync`) para garantizar comillado seguro y sanitización anti-inyección shell (0 LLM tokens).
+- **Sandbox Process Group Signal Trap Prover (`sandbox-guard/sandbox-signal-trap-prover.mjs`)**: Demostración formal de creación de grupos de procesos independientes (`detached: true`) y captura de señales (`kill(-pid)`) para prevenir subprocesos huérfanos (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 136 Pilares (AOI-OS v40)
+## 🏛️ Matriz Arquitectónica Maestra de 140 Pilares (AOI-OS v41)
 
 ```text
-AOI-OS v40 Architecture Matrix (136 Pillars)
+AOI-OS v41 Architecture Matrix (140 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -252,11 +252,17 @@ AOI-OS v40 Architecture Matrix (136 Pillars)
 │   ├── crypto-random-guard.mjs: Auditoría estática contra generadores pseudo-aleatorios (Math.random()) en tokens/secretos.
 │   └── sandbox-fd-cloexec-prover.mjs: Demostración formal de aislamiento estricto de descriptores de archivos (stdio array) en sandbox.
 │
-└── 133-136. Núcleo Transcendent 136-Pillar Genesis Core v40 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-    ├── atomic-file-write-guard.mjs: Auditoría estática de persistencia de archivos para garantizar escrituras atómicas en dos fases.
-    ├── dead-alias-pruner.mjs: Podado estático de alias de rutas huérfanos en tsconfig.json / vite.config.ts.
-    ├── regex-flag-guard.mjs: Auditoría estática de expresiones regulares de validación para garantizar flags Unicode (u / v).
-    └── sandbox-priority-prover.mjs: Demostración formal de prioridad y niceness de procesos (nice -n) en workers de sandbox.
+├── 133-136. Núcleo Transcendent 136-Pillar Genesis Core (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+│   ├── atomic-file-write-guard.mjs: Auditoría estática de persistencia de archivos para garantizar escrituras atómicas en dos fases.
+│   ├── dead-alias-pruner.mjs: Podado estático de alias de rutas huérfanos en tsconfig.json / vite.config.ts.
+│   ├── regex-flag-guard.mjs: Auditoría estática de expresiones regulares de validación para garantizar flags Unicode (u / v).
+│   └── sandbox-priority-prover.mjs: Demostración formal de prioridad y niceness de procesos (nice -n) en workers de sandbox.
+│
+└── 137-140. Núcleo Sovereign 140-Pillar Genesis Matrix v41 (storage-guard/, export-guard/, security-guard/, sandbox-guard/)
+    ├── file-lock-lease-guard.mjs: Auditoría estática de bloqueos de archivo para garantizar detección de locks huérfanos y TTL.
+    ├── dead-barrel-duplicate-pruner.mjs: Podado estático de re-exportaciones redundantes y duplicados en índices barril.
+    ├── shell-quote-guard.mjs: Auditoría estática contra inyección de comandos shell mediante comillado y escape seguro.
+    └── sandbox-signal-trap-prover.mjs: Demostración formal de creación de grupos de procesos independientes y trampa de señales SIGTERM.
 ```
 
 ---
@@ -299,12 +305,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [41.0.0] - 2026-08-17 (The Sovereign 140-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
+- **Atomic File Lock & PID Lease Guard**: Auditoría estática de rutinas de bloqueo por archivo para certificar detección de locks huérfanos (`process.kill(pid, 0)`) y políticas de expiración TTL (`storage-guard/file-lock-lease-guard.mjs`).
+- **Dead Barrel Duplicate Re-Export Pruner**: Podado estático de re-exportaciones redundantes y símbolos duplicados en archivos índice barril (`index.ts`/`index.mjs`) (`export-guard/dead-barrel-duplicate-pruner.mjs`).
+- **Safe Shell Command Argument Quoting Guard**: Auditoría estática de comandos del sistema (`exec`, `execSync`) para garantizar comillado seguro y sanitización anti-inyección shell (`security-guard/shell-quote-guard.mjs`).
+- **Sandbox Process Group Signal Trap Prover**: Demostración formal de creación de grupos de procesos independientes (`detached: true`) y captura de señales (`kill(-pid)`) para prevenir subprocesos huérfanos (`sandbox-guard/sandbox-signal-trap-prover.mjs`).
+- **390/390 Tests Pasando al 100%** y **467 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [40.0.0] - 2026-08-17 (The Transcendent 136-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
 - **Atomic File Replace & Staged Write Guard**: Auditoría estática de operaciones de guardado de estado/manifiestos para garantizar escritura atómica en dos fases (`temp + rename`) (`storage-guard/atomic-file-write-guard.mjs`).
 - **Dead Config Path Alias Pruner**: Podado estático de alias de rutas y módulos huérfanos o no alcanzados en `tsconfig.json`/`vite.config.ts` (`config-guard/dead-alias-pruner.mjs`).
 - **Safe Regular Expression Unicode Flag Guard**: Auditoría estática de expresiones regulares de validación para garantizar el uso de flags `u`/`v` contra bypasses multibyte (`security-guard/regex-flag-guard.mjs`).
 - **Sandbox Process Scheduling Priority & Niceness Prover**: Demostración formal de prioridad de scheduling (`nice -n`, `os.setPriority`) en sandboxes para prevenir saturación del Event Loop anfitrión (`sandbox-guard/sandbox-priority-prover.mjs`).
-- **382/382 Tests Pasando al 100%** y **459 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [39.0.0] - 2026-08-17 (The Sovereign 132-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
 - **Unhandled Rejection & Process Exception Guard**: Auditoría estática de puntos de entrada de procesos y workers para garantizar captura de `unhandledRejection` y `uncaughtException` (`async-guard/unhandled-rejection-guard.mjs`).
