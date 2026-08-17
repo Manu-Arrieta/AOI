@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v47 pipeline with 164 pillars', async () => {
+test('createAoiOsPipeline initializes full v48 pipeline with 168 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v47',
-    taskId: 'TASK-2026-47',
+    feature: 'aoi-os-v48',
+    taskId: 'TASK-2026-48',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v47 pipeline with 164 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic Temporary Symlink Clashing & Race Guard
-  const symlinkCheck = pipeline.auditTempSymlinkClashes("const tempLink = path.join(dir, `.stg-${crypto.randomUUID()}`); if (fs.existsSync(tempLink)) fs.unlinkSync(tempLink); fs.symlinkSync(target, tempLink);")
-  assert.equal(symlinkCheck.safe, true)
-  assert.equal(symlinkCheck.symlinkProof, 'SAFE_ATOMIC_SYMLINK_CREATION_ENFORCED')
+  // 2. Atomic Buffer Slicing & Subarray Bounds Guard
+  const bufferCheck = pipeline.auditBufferSliceBounds("function readHeader(buf, offset, length) { if (offset + length <= buf.byteLength) return buf.subarray(offset, offset + length); throw new RangeError(); }")
+  assert.equal(bufferCheck.safe, true)
+  assert.equal(bufferCheck.boundsProof, 'SAFE_BUFFER_BOUNDARY_VALIDATION_ENFORCED')
 
-  // 3. Dead Workspace TypeScript Include Path Pruner
-  const includeCheck = pipeline.auditTsconfigIncludes({ include: ['src/**/*'] }, ['src/index.ts'])
-  assert.equal(includeCheck.clean, true)
-  assert.equal(includeCheck.includeProof, 'TSCONFIG_INCLUDE_PATHS_CANONICAL')
+  // 3. Dead Monorepo tsconfig Compiler Options types Pruner
+  const typesCheck = pipeline.auditTsconfigTypes({ compilerOptions: { types: ['node', 'vitest'] } }, ['@types/node', 'vitest'])
+  assert.equal(typesCheck.clean, true)
+  assert.equal(typesCheck.typesProof, 'TSCONFIG_TYPES_ARRAY_CANONICAL')
 
-  // 4. Safe Cryptographic PBKDF2 Digest Algorithm Hardness Guard
-  const pbkdf2Check = pipeline.auditCryptoPbkdf2Digests("const k = crypto.pbkdf2Sync(pass, salt, 100000, 64, 'sha512');")
-  assert.equal(pbkdf2Check.safe, true)
-  assert.equal(pbkdf2Check.digestProof, 'ROBUST_PBKDF2_DIGEST_ENFORCED')
+  // 4. Safe Cryptographic RSA Key Minimum Modulus Length Guard
+  const rsaCheck = pipeline.auditCryptoRsaKeyLengths("const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 4096 });")
+  assert.equal(rsaCheck.safe, true)
+  assert.equal(rsaCheck.rsaProof, 'ROBUST_RSA_MODULUS_LENGTH_ENFORCED')
 
-  // 5. Sandbox Child Process Stdin Stream Closure Prover
-  const stdinCheck = pipeline.auditSandboxStdinClosure("child.stdin.write(payload); child.stdin.end();")
-  assert.equal(stdinCheck.safe, true)
-  assert.equal(stdinCheck.stdinProof, 'DETERMINISTIC_STDIN_EOF_CLOSURE_ENFORCED')
+  // 5. Sandbox Dynamic Worker MessagePort Transfer Prover
+  const portCheck = pipeline.auditSandboxPortTransfers("const { port1, port2 } = new MessageChannel(); worker.postMessage({}, [port2]); worker.on('exit', () => port1.close());")
+  assert.equal(portCheck.safe, true)
+  assert.equal(portCheck.portProof, 'DETERMINISTIC_MESSAGE_PORT_CLOSURE_ENFORCED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v47 sovereign 164-pillar infinite singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+164 lines)',
+    decisions: ['Use deterministic v48 transcendent 168-pillar omnipresent singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+168 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
