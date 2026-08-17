@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v48 pipeline with 168 pillars', async () => {
+test('createAoiOsPipeline initializes full v49 pipeline with 172 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v48',
-    taskId: 'TASK-2026-48',
+    feature: 'aoi-os-v49',
+    taskId: 'TASK-2026-49',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v48 pipeline with 168 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic Buffer Slicing & Subarray Bounds Guard
-  const bufferCheck = pipeline.auditBufferSliceBounds("function readHeader(buf, offset, length) { if (offset + length <= buf.byteLength) return buf.subarray(offset, offset + length); throw new RangeError(); }")
-  assert.equal(bufferCheck.safe, true)
-  assert.equal(bufferCheck.boundsProof, 'SAFE_BUFFER_BOUNDARY_VALIDATION_ENFORCED')
+  // 2. Atomic Stream & EventEmitter MaxListeners Leak Guard
+  const maxListenersCheck = pipeline.auditStreamMaxListeners("function setup(emitter, list) { emitter.setMaxListeners(100); for (const item of list) { emitter.on('data', console.log); } }")
+  assert.equal(maxListenersCheck.safe, true)
+  assert.equal(maxListenersCheck.listenersProof, 'SAFE_MAX_LISTENERS_BOUNDING_ENFORCED')
 
-  // 3. Dead Monorepo tsconfig Compiler Options types Pruner
-  const typesCheck = pipeline.auditTsconfigTypes({ compilerOptions: { types: ['node', 'vitest'] } }, ['@types/node', 'vitest'])
-  assert.equal(typesCheck.clean, true)
-  assert.equal(typesCheck.typesProof, 'TSCONFIG_TYPES_ARRAY_CANONICAL')
+  // 3. Dead TypeScript Path Mapping Prefix Pruner
+  const pathPrefixCheck = pipeline.auditTsconfigPathPrefixes({ compilerOptions: { paths: { '@core/*': ['src/core/*'] } } }, ['src/core'])
+  assert.equal(pathPrefixCheck.clean, true)
+  assert.equal(pathPrefixCheck.pathsProof, 'TSCONFIG_PATH_MAPPINGS_CANONICAL')
 
-  // 4. Safe Cryptographic RSA Key Minimum Modulus Length Guard
-  const rsaCheck = pipeline.auditCryptoRsaKeyLengths("const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 4096 });")
-  assert.equal(rsaCheck.safe, true)
-  assert.equal(rsaCheck.rsaProof, 'ROBUST_RSA_MODULUS_LENGTH_ENFORCED')
+  // 4. Safe Cryptographic Diffie-Hellman Group & Prime Length Guard
+  const dhCheck = pipeline.auditCryptoDhGroups("const dh = crypto.getDiffieHellman('modp14'); dh.generateKeys();")
+  assert.equal(dhCheck.safe, true)
+  assert.equal(dhCheck.dhProof, 'ROBUST_DH_GROUP_ENFORCED')
 
-  // 5. Sandbox Dynamic Worker MessagePort Transfer Prover
-  const portCheck = pipeline.auditSandboxPortTransfers("const { port1, port2 } = new MessageChannel(); worker.postMessage({}, [port2]); worker.on('exit', () => port1.close());")
-  assert.equal(portCheck.safe, true)
-  assert.equal(portCheck.portProof, 'DETERMINISTIC_MESSAGE_PORT_CLOSURE_ENFORCED')
+  // 5. Sandbox Child Process IPC Channel Disconnect Prover
+  const ipcCheck = pipeline.auditSandboxIpcDisconnects("const child = fork('./worker.js'); child.on('exit', () => child.disconnect());")
+  assert.equal(ipcCheck.safe, true)
+  assert.equal(ipcCheck.disconnectProof, 'DETERMINISTIC_IPC_DISCONNECT_ENFORCED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v48 transcendent 168-pillar omnipresent singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+168 lines)',
+    decisions: ['Use deterministic v49 sovereign 172-pillar infinite singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+172 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
