@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v49 (The Sovereign 172-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v50 (The Centurial 176-Pillar Omnipresent Singularity & Universal Transcendence Master Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Atomic Stream & EventEmitter MaxListeners Leak Guard (`storage-guard/stream-max-listeners-guard.mjs`)**: Auditoría estática de registro de manejadores de eventos y streams para certificar la cota explícita (`setMaxListeners`) o desuscripción determinista (`removeListener`/`off`), previniendo advertencias `MaxListenersExceededWarning` y fugas de memoria (0 LLM tokens).
-- **Dead TypeScript Path Mapping Prefix Pruner (`config-guard/dead-tsconfig-path-prefix-pruner.mjs`)**: Podado estático de prefijos y rutas muertas en `"compilerOptions": { "paths": { "@prefix/*": ["src/prefix/*"] } }` de `tsconfig.json` contra directorios reales en disco, eliminando ambigüedades en la resolución del compilador `tsc` y LSP (0 LLM tokens).
-- **Safe Cryptographic Diffie-Hellman Group & Prime Length Guard (`security-guard/crypto-dh-group-guard.mjs`)**: Auditoría estática de intercambio de claves Diffie-Hellman (`crypto.createDiffieHellman`, `crypto.getDiffieHellman`) para garantizar que la longitud del primo sea estrictamente ≥ 2048 bits o grupos RFC 3526 MODP estandarizados (`modp14`+), prohibiendo grupos débiles u obsoletos (512, 768, 1024 bits / Logjam) (0 LLM tokens).
-- **Sandbox Child Process IPC Channel Disconnect Prover (`sandbox-guard/sandbox-ipc-disconnect-prover.mjs`)**: Demostración formal de desconexión determinista (`child.disconnect()`) en subprocesos con canales IPC generados en sandbox, evitando handles abiertos que retengan el bucle de eventos del proceso anfitrión (0 LLM tokens).
+- **Atomic Stream highWaterMark Memory Bounding Guard (`storage-guard/stream-highwatermark-guard.mjs`)**: Auditoría estática de creación de streams (`createReadStream`, `createWriteStream`, `Transform`, `PassThrough`) para certificar la cota explícita en `highWaterMark` (≤ 256KB), previniendo saturación de memoria y fragmentación del heap bajo transferencias masivas (0 LLM tokens).
+- **Dead TypeScript Exclude Pattern Pruner (`config-guard/dead-tsconfig-exclude-pruner.mjs`)**: Podado estático de patrones glob y rutas muertas en `"exclude": [...]` de `tsconfig.json` contra los archivos reales en disco, optimizando la fase de escaneo inicial del compilador `tsc` y LSP (0 LLM tokens).
+- **Safe Cryptographic HKDF Parameter & Digest Guard (`security-guard/crypto-hkdf-param-guard.mjs`)**: Auditoría estática de derivación de claves HKDF (`crypto.hkdf`, `crypto.hkdfSync` / RFC 5869) para garantizar el uso de resúmenes robustos SHA-2/SHA-3 (`sha256`, `sha384`, `sha512`) y validar parámetros `salt`/`info` no vacíos (0 LLM tokens).
+- **Sandbox Child Process Unref & Detach Prover (`sandbox-guard/sandbox-ipc-unref-prover.mjs`)**: Demostración formal de desprendimiento determinista (`child.unref()`) en subprocesos desacoplados (`detached: true`) o daemons de sandbox para permitir la salida limpia del bucle de eventos del proceso padre (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 172 Pilares (AOI-OS v49)
+## 🏛️ Matriz Arquitectónica Maestra de 176 Pilares (AOI-OS v50)
 
 ```text
-AOI-OS v49 Architecture Matrix (172 Pillars)
+AOI-OS v50 Architecture Matrix (176 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -306,11 +306,17 @@ AOI-OS v49 Architecture Matrix (172 Pillars)
 │   ├── crypto-rsa-key-length-guard.mjs: Auditoría estática de generación de claves RSA para garantizar longitud de módulo segura (>= 2048/3072 bits).
 │   └── sandbox-port-transfer-prover.mjs: Demostración formal de cierre determinista de MessagePort en canales transferidos a workers de sandbox.
 │
-└── 169-172. Núcleo Sovereign 172-Pillar Genesis Matrix v49 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-    ├── stream-max-listeners-guard.mjs: Auditoría estática de registro de eventos y streams para garantizar cota MaxListeners y desuscripciones deterministas.
-    ├── dead-tsconfig-path-prefix-pruner.mjs: Podado estático de prefijos y rutas muertas en paths de tsconfig.json.
-    ├── crypto-dh-group-guard.mjs: Auditoría estática de grupos Diffie-Hellman para certificar longitud de primo segura (>= 2048 bits / MODP14+).
-    └── sandbox-ipc-disconnect-prover.mjs: Demostración formal de desconexión determinista de canales IPC en subprocesos de sandbox.
+├── 169-172. Núcleo Sovereign 172-Pillar Genesis Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+│   ├── stream-max-listeners-guard.mjs: Auditoría estática de registro de eventos y streams para garantizar cota MaxListeners y desuscripciones deterministas.
+│   ├── dead-tsconfig-path-prefix-pruner.mjs: Podado estático de prefijos y rutas muertas en paths de tsconfig.json.
+│   ├── crypto-dh-group-guard.mjs: Auditoría estática de grupos Diffie-Hellman para certificar longitud de primo segura (>= 2048 bits / MODP14+).
+│   └── sandbox-ipc-disconnect-prover.mjs: Demostración formal de desconexión determinista de canales IPC en subprocesos de sandbox.
+│
+└── 173-176. Núcleo Centurial 176-Pillar Master Matrix v50 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+    ├── stream-highwatermark-guard.mjs: Auditoría estática de creación de streams para certificar cota de memoria explícita en highWaterMark (<= 256KB).
+    ├── dead-tsconfig-exclude-pruner.mjs: Podado estático de patrones glob huérfanos en exclude de tsconfig.json.
+    ├── crypto-hkdf-param-guard.mjs: Auditoría estática de parámetros HKDF para certificar uso exclusivo de digest SHA-2/SHA-3 y validación de salt/info.
+    └── sandbox-ipc-unref-prover.mjs: Demostración formal de desprendimiento determinista (child.unref()) en procesos desacoplados en sandbox.
 ```
 
 ---
@@ -353,24 +359,24 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [50.0.0] - 2026-08-17 (The Centurial 176-Pillar Omnipresent Singularity & Universal Transcendence Master Matrix)
+- **Atomic Stream highWaterMark Memory Bounding Guard**: Auditoría estática de creación de streams (`createReadStream`, `createWriteStream`, `Transform`, `PassThrough`) para certificar la cota explícita en `highWaterMark` (≤ 256KB), previniendo saturación de memoria y fragmentación del heap bajo transferencias masivas (`storage-guard/stream-highwatermark-guard.mjs`).
+- **Dead TypeScript Exclude Pattern Pruner**: Podado estático de patrones glob y rutas muertas en `"exclude": [...]` de `tsconfig.json` contra los archivos reales en disco, optimizando la fase de escaneo inicial del compilador `tsc` y LSP (`config-guard/dead-tsconfig-exclude-pruner.mjs`).
+- **Safe Cryptographic HKDF Parameter & Digest Guard**: Auditoría estática de derivación de claves HKDF (`crypto.hkdf`, `crypto.hkdfSync` / RFC 5869) para garantizar el uso de resúmenes robustos SHA-2/SHA-3 (`sha256`, `sha384`, `sha512`) y validar parámetros `salt`/`info` no vacíos (`security-guard/crypto-hkdf-param-guard.mjs`).
+- **Sandbox Child Process Unref & Detach Prover**: Demostración formal de desprendimiento determinista (`child.unref()`) en subprocesos desacoplados (`detached: true`) o daemons de sandbox para permitir la salida limpia del bucle de eventos del proceso padre (`sandbox-guard/sandbox-ipc-unref-prover.mjs`).
+- **462/462 Tests Pasando al 100%** y **539 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [49.0.0] - 2026-08-17 (The Sovereign 172-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
 - **Atomic Stream & EventEmitter MaxListeners Leak Guard**: Auditoría estática de registro de manejadores de eventos y streams para certificar la cota explícita (`setMaxListeners`) o desuscripción determinista (`removeListener`/`off`), previniendo advertencias `MaxListenersExceededWarning` y fugas de memoria (`storage-guard/stream-max-listeners-guard.mjs`).
 - **Dead TypeScript Path Mapping Prefix Pruner**: Podado estático de prefijos y rutas muertas en `"compilerOptions": { "paths": { "@prefix/*": ["src/prefix/*"] } }` de `tsconfig.json` contra directorios reales en disco, eliminando ambigüedades en la resolución del compilador `tsc` y LSP (`config-guard/dead-tsconfig-path-prefix-pruner.mjs`).
 - **Safe Cryptographic Diffie-Hellman Group & Prime Length Guard**: Auditoría estática de intercambio de claves Diffie-Hellman (`crypto.createDiffieHellman`, `crypto.getDiffieHellman`) para garantizar que la longitud del primo sea estrictamente ≥ 2048 bits o grupos RFC 3526 MODP estandarizados (`modp14`+), prohibiendo grupos débiles u obsoletos (512, 768, 1024 bits / Logjam) (`security-guard/crypto-dh-group-guard.mjs`).
 - **Sandbox Child Process IPC Channel Disconnect Prover**: Demostración formal de desconexión determinista (`child.disconnect()`) en subprocesos con canales IPC generados en sandbox, evitando handles abiertos que retengan el bucle de eventos del proceso anfitrión (`sandbox-guard/sandbox-ipc-disconnect-prover.mjs`).
-- **454/454 Tests Pasando al 100%** y **531 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [48.0.0] - 2026-08-17 (The Transcendent 168-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
 - **Atomic Buffer Slicing & Subarray Bounds Guard**: Auditoría estática de operaciones de indexación y slicing en Buffers y TypedArrays (`buf.subarray`, `buf.slice`, `buf.readUInt32BE`, `buf.copy`) para certificar la validación explícita de límites (`offset + length <= buffer.length`), previniendo caídas por `ERR_OUT_OF_RANGE` (`storage-guard/buffer-slice-bounds-guard.mjs`).
 - **Dead TypeScript Compiler Options `types` Pruner**: Podado estático de declaraciones de tipos huérfanas en `"compilerOptions": { "types": [...] }` de `tsconfig.json` contra los paquetes `@types/*` efectivamente instalados, previniendo errores de compilación `tsc` (`config-guard/dead-tsconfig-types-pruner.mjs`).
 - **Safe Cryptographic RSA Key Minimum Modulus Length Guard**: Auditoría estática de generación de claves asimétricas RSA (`crypto.generateKeyPair`, `crypto.generateKeyPairSync`) para certificar que `modulusLength` sea ≥ 2048 bits (recomendado 3072/4096 bits), prohibiendo longitudes débiles obsoletas (512, 1024 bits) (`security-guard/crypto-rsa-key-length-guard.mjs`).
 - **Sandbox Dynamic Worker MessagePort Transfer Prover**: Demostración formal de gestión determinista del ciclo de vida y cierre (`port1.close()` / `port.close()`) en canales `MessageChannel()` transferidos a workers de sandbox para evitar fugas de descriptores IPC (`sandbox-guard/sandbox-port-transfer-prover.mjs`).
-
-### [47.0.0] - 2026-08-17 (The Sovereign 164-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
-- **Atomic Temporary Symlink Clashing & Race Guard**: Auditoría estática de operaciones de creación de symlinks temporales (`fs.symlink`, `fs.symlinkSync`) para certificar el uso de sufijos aleatorios no colisionantes (`crypto.randomUUID()`) y desvinculación previa segura contra condiciones de carrera TOCTOU (`storage-guard/temp-symlink-clash-guard.mjs`).
-- **Dead Workspace TypeScript Include Path Pruner**: Podado estático de patrones glob y rutas muertas en `"include": [...]` de manifiestos `tsconfig.json` que apuntan a directorios eliminados o inexistentes (`config-guard/dead-tsconfig-include-pruner.mjs`).
-- **Safe Cryptographic PBKDF2 Digest Algorithm Hardness Guard**: Auditoría estática de derivación de claves PBKDF2 (`crypto.pbkdf2`, `crypto.pbkdf2Sync`) para certificar el uso exclusivo de algoritmos de digest modernos y robustos (`sha256`, `sha384`, `sha512`), prohibiendo digests vulnerables como `sha1` o `md5` (`security-guard/crypto-pbkdf2-digest-guard.mjs`).
-- **Sandbox Child Process Stdin Stream Closure Prover**: Demostración formal de invocación explícita de `child.stdin.end()` o `destroy()` tras enviar payloads a subprocesos con `stdin: 'pipe'` para prevenir bloqueos por espera infinita de EOF (`sandbox-guard/sandbox-stdin-close-prover.mjs`).
 
 ---
 

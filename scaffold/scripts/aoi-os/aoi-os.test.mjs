@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v49 pipeline with 172 pillars', async () => {
+test('createAoiOsPipeline initializes full v50 pipeline with 176 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v49',
-    taskId: 'TASK-2026-49',
+    feature: 'aoi-os-v50',
+    taskId: 'TASK-2026-50',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v49 pipeline with 172 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic Stream & EventEmitter MaxListeners Leak Guard
-  const maxListenersCheck = pipeline.auditStreamMaxListeners("function setup(emitter, list) { emitter.setMaxListeners(100); for (const item of list) { emitter.on('data', console.log); } }")
-  assert.equal(maxListenersCheck.safe, true)
-  assert.equal(maxListenersCheck.listenersProof, 'SAFE_MAX_LISTENERS_BOUNDING_ENFORCED')
+  // 2. Atomic Stream highWaterMark Memory Bounding Guard
+  const hwmCheck = pipeline.auditStreamHighWaterMarks("const stream = fs.createReadStream('/data.bin', { highWaterMark: 64 * 1024 });")
+  assert.equal(hwmCheck.safe, true)
+  assert.equal(hwmCheck.highWaterMarkProof, 'SAFE_HIGHWATERMARK_BOUNDING_ENFORCED')
 
-  // 3. Dead TypeScript Path Mapping Prefix Pruner
-  const pathPrefixCheck = pipeline.auditTsconfigPathPrefixes({ compilerOptions: { paths: { '@core/*': ['src/core/*'] } } }, ['src/core'])
-  assert.equal(pathPrefixCheck.clean, true)
-  assert.equal(pathPrefixCheck.pathsProof, 'TSCONFIG_PATH_MAPPINGS_CANONICAL')
+  // 3. Dead TypeScript Exclude Pattern Pruner
+  const excludeCheck = pipeline.auditTsconfigExcludes({ exclude: ['dist', 'coverage'] }, ['dist/index.js', 'coverage/lcov.info'])
+  assert.equal(excludeCheck.clean, true)
+  assert.equal(excludeCheck.excludeProof, 'TSCONFIG_EXCLUDE_PATTERNS_CANONICAL')
 
-  // 4. Safe Cryptographic Diffie-Hellman Group & Prime Length Guard
-  const dhCheck = pipeline.auditCryptoDhGroups("const dh = crypto.getDiffieHellman('modp14'); dh.generateKeys();")
-  assert.equal(dhCheck.safe, true)
-  assert.equal(dhCheck.dhProof, 'ROBUST_DH_GROUP_ENFORCED')
+  // 4. Safe Cryptographic HKDF Parameter & Digest Guard
+  const hkdfCheck = pipeline.auditCryptoHkdfParams("const key = crypto.hkdfSync('sha512', ikm, salt, info, 64);")
+  assert.equal(hkdfCheck.safe, true)
+  assert.equal(hkdfCheck.hkdfProof, 'ROBUST_HKDF_PARAMETERS_ENFORCED')
 
-  // 5. Sandbox Child Process IPC Channel Disconnect Prover
-  const ipcCheck = pipeline.auditSandboxIpcDisconnects("const child = fork('./worker.js'); child.on('exit', () => child.disconnect());")
-  assert.equal(ipcCheck.safe, true)
-  assert.equal(ipcCheck.disconnectProof, 'DETERMINISTIC_IPC_DISCONNECT_ENFORCED')
+  // 5. Sandbox Child Process Unref & Detach Prover
+  const unrefCheck = pipeline.auditSandboxIpcUnrefs("const child = spawn('node', ['./daemon.js'], { detached: true }); child.unref();")
+  assert.equal(unrefCheck.safe, true)
+  assert.equal(unrefCheck.unrefProof, 'DETERMINISTIC_DETACHED_UNREF_ENFORCED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v49 sovereign 172-pillar infinite singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+172 lines)',
+    decisions: ['Use deterministic v50 centurial 176-pillar omnipresent singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+176 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
