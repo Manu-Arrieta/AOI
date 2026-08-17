@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v44 (The Transcendent 152-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v45 (The Sovereign 156-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Atomic Directory Traversal Boundary & Canonical Realpath Guard (`storage-guard/directory-traversal-boundary-guard.mjs`)**: Auditoría estática de rutinas de resolución de rutas en disco para garantizar anclaje canónico estricto dentro de la raíz del workspace (`realpath.startsWith(root)`) contra evasiones de enlaces simbólicos (0 LLM tokens).
-- **Dead Package Export Condition Pruner (`package-guard/dead-package-export-condition-pruner.mjs`)**: Podado estático de condiciones de exportación (`import`, `require`, `types`, `default`) en `package.json` que apuntan a archivos o declaraciones inexistentes (0 LLM tokens).
-- **Safe Cryptographic Timing-Safe Buffer Comparison Guard (`security-guard/crypto-timing-safe-buffer-guard.mjs`)**: Auditoría estática de verificación de firmas y tokens HMAC para garantizar comparaciones en tiempo constante con `crypto.timingSafeEqual()` sobre Buffers (0 LLM tokens).
-- **Sandbox Worker AbortController Cancellation Prover (`sandbox-guard/sandbox-abort-controller-prover.mjs`)**: Demostración formal de aceptación de `AbortSignal` y listeners de cancelación en tareas asíncronas para garantizar parada instantánea de workers (0 LLM tokens).
+- **Atomic Hardlink Recursion & Inode Loop Guard (`storage-guard/hardlink-recursion-guard.mjs`)**: Auditoría estática de funciones recursivas de rastreo de directorios para verificar seguimiento de inodos visitados (`visitedInodes.has(stat.ino)`) o cota máxima de profundidad (`maxDepth`) contra bucles infinitos por hardlinks cíclicos (0 LLM tokens).
+- **Dead Package Binary Entrypoint Pruner (`package-guard/dead-package-bin-pruner.mjs`)**: Podado estático de mapeos `"bin"` en `package.json` que apuntan a ejecutables o scripts inexistentes o rotos (0 LLM tokens).
+- **Safe Cryptographic Elliptic Curve Hardness Guard (`security-guard/crypto-ec-curve-guard.mjs`)**: Auditoría estática de generación de claves ECDSA/ECDH para certificar el uso exclusivo de curvas robustas (`prime256v1`, `secp384r1`, `ed25519`, `x25519`) prohibiendo curvas débiles obsoletas (0 LLM tokens).
+- **Sandbox Dynamic Import Subresource Integrity Prover (`sandbox-guard/sandbox-sri-integrity-prover.mjs`)**: Demostración formal de validación de hashes criptográficos SRI (`integrity="sha384-..."` / SHA-256) en scripts y módulos externos dinámicos en sandbox (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 152 Pilares (AOI-OS v44)
+## 🏛️ Matriz Arquitectónica Maestra de 156 Pilares (AOI-OS v45)
 
 ```text
-AOI-OS v44 Architecture Matrix (152 Pillars)
+AOI-OS v45 Architecture Matrix (156 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -276,11 +276,17 @@ AOI-OS v44 Architecture Matrix (152 Pillars)
 │   ├── crypto-cipher-mode-guard.mjs: Auditoría estática de cifrado simétrico para certificar modos AEAD/GCM y manejo de auth tag.
 │   └── sandbox-ipc-payload-prover.mjs: Demostración formal de cotas de carga útil en mensajes IPC de sandbox contra caídas de serialización.
 │
-└── 149-152. Núcleo Transcendent 152-Pillar Genesis Core v44 (storage-guard/, package-guard/, security-guard/, sandbox-guard/)
-    ├── directory-traversal-boundary-guard.mjs: Auditoría estática de resolución de rutas para garantizar anclaje canónico estricto (realpath).
-    ├── dead-package-export-condition-pruner.mjs: Podado estático de condiciones de exportación huérfanas en package.json.
-    ├── crypto-timing-safe-buffer-guard.mjs: Auditoría estática de verificación de firmas HMAC para certificar tiempo constante (timingSafeEqual).
-    └── sandbox-abort-controller-prover.mjs: Demostración formal de aceptación y manejo de AbortSignal en workers asíncronos de sandbox.
+├── 149-152. Núcleo Transcendent 152-Pillar Genesis Core (storage-guard/, package-guard/, security-guard/, sandbox-guard/)
+│   ├── directory-traversal-boundary-guard.mjs: Auditoría estática de resolución de rutas para garantizar anclaje canónico estricto (realpath).
+│   ├── dead-package-export-condition-pruner.mjs: Podado estático de condiciones de exportación huérfanas en package.json.
+│   ├── crypto-timing-safe-buffer-guard.mjs: Auditoría estática de verificación de firmas HMAC para certificar tiempo constante (timingSafeEqual).
+│   └── sandbox-abort-controller-prover.mjs: Demostración formal de aceptación y manejo de AbortSignal en workers asíncronos de sandbox.
+│
+└── 153-156. Núcleo Sovereign 156-Pillar Genesis Matrix v45 (storage-guard/, package-guard/, security-guard/, sandbox-guard/)
+    ├── hardlink-recursion-guard.mjs: Auditoría estática de recursión de directorios para garantizar seguimiento de inodos visitados.
+    ├── dead-package-bin-pruner.mjs: Podado estático de binarios CLI huérfanos en package.json.
+    ├── crypto-ec-curve-guard.mjs: Auditoría estática de curvas elípticas para garantizar curvas criptográficas robustas (prime256v1, ed25519).
+    └── sandbox-sri-integrity-prover.mjs: Demostración formal de validación de hashes criptográficos SRI en imports dinámicos en sandbox.
 ```
 
 ---
@@ -323,12 +329,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [45.0.0] - 2026-08-17 (The Sovereign 156-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
+- **Atomic Hardlink Recursion & Inode Loop Guard**: Auditoría estática de funciones recursivas de rastreo de directorios para verificar seguimiento de inodos visitados (`visitedInodes.has(stat.ino)`) o cota máxima de profundidad (`maxDepth`) contra bucles infinitos por hardlinks cíclicos (`storage-guard/hardlink-recursion-guard.mjs`).
+- **Dead Package Binary Entrypoint Pruner**: Podado estático de mapeos `"bin"` en `package.json` que apuntan a ejecutables o scripts inexistentes o rotos (`package-guard/dead-package-bin-pruner.mjs`).
+- **Safe Cryptographic Elliptic Curve Hardness Guard**: Auditoría estática de generación de claves ECDSA/ECDH para certificar el uso exclusivo de curvas robustas (`prime256v1`, `secp384r1`, `ed25519`, `x25519`) prohibiendo curvas débiles obsoletas (`security-guard/crypto-ec-curve-guard.mjs`).
+- **Sandbox Dynamic Import Subresource Integrity Prover**: Demostración formal de validación de hashes criptográficos SRI (`integrity="sha384-..."` / SHA-256) en scripts y módulos externos dinámicos en sandbox (`sandbox-guard/sandbox-sri-integrity-prover.mjs`).
+- **422/422 Tests Pasando al 100%** y **499 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [44.0.0] - 2026-08-17 (The Transcendent 152-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
 - **Atomic Directory Traversal Boundary & Canonical Realpath Guard**: Auditoría estática de rutinas de resolución de rutas en disco para garantizar anclaje canónico estricto dentro de la raíz del workspace (`realpath.startsWith(root)`) contra evasiones de enlaces simbólicos (`storage-guard/directory-traversal-boundary-guard.mjs`).
 - **Dead Package Export Condition Pruner**: Podado estático de condiciones de exportación (`import`, `require`, `types`, `default`) en `package.json` que apuntan a archivos o declaraciones inexistentes (`package-guard/dead-package-export-condition-pruner.mjs`).
 - **Safe Cryptographic Timing-Safe Buffer Comparison Guard**: Auditoría estática de verificación de firmas y tokens HMAC para garantizar comparaciones en tiempo constante con `crypto.timingSafeEqual()` sobre Buffers (`security-guard/crypto-timing-safe-buffer-guard.mjs`).
 - **Sandbox Worker AbortController Cancellation Prover**: Demostración formal de aceptación de `AbortSignal` y listeners de cancelación en tareas asíncronas para garantizar parada instantánea de workers (`sandbox-guard/sandbox-abort-controller-prover.mjs`).
-- **414/414 Tests Pasando al 100%** y **491 archivos gobernados en paridad absoluta con scaffold/**.
 
 ### [43.0.0] - 2026-08-17 (The Sovereign 148-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
 - **Atomic Temporary File Collision & Cryptographic Prefix Guard**: Auditoría estática de rutinas de generación de archivos temporales para garantizar prefijos criptográficos no colisionantes (`crypto.randomUUID()`) contra carreras TOCTOU (`storage-guard/temp-file-collision-guard.mjs`).

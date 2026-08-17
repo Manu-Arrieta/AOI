@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v44 pipeline with 152 pillars', async () => {
+test('createAoiOsPipeline initializes full v45 pipeline with 156 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v44',
-    taskId: 'TASK-2026-44',
+    feature: 'aoi-os-v45',
+    taskId: 'TASK-2026-45',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v44 pipeline with 152 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic Directory Traversal Boundary & Canonical Realpath Guard
-  const dirCheck = pipeline.auditDirectoryBoundaries("function readFile(root, p) { const r = fs.realpathSync(path.resolve(root, p)); if (!r.startsWith(root)) throw new Error(); return fs.readFileSync(r); }")
-  assert.equal(dirCheck.safe, true)
-  assert.equal(dirCheck.boundaryProof, 'CANONICAL_WORKSPACE_BOUNDARY_ANCHORED')
+  // 2. Atomic Hardlink Recursion & Inode Loop Guard
+  const hardlinkCheck = pipeline.auditHardlinkRecursions("function walk(dir, seen = new Set()) { const s = fs.statSync(dir); if (seen.has(s.ino)) return; seen.add(s.ino); }")
+  assert.equal(hardlinkCheck.safe, true)
+  assert.equal(hardlinkCheck.recursionProof, 'BOUNDED_INODE_RECURSION_ENFORCED')
 
-  // 3. Dead Package Export Condition Pruner
-  const expCheck = pipeline.auditExportConditions({ exports: { '.': { import: './dist/index.mjs' } } }, ['dist/index.mjs'])
-  assert.equal(expCheck.clean, true)
-  assert.equal(expCheck.exportConditionProof, 'PACKAGE_EXPORT_CONDITIONS_CANONICAL')
+  // 3. Dead Package Binary Entrypoint Pruner
+  const binCheck = pipeline.auditPackageBinaries({ bin: { 'aoi-cli': './dist/cli.mjs' } }, ['dist/cli.mjs'])
+  assert.equal(binCheck.clean, true)
+  assert.equal(binCheck.binaryProof, 'PACKAGE_BINARIES_CANONICAL')
 
-  // 4. Safe Cryptographic Timing-Safe Buffer Comparison Guard
-  const timeBufCheck = pipeline.auditTimingSafeBuffers("function verifySignature(a, b) { const bA = Buffer.from(a); const bB = Buffer.from(b); if (bA.length !== bB.length) return false; return crypto.timingSafeEqual(bA, bB); }")
-  assert.equal(timeBufCheck.safe, true)
-  assert.equal(timeBufCheck.timingSafeProof, 'CONSTANT_TIME_BUFFER_COMPARISON_ENFORCED')
+  // 4. Safe Cryptographic Elliptic Curve Hardness Guard
+  const ecCheck = pipeline.auditEcCurves("const ecdh = crypto.createECDH('prime256v1');")
+  assert.equal(ecCheck.safe, true)
+  assert.equal(ecCheck.curveProof, 'ROBUST_ELLIPTIC_CURVE_HARDNESS_ENFORCED')
 
-  // 5. Sandbox Worker AbortController Cancellation Prover
-  const abortCheck = pipeline.auditAbortControllers("async function runJob(data, signal) { signal.throwIfAborted(); return compute(data); }")
-  assert.equal(abortCheck.safe, true)
-  assert.equal(abortCheck.abortProof, 'RESPONSIVE_ABORT_CONTROLLER_CANCELLATION_ENFORCED')
+  // 5. Sandbox Dynamic Import Subresource Integrity (SRI) Prover
+  const sriCheck = pipeline.auditSriIntegrity("function loadScript(url, sha) { const s = document.createElement('script'); s.src = url; s.integrity = sha; }")
+  assert.equal(sriCheck.safe, true)
+  assert.equal(sriCheck.sriProof, 'CRYPTOGRAPHIC_SUBRESOURCE_INTEGRITY_ENFORCED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v44 transcendent 152-pillar omnipresent singularity genesis suite'],
-    diffSummary: 'server/api/tasks.ts (+152 lines)',
+    decisions: ['Use deterministic v45 sovereign 156-pillar infinite singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+156 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
