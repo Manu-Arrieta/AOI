@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v33 pipeline with 108 pillars', async () => {
+test('createAoiOsPipeline initializes full v34 pipeline with 112 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v33',
-    taskId: 'TASK-2026-33',
+    feature: 'aoi-os-v34',
+    taskId: 'TASK-2026-34',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,29 +34,29 @@ test('createAoiOsPipeline initializes full v33 pipeline with 108 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. OpenTelemetry Span Lifecycle Guard
-  const spanCheck = pipeline.auditSpanLifecycle("const s = tracer.startSpan('task'); try { await doWork(); } finally { s.end(); }")
-  assert.equal(spanCheck.safe, true)
-  assert.equal(spanCheck.spanProof, 'SPAN_LIFECYCLE_TERMINATION_PROVEN')
+  // 2. Worker Thread Termination Guard
+  const workerCheck = pipeline.auditWorkerTeardown("const w = new Worker('./w.js'); afterAll(async () => await w.terminate());")
+  assert.equal(workerCheck.safe, true)
+  assert.equal(workerCheck.workerProof, 'WORKER_TERMINATION_GUARANTEED')
 
-  // 3. Dead Env Flag Pruner
-  const envCheck = pipeline.auditDeadEnvFlagCoverage(['PORT'], 'const p = process.env.PORT || 3000;')
-  assert.equal(envCheck.allReferenced, true)
-  assert.equal(envCheck.envProof, 'ALL_ENV_FLAGS_REFERENCED')
+  // 3. Dead Store State Pruner
+  const storeCheck = pipeline.auditDeadStoreStateCoverage(['activeFilter'], 'const f = store.activeFilter;')
+  assert.equal(storeCheck.allReferenced, true)
+  assert.equal(storeCheck.storeProof, 'ALL_STORE_PROPERTIES_REFERENCED')
 
-  // 4. Query Depth & Algorithmic Complexity Guard
-  const depthCheck = pipeline.auditQueryDepth("const server = new ApolloServer({ schema, validationRules: [depthLimit(5)] });")
-  assert.equal(depthCheck.safe, true)
-  assert.equal(depthCheck.queryDepthProof, 'QUERY_DEPTH_RESTRICTION_PROVEN')
+  // 4. Stream Backpressure Guard
+  const backpressureCheck = pipeline.auditStreamBackpressure("const ok = stream.push(chunk); if (!ok) stream.once('drain', () => {});")
+  assert.equal(backpressureCheck.safe, true)
+  assert.equal(backpressureCheck.backpressureProof, 'STREAMING_BACKPRESSURE_HANDLED')
 
-  // 5. Sandbox Shm & IPC Channel Cleanup Prover
-  const shmCheck = pipeline.auditShmChannelCleanup("const { port1, port2 } = new MessageChannel(); afterAll(() => { port1.close(); port2.close(); });")
-  assert.equal(shmCheck.safe, true)
-  assert.equal(shmCheck.shmProof, 'IPC_CHANNEL_CLEANUP_GUARANTEED')
+  // 5. Sandbox Privilege Escalation Prover
+  const escalationCheck = pipeline.auditPrivilegeEscalation("chmod 755 ./run.sh && node ./run.sh")
+  assert.equal(escalationCheck.safe, true)
+  assert.equal(escalationCheck.escalationProof, 'PRIVILEGE_ESCALATION_CONTAINMENT_PROVEN')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v33 transcendent 108-pillar omnipresent singularity master suite'],
+    decisions: ['Use deterministic v34 absolute 112-pillar universal omniverse master suite'],
     diffSummary: 'server/api/tasks.ts (+80 lines)',
   }, async () => ({ stdout: 'OK' }))
 

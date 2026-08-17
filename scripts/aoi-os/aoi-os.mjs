@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v33 (The Transcendent 108-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core).
+ * Master Orchestrator Engine for AOI-OS v34 (The Absolute 112-Pillar Universal Omniverse Kernel & Autonomous Transcendence Super-Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -43,7 +43,9 @@
  * Database Connection Pool Drain Prover, Dead i18n & Localization Key Pruner,
  * JWT & Auth Token Expiration Guard, Sandbox Symlink Traversal Escape Prover,
  * OpenTelemetry Tracer Span Lifecycle Guard, Dead Environment Variable & Config Flag Pruner,
- * Query Depth & Algorithmic Complexity Guard, Sandbox Shared Memory & IPC Channel Cleanup Prover, and ICM Memory Linking.
+ * Query Depth & Algorithmic Complexity Guard, Sandbox Shared Memory & IPC Channel Cleanup Prover,
+ * Web Worker & Worker Thread Termination Guard, Dead Store State & Pinia Property Pruner,
+ * SSE & WebSocket Stream Backpressure Guard, Sandbox Privilege Escalation & Setuid Prover, and ICM Memory Linking.
  */
 
 import fs from 'node:fs'
@@ -85,6 +87,7 @@ import { auditDeadEnvFlags } from './env-guard/dead-env-pruner.mjs'
 import { validateStructuralConfig } from './config-guard/structural-config-guard.mjs'
 import { auditDeadRoutes } from './route-guard/dead-route-pruner.mjs'
 import { auditDeadComponents } from './component-guard/dead-component-pruner.mjs'
+import { auditDeadStoreState } from './component-guard/dead-store-pruner.mjs'
 import { auditHydrationSafety } from './component-guard/hydration-mismatch-guard.mjs'
 import { auditDeadTypes } from './type-guard/dead-type-pruner.mjs'
 import { auditDeadTypeAliases } from './type-guard/dead-type-alias-pruner.mjs'
@@ -93,11 +96,13 @@ import { auditDeadPackageExports } from './export-guard/dead-export-package-prun
 import { auditDeadI18nKeys } from './i18n-guard/dead-i18n-pruner.mjs'
 import { proveDbPoolDrainSafety } from './db-guard/db-pool-drain-prover.mjs'
 import { proveStreamTeardownSafety } from './stream-guard/stream-teardown-prover.mjs'
+import { auditStreamBackpressureSafety } from './stream-guard/stream-backpressure-guard.mjs'
 import { auditWebSocketHeartbeat } from './stream-guard/websocket-heartbeat-guard.mjs'
 import { proveSignalTeardown } from './sandbox-guard/signal-teardown-prover.mjs'
 import { provePipeCleanupSafety } from './sandbox-guard/pipe-cleanup-prover.mjs'
 import { provePathContainment } from './sandbox-guard/sandbox-path-escape-prover.mjs'
 import { proveSymlinkContainment } from './sandbox-guard/sandbox-symlink-escape-prover.mjs'
+import { provePrivilegeEscalationSafety } from './sandbox-guard/sandbox-privilege-escalation-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -109,6 +114,7 @@ import { auditConstitutionDrift } from './consensus-gate/constitution-drift-audi
 import { evaluateBftQuorum } from './consensus-gate/bft-quorum-engine.mjs'
 import { createWorkspaceMeshNode } from './federation/workspace-mesh-bridge.mjs'
 import { createLivePatchKernel } from './runtime-kernel/live-patch-kernel.mjs'
+import { auditWorkerTerminationSafety } from './runtime-kernel/worker-termination-guard.mjs'
 import { proveSymbolicConstraints } from './symbolic-prover/symbolic-constraint-prover.mjs'
 import { auditTestFlakiness } from './test-guard/flakiness-detector.mjs'
 import { alignBidirectionalAbi } from './abi-linker/bidirectional-abi-linker.mjs'
@@ -304,6 +310,43 @@ export function createAoiOsPipeline(options) {
     )
 
     return { node, microAgent, capabilityToken }
+  }
+
+  /**
+   * Audits worker thread managers for guaranteed termination.
+   *
+   * @param {string} sourceCode
+   */
+  function auditWorkerTeardown(sourceCode) {
+    return auditWorkerTerminationSafety(sourceCode)
+  }
+
+  /**
+   * Audits Pinia/Vuex store state properties for dead unreferenced properties.
+   *
+   * @param {string[]} stateProperties
+   * @param {string} consumerSourceCode
+   */
+  function auditDeadStoreStateCoverage(stateProperties = [], consumerSourceCode = '') {
+    return auditDeadStoreState(stateProperties, consumerSourceCode)
+  }
+
+  /**
+   * Audits streaming writes for backpressure flow control.
+   *
+   * @param {string} sourceCode
+   */
+  function auditStreamBackpressure(sourceCode) {
+    return auditStreamBackpressureSafety(sourceCode)
+  }
+
+  /**
+   * Proves prohibition of setuid/setgid and privilege escalation commands in sandbox.
+   *
+   * @param {string} commandOrSourceCode
+   */
+  function auditPrivilegeEscalation(commandOrSourceCode) {
+    return provePrivilegeEscalationSafety(commandOrSourceCode)
   }
 
   /**
@@ -898,7 +941,7 @@ export function createAoiOsPipeline(options) {
   function generateSbomReport(components = []) {
     return generateDeterministicSbom({
       projectName: `AOI-${workspace}`,
-      version: '33.0.0',
+      version: '34.0.0',
       components,
     })
   }
@@ -995,7 +1038,7 @@ export function createAoiOsPipeline(options) {
    *
    * @param {string} tableName
    * @param {Record<string, string>} prevCols
-   * @param {Record<string, string>} currCols
+   * @param {Record<string, currCols>} currCols
    */
   function generateDbMigration(tableName, prevCols, currCols) {
     return synthesizeMigrationDiff(tableName, prevCols, currCols)
@@ -1447,6 +1490,10 @@ export function createAoiOsPipeline(options) {
     semanticFabric,
     tokenHologram,
     prepareTaskExecution,
+    auditWorkerTeardown,
+    auditDeadStoreStateCoverage,
+    auditStreamBackpressure,
+    auditPrivilegeEscalation,
     auditSpanLifecycle,
     auditDeadEnvFlagCoverage,
     auditQueryDepth,
@@ -1571,7 +1618,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v33: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v34: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
