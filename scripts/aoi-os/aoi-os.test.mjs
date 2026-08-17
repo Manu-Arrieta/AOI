@@ -12,12 +12,12 @@ const SAMPLE_TASKS_MD = `
 - Target: \`Services/TaskService.cs\`
 `
 
-test('createAoiOsPipeline initializes full v55 pipeline with 196 pillars', async () => {
+test('createAoiOsPipeline initializes full v56 pipeline with 200 pillars', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v55',
-    taskId: 'TASK-2026-55',
+    feature: 'aoi-os-v56',
+    taskId: 'TASK-2026-56',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -34,30 +34,30 @@ test('createAoiOsPipeline initializes full v55 pipeline with 196 pillars', async
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic Stream pipeline & finished Async Await Guard
-  const pipelineCheck = pipeline.auditStreamPipelineAsync("import { pipeline } from 'node:stream/promises'; async function run() { await pipeline(a, b); }")
-  assert.equal(pipelineCheck.safe, true)
-  assert.equal(pipelineCheck.pipelineProof, 'STREAM_PIPELINE_PROMISE_AWAITED')
+  // 2. Atomic Stream Duplex & Half-Close Socket Guard
+  const halfCloseCheck = pipeline.auditStreamHalfCloses("const s = net.createConnection({ port: 80, allowHalfOpen: true }); s.on('end', () => s.destroy());")
+  assert.equal(halfCloseCheck.safe, true)
+  assert.equal(halfCloseCheck.halfCloseProof, 'HALF_OPEN_SOCKET_TEARDOWN_ENFORCED')
 
-  // 3. Dead TypeScript Redundant Strict Sub-Flags Pruner
-  const strictCheck = pipeline.auditTsconfigStrictFlags({ compilerOptions: { strict: true, target: 'es2022' } })
-  assert.equal(strictCheck.clean, true)
-  assert.equal(strictCheck.strictProof, 'TSCONFIG_STRICT_FLAGS_CANONICAL')
+  // 3. Dead TypeScript Target-Lib Consistency Pruner
+  const targetLibCheck = pipeline.auditTsconfigTargetLibs({ compilerOptions: { target: 'ES2022', lib: ['DOM'] } })
+  assert.equal(targetLibCheck.clean, true)
+  assert.equal(targetLibCheck.targetLibProof, 'TARGET_LIB_CANONICAL')
 
-  // 4. Safe Cryptographic Key Pair Generation Guard
-  const keyPairCheck = pipeline.auditCryptoKeyPairs("crypto.generateKeyPair('ed25519', (err, pub, priv) => {});")
-  assert.equal(keyPairCheck.safe, true)
-  assert.equal(keyPairCheck.keyPairProof, 'KEYPAIR_PARAMETERS_CANONICAL')
+  // 4. Safe Cryptographic RSA-PSS Padding & Salt Guard
+  const rsaPssCheck = pipeline.auditCryptoRsaPssPaddings("const sig = crypto.sign('sha256', d, { key: k, padding: crypto.constants.RSA_PKCS1_PSS_PADDING, saltLength: crypto.constants.RSA_PSS_SALTLEN_DIGEST });")
+  assert.equal(rsaPssCheck.safe, true)
+  assert.equal(rsaPssCheck.rsaPssProof, 'RSA_PSS_PADDING_CANONICAL')
 
-  // 5. Sandbox Worker TransferList & Zero-Copy Prover
-  const transferCheck = pipeline.auditSandboxWorkerTransferLists("parentPort.postMessage(buffer, [buffer]);")
-  assert.equal(transferCheck.safe, true)
-  assert.equal(transferCheck.transferProof, 'ZERO_COPY_TRANSFER_LIST_ENFORCED')
+  // 5. Sandbox Process windowsHide Isolation Prover
+  const windowsHideCheck = pipeline.auditSandboxProcessWindowsHide("const p = spawn('node', ['app.js'], { cwd: '/s', windowsHide: true });")
+  assert.equal(windowsHideCheck.safe, true)
+  assert.equal(windowsHideCheck.windowsHideProof, 'CROSS_PLATFORM_HEADLESS_PROCESS_ENFORCED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v55 sovereign 196-pillar infinite singularity master suite'],
-    diffSummary: 'server/api/tasks.ts (+196 lines)',
+    decisions: ['Use deterministic v56 bicentennial 200-pillar omnipresent singularity master suite'],
+    diffSummary: 'server/api/tasks.ts (+200 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)

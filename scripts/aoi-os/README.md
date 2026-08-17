@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v55 (The Sovereign 196-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v56 (The Bicentennial 200-Pillar Omnipresent Singularity & Universal Transcendence Master Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Atomic Stream pipeline & finished Async Await Guard (`storage-guard/stream-pipeline-async-guard.mjs`)**: Auditoría estática de flujos de streams basados en Promesas (`stream.pipeline` / `stream.finished` de `stream/promises`) para certificar que incluyan `await` o manejadores `.catch()`, garantizando propagación de errores y finalización determinista (0 LLM tokens).
-- **Dead TypeScript Redundant Strict Sub-Flags Pruner (`config-guard/dead-tsconfig-strict-flag-pruner.mjs`)**: Podado estático de sub-flags estrictas (`noImplicitAny`, `strictNullChecks`, etc.) en `tsconfig.json` cuando `"strict": true` ya está activo en `compilerOptions`, manteniendo la configuración concisa y canónica (0 LLM tokens).
-- **Safe Cryptographic Key Pair Generation Guard (`security-guard/crypto-key-pair-curve-guard.mjs`)**: Auditoría estática de llamadas a `crypto.generateKeyPair` / `generateKeyPairSync` para certificar curvas robustas modernas (`ed25519`, `x25519`, `prime256v1`, `secp384r1`) y longitud RSA segura (≥ 2048 bits), prohibiendo curvas débiles (< 256 bits) (0 LLM tokens).
-- **Sandbox Worker TransferList & Zero-Copy Prover (`sandbox-guard/sandbox-worker-transfer-list-prover.mjs`)**: Demostración formal de inclusión explícita del argumento `transferList` en llamadas `postMessage` con `ArrayBuffer` en Worker Threads de sandbox, garantizando transferencias sin copia y previniendo sobrecarga en el heap (0 LLM tokens).
+- **Atomic Stream Duplex & Half-Close Socket Guard (`storage-guard/stream-half-close-guard.mjs`)**: Auditoría estática de sockets TCP/TLS y streams Duplex (`net.Socket`, `tls.TLSSocket`, `stream.Duplex`) configurados con `allowHalfOpen: true` para certificar la presencia de manejadores de evento `end`/`close` o llamadas deterministas a `.destroy()`, evitando sockets estancados en `CLOSE_WAIT` y fugas de descriptores de archivos del sistema operativo (0 LLM tokens).
+- **Dead TypeScript Target-Lib Consistency Pruner (`config-guard/dead-tsconfig-target-lib-pruner.mjs`)**: Podado estático de entradas redundantes en `compilerOptions.lib` (ej. `"lib": ["ES2022"]`) cuando `"target": "ES2022"` ya está configurado en `tsconfig.json` (dado que `target` incluye implícitamente su propia librería estándar), reduciendo la memoria del parser de `tsc` y LSP (0 LLM tokens).
+- **Safe Cryptographic RSA-PSS Padding & Salt Guard (`security-guard/crypto-rsa-pss-padding-guard.mjs`)**: Auditoría estática de llamadas a `crypto.sign()` y `crypto.verify()` cuando se utiliza `RSA_PKCS1_PSS_PADDING` para certificar que el parámetro `saltLength` esté configurado explícitamente (ej. `crypto.constants.RSA_PSS_SALTLEN_DIGEST`), previniendo vulnerabilidades de maleabilidad de firmas RSA (RFC 8017 / NIST SP 800-56B) (0 LLM tokens).
+- **Sandbox Process windowsHide Isolation Prover (`sandbox-guard/sandbox-process-windows-hide-prover.mjs`)**: Demostración formal de definición explícita de `windowsHide: true` en opciones de `spawn()` / `exec()` / `fork()` para subprocesos de sandbox, garantizando ejecución headless, silenciosa y hermética en entornos multiplataforma (Windows/macOS/Linux) (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 196 Pilares (AOI-OS v55)
+## 🏛️ Matriz Arquitectónica Maestra de 200 Pilares (AOI-OS v56)
 
 ```text
-AOI-OS v55 Architecture Matrix (196 Pillars)
+AOI-OS v56 Architecture Matrix (200 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -342,11 +342,17 @@ AOI-OS v55 Architecture Matrix (196 Pillars)
 │   ├── crypto-eddsa-verify-guard.mjs: Auditoría estática de firmas EdDSA (Ed25519/Ed448) para certificar parámetro de algoritmo null y prevenir confusión.
 │   └── sandbox-worker-heap-limit-prover.mjs: Demostración formal de límites resourceLimits (maxOldGenerationSizeMb <= 512MB) en Worker Threads de sandbox.
 │
-└── 193-196. Núcleo Sovereign 196-Pillar Master Matrix v55 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-    ├── stream-pipeline-async-guard.mjs: Auditoría estática de stream.pipeline / stream.finished para certificar manejo await o .catch() en promesas.
-    ├── dead-tsconfig-strict-flag-pruner.mjs: Podado estático de sub-flags estrictas (noImplicitAny, strictNullChecks) redundantes cuando strict es true en tsconfig.json.
-    ├── crypto-key-pair-curve-guard.mjs: Auditoría estática de crypto.generateKeyPair para certificar curvas robustas (ed25519/x25519) y módulos RSA seguros (>= 2048 bits).
-    └── sandbox-worker-transfer-list-prover.mjs: Demostración formal de inclusión de transferList en postMessage de ArrayBuffers en workers de sandbox.
+├── 193-196. Núcleo Sovereign 196-Pillar Master Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+│   ├── stream-pipeline-async-guard.mjs: Auditoría estática de stream.pipeline / stream.finished para certificar manejo await o .catch() en promesas.
+│   ├── dead-tsconfig-strict-flag-pruner.mjs: Podado estático de sub-flags estrictas (noImplicitAny, strictNullChecks) redundantes cuando strict es true en tsconfig.json.
+│   ├── crypto-key-pair-curve-guard.mjs: Auditoría estática de crypto.generateKeyPair para certificar curvas robustas (ed25519/x25519) y módulos RSA seguros (>= 2048 bits).
+│   └── sandbox-worker-transfer-list-prover.mjs: Demostración formal de inclusión de transferList en postMessage de ArrayBuffers en workers de sandbox.
+│
+└── 197-200. Núcleo Bicentenario 200-Pillar Master Matrix v56 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+    ├── stream-half-close-guard.mjs: Auditoría estática de sockets TCP/TLS y streams Duplex con allowHalfOpen: true para certificar cierre completo (destroy/end/close).
+    ├── dead-tsconfig-target-lib-pruner.mjs: Podado estático de entradas redundantes en lib que duplican el target en tsconfig.json (ej. target ES2022 con lib ES2022).
+    ├── crypto-rsa-pss-padding-guard.mjs: Auditoría estática de crypto.sign/verify con RSA_PKCS1_PSS_PADDING para certificar especificación explícita de saltLength.
+    └── sandbox-process-windows-hide-prover.mjs: Demostración formal de definición explícita de windowsHide: true en subprocesos de sandbox multiplataforma.
 ```
 
 ---
@@ -389,18 +395,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [56.0.0] - 2026-08-17 (The Bicentennial 200-Pillar Omnipresent Singularity & Universal Transcendence Master Matrix)
+- **Atomic Stream Duplex & Half-Close Socket Guard**: Auditoría estática de sockets TCP/TLS y streams Duplex (`net.Socket`, `tls.TLSSocket`, `stream.Duplex`) configurados con `allowHalfOpen: true` para certificar la presencia de manejadores de evento `end`/`close` o llamadas deterministas a `.destroy()`, evitando sockets estancados en `CLOSE_WAIT` y fugas de descriptores de archivos del sistema operativo (`storage-guard/stream-half-close-guard.mjs`).
+- **Dead TypeScript Target-Lib Consistency Pruner**: Podado estático de entradas redundantes en `compilerOptions.lib` (ej. `"lib": ["ES2022"]`) cuando `"target": "ES2022"` ya está configurado en `tsconfig.json` (dado que `target` incluye implícitamente su propia librería estándar), reduciendo la memoria del parser de `tsc` y LSP (`config-guard/dead-tsconfig-target-lib-pruner.mjs`).
+- **Safe Cryptographic RSA-PSS Padding & Salt Guard**: Auditoría estática de llamadas a `crypto.sign()` y `crypto.verify()` cuando se utiliza `RSA_PKCS1_PSS_PADDING` para certificar que el parámetro `saltLength` esté configurado explícitamente (ej. `crypto.constants.RSA_PSS_SALTLEN_DIGEST`), previniendo vulnerabilidades de maleabilidad de firmas RSA (RFC 8017 / NIST SP 800-56B) (`security-guard/crypto-rsa-pss-padding-guard.mjs`).
+- **Sandbox Process windowsHide Isolation Prover**: Demostración formal de definición explícita de `windowsHide: true` en opciones de `spawn()` / `exec()` / `fork()` para subprocesos de sandbox, garantizando ejecución headless, silenciosa y hermética en entornos multiplataforma (Windows/macOS/Linux) (`sandbox-guard/sandbox-process-windows-hide-prover.mjs`).
+- **510/510 Tests Pasando al 100%** y **587 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [55.0.0] - 2026-08-17 (The Sovereign 196-Pillar Infinite Singularity & Universal Autonomous Hyper-Nexus Matrix)
 - **Atomic Stream pipeline & finished Async Await Guard**: Auditoría estática de flujos de streams basados en Promesas (`stream.pipeline` / `stream.finished` de `stream/promises`) para certificar que incluyan `await` o manejadores `.catch()`, garantizando propagación de errores y finalización determinista (`storage-guard/stream-pipeline-async-guard.mjs`).
 - **Dead TypeScript Redundant Strict Sub-Flags Pruner**: Podado estático de sub-flags estrictas (`noImplicitAny`, `strictNullChecks`, etc.) en `tsconfig.json` cuando `"strict": true` ya está activo en `compilerOptions`, manteniendo la configuración concisa y canónica (`config-guard/dead-tsconfig-strict-flag-pruner.mjs`).
 - **Safe Cryptographic Key Pair Generation Guard**: Auditoría estática de llamadas a `crypto.generateKeyPair` / `generateKeyPairSync` para certificar curvas robustas modernas (`ed25519`, `x25519`, `prime256v1`, `secp384r1`) y longitud RSA segura (≥ 2048 bits), prohibiendo curvas débiles (< 256 bits) (`security-guard/crypto-key-pair-curve-guard.mjs`).
 - **Sandbox Worker TransferList & Zero-Copy Prover**: Demostración formal de inclusión explícita del argumento `transferList` en llamadas `postMessage` con `ArrayBuffer` en Worker Threads de sandbox, garantizando transferencias sin copia y previniendo sobrecarga en el heap (`sandbox-guard/sandbox-worker-transfer-list-prover.mjs`).
-- **502/502 Tests Pasando al 100%** y **579 archivos gobernados en paridad absoluta con scaffold/**.
-
-### [54.0.0] - 2026-08-17 (The Transcendent 192-Pillar Omnipresent Singularity & Universal Autonomous Genesis Core)
-- **Atomic Stream pause & resume Flow Control Guard**: Auditoría estática de flujos de throttling y contrapresión que emplean `.pause()` para verificar que exista una llamada emparejada determinista a `.resume()` (ej. en callbacks asíncronos o evento `drain`), evitando deadlocks en pipelines de datos (`storage-guard/stream-pause-resume-guard.mjs`).
-- **Dead TypeScript Interop Flag Pruner**: Podado estático de declaraciones redundantes de `allowSyntheticDefaultImports: true` en `tsconfig.json` cuando `esModuleInterop: true` ya está activo, simplificando el esquema de compilación (`config-guard/dead-tsconfig-interop-pruner.mjs`).
-- **Safe Cryptographic EdDSA Signature & Algorithm Guard**: Auditoría estática de verificación de firmas EdDSA (Ed25519 / Ed448 / RFC 8032) para certificar que el parámetro de algoritmo sea `null` (mandatario en Node.js crypto API) y prevenir confusión de algoritmos o firmas truncadas (`security-guard/crypto-eddsa-verify-guard.mjs`).
-- **Sandbox Worker Resource Limits & Heap Cap Prover**: Demostración formal de definición explícita de `resourceLimits` (con cota de memoria `maxOldGenerationSizeMb` ≤ 512MB) en instanciaciones de Worker Threads (`new Worker`) dentro del sandbox, evitando OOM DoS en el anfitrión (`sandbox-guard/sandbox-worker-heap-limit-prover.mjs`).
 
 ---
 
