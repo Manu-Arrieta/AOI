@@ -18,12 +18,12 @@ As an operator, I want JWT authentication.
 ### Scenario: User logs in with valid email password credentials returning JWT
 `
 
-test('createAoiOsPipeline initializes full v68 pipeline with 248 pillars including same-dev staging & NPROC bounds', async () => {
+test('createAoiOsPipeline initializes full v69 pipeline with 252 pillars including flock & core dump filtering', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v68',
-    taskId: 'TASK-2026-68',
+    feature: 'aoi-os-v69',
+    taskId: 'TASK-2026-69',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -40,44 +40,55 @@ test('createAoiOsPipeline initializes full v68 pipeline with 248 pillars includi
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic File Same-Device Placement Guard
-  const sameDevCheck = pipeline.auditAtomicSameDevs(`
-    const tempPath = path.join(path.dirname(targetFile), \`.\${path.basename(targetFile)}.\${crypto.randomUUID()}.tmp\`);
-    fs.writeFileSync(tempPath, data);
-    fs.renameSync(tempPath, targetFile);
+  // 2. Atomic File Advisory Lock Guard
+  const flockCheck = pipeline.auditAtomicFlocks(`
+    async function updateRegistry(filePath, data) {
+      const release = await lockfile.lock(filePath);
+      try {
+        fs.writeFileSync(tempPath, data);
+        fs.renameSync(tempPath, filePath);
+      } finally {
+        await release();
+      }
+    }
   `)
-  assert.equal(sameDevCheck.safe, true)
-  assert.equal(sameDevCheck.sameDevProof, 'SAME_DEVICE_STAGING_PLACEMENT_VERIFIED')
+  assert.equal(flockCheck.safe, true)
+  assert.equal(flockCheck.atomicFlockProof, 'EXCLUSIVE_ADVISORY_LOCK_VERIFIED')
 
-  // 3. Dead tsconfig.json rewriteRelativeImportExtensions Pruner
-  const rewriteCheck = pipeline.auditTsconfigRewriteImports({
-    compilerOptions: { rewriteRelativeImportExtensions: true, moduleResolution: 'bundler' },
+  // 3. Dead tsconfig.json exactOptionalPropertyTypes Pruner
+  const exactOptionalCheck = pipeline.auditTsconfigExactOptionalProperties({
+    compilerOptions: { exactOptionalPropertyTypes: true, strict: true },
   })
-  assert.equal(rewriteCheck.clean, true)
-  assert.equal(rewriteCheck.rewriteRelativeImportProof, 'TSCONFIG_REWRITE_RELATIVE_IMPORT_EXTENSIONS_VALID')
+  assert.equal(exactOptionalCheck.clean, true)
+  assert.equal(exactOptionalCheck.exactOptionalProof, 'TSCONFIG_EXACT_OPTIONAL_PROPERTY_TYPES_VALID')
 
-  // 4. Safe Cryptographic RSA-PSS Auto-Salt Guard
-  const autoSaltCheck = pipeline.auditCryptoRsaPssAutoSalts(`
-    const verified = crypto.verify('sha256', buffer, publicKey, signature, {
+  // 4. Safe Cryptographic RSA-PSS Hash Algorithm Guard
+  const hashAlgCheck = pipeline.auditCryptoRsaPssHashAlgorithms(`
+    const signature = crypto.sign('sha256', buffer, {
+      key: privateKey,
       padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
-      saltLength: crypto.constants.RSA_PSS_SALTLEN_AUTO,
+      saltLength: crypto.constants.RSA_PSS_SALTLEN_DIGEST,
     });
   `)
-  assert.equal(autoSaltCheck.safe, true)
-  assert.equal(autoSaltCheck.rsaPssAutoSaltProof, 'SECURE_RSA_PSS_AUTO_SALT_VERIFIED')
+  assert.equal(hashAlgCheck.safe, true)
+  assert.equal(hashAlgCheck.rsaPssHashProof, 'SECURE_RSA_PSS_HASH_ALGORITHM_VERIFIED')
 
-  // 5. Sandbox Process POSIX RLimit NPROC (Fork-Bomb Defense) Prover
-  const nprocCheck = pipeline.auditSandboxProcessRlimitNprocs(`
-    const limit = pLimit(maxProcesses);
-    await Promise.all(tasks.map(task => limit(() => spawn('node', [task.script]))));
+  // 5. Sandbox Process POSIX Core Dump Filter Prover
+  const coreDumpCheck = pipeline.auditSandboxProcessCoreDumpFilters(`
+    function spawnSandbox(scriptPath, args) {
+      const child = spawn('sh', ['-c', 'ulimit -c 0 && node ' + scriptPath], {
+        dumpable: false,
+      });
+      return child;
+    }
   `)
-  assert.equal(nprocCheck.safe, true)
-  assert.equal(nprocCheck.rlimitNprocProof, 'PROCESS_CONCURRENCY_NPROC_BOUND_VERIFIED')
+  assert.equal(coreDumpCheck.safe, true)
+  assert.equal(coreDumpCheck.coreDumpFilterProof, 'SANDBOX_CORE_DUMP_FILTER_SUPPRESSION_VERIFIED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v68 sovereign 248-pillar master core with Quantum Autonomous Nexus runtime'],
-    diffSummary: 'server/api/tasks.ts (+248 lines)',
+    decisions: ['Use deterministic v69 sovereign 252-pillar master core with Quantum Epistemic Hyper-Core runtime'],
+    diffSummary: 'server/api/tasks.ts (+252 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
