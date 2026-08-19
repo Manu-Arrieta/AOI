@@ -18,12 +18,12 @@ As an operator, I want JWT authentication.
 ### Scenario: User logs in with valid email password credentials returning JWT
 `
 
-test('createAoiOsPipeline initializes full v67 pipeline with 244 pillars including parent dir fsync & umask isolation', async () => {
+test('createAoiOsPipeline initializes full v68 pipeline with 248 pillars including same-dev staging & NPROC bounds', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v67',
-    taskId: 'TASK-2026-67',
+    feature: 'aoi-os-v68',
+    taskId: 'TASK-2026-68',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -40,42 +40,44 @@ test('createAoiOsPipeline initializes full v67 pipeline with 244 pillars includi
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic File Parent Directory fsync Guard
-  const parentDirFsyncCheck = pipeline.auditAtomicParentDirFsyncs(`
-    fs.renameSync(tempFile, targetFile);
-    const dirFd = fs.openSync(path.dirname(targetFile), 'r');
-    fs.fsyncSync(dirFd);
-    fs.closeSync(dirFd);
+  // 2. Atomic File Same-Device Placement Guard
+  const sameDevCheck = pipeline.auditAtomicSameDevs(`
+    const tempPath = path.join(path.dirname(targetFile), \`.\${path.basename(targetFile)}.\${crypto.randomUUID()}.tmp\`);
+    fs.writeFileSync(tempPath, data);
+    fs.renameSync(tempPath, targetFile);
   `)
-  assert.equal(parentDirFsyncCheck.safe, true)
-  assert.equal(parentDirFsyncCheck.parentDirFsyncProof, 'PARENT_DIRECTORY_FSYNC_FLUSH_VERIFIED')
+  assert.equal(sameDevCheck.safe, true)
+  assert.equal(sameDevCheck.sameDevProof, 'SAME_DEVICE_STAGING_PLACEMENT_VERIFIED')
 
-  // 3. Dead tsconfig.json erasableSyntaxOnly Pruner
-  const erasableCheck = pipeline.auditTsconfigErasableSyntax({
-    compilerOptions: { erasableSyntaxOnly: true, target: 'ESNext' },
+  // 3. Dead tsconfig.json rewriteRelativeImportExtensions Pruner
+  const rewriteCheck = pipeline.auditTsconfigRewriteImports({
+    compilerOptions: { rewriteRelativeImportExtensions: true, moduleResolution: 'bundler' },
   })
-  assert.equal(erasableCheck.clean, true)
-  assert.equal(erasableCheck.erasableSyntaxProof, 'TSCONFIG_ERASABLE_SYNTAX_VALID')
+  assert.equal(rewriteCheck.clean, true)
+  assert.equal(rewriteCheck.rewriteRelativeImportProof, 'TSCONFIG_REWRITE_RELATIVE_IMPORT_EXTENSIONS_VALID')
 
-  // 4. Safe Cryptographic RSA-PSS Salt Length Guard
-  const rsaSaltCheck = pipeline.auditCryptoRsaPssSaltLengths(`
-    crypto.sign('sha256', buf, { key, padding: RSA_PKCS1_PSS_PADDING, saltLength: crypto.constants.RSA_PSS_SALTLEN_DIGEST });
+  // 4. Safe Cryptographic RSA-PSS Auto-Salt Guard
+  const autoSaltCheck = pipeline.auditCryptoRsaPssAutoSalts(`
+    const verified = crypto.verify('sha256', buffer, publicKey, signature, {
+      padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
+      saltLength: crypto.constants.RSA_PSS_SALTLEN_AUTO,
+    });
   `)
-  assert.equal(rsaSaltCheck.safe, true)
-  assert.equal(rsaSaltCheck.rsaPssSaltLengthProof, 'SECURE_RSA_PSS_SALTLENGTH_VERIFIED')
+  assert.equal(autoSaltCheck.safe, true)
+  assert.equal(autoSaltCheck.rsaPssAutoSaltProof, 'SECURE_RSA_PSS_AUTO_SALT_VERIFIED')
 
-  // 5. POSIX umask Isolation Prover in Sandbox
-  const umaskCheck = pipeline.auditSandboxProcessPosixUmasks(`
-    process.umask(0o077);
-    const child = spawn('node', ['worker.mjs']);
+  // 5. Sandbox Process POSIX RLimit NPROC (Fork-Bomb Defense) Prover
+  const nprocCheck = pipeline.auditSandboxProcessRlimitNprocs(`
+    const limit = pLimit(maxProcesses);
+    await Promise.all(tasks.map(task => limit(() => spawn('node', [task.script]))));
   `)
-  assert.equal(umaskCheck.safe, true)
-  assert.equal(umaskCheck.posixUmaskProof, 'POSIX_UMASK_ISOLATION_VERIFIED')
+  assert.equal(nprocCheck.safe, true)
+  assert.equal(nprocCheck.rlimitNprocProof, 'PROCESS_CONCURRENCY_NPROC_BOUND_VERIFIED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v67 sovereign 244-pillar master core with Infinite Transcendence runtime'],
-    diffSummary: 'server/api/tasks.ts (+244 lines)',
+    decisions: ['Use deterministic v68 sovereign 248-pillar master core with Quantum Autonomous Nexus runtime'],
+    diffSummary: 'server/api/tasks.ts (+248 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)

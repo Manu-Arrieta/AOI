@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v67 (The Sovereign 244-Pillar Infinite Transcendence & Autonomous Quantum Fabric Matrix).
+ * Master Orchestrator Engine for AOI-OS v68 (The Sovereign 248-Pillar Omnipresent Master & Quantum Autonomous Nexus Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -112,6 +112,8 @@
  * Safe Cryptographic AES-GCM AuthTag Length Guard, Sandbox Process SIGTERM/SIGKILL Grace Prover,
  * Atomic File Parent Directory fsync Guard, Dead TypeScript erasableSyntaxOnly Pruner,
  * Safe Cryptographic RSA-PSS Salt Length Guard, Sandbox Process POSIX umask Isolation Prover,
+ * Atomic File Same-Device Placement Guard, Dead TypeScript rewriteRelativeImportExtensions Pruner,
+ * Safe Cryptographic RSA-PSS Auto-Salt Guard, Sandbox Process POSIX RLimit NPROC Prover,
  * and ICM Memory Linking.
  */
 
@@ -288,6 +290,10 @@ import { auditAtomicParentDirFsyncSafety } from './storage-guard/file-atomic-par
 import { auditDeadTsconfigErasableSyntaxOnly } from './config-guard/dead-tsconfig-erasable-syntax-only-pruner.mjs'
 import { auditCryptoRsaPssSaltLengthSafety } from './security-guard/crypto-rsa-pss-salt-length-guard.mjs'
 import { proveSandboxProcessPosixUmaskSafety } from './sandbox-guard/sandbox-process-posix-umask-inheritance-prover.mjs'
+import { auditAtomicSameDevSafety } from './storage-guard/file-atomic-same-dev-guard.mjs'
+import { auditDeadTsconfigRewriteRelativeImportExtensions } from './config-guard/dead-tsconfig-rewrite-relative-import-extensions-pruner.mjs'
+import { auditCryptoRsaPssAutoSaltSafety } from './security-guard/crypto-rsa-pss-auto-salt-guard.mjs'
+import { proveSandboxProcessRlimitNprocSafety } from './sandbox-guard/sandbox-process-posix-rlimit-nproc-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -656,6 +662,42 @@ export function createAoiOsPipeline(options) {
    */
   function auditSandboxProcessPosixUmasks(sourceCode) {
     return proveSandboxProcessPosixUmaskSafety(sourceCode)
+  }
+
+  /**
+   * Audits atomic file writing source code to guarantee temporary files are co-located in the same device/directory.
+   *
+   * @param {string} sourceCode
+   */
+  function auditAtomicSameDevs(sourceCode) {
+    return auditAtomicSameDevSafety(sourceCode)
+  }
+
+  /**
+   * Audits tsconfig.json compilerOptions for rewriteRelativeImportExtensions validity in TypeScript 5.7+.
+   *
+   * @param {object} tsconfigJson
+   */
+  function auditTsconfigRewriteImports(tsconfigJson = {}) {
+    return auditDeadTsconfigRewriteRelativeImportExtensions(tsconfigJson)
+  }
+
+  /**
+   * Audits cryptographic RSA-PSS verification calls for RSA_PSS_SALTLEN_AUTO or RSA_PSS_SALTLEN_DIGEST constants.
+   *
+   * @param {string} sourceCode
+   */
+  function auditCryptoRsaPssAutoSalts(sourceCode) {
+    return auditCryptoRsaPssAutoSaltSafety(sourceCode)
+  }
+
+  /**
+   * Proves that concurrent process execution applies explicit concurrency bounds against fork-bomb exhaustion.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxProcessRlimitNprocs(sourceCode) {
+    return proveSandboxProcessRlimitNprocSafety(sourceCode)
   }
 
   /**
@@ -2913,6 +2955,10 @@ export function createAoiOsPipeline(options) {
     auditTsconfigErasableSyntax,
     auditCryptoRsaPssSaltLengths,
     auditSandboxProcessPosixUmasks,
+    auditAtomicSameDevs,
+    auditTsconfigRewriteImports,
+    auditCryptoRsaPssAutoSalts,
+    auditSandboxProcessRlimitNprocs,
     auditFileWatcherErrors,
     auditTsconfigComposites,
     auditCryptoTlsRenegotiations,
@@ -3157,7 +3203,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v67: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v68: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 
