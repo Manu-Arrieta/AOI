@@ -2,7 +2,7 @@
 /**
  * scripts/aoi-os/aoi-os.mjs
  *
- * Master Orchestrator Engine for AOI-OS v69 (The Sovereign 252-Pillar Omnipresent Master & Quantum Epistemic Hyper-Core Matrix).
+ * Master Orchestrator Engine for AOI-OS v70 (The Sovereign 256-Pillar Omnipresent Master & Quantum Epistemic Hyper-Nexus Matrix).
  * Unifies DAG Task Compilation, Polyglot AST Contract Guards (TS/Vue/Py/C#),
  * AST Skeletonization & KV-Cache, AST Symbol Mutex, Adversarial Chaos Fuzzing,
  * Dynamic C4 Graph Generation, Time-Travel Snapshots, Mutation Testing,
@@ -116,6 +116,8 @@
  * Safe Cryptographic RSA-PSS Auto-Salt Guard, Sandbox Process POSIX RLimit NPROC Prover,
  * Atomic File Advisory Lock Guard, Dead TypeScript exactOptionalPropertyTypes Pruner,
  * Safe Cryptographic RSA-PSS Hash Algorithm Guard, Sandbox Process POSIX Core Dump Filter Prover,
+ * Atomic File Temp Extension Guard, Dead TypeScript checkJs/allowJs Dependency Pruner,
+ * Safe Cryptographic RSA-PSS Key Export Guard, Sandbox Process POSIX RLimit FSIZE Prover,
  * and ICM Memory Linking.
  */
 
@@ -300,6 +302,10 @@ import { auditAtomicFlockSafety } from './storage-guard/file-atomic-flock-guard.
 import { auditDeadTsconfigExactOptionalPropertyTypes } from './config-guard/dead-tsconfig-exact-optional-property-types-pruner.mjs'
 import { auditCryptoRsaPssHashAlgorithmSafety } from './security-guard/crypto-rsa-pss-hash-algorithm-guard.mjs'
 import { proveSandboxProcessCoreDumpFilterSafety } from './sandbox-guard/sandbox-process-posix-core-dump-filter-prover.mjs'
+import { auditAtomicTempExtensionSafety } from './storage-guard/file-atomic-temp-extension-guard.mjs'
+import { auditDeadTsconfigCheckJsAllowJsDependency } from './config-guard/dead-tsconfig-check-js-allow-js-dependency-pruner.mjs'
+import { auditCryptoRsaPssKeyExportSafety } from './security-guard/crypto-rsa-pss-key-export-guard.mjs'
+import { proveSandboxProcessRlimitFsizeSafety } from './sandbox-guard/sandbox-process-posix-rlimit-fsize-prover.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -740,6 +746,42 @@ export function createAoiOsPipeline(options) {
    */
   function auditSandboxProcessCoreDumpFilters(sourceCode) {
     return proveSandboxProcessCoreDumpFilterSafety(sourceCode)
+  }
+
+  /**
+   * Audits atomic file staging routines for hidden dot-prefix and .tmp temporary extension naming.
+   *
+   * @param {string} sourceCode
+   */
+  function auditAtomicTempExtensions(sourceCode) {
+    return auditAtomicTempExtensionSafety(sourceCode)
+  }
+
+  /**
+   * Audits tsconfig.json compilerOptions to ensure checkJs is accompanied by allowJs.
+   *
+   * @param {object} tsconfigJson
+   */
+  function auditTsconfigCheckJsAllowJsDependencies(tsconfigJson = {}) {
+    return auditDeadTsconfigCheckJsAllowJsDependency(tsconfigJson)
+  }
+
+  /**
+   * Audits cryptographic private key export operations for standard PKCS#8 format.
+   *
+   * @param {string} sourceCode
+   */
+  function auditCryptoRsaPssKeyExports(sourceCode) {
+    return auditCryptoRsaPssKeyExportSafety(sourceCode)
+  }
+
+  /**
+   * Proves that sandbox execution enforces explicit file size limits against disk exhaustion.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSandboxProcessRlimitFsizes(sourceCode) {
+    return proveSandboxProcessRlimitFsizeSafety(sourceCode)
   }
 
   /**
@@ -3005,6 +3047,10 @@ export function createAoiOsPipeline(options) {
     auditTsconfigExactOptionalProperties,
     auditCryptoRsaPssHashAlgorithms,
     auditSandboxProcessCoreDumpFilters,
+    auditAtomicTempExtensions,
+    auditTsconfigCheckJsAllowJsDependencies,
+    auditCryptoRsaPssKeyExports,
+    auditSandboxProcessRlimitFsizes,
     auditFileWatcherErrors,
     auditTsconfigComposites,
     auditCryptoTlsRenegotiations,
@@ -3249,7 +3295,7 @@ async function main() {
   const markdown = fs.readFileSync(resolved, 'utf8')
   const pipeline = createAoiOsPipeline({ tasksMarkdown: markdown })
 
-  process.stdout.write(`✅ AOI-OS v69: Successfully compiled DAG from ${filePath}\n`)
+  process.stdout.write(`✅ AOI-OS v70: Successfully compiled DAG from ${filePath}\n`)
   process.stdout.write(`   Nodes: ${pipeline.rawNodes.length} | Waves: ${pipeline.batches.length}\n`)
 }
 

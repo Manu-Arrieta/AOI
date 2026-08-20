@@ -18,12 +18,12 @@ As an operator, I want JWT authentication.
 ### Scenario: User logs in with valid email password credentials returning JWT
 `
 
-test('createAoiOsPipeline initializes full v69 pipeline with 252 pillars including flock & core dump filtering', async () => {
+test('createAoiOsPipeline initializes full v70 pipeline with 256 pillars including staging naming & RLimit FSIZE', async () => {
   const pipeline = createAoiOsPipeline({
     tasksMarkdown: SAMPLE_TASKS_MD,
     workspace: 'AOI',
-    feature: 'aoi-os-v69',
-    taskId: 'TASK-2026-69',
+    feature: 'aoi-os-v70',
+    taskId: 'TASK-2026-70',
     constitutionRules: 'Must use strict typing and no eval',
     globalTokenBudget: 100000,
     federatedPeers: ['MoviHub'],
@@ -40,55 +40,50 @@ test('createAoiOsPipeline initializes full v69 pipeline with 252 pillars includi
   assert.equal(prep.capabilityToken.signature.length, 64)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'in_progress')
 
-  // 2. Atomic File Advisory Lock Guard
-  const flockCheck = pipeline.auditAtomicFlocks(`
-    async function updateRegistry(filePath, data) {
-      const release = await lockfile.lock(filePath);
-      try {
-        fs.writeFileSync(tempPath, data);
-        fs.renameSync(tempPath, filePath);
-      } finally {
-        await release();
-      }
-    }
+  // 2. Atomic File Temp Extension & Hidden Naming Guard
+  const tempExtCheck = pipeline.auditAtomicTempExtensions(`
+    const tempPath = path.join(path.dirname(targetFile), \`.\${path.basename(targetFile)}.\${crypto.randomUUID()}.tmp\`);
+    fs.writeFileSync(tempPath, data);
+    fs.renameSync(tempPath, targetFile);
   `)
-  assert.equal(flockCheck.safe, true)
-  assert.equal(flockCheck.atomicFlockProof, 'EXCLUSIVE_ADVISORY_LOCK_VERIFIED')
+  assert.equal(tempExtCheck.safe, true)
+  assert.equal(tempExtCheck.atomicTempExtensionProof, 'HIDDEN_DOT_PREFIX_TMP_EXTENSION_VERIFIED')
 
-  // 3. Dead tsconfig.json exactOptionalPropertyTypes Pruner
-  const exactOptionalCheck = pipeline.auditTsconfigExactOptionalProperties({
-    compilerOptions: { exactOptionalPropertyTypes: true, strict: true },
+  // 3. Dead tsconfig.json checkJs/allowJs Dependency Pruner
+  const checkJsCheck = pipeline.auditTsconfigCheckJsAllowJsDependencies({
+    compilerOptions: { checkJs: true, allowJs: true },
   })
-  assert.equal(exactOptionalCheck.clean, true)
-  assert.equal(exactOptionalCheck.exactOptionalProof, 'TSCONFIG_EXACT_OPTIONAL_PROPERTY_TYPES_VALID')
+  assert.equal(checkJsCheck.clean, true)
+  assert.equal(checkJsCheck.checkJsAllowJsProof, 'TSCONFIG_CHECK_JS_ALLOW_JS_DEPENDENCY_VALID')
 
-  // 4. Safe Cryptographic RSA-PSS Hash Algorithm Guard
-  const hashAlgCheck = pipeline.auditCryptoRsaPssHashAlgorithms(`
-    const signature = crypto.sign('sha256', buffer, {
-      key: privateKey,
-      padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
-      saltLength: crypto.constants.RSA_PSS_SALTLEN_DIGEST,
+  // 4. Safe Cryptographic RSA-PSS PKCS#8 Key Export Guard
+  const keyExportCheck = pipeline.auditCryptoRsaPssKeyExports(`
+    const exportedKey = privateKey.export({
+      type: 'pkcs8',
+      format: 'pem',
+      cipher: 'aes-256-gcm',
+      passphrase: 'secure-secret-password',
     });
   `)
-  assert.equal(hashAlgCheck.safe, true)
-  assert.equal(hashAlgCheck.rsaPssHashProof, 'SECURE_RSA_PSS_HASH_ALGORITHM_VERIFIED')
+  assert.equal(keyExportCheck.safe, true)
+  assert.equal(keyExportCheck.rsaPssKeyExportProof, 'SECURE_PKCS8_KEY_EXPORT_VERIFIED')
 
-  // 5. Sandbox Process POSIX Core Dump Filter Prover
-  const coreDumpCheck = pipeline.auditSandboxProcessCoreDumpFilters(`
+  // 5. Sandbox Process POSIX RLimit FSIZE Prover
+  const fsizeCheck = pipeline.auditSandboxProcessRlimitFsizes(`
     function spawnSandbox(scriptPath, args) {
-      const child = spawn('sh', ['-c', 'ulimit -c 0 && node ' + scriptPath], {
-        dumpable: false,
+      const child = spawn('sh', ['-c', 'ulimit -f 50000 && node ' + scriptPath], {
+        maxDiskQuotaMb: 50,
       });
       return child;
     }
   `)
-  assert.equal(coreDumpCheck.safe, true)
-  assert.equal(coreDumpCheck.coreDumpFilterProof, 'SANDBOX_CORE_DUMP_FILTER_SUPPRESSION_VERIFIED')
+  assert.equal(fsizeCheck.safe, true)
+  assert.equal(fsizeCheck.rlimitFsizeProof, 'SANDBOX_RLIMIT_FSIZE_BOUND_VERIFIED')
 
   // 6. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
-    decisions: ['Use deterministic v69 sovereign 252-pillar master core with Quantum Epistemic Hyper-Core runtime'],
-    diffSummary: 'server/api/tasks.ts (+252 lines)',
+    decisions: ['Use deterministic v70 sovereign 256-pillar master core with Quantum Epistemic Hyper-Nexus runtime'],
+    diffSummary: 'server/api/tasks.ts (+256 lines)',
   }, async () => ({ stdout: 'OK' }))
 
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)

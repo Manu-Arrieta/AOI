@@ -1,20 +1,20 @@
 # AOI-OS — Autonomous, Deterministic & Self-Healing Operating System
 
-**AOI-OS v69 (The Sovereign 252-Pillar Omnipresent Master & Quantum Epistemic Hyper-Core Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
+**AOI-OS v70 (The Sovereign 256-Pillar Omnipresent Master & Quantum Epistemic Hyper-Nexus Matrix)** es el núcleo de orquestación y runtime agéntico de nueva generación para **AOI (Agentic Operational Infrastructure)**.
 
 Transforma la ejecución asistida tradicional por prompts en un **sistema operativo determinista, autónomo y autosanable con gobernanza activa Human-in-the-Loop (HITL)** que coordina micro-agentes efímeros, protege contratos de código políglota (TypeScript, Vue SFC, Python y C#), aísla ejecuciones en sandboxes herméticos, arbitra la calidad mediante consenso multi-agente, re-orienta las olas de ejecución a partir de historias de usuario y sincroniza grafos de conocimiento semántico en memoria persistente (ICM), con **MÁXIMA EFICIENCIA DE TOKENS (cómputo local determinista de alto rendimiento + síntesis agéntica ultra-densa)**.
 
-- **Guardián de Bloqueo Exclusivo (Advisory Lock) en Sobreescrituras Atómicas (`storage-guard/file-atomic-flock-guard.mjs`)**: Audita estáticamente que las operaciones de mutación de archivos críticos bajo alta concurrencia adquieran un bloqueo consultivo o descriptor exclusivo (`flockSync` / `O_EXCL` / `proper-lockfile`) antes de iniciar el ciclo de staging y reemplazo, previniendo condiciones de carrera entre workers paralelos (0 LLM tokens).
-- **Podador de Flags Incompatibles con `exactOptionalPropertyTypes` en tsconfig (`config-guard/dead-tsconfig-exact-optional-property-types-pruner.mjs`)**: Podado estático en `tsconfig.json` para `exactOptionalPropertyTypes: true` (TypeScript 5.x+), certificando que la configuración estricta (`strict: true` o `strictNullChecks: true`) esté activa y saneando banderas incompatibles legadas (`suppressImplicitAnyIndexErrors`) (0 LLM tokens).
-- **Guardián de Digest Hash Robusto en Firmas RSA-PSS (`security-guard/crypto-rsa-pss-hash-algorithm-guard.mjs`)**: Auditoría estática de operaciones `crypto.sign` y `crypto.verify` con RSA-PSS para certificar el uso exclusivo de funciones hash SHA-2/SHA-3 robustas (`sha256`/`sha384`/`sha512`), prohibiendo tajantemente digests obsoletos como `sha1` o `md5` (0 LLM tokens).
-- **Probador de Filtro y Supresión de Core Dumps en Sandboxes (`sandbox-guard/sandbox-process-posix-core-dump-filter-prover.mjs`)**: Demostración formal de que los subprocesos de sandbox configuren la supresión de volcados de memoria (`ulimit -c 0` / `PR_SET_DUMPABLE=0` / `coredump_filter 0x0` / `dumpable: false`), impidiendo fugas de memoria con claves criptográficas o secretos a disco ante fallos catastróficos (0 LLM tokens).
+- **Guardián de Nomenclatura y Ocultamiento de Archivos en Staging Atómico (`storage-guard/file-atomic-temp-extension-guard.mjs`)**: Audita estáticamente que los archivos de staging temporal utilicen prefijo de archivo oculto (`.${file}.${id}.tmp`), evitando que bundlers, watchers de archivos (Vite/Rollup) o indexadores ingieran archivos intermedios incompletos (0 LLM tokens).
+- **Podador y Saneador de checkJs sin allowJs en tsconfig (`config-guard/dead-tsconfig-check-js-allow-js-dependency-pruner.mjs`)**: Podado estático en `tsconfig.json` para certificar que `checkJs: true` siempre declare explícitamente `allowJs: true`, previniendo errores de compilación TS5052 y saneando configuraciones híbridas JS/TS (0 LLM tokens).
+- **Guardián de Exportación Estricta PKCS#8 en Claves RSA-PSS (`security-guard/crypto-rsa-pss-key-export-guard.mjs`)**: Auditoría estática de operaciones `key.export()` para claves RSA-PSS para certificar el formato estándar `type: 'pkcs8'` y cifrado simétrico con passphrase, prohibiendo formatos PKCS#1 legados no encapsulados (0 LLM tokens).
+- **Probador de Cuota Máxima de Escritura en Disco / RLimit FSIZE en Sandboxes (`sandbox-guard/sandbox-process-posix-rlimit-fsize-prover.mjs`)**: Demostración formal de que la ejecución de subprocesos en sandboxes configure cotas de tamaño máximo de archivo (`ulimit -f` / `maxFileSize` / `maxDiskQuotaMb`), impidiendo ataques de agotamiento de espacio en disco por bucles de escritura infinita (0 LLM tokens).
 
 ---
 
-## 🏛️ Matriz Arquitectónica Maestra de 252 Pilares (AOI-OS v69)
+## 🏛️ Matriz Arquitectónica Maestra de 256 Pilares (AOI-OS v70)
 
 ```text
-AOI-OS v69 Architecture Matrix (252 Pillars)
+AOI-OS v70 Architecture Matrix (256 Pillars)
 ├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
 │   ├── dag-parser.mjs: Extrae nodos, roles (@backend, @frontend, @devops), dependencias y requisitos TDD.
 │   └── dag-scheduler.mjs: Detección DFS de ciclos y cálculo de olas de ejecución paralela.
@@ -206,7 +206,7 @@ AOI-OS v69 Architecture Matrix (252 Pillars)
 │
 ├── 101-104. Núcleo Sovereign 104-Pillar Infinite Singularity Matrix (db-guard/, i18n-guard/, security-guard/, sandbox-guard/)
 │   ├── db-pool-drain-prover.mjs: Demostración formal de cierre y drenaje de pools de conexión a bases de datos en teardown.
-│   ├── dead-i18n-pruner.mjs: Podado estático de claves de traducción y diccionarios de internacionalización no alcanzados.
+│   ├── dead-i18n-pruner.mjs: Podado estático de claves de traducción e internacionalización no alcanzadas.
 │   ├── jwt-expiration-guard.mjs: Auditoría estática de firmas JWT para garantizar políticas de expiración acotadas.
 │   └── sandbox-symlink-escape-prover.mjs: Demostración formal de confinamiento estricto de enlaces simbólicos en sandbox.
 │
@@ -426,11 +426,17 @@ AOI-OS v69 Architecture Matrix (252 Pillars)
 │   ├── crypto-rsa-pss-auto-salt-guard.mjs: Auditoría estática de verificación RSA-PSS para certificar constante estándar RSA_PSS_SALTLEN_AUTO.
 │   └── sandbox-process-posix-rlimit-nproc-prover.mjs: Demostración formal de cotas de concurrencia y defensa anti fork-bomb en sandbox.
 │
-└── 249-252. Núcleo Soberano 252-Pillar Epistemic Hyper-Core Matrix v69 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-    ├── file-atomic-flock-guard.mjs: Auditoría estática de bloqueo consultivo exclusivo (flockSync/O_EXCL) antes de mutación concurrente de archivos.
-    ├── dead-tsconfig-exact-optional-property-types-pruner.mjs: Podado estático de flags incompatibles con exactOptionalPropertyTypes: true (TS 5.x+).
-    ├── crypto-rsa-pss-hash-algorithm-guard.mjs: Auditoría estática de funciones hash en RSA-PSS para certificar algoritmos robustos SHA-2/SHA-3.
-    └── sandbox-process-posix-core-dump-filter-prover.mjs: Demostración formal de supresión de core dumps (ulimit -c 0 / dumpable: false) en sandbox.
+├── 249-252. Núcleo Soberano 252-Pillar Epistemic Hyper-Core Matrix v69 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+│   ├── file-atomic-flock-guard.mjs: Auditoría estática de bloqueo consultivo exclusivo (flockSync/O_EXCL) antes de mutación concurrente de archivos.
+│   ├── dead-tsconfig-exact-optional-property-types-pruner.mjs: Podado estático de flags incompatibles con exactOptionalPropertyTypes: true (TS 5.x+).
+│   ├── crypto-rsa-pss-hash-algorithm-guard.mjs: Auditoría estática de funciones hash en RSA-PSS para certificar algoritmos robustos SHA-2/SHA-3.
+│   └── sandbox-process-posix-core-dump-filter-prover.mjs: Demostración formal de supresión de core dumps (ulimit -c 0 / dumpable: false) en sandbox.
+│
+└── 253-256. Núcleo Soberano 256-Pillar Omnipresent Master Matrix v70 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
+    ├── file-atomic-temp-extension-guard.mjs: Auditoría estática de nomenclatura y prefijo oculto en staging (.${file}.${id}.tmp).
+    ├── dead-tsconfig-check-js-allow-js-dependency-pruner.mjs: Saneamiento estático de checkJs: true con allowJs: true obligatorio (TS5052).
+    ├── crypto-rsa-pss-key-export-guard.mjs: Auditoría estática de exportación de claves RSA-PSS en formato estándar PKCS#8.
+    └── sandbox-process-posix-rlimit-fsize-prover.mjs: Demostración formal de cotas máximas de tamaño de archivo (RLimit FSIZE) en sandboxes.
 ```
 
 ---
@@ -473,18 +479,18 @@ pnpm --filter agentic-ops-dashboard dev
 
 ## 📜 CHANGELOG
 
+### [70.0.0] - 2026-08-19 (The Sovereign 256-Pillar Omnipresent Master & Quantum Epistemic Hyper-Nexus Matrix)
+- **Atomic File Temp Extension & Hidden Naming Guard**: Audita estáticamente que los archivos de staging temporal utilicen prefijo de archivo oculto (`.${file}.${id}.tmp`), evitando que bundlers o indexadores ingieran archivos intermedios (`storage-guard/file-atomic-temp-extension-guard.mjs`).
+- **Dead TypeScript checkJs/allowJs Dependency Pruner**: Podado estático en `tsconfig.json` para certificar que `checkJs: true` declare explícitamente `allowJs: true` (`config-guard/dead-tsconfig-check-js-allow-js-dependency-pruner.mjs`).
+- **Safe Cryptographic RSA-PSS PKCS#8 Key Export Guard**: Auditoría estática de exportaciones de claves RSA-PSS para certificar el formato estándar `type: 'pkcs8'` (`security-guard/crypto-rsa-pss-key-export-guard.mjs`).
+- **Sandbox Process POSIX RLimit FSIZE Prover**: Demostración formal de cotas de tamaño máximo de archivo (`ulimit -f` / `maxDiskQuotaMb`) en sandboxes (`sandbox-guard/sandbox-process-posix-rlimit-fsize-prover.mjs`).
+- **622/622 Tests Pasando al 100%** y **699 archivos gobernados en paridad absoluta con scaffold/**.
+
 ### [69.0.0] - 2026-08-19 (The Sovereign 252-Pillar Omnipresent Master & Quantum Epistemic Hyper-Core Matrix)
 - **Atomic File Advisory Lock Guard**: Audita estáticamente que las mutaciones de archivos concurrentes adquieran bloqueo consultivo (`flockSync` / `O_EXCL` / `proper-lockfile`) (`storage-guard/file-atomic-flock-guard.mjs`).
-- **Dead TypeScript exactOptionalPropertyTypes Pruner**: Podado estático en `tsconfig.json` para `exactOptionalPropertyTypes: true`, certificando `strict: true` y podando flags deprecadas (`config-guard/dead-tsconfig-exact-optional-property-types-pruner.mjs`).
-- **Safe Cryptographic RSA-PSS Hash Algorithm Guard**: Auditoría estática de firmas RSA-PSS para certificar uso exclusivo de funciones hash SHA-2/SHA-3 (`sha256`/`sha384`/`sha512`) (`security-guard/crypto-rsa-pss-hash-algorithm-guard.mjs`).
-- **Sandbox Process POSIX Core Dump Filter Prover**: Demostración formal de que los subprocesos de sandbox supriman volcados de memoria (`ulimit -c 0` / `dumpable: false`) (`sandbox-guard/sandbox-process-posix-core-dump-filter-prover.mjs`).
-- **614/614 Tests Pasando al 100%** y **691 archivos gobernados en paridad absoluta con scaffold/**.
-
-### [68.0.0] - 2026-08-19 (The Sovereign 248-Pillar Omnipresent Master & Quantum Autonomous Nexus Matrix)
-- **Atomic File Same-Device Placement Guard**: Audita estáticamente que los archivos temporales de staging se creen en el mismo dispositivo (`storage-guard/file-atomic-same-dev-guard.mjs`).
-- **Dead TypeScript rewriteRelativeImportExtensions Pruner**: Podado estático en `tsconfig.json` para `rewriteRelativeImportExtensions: true` (`config-guard/dead-tsconfig-rewrite-relative-import-extensions-pruner.mjs`).
-- **Safe Cryptographic RSA-PSS Auto-Salt Guard**: Auditoría estática de firmas RSA-PSS para certificar `crypto.constants.RSA_PSS_SALTLEN_AUTO` (`security-guard/crypto-rsa-pss-auto-salt-guard.mjs`).
-- **Sandbox Process POSIX RLimit NPROC (Fork-Bomb Defense) Prover**: Demostración formal de cotas de concurrencia en sandbox (`sandbox-guard/sandbox-process-posix-rlimit-nproc-prover.mjs`).
+- **Dead TypeScript exactOptionalPropertyTypes Pruner**: Podado estático en `tsconfig.json` para `exactOptionalPropertyTypes: true`, certificando `strict: true` (`config-guard/dead-tsconfig-exact-optional-property-types-pruner.mjs`).
+- **Safe Cryptographic RSA-PSS Hash Algorithm Guard**: Auditoría estática de firmas RSA-PSS para certificar uso exclusivo de funciones hash SHA-2/SHA-3 (`security-guard/crypto-rsa-pss-hash-algorithm-guard.mjs`).
+- **Sandbox Process POSIX Core Dump Filter Prover**: Demostración formal de que los subprocesos de sandbox supriman volcados de memoria (`ulimit -c 0`) (`sandbox-guard/sandbox-process-posix-core-dump-filter-prover.mjs`).
 
 ---
 
