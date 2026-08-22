@@ -306,6 +306,14 @@ import { auditAtomicTempExtensionSafety } from './storage-guard/file-atomic-temp
 import { auditDeadTsconfigCheckJsAllowJsDependency } from './config-guard/dead-tsconfig-check-js-allow-js-dependency-pruner.mjs'
 import { auditCryptoRsaPssKeyExportSafety } from './security-guard/crypto-rsa-pss-key-export-guard.mjs'
 import { proveSandboxProcessRlimitFsizeSafety } from './sandbox-guard/sandbox-process-posix-rlimit-fsize-prover.mjs'
+import { analyzeAstStructure } from './ast-guard/ast-structural-analyzer.mjs'
+import { auditSupplyChainSecurity } from './security-guard/supply-chain-dependency-guard.mjs'
+import { auditA11yTemplateCompliance } from './component-guard/a11y-template-guard.mjs'
+import { auditSqlTransactionDeadlockSafety } from './db-guard/sql-transaction-deadlock-guard.mjs'
+import { proveSandboxWasmMemoryQuotaSafety } from './sandbox-guard/sandbox-wasm-memory-quota-prover.mjs'
+import { generateComplianceReport } from './reporting/compliance-report-generator.mjs'
+import { createPipelineMetricsExporter } from './telemetry/pipeline-metrics-exporter.mjs'
+import { renderAsciiDag } from './tui/ascii-dag-renderer.mjs'
 import { proveSubprocessDrainSafety } from './sandbox-guard/subprocess-drain-prover.mjs'
 import { proveSandboxTempCleanupSafety } from './sandbox-guard/sandbox-temp-cleanup-prover.mjs'
 import { proveSocketUnbindSafety } from './sandbox-guard/sandbox-socket-unbind-prover.mjs'
@@ -782,6 +790,51 @@ export function createAoiOsPipeline(options) {
    */
   function auditSandboxProcessRlimitFsizes(sourceCode) {
     return proveSandboxProcessRlimitFsizeSafety(sourceCode)
+  }
+
+  /**
+   * Deterministically parses AST lexical structure, balanced delimiters, and top-level declarations.
+   *
+   * @param {string} sourceCode
+   */
+  function auditAstStructure(sourceCode = '') {
+    return analyzeAstStructure(sourceCode)
+  }
+
+  /**
+   * Audits package.json for suspicious install hooks, typosquatting packages, and restrictive licenses.
+   *
+   * @param {object} packageJson
+   */
+  function auditSupplyChain(packageJson = {}) {
+    return auditSupplyChainSecurity(packageJson)
+  }
+
+  /**
+   * Audits Vue SFC and HTML templates for WCAG 2.1 AA web accessibility compliance.
+   *
+   * @param {string} templateCode
+   */
+  function auditA11yTemplate(templateCode = '') {
+    return auditA11yTemplateCompliance(templateCode)
+  }
+
+  /**
+   * Audits database transaction routines for canonical lock acquisition ordering and deadlock prevention.
+   *
+   * @param {string} sourceCode
+   */
+  function auditSqlTransactionDeadlocks(sourceCode = '') {
+    return auditSqlTransactionDeadlockSafety(sourceCode)
+  }
+
+  /**
+   * Proves that WebAssembly memory allocations enforce finite maximum page bounds.
+   *
+   * @param {string} sourceCode
+   */
+  function auditWasmMemoryQuota(sourceCode = '') {
+    return proveSandboxWasmMemoryQuotaSafety(sourceCode)
   }
 
   /**
@@ -3051,6 +3104,14 @@ export function createAoiOsPipeline(options) {
     auditTsconfigCheckJsAllowJsDependencies,
     auditCryptoRsaPssKeyExports,
     auditSandboxProcessRlimitFsizes,
+    auditAstStructure,
+    auditSupplyChain,
+    auditA11yTemplate,
+    auditSqlTransactionDeadlocks,
+    auditWasmMemoryQuota,
+    generateComplianceReport,
+    createPipelineMetricsExporter,
+    renderAsciiDag,
     auditFileWatcherErrors,
     auditTsconfigComposites,
     auditCryptoTlsRenegotiations,

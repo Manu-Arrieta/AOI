@@ -120,6 +120,13 @@ icm_memory_store(
 )
 ```
 
+### Step 5b: Interactive Clarification & Intent Prover (AOI-OS HITL Gate)
+
+Audit the feature intention for ambiguous terms using the AOI-OS Deterministic Prover:
+1. Identify any vague or underspecified requirements ("fast", "scalable", "secure", "user-friendly").
+2. Ask 2-3 concrete clarifying questions to establish testable acceptance criteria before writing the proposal.
+3. Structure the prompt payload with invariant prefix boundaries using `scripts/aoi-os/context-compactor/prompt-cache-optimizer.mjs` to maximize LLM prompt-caching hit rates.
+
 ### Step 6: Propose
 
 With the exploration analysis, produce the proposal:
@@ -145,3 +152,4 @@ Present the proposal to the Owner. Ask:
 
 **The change to start is:**
 {{input}}
+

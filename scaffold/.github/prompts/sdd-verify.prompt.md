@@ -24,12 +24,18 @@ icm_memory_recall(query: "implementation complete", topic: "sdd-{WORKSPACE}-{FEA
 
 > **Headroom mandatory policy.** Any Copilot CLI invocation in this workspace MUST be routed through `bash scripts/aoi-headroom-wrap.sh` (or the `aoi-copilot` shim) so the call exits via `headroom wrap copilot --subscription`. The wrapper refuses to run when `headroom` is missing.
 
-### Step 2: Identify Task + Load Artifacts
+### Step 2: Identify Task + Load Artifacts (Context-Agnostic Resolution)
 
-Resolve the TASK-ID from user input `{{input}}`:
+Resolve the target TASK-ID automatically using the following priority order (do NOT interrupt or ask if context is available):
 
-1. Validate it exists in `.tasks/registry.md` with status `✅ Implementado`
-2. Load all artifacts from `.tasks/{feature-name}/TASK-YYYY-NNN/`:
+1. **Explicit Argument**: If `{{input}}` contains an explicit TASK-ID (e.g. `TASK-2026-001`), validate and use it.
+2. **Current Conversation Context**: If a task was just executed in `/sdd-apply` within the active session, use that TASK-ID automatically.
+3. **Recent Registry Inference**: If `{{input}}` is empty, "continua", "procede", "adelante", "verifica", or similar confirmation:
+   - Read `.tasks/registry.md` and pick the most recent task with status `✅ Implementado` or `⚙️ En Implementación`.
+   - Announce briefly: `▸ Contexto auto-detectado: TASK-YYYY-NNN ({feature-name}) — Ejecutando auditoría de calidad y cumplimiento...`
+4. **Fallback**: Only if multiple implemented tasks exist without prior conversation context, list active tasks and ask the Owner to select one.
+
+5. Load all artifacts from `.tasks/{feature-name}/TASK-YYYY-NNN/`:
    - `spec.md` (the contract)
    - `design.md` (architecture decisions)
    - `tasks.md` (what was planned)
@@ -63,7 +69,8 @@ Hand off to **@integration-specialist** with isolated task context (via `node sc
    - **Observability**: Read `design.md` Observability section — verify that logs/metrics/traces specified in design were actually implemented. New endpoints/controllers without logging? → WARNING
    - **Contract-First**: Read `spec.md` for API contracts defined — verify that interfaces/types/endpoints match the spec. Breaking changes from spec? → WARNING
    Include findings in verify-report under `## Principles Compliance`.
-6. Run `/speckit.checklist` for formal verification
+6. **AOI-OS Compliance & Invariant Audit Report**: Run the comprehensive invariant provers and generate the auditable Markdown compliance report using `scripts/aoi-os/reporting/compliance-report-generator.mjs` and export pipeline execution metrics with `scripts/aoi-os/telemetry/pipeline-metrics-exporter.mjs`. Save to `.tasks/{feature-name}/TASK-YYYY-NNN/compliance-report.md`.
+7. Run `/speckit.checklist` for formal verification
 
 ### Step 4: Service Discovery Gate Check
 

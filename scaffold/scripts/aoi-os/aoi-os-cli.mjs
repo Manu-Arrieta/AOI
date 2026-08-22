@@ -17,6 +17,7 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import { createAoiOsPipeline } from './aoi-os.mjs'
+import { renderAsciiDag } from './tui/ascii-dag-renderer.mjs'
 
 /**
  * Parses CLI arguments into structured options.
@@ -90,7 +91,10 @@ export async function runAoiOsCli(options, execFn = null) {
     waveResults: [],
     dryRun,
     status: 'completed',
+    asciiTree: renderAsciiDag(pipeline.batches),
   }
+
+  process.stdout.write(`\n${results.asciiTree}\n\n`)
 
   // Iterate over waves
   for (let waveIndex = 0; waveIndex < pipeline.batches.length; waveIndex++) {

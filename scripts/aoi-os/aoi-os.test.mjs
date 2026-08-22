@@ -80,7 +80,30 @@ test('createAoiOsPipeline initializes full v70 pipeline with 256 pillars includi
   assert.equal(fsizeCheck.safe, true)
   assert.equal(fsizeCheck.rlimitFsizeProof, 'SANDBOX_RLIMIT_FSIZE_BOUND_VERIFIED')
 
-  // 6. Finalize Task and Auto-Sync to ICM
+  // 6. AST Structural Analyzer
+  const astCheck = pipeline.auditAstStructure('export function add(a, b) { return a + b; }')
+  assert.equal(astCheck.valid, true)
+  assert.equal(astCheck.isBalanced, true)
+
+  // 7. Supply Chain Security Guard
+  const supplyCheck = pipeline.auditSupplyChain({ name: 'safe-app', dependencies: { express: '^4.19.0' } })
+  assert.equal(supplyCheck.safe, true)
+  assert.equal(supplyCheck.supplyChainProof, 'SUPPLY_CHAIN_SECURITY_VERIFIED')
+
+  // 8. WCAG 2.1 AA A11y Template Guard
+  const a11yCheck = pipeline.auditA11yTemplate('<div><img src="/logo.png" alt="Logo" /></div>')
+  assert.equal(a11yCheck.safe, true)
+  assert.equal(a11yCheck.a11yProof, 'A11Y_WCAG_TEMPLATE_COMPLIANCE_VERIFIED')
+
+  // 9. SQL Transaction Deadlock Guard
+  const sqlDeadlockCheck = pipeline.auditSqlTransactionDeadlocks('await db.transaction(async tx => { await tx("a").update({}); await tx("b").update({}); })')
+  assert.equal(sqlDeadlockCheck.safe, true)
+
+  // 10. WASM Linear Memory Quota Prover
+  const wasmCheck = pipeline.auditWasmMemoryQuota('const mem = new WebAssembly.Memory({ initial: 1, maximum: 256 })')
+  assert.equal(wasmCheck.safe, true)
+
+  // 11. Finalize Task and Auto-Sync to ICM
   const finalMem = await pipeline.finalizeTaskMemory('T-1', {
     decisions: ['Use deterministic v70 sovereign 256-pillar master core with Quantum Epistemic Hyper-Nexus runtime'],
     diffSummary: 'server/api/tasks.ts (+256 lines)',
@@ -89,3 +112,4 @@ test('createAoiOsPipeline initializes full v70 pipeline with 256 pillars includi
   assert.equal(finalMem.syncResult.executedCount, finalMem.payload.memories.length)
   assert.equal(pipeline.stateManager.getTask('T-1').status, 'completed')
 })
+

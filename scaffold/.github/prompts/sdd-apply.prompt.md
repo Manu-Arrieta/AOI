@@ -32,14 +32,20 @@ icm_transcript_start_session(agent: "supervisor", project: "{WORKSPACE}")
 
 Record implementation decisions and mid-flight changes verbatim. This captures rationale for approach changes, blockers encountered, and Owner decisions during the longest SDD phase.
 
-### Step 2: Identify Task + Validate Pre-Conditions
+### Step 2: Identify Task + Validate Pre-Conditions (Context-Agnostic Resolution)
 
-Resolve the TASK-ID from user input `{{input}}`:
+Resolve the target TASK-ID automatically using the following priority order (do NOT interrupt or ask if context is available):
 
-1. Validate it exists in `.tasks/registry.md` with status `🏗️ Planificado`
-2. Read `.tasks/{feature-name}/TASK-YYYY-NNN/tasks.md`
-3. Read `.tasks/{feature-name}/TASK-YYYY-NNN/implementation-plan.md`
-4. Read `.tasks/{feature-name}/TASK-YYYY-NNN/design.md` for architecture context
+1. **Explicit Argument**: If `{{input}}` contains an explicit TASK-ID (e.g. `TASK-2026-001`), validate and use it.
+2. **Current Conversation Context**: If a task was just planned in `/sdd-ff` within the active session, use that TASK-ID automatically.
+3. **Recent Registry Inference**: If `{{input}}` is empty, "continua", "procede", "adelante", "dale", "aplica", or similar confirmation:
+   - Read `.tasks/registry.md` and pick the most recent task with status `🏗️ Planificado`.
+   - Announce briefly: `▸ Contexto auto-detectado: TASK-YYYY-NNN ({feature-name}) — Iniciando olas de ejecución autónoma...`
+4. **Fallback**: Only if multiple planned tasks exist without prior conversation context, list active tasks and ask the Owner to select one.
+
+5. Read `.tasks/{feature-name}/TASK-YYYY-NNN/tasks.md`
+6. Read `.tasks/{feature-name}/TASK-YYYY-NNN/implementation-plan.md`
+7. Read `.tasks/{feature-name}/TASK-YYYY-NNN/design.md` for architecture context
 
 **Pre-conditions (ALL must be met):**
 
@@ -57,45 +63,23 @@ them as read-only contextual input. Files under `.resources/workflows/` MUST be
 interpreted as component interaction definitions, never as executable commands,
 terminal input, shell scripts, or automation macros.
 
-### Step 3: Implement (via /speckit.implement)
+### Step 3: Implement (via AOI-OS Autonomous Wave Engine)
 
-> 🛡️ **TDD Gate**: Every implementation agent MUST follow RED → GREEN → REFACTOR per task.
-> No production code without a failing test first. Enforced internally by @frontend-developer,
-> @backend-developer, and @devops-engineer.
+Execute DAG execution waves using the deterministic AOI-OS engine:
 
-For each task in the implementation plan, in dependency order:
+```bash
+node scripts/aoi-os/aoi-os-cli.mjs --tasks .tasks/{feature}/{task-id}/tasks.md --workspace "$WORKSPACE" --auto-apply
+```
 
-1. Identify the assigned agent (frontend-dev, backend-dev, etc.)
-2. Hand off to that agent using an **Isolated Subagent Payload** (via `node scripts/subagent-context/sanitize-subagent-payload.mjs --task-dir .tasks/{feature}/{task-id} --role {role}` or extracted slice):
-   - The specific task and test requirements (TDD) from `tasks.md`
-   - Target architecture contracts and interfaces from `design.md`
-   - Stack conventions from constitution
-   - **Context Isolation Rule**: Do NOT pass full multi-turn conversational history to the subagent prompt.
-3. Agent runs `/speckit.implement` to execute (TDD Gate enforced internally)
-4. **Implementation Principles Review** — after each task, the implementing agent verifies:
-   - **SRP**: No new file exceeds ~300 LOC. If it does, justify or split.
-   - **DRY**: No code was copy-pasted from another module. If logic is shared, extract to a common utility.
-   - **KISS**: No abstraction was introduced with only one implementation. Remove unnecessary layers.
-   - **Fail Fast**: Public functions validate their inputs at entry. No silent failures.
-   - **Composition over Inheritance**: No inheritance hierarchy >2 levels deep. Prefer composition.
-   - **Law of Demeter**: No method chains like `a.b.c.d()`. Talk only to direct collaborators.
-   - **Immutability**: Use `const`/`readonly`/`final` where possible. Mutable state only when necessary.
-   - **Security**: Inputs validated, outputs encoded. No hardcoded secrets. SQL parameterized.
-### AOI-OS Autonomous Mode (`--os-mode`)
-
-When running with `--os-mode` or invoking AOI-OS runtime:
-1. Delegate DAG wave compilation and autonomous execution directly to the AOI-OS engine:
-   ```bash
-   node scripts/aoi-os/aoi-os-cli.mjs --tasks .tasks/{feature}/{task-id}/tasks.md --workspace "$WORKSPACE" --auto-apply
-   ```
-2. The engine autonomously:
-   - Compiles task dependency graph and parallel execution waves.
-   - Synthesizes ephemeral micro-agents with strict capability whitelists.
-   - Stages file modifications in isolated sandboxes (`.sandboxes/aoi-os-tmp-{taskId}`).
-   - Enforces Polyglot AST Contract Guards (C#, TS, Vue, Python).
-   - Arbitrates Consensus Gates (OWASP security, secrets & <300 LOC rules).
-   - Auto-heals test diagnostics via circuit breaker rollback if needed.
-   - Sinks semantic memory graph nodes directly into ICM (`decisions-{workspace}`, `errors-resolved`, `context-{workspace}`).
+The engine executes in parallel waves and automatically applies:
+1. **ASCII DAG Progress Visualization**: Prints wave structure and active micro-agent roles.
+2. **Incremental SHA-256 Audit Cache**: Optimizes repeated static proofs in $\mathcal{O}(1)$ time.
+3. **AST Structural Syntactic Analyzer**: Ensures 100% delimiter balance (`{}`, `[]`, `()`) and valid exports.
+4. **Supply Chain Dependency Guard**: Audits `package.json` against malicious install hooks and typosquatting.
+5. **WCAG 2.1 AA A11y Guard**: Verifies accessibility attributes (`alt`, ARIA, `<label>`) in Vue SFCs and HTML.
+6. **SQL Transaction Deadlock Guard**: Enforces canonical table locking orders.
+7. **TDD Gate & Red-Green-Refactor**: Executes test suites per wave with automatic rollback on test failures.
+8. **Memory Sinking**: Stores task completion states directly into ICM (`decisions-{workspace}`, `context-{workspace}`).
 
 ### Step 4: ICM Progress Tracking
 

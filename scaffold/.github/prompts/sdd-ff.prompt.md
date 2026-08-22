@@ -31,16 +31,21 @@ icm_transcript_start_session(agent: "supervisor", project: "{WORKSPACE}")
 
 Record architecture and design decisions verbatim during specify/plan/tasks. These capture the Owner's rationale that is lost when Memories summarize.
 
-### Step 2: Identify Task
+### Step 2: Identify Task (Context-Agnostic Resolution)
 
-Resolve the TASK-ID from user input `{{input}}`:
+Resolve the target TASK-ID automatically using the following priority order (do NOT interrupt or ask if context is available):
 
-1. If user provides TASK-ID → validate it exists in `.tasks/registry.md`
-2. If not → show active tasks and ask the Owner to pick one
-3. Read `.tasks/{feature-name}/TASK-YYYY-NNN/proposal.md` for context
-4. If `.tasks/{feature-name}/TASK-YYYY-NNN/requirement.md` exists, read it as @functional-analyst output from `/sdd-new`. If missing, warn the Owner: "No requirement.md found — @functional-analyst may not have completed analysis. Proceed anyway?"
-5. Recall exploration from ICM: `icm_memory_recall(query: "exploration", topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN")`
-6. If `.tasks/{feature-name}/TASK-YYYY-NNN/relations.json` exists, treat it as
+1. **Explicit Argument**: If `{{input}}` contains an explicit TASK-ID (e.g. `TASK-2026-001`), validate and use it.
+2. **Current Conversation Context**: If a task was just created or discussed in `/sdd-new` within the active session, use that TASK-ID automatically.
+3. **Recent Registry Inference**: If `{{input}}` is empty, "continua", "procede", "adelante", "dale", "next", or similar confirmation:
+   - Read `.tasks/registry.md` and pick the most recent task with status `📋 Propuesto` (or latest active task).
+   - Announce briefly: `▸ Contexto auto-detectado: TASK-YYYY-NNN ({feature-name}) — Continuando hacia especificación y diseño...`
+4. **Fallback**: Only if `.tasks/registry.md` has multiple ambiguous proposed tasks and no conversational context exists, list active tasks and ask the Owner to pick one.
+
+5. Read `.tasks/{feature-name}/TASK-YYYY-NNN/proposal.md` for context
+6. If `.tasks/{feature-name}/TASK-YYYY-NNN/requirement.md` exists, read it as @functional-analyst output from `/sdd-new`. If missing, proceed with `proposal.md` context.
+7. Recall exploration from ICM: `icm_memory_recall(query: "exploration", topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN")`
+8. If `.tasks/{feature-name}/TASK-YYYY-NNN/relations.json` exists, treat it as
   the canonical explicit relation record for linked `.resources/` files
 
 ### Resource Linkage Rule (MANDATORY)
@@ -88,7 +93,8 @@ Hand off to the **@solution-architect**:
    - **SRP**: Each component/module has one clear responsibility. If a module name requires "and", split it.
    - **OCP**: Document extension points — where can new behavior be added without modifying existing code?
    - **DIP**: Dependency direction — high-level modules must NOT depend on low-level modules directly. Both depend on abstractions.
-   - **Contract-First**: API contracts (interfaces, types, endpoints) defined in spec before implementation starts.
+   - **Contract-First & Bidirectional Schema Alignment**: Verify that all TypeScript interfaces match runtime Zod schemas with zero drift using `scripts/aoi-os/type-synthesizer/schema-bidirectional-converter.mjs`.
+   - **Sequence Diagram**: Embed a Mermaid sequence diagram (`sequenceDiagram`) generated via `scripts/aoi-os/contract-docgen/sequence-diagram-generator.mjs` showing interaction flows between `@supervisor`, `@architect`, and executing roles.
    - **Observability**: What needs to be logged, measured, or traced? Document in design.md: "Observability: {logs/metrics/traces needed}"
 
 ### Step 5: Tasks (via @solution-architect + /speckit.tasks)
@@ -99,20 +105,24 @@ Continue with @solution-architect:
 2. Output → `.tasks/{feature-name}/TASK-YYYY-NNN/tasks.md`
 3. Produces `implementation-plan.md` with: agent assignment, dependency order, verification criteria
 4. **TDD Gate**: Every task in `tasks.md` MUST include a `## Test Requirements` section specifying: (a) what tests to write first (RED), (b) acceptance criteria for GREEN, and (c) any refactor notes. Implementation agents enforce RED → GREEN → REFACTOR per task during `/sdd-apply`.
-5. Persist in ICM: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", importance: "high", content: "Tasks generated: N tasks across K agents")`
-6. Update `.tasks/registry.md`: status → `🏗️ Planificado`
+5. **DAG Wave Compilation & ASCII Preview**: Run AOI-OS dry-run compiler:
+   ```bash
+   node scripts/aoi-os/aoi-os-cli.mjs --tasks .tasks/{feature}/{task-id}/tasks.md --dry-run
+   ```
+6. Persist in ICM: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", importance: "high", content: "Tasks generated: N tasks across K waves")`
+7. Update `.tasks/registry.md`: status → `🏗️ Planificado`
 
 ### Step 6: Gate — Owner Approval
 
 Present the complete plan to the Owner:
 
-> "TASK-YYYY-NNN is implementation-ready. Spec, design, and N tasks generated. Review the artifacts and approve to proceed with `/sdd-apply TASK-ID`."
+> "TASK-YYYY-NNN is implementation-ready. Spec, design, and N tasks generated across K waves. Review the artifacts and approve to proceed with `/sdd-apply TASK-ID`."
 
 Show:
-- Summary of spec changes
-- Key architecture decisions
-- Task count by agent
-- Estimated flow (dependency order)
+- Summary of spec changes & linked user stories
+- Key architecture decisions & Mermaid sequence diagram
+- **ASCII DAG Wave Map** (from dry-run output)
+- Task count and role assignments
 
 - If approved → suggest `/sdd-apply TASK-ID`
 - If changes requested → iterate (re-run the affected step)
@@ -120,3 +130,4 @@ Show:
 
 **The task to fast-forward is:**
 {{input}}
+

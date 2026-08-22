@@ -32,14 +32,20 @@ icm_transcript_start_session(agent: "supervisor", project: "{WORKSPACE}")
 
 Record all archive decisions verbatim. This captures closure rationale, what was deliberately excluded, and final decisions that would be lost in summarization.
 
-### Step 3: Identify Task + Validate
+### Step 3: Identify Task + Validate (Context-Agnostic Resolution)
 
-Resolve the TASK-ID from user input `{{input}}`:
+Resolve the target TASK-ID automatically using the following priority order (do NOT interrupt or ask if context is available):
 
-1. Validate it exists in `.tasks/registry.md` with status `✅ Implementado`
-2. Read verify report: `.tasks/{feature-name}/TASK-YYYY-NNN/verify-report.md`
-3. Confirm PASS status
-4. **TDD Gate compliance**: confirm verify-report shows all implementation tasks had tests written (RED → GREEN → REFACTOR). If TDD Gate was not met, warn the Owner before proceeding.
+1. **Explicit Argument**: If `{{input}}` contains an explicit TASK-ID (e.g. `TASK-2026-001`), validate and use it.
+2. **Current Conversation Context**: If a task was just verified in `/sdd-verify` within the active session, use that TASK-ID automatically.
+3. **Recent Registry Inference**: If `{{input}}` is empty, "continua", "procede", "adelante", "archiva", or similar confirmation:
+   - Read `.tasks/registry.md` and pick the most recent task with status `✅ Implementado`.
+   - Announce briefly: `▸ Contexto auto-detectado: TASK-YYYY-NNN ({feature-name}) — Archivando y sincronizando con memoria persistente...`
+4. **Fallback**: Only if multiple verified tasks exist without prior conversation context, list active tasks and ask the Owner to select one.
+
+5. Read verify report: `.tasks/{feature-name}/TASK-YYYY-NNN/verify-report.md`
+6. Confirm PASS status
+7. **TDD Gate compliance**: confirm verify-report shows all implementation tasks had tests written (RED → GREEN → REFACTOR). If TDD Gate was not met, warn the Owner before proceeding.
 
 ### Step 4: Generate Documentation
 
