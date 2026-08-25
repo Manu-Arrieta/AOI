@@ -69,8 +69,7 @@ Hand off to **@integration-specialist** with isolated task context (via `node sc
    - **Observability**: Read `design.md` Observability section — verify that logs/metrics/traces specified in design were actually implemented. New endpoints/controllers without logging? → WARNING
    - **Contract-First**: Read `spec.md` for API contracts defined — verify that interfaces/types/endpoints match the spec. Breaking changes from spec? → WARNING
    Include findings in verify-report under `## Principles Compliance`.
-6. **AOI-OS Compliance & Invariant Audit Report**: Run the comprehensive invariant provers and generate the auditable Markdown compliance report using `scripts/aoi-os/reporting/compliance-report-generator.mjs` and export pipeline execution metrics with `scripts/aoi-os/telemetry/pipeline-metrics-exporter.mjs`. Save to `.tasks/{feature-name}/TASK-YYYY-NNN/compliance-report.md`.
-7. Run `/speckit.checklist` for formal verification
+6. Run `/speckit.checklist` for formal verification
 
 ### Step 4: Service Discovery Gate Check
 
@@ -150,7 +149,6 @@ Write `.tasks/{feature-name}/TASK-YYYY-NNN/verify-report.md`:
 
 - [ ] Service Discovery completed (mandatory)
 - [ ] Sandbox manifest valid — `validate-manifest.mjs` exit 0 (if active sandbox)
-- [ ] AOI-OS DAG Quality Gate OK — 0 contract violations, consensus score >= 85% (if executed in --os-mode)
 - [ ] ICM Memory Health OK
 - [ ] No orphan tasks in `tasks.md`
 

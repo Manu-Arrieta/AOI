@@ -1,4 +1,4 @@
-name: AOI-OS Architectural & Security Gate
+name: AOI CI & Scaffold Parity Gate
 
 on:
   push:

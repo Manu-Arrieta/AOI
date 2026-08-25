@@ -1,205 +1,375 @@
-# AOI — Agentic Operational Infrastructure & AOI-OS
+# AOI — Infraestructura Operativa Agéntica
 
-**Tu equipo de desarrollo de software autónomo, determinista y autosanable, orquestado por IA.**
+Instala un ecosistema agéntico completo en cualquier proyecto: **RTK**
+(optimización de tokens) + **ICM** (memoria persistente) + **Spec-Kit**
+(ciclo de vida SDD) + **11 agentes especializados** sincronizados entre
+Copilot.
 
-AOI transforma cualquier repositorio en un espacio de trabajo agéntico con **memoria persistente (ICM)**, **agentes especializados**, un **ciclo de vida gobernado (SDD)** y **AOI-OS v70**: un sistema operativo determinista de 256 pilares con gobernanza activa **Human-in-the-Loop (HITL)** que ejecuta tareas complejas de forma autónoma con protección de contratos de código políglota (TypeScript, Vue SFC, Python, C#), sandboxes herméticos, hot-patching en memoria, demostración formal de invariantes, síntesis cuántica de variantes AST, resolución de dependencias, auto-refactorización, migraciones de base de datos reversibles, pruebas ZK de cumplimiento, diagnóstico de causa raíz, reconciliación de malla de conocimiento, difusión transitiva de ABI, optimización de KV-cache, teoría de juegos y Equilibrio de Nash, podado de activos zombie, pre-compilación especulativa, generación formal de SBOMs, medición de entropía de Shannon, compresión de deltas, auditoría de colisiones de rutas API, confinamiento criptográfico de capacidades, neutralización de sesgos epistémicos, comprobación estática de nulabilidad, maximización de densidad cognitiva, sanitización formal de descriptores, cadenas criptográficas de procedencia y linaje, auditoría de límites de paquetes, auto-regulación dinámica de presupuesto de tokens, prevención de ataques de canal lateral, reconciliación semántica 3-way AST, análisis estático de consultas e índices de bases de datos, verificación de derivas de bundle size, purga formal de subprocesos zombie, probador de invariantes de aserciones en tests, guardián de deriva de cargas HTTP, neutralizador de re-exportaciones comodín en barriles, cumplimiento de mínimo privilegio en permisos de archivos, prevención estática de bloqueos de microtareas y cascadas asíncronas, centinela estático de campos API deprecados, demostración formal de alocación de memoria en Heap, certificación de aislamiento 100% offline de red en sandboxes, convergencia unificada de peer-dependencies en monorrepositorios, demostración formal de cota de ejecución lineal contra vulnerabilidades ReDoS, guardián de consistencia de variables CSS, probador estático de cierre determinista de file handles, auditoría estática de conformidad de variables .env y detección de secretos, validación estructural AST de configuraciones JSON/YAML, podado de rutas API huérfanas, probador de captura y manejo limpio de señales OS, auditoría de versiones de dependencias en lockfiles, verificación formal de cabeceras HTTP y políticas CORS seguras, podado estático de componentes Vue no renderizados, probador de cierre y desvinculación de FIFOs y sockets IPC, demostración formal de listeners de aborto y limpieza de intervalos en SSE y WebSockets, podado estático de interfaces y tipos huérfanos, auditoría contra concatenaciones dinámicas e inyecciones SQL, probador formal de confinamiento de rutas en sandboxes, demostración formal de directivas de invalidación de caché en endpoints de mutación, podado estático de enums y constantes no alcanzadas, auditoría estática contra lecturas de archivos sin sanitizar, probador de drenaje de streams de subprocesos, demostración formal de protección de tasa de peticiones y defensa anti-DoS, podado estático de entrypoints exportados en package.json, auditoría estática contra desajustes de hidratación SSR, probador formal de desvinculación recursiva de directorios temporales en sandboxes, demostración formal de limpieza de temporizadores de heartbeat en WebSockets, podado estático de alias de tipos y parámetros genéricos no alcanzados, auditoría de deserialización y validación estricta de Content-Type, probador formal de desvinculación de sockets TCP/HTTP en ganchos de teardown, probador de cierre y drenaje de pools de conexión a bases de datos, podado estático de claves de traducción e internacionalización no alcanzadas, auditoría estática de firmas JWT para garantizar políticas de expiración acotadas, probador formal de confinamiento estricto de enlaces simbólicos en sandboxes, demostración formal de finalización de spans OpenTelemetry en bloques finally, podado estático de variables de entorno huérfanas, auditoría estática de límites de profundidad en consultas GraphQL/REST, probador formal de cierre de canales MessageChannel y descriptores IPC, demostración formal de terminación y destrucción de hilos de trabajo Worker Threads, podado estático de propiedades reactivas huérfanas en stores Pinia/Vuex, auditoría estática de flujos SSE y WebSockets para verificar contrapresión de búferes, probador formal de prohibición de bits setuid/setgid y comandos de elevación de privilegios en sandboxes, auditoría estática de operaciones en `localStorage`/`IndexedDB` contra `QuotaExceededError`, podado estático de clases y selectores CSS huérfanos, probador formal de puertos efímeros dinámicos contra colisiones `EADDRINUSE`, probador formal de concurrencia acotada de descriptores de archivos para prevenir `ulimit`/`EMFILE`, demostración formal de rollback garantizado en transacciones de base de datos, podado estático de scripts y comandos npm huérfanos en `package.json`, auditoría estática de renderizado HTML dinámico contra vulnerabilidades XSS, probador formal de paso explícito y filtrado de variables `env` en subprocesos de sandbox, auditoría estática de peticiones de red salientes para garantizar límites de tiempo o AbortSignal, podado y validación estática de hipervínculos en markdown, demostración formal de acotamiento de longitud en expresiones regulares dinámicas en runtime, probador formal de desactivación de volcados de memoria (ulimit -c 0) en sandboxes, auditoría estática de telemetría y logs para enmascarar contraseñas, tokens y PII, podado estático de reglas duplicadas en `.gitignore`, auditoría estática contra algoritmos criptográficos obsoletos, probador formal de límites de CPU y memoria en subprocesos de sandbox, auditoría estática de ganchos de unhandledRejection/uncaughtException, podado estático de paquetes de workspace huérfanos, auditoría de CSPRNG contra Math.random en tokens, probador formal de aislamiento de descriptores de archivos en sandboxes, auditoría estática de escrituras atómicas en dos fases para estados y manifiestos, podado estático de alias de rutas huérfanos en configuración, auditoría estática de flags Unicode en RegExp, probador formal de prioridad de scheduling en sandboxes, auditoría de bloqueos de archivos y TTL de PID, podado de duplicados en barriles, blindaje contra inyecciones shell, trampa de señales de grupos de procesos en sandboxes, auditoría de permisos POSIX restrictivos en archivos sensibles, podado de protocolos workspace:* huérfanos, validación OWASP de salt e iteraciones en KDF, cotas maxBuffer en subprocesos, prefijos criptográficos no colisionantes en archivos temporales, podado de hooks de ciclo de vida huérfanos, cifrado simétrico autenticado AEAD/GCM, cotas de mensajes IPC en sandboxes, anclaje canónico de rutas contra enlaces simbólicos, podado de condiciones de exportación huérfanas en `package.json`, comparación en tiempo constante de firmas/HMAC, cancelación instantánea de tareas asíncronas en sandboxes, prevención de recursión por hardlinks e inodos cíclicos, podado de binarios CLI huérfanos en package manifests, validación de curvas elípticas seguras, verificación SRI en módulos dinámicos, decodificación segura de fronteras de chunks UTF-8 en streams, podado de referencias huérfanas en `tsconfig.json`, forzado de versiones seguras de TLS (≥ TLSv1.2), vaciado garantizado de buffers stdio en sandboxes, prevención de colisiones TOCTOU en symlinks temporales, podado de rutas glob huérfanas en `include` de `tsconfig.json`, forzado de funciones hash SHA-2 en PBKDF2, cierre determinista de `stdin` en subprocesos, validación de límites de lectura en Buffers, podado de declaraciones `@types` huérfanas en `tsconfig.json`, longitud de clave RSA segura (≥ 2048/3072 bits), gestión determinista de `MessagePort` en sandboxes, acotamiento de `MaxListeners` y desuscripción en streams, podado de prefijos huérfanos en `paths` de `tsconfig.json`, forzado de grupos Diffie-Hellman seguros (≥ 2048 bits / MODP14+), desconexión determinista de canales IPC en subprocesos de sandbox, cota de memoria en `highWaterMark` de streams (≤ 256KB), podado de directivas glob huérfanas en `exclude` de `tsconfig.json`, parámetros seguros de derivación HKDF (SHA-2/SHA-3), desprendimiento determinista del event loop (`child.unref()`), auto-destrucción de streams en fallos de tuberías (`pipeline`/`pipe`), podado de librerías redundantes en `lib` de `tsconfig.json`, parámetros de costo robustos en Scrypt (N ≥ 16384), sanitización estricta de `PATH`, invocación determinista de callback en `_final`/`_flush` de transforms, podado de directivas `jsx` huérfanas en `tsconfig.json`, parámetros AEAD seguros en ChaCha20-Poly1305 (nonce de 12 bytes y auth tag), sanitización estricta de `NODE_OPTIONS`, vaciado atómico de buffers en streams mediante `cork()` / `uncork()`, podado de directivas `baseUrl` redundantes en `tsconfig.json`, curvas seguras ECDH (X25519/X448), sanitización estricta de `LD_PRELOAD` / `DYLD_INSERT_LIBRARIES`, control de flujo determinista `pause()` / `resume()` en streams, podado de flags de interoperabilidad ESM redundantes en `tsconfig.json`, validación estricta de algoritmo y firmas EdDSA (Ed25519/Ed448), límites estrictos de heap en Worker Threads de sandbox, control de promesas en `stream.pipeline`/`stream.finished`, podado de sub-flags estrictas redundantes en `tsconfig.json`, parámetros robustos en generación de pares de claves criptográficas, transferencias sin copia (`transferList`) en Worker Threads de sandbox, prevención de sockets huérfanos en conexiones half-open, podado de librerías duplicadas por `target` en `tsconfig.json`, longitud explícita de salt en esquemas RSA-PSS, contención headless multiplataforma (`windowsHide`), cota de memoria proporcional en streams `objectMode`, podado de `resolveJsonModule` redundante bajo resolución moderna, orden estricto de `setAuthTag` en descifrado AEAD, serialización avanzada V8 en IPC de sandbox, auditoría de bloqueos secuenciales en escrituras append-only, podado de fuga de tipos Node en tsconfigs de frontend, validación estricta de certificados X.509, destrucción de grupos de procesos detached, auditoría de truncado atómico en archivos en disco, podado de `declarationMap` huérfano en `tsconfig.json`, cumplimiento estricto de validación TLS por SAN (RFC 6125), prevención de inyección en archivos batch de Windows, debouncing y cierre de watchers de archivos, podado de `exactOptionalPropertyTypes: false` redundante, especificación explícita de Server Name Indication (SNI / RFC 6066) en TLS, normalización canónica de rutas de ejecutables de sandbox, comprobación de soporte recursivo multiplataforma en watchers de archivos, podado de directivas deprecadas bajo `verbatimModuleSyntax: true` en `tsconfig.json`, validación estricta de protocolos estándar IANA en `ALPNProtocols` (TLS), prevención de inyección en opciones `shell: true` de subprocesos, precisión BigInt (`mtimeNs`) en detección de modificaciones de archivos en disco, podado de `checkJs: true` inerte sin `allowJs` en `tsconfig.json`, validación y manejo de OCSP Stapling (`requestOCSP: true` + `'OCSPResponse'`) en TLS, escape estricto de metacaracteres batch (`^&|<>%"`) en subprocesos de sandbox, listeners de error obligatorios en watchers de archivos, podado de `composite: true` incompatible sin `declaration: true` en `tsconfig.json`, mitigación formal de vulnerabilidades DoS por renegociación de sesiones TLS (CVE-2011-1473), entrecomillado estricto (`"$VAR"`) en subshells POSIX para evitar word splitting, re-ponderación dinámica por historias de usuario, compuertas de escalación humana ante blast radius crítico, demostración 1:1 de criterios de aceptación, probador de entrevistas interactivas en `/sdd-new`, guardián centinela contra deriva de intención humana y scope creep, podado estático de `moduleResolution` incompatible en `tsconfig.json`, especificación explícita y segura de hash MGF1 en RSA-PSS, ejecución directa `execFile`/`spawn` sin subshells intermedias (CWE-78), volcado físico a disco garantizado mediante `fsync` antes de `renameSync`, podado de `isolatedDeclarations: true` huérfanas en TS 5.5+, longitud estricta de authTag de 16 bytes en cifrados AES-GCM, protocolo de terminación escalonado `SIGTERM` con gracia antes de `SIGKILL` en sandboxes, volcado físico a disco de directorios padre tras `renameSync`, podado de flags incompatibles con `erasableSyntaxOnly: true` en TS 5.8+, constantes estándar seguras en `saltLength` de RSA-PSS, aislamiento estricto de `umask` en sandboxes, co-locación en mismo dispositivo de staging para evitar caídas `EXDEV`, podado de `rewriteRelativeImportExtensions: true` en TS 5.7+, constante estándar `RSA_PSS_SALTLEN_AUTO` en verificaciones RSA-PSS, cotas estrictas de procesos concurrentes (defensa anti fork-bomb), bloqueo consultivo exclusivo previo a mutaciones de archivos, podado de flags incompatibles con `exactOptionalPropertyTypes: true`, digest robusto SHA-2/SHA-3 en firmas RSA-PSS, supresión de volcados de memoria (core dumps), nomenclatura y prefijo oculto en archivos temporales de staging, saneamiento de `checkJs: true` con `allowJs: true`, exportación estricta de claves RSA-PSS en formato PKCS#8 y cotas de tamaño de archivo (RLimit FSIZE) en sandboxes con **máxima eficiencia y optimización de tokens**.
-
----
-
-## ⚡ ¿Cómo funciona el Ciclo de Vida?
-
-```text
-Tu proyecto
-    ↓
-setup.sh / setup.ps1    ← Instala infraestructura, agentes y AOI-OS
-    ↓
-/init                   ← Configura stack, convenciones e invariantes
-    ↓
-/sdd-new                ← Explora y propone el feature (@supervisor) [Entrevista Interactiva HITL]
-    ↓
-/sdd-ff                 ← Diseña contratos y planifica tareas (@architect + @analyst) [Firma de Contratos]
-    ↓
-/sdd-apply (--os-mode)  ← Implementación autónoma vía AOI-OS o asistida por TDD [Control C2 & Escalación HITL]
-    ↓
-/sdd-verify             ← Verificación de calidad, AST contracts y consensus score [Aprobación Humana]
-    ↓
-/sdd-archive            ← Documentación funcional y cierre formal en memoria [Sincronización ICM]
-```
-
-Cada paso cuenta con una **aprobación explícita del Owner/Arquitecto**. Tú diseñas la intención y los contratos sagrados; el sistema operativo agéntico ejecuta con garantías matemáticas de no-regresión.
-
----
-
-## 🧠 AOI-OS v70: Matriz Arquitectónica Maestra de 256 Pilares
-
-AOI-OS opera maximizando la eficiencia de cómputo local determinista combinado con síntesis agéntica de ultra-alta densidad:
-
-```text
-AOI-OS v70 Architecture Matrix (256 Pillars)
-├── 1. Compilador DAG y Planificador de Olas (scripts/aoi-os/dag-engine/)
-├── 2. Guardián AST Políglota para TS / Vue SFC / Python / C# (scripts/aoi-os/ast-guard/)
-├── 3. Esqueletizador AST & Cache Semántico de Contratos (ast-skeletonizer.mjs, contract-kv-cache.mjs)
-├── 4. Invariante de Concurrencia: AST Symbol Mutex (scripts/aoi-os/mutex/ast-symbol-mutex.mjs)
-├── 5. Micro-Agente Adversario: Chaos Fuzzer (scripts/aoi-os/fuzzing/adversarial-fuzzer.mjs)
-├── 6. Grafo Dinámico de Arquitectura C4 (scripts/aoi-os/c4-graph/ & /api/aoi-os/c4)
-├── 7. Snapshots Criptográficos & Time-Travel (scripts/aoi-os/time-travel/time-travel-engine.mjs)
-├── 8. Sandboxes Herméticos & Gobernador de Tokens (scripts/aoi-os/sandbox-runtime/)
-├── 9. Consenso y Arbitraje Multi-Agente (scripts/aoi-os/consensus-gate/consensus-arbitrator.mjs)
-├── 10. Grafo Semántico de Memoria y Auto-Linker ICM (scripts/aoi-os/memory-linker/icm-memory-linker.mjs)
-├── 11. Motor Determinista de Mutation Testing (scripts/aoi-os/mutation-testing/ast-mutation-verifier.mjs)
-├── 12. Estimador Predictivo de Complejidad y Tokens (scripts/aoi-os/sandbox-runtime/token-complexity-estimator.mjs)
-├── 13. Sintetizador Autónomo de OpenAPI 3.1 & Flujos E2E (scripts/aoi-os/contract-docgen/)
-├── 14. Protocolo de Federación Multi-Repositorio (scripts/aoi-os/federation/workspace-mesh-bridge.mjs)
-├── 15. Taint Tracer & Guardián de Código Muerto (security-guard/, ast-guard/)
-├── 16. Live Micro-Patch Kernel (runtime-kernel/live-patch-kernel.mjs)
-├── 17. Symbolic Constraint Prover (symbolic-prover/symbolic-constraint-prover.mjs)
-├── 18. Test Flakiness & Race Detector (test-guard/flakiness-detector.mjs)
-├── 19. Bidirectional ABI Linker (abi-linker/bidirectional-abi-linker.mjs)
-├── 20. Núcleo Cognitivo y Epistémico (memo-engine/, adaptive-wave-balancer/, bft-quorum/, polyglot-transpiler/)
-├── 21-24. Núcleo Hyper-Core (virtualizer/, telemetry/, ontology/, ast-optimizer/)
-├── 25-28. Núcleo Genesis Cuántico (quantum-synthesis/, type-synthesizer/, hologram/, security-guard/)
-├── 29-32. Núcleo Omnisciente (dependency-solver/, event-sourcing/, benchmark/, axiom-reconciler/)
-├── 33-36. Núcleo Holo-Genesis (ast-refactor/, db-migration/, convergence/, context-compactor/)
-├── 37-40. Núcleo Omnipresente Singularity (zk-attestor/, diagnostics/, circular-neutralizer/, liquidity-balancer/)
-├── 41-44. Núcleo Hyper-Omniscience (knowledge-mesh/, abi-broadcaster/, cache-optimizer/, sandbox-guard/)
-├── 45-48. Núcleo Quantum Super-Matrix (game-engine/, asset-pruner/, speculative/, sbom/)
-├── 49-52. Núcleo Transcendent Omni-Core (entropy-prover/, delta-compressor/, route-guard/, capability-guard/)
-├── 53-56. Núcleo Grand Epistemic Master (bias-neutralizer/, nullability-guard/, density-maximizer/, sandbox-guard/)
-├── 57-60. Núcleo Diamond Singularity (provenance/, export-guard/, throttle/, security-guard/)
-├── 61-64. Núcleo Apex Infinity Kernel (ast-merge/, query-guard/, bundle-guard/, sandbox-guard/)
-├── 65-68. Núcleo Infinite Holo-Super-Matrix (test-guard/, payload-guard/, export-guard/, sandbox-guard/)
-├── 69-72. Núcleo Omniscient Quantum Matrix (async-guard/, schema-guard/, memory-guard/, sandbox-guard/)
-├── 73-76. Núcleo Absolute Omniverse Kernel (dependency-solver/, security-guard/, css-guard/, sandbox-guard/)
-├── 77-80. Núcleo Sovereign Singularity Matrix (env-guard/, config-guard/, route-guard/, sandbox-guard/)
-├── 81-84. Núcleo Supreme Infinite Singularity Matrix (dependency-solver/, security-guard/, component-guard/, sandbox-guard/)
-├── 85-88. Núcleo Absolute Universal Omniverse Matrix (stream-guard/, type-guard/, security-guard/, sandbox-guard/)
-├── 89-92. Núcleo Transcendent Omnipresent Singularity Matrix (cache-guard/, enum-guard/, security-guard/, sandbox-guard/)
-├── 93-96. Núcleo Supreme Infinite Singularity Matrix (security-guard/, export-guard/, component-guard/, sandbox-guard/)
-├── 97-100. Núcleo Centurial 100-Pillar Omnipresent Master Engine (stream-guard/, type-guard/, security-guard/, sandbox-guard/)
-├── 101-104. Núcleo Sovereign 104-Pillar Infinite Singularity Matrix (db-guard/, i18n-guard/, security-guard/, sandbox-guard/)
-├── 105-108. Núcleo Transcendent 108-Pillar Genesis Core (telemetry/, env-guard/, security-guard/, sandbox-guard/)
-├── 109-112. Núcleo Absolute 112-Pillar Omniverse Matrix (runtime-kernel/, component-guard/, stream-guard/, sandbox-guard/)
-├── 113-116. Núcleo Sovereign 116-Pillar Genesis Matrix (storage-guard/, css-guard/, test-guard/, sandbox-guard/)
-├── 117-120. Núcleo Centurial 120-Pillar Genesis Master Matrix (db-guard/, package-guard/, security-guard/, sandbox-guard/)
-├── 121-124. Núcleo Sovereign 124-Pillar Genesis Matrix (stream-guard/, doc-guard/, security-guard/, sandbox-guard/)
-├── 125-128. Núcleo Transcendent 128-Pillar Genesis Core (telemetry/, repo-guard/, security-guard/, sandbox-guard/)
-├── 129-132. Núcleo Sovereign 132-Pillar Genesis Matrix (async-guard/, package-guard/, security-guard/, sandbox-guard/)
-├── 133-136. Núcleo Transcendent 136-Pillar Genesis Core (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 137-140. Núcleo Sovereign 140-Pillar Genesis Matrix (storage-guard/, export-guard/, security-guard/, sandbox-guard/)
-├── 141-144. Núcleo Transcendent 144-Pillar Genesis Core (storage-guard/, package-guard/, security-guard/, sandbox-guard/)
-├── 145-148. Núcleo Sovereign 148-Pillar Genesis Matrix (storage-guard/, package-guard/, security-guard/, sandbox-guard/)
-├── 149-152. Núcleo Transcendent 152-Pillar Genesis Core (storage-guard/, package-guard/, security-guard/, sandbox-guard/)
-├── 153-156. Núcleo Sovereign 156-Pillar Genesis Matrix (storage-guard/, package-guard/, security-guard/, sandbox-guard/)
-├── 157-160. Núcleo Transcendent 160-Pillar Genesis Core (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 161-164. Núcleo Sovereign 164-Pillar Genesis Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 165-168. Núcleo Transcendent 168-Pillar Genesis Core (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 169-172. Núcleo Sovereign 172-Pillar Genesis Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 173-176. Núcleo Centurial 176-Pillar Genesis Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 177-180. Núcleo Sovereign 180-Pillar Genesis Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 181-184. Núcleo Transcendent 184-Pillar Genesis Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 185-188. Núcleo Sovereign 188-Pillar Genesis Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 189-192. Núcleo Transcendent 192-Pillar Genesis Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 193-196. Núcleo Sovereign 196-Pillar Master Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 197-200. Núcleo Bicentenario 200-Pillar Master Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 201-204. Núcleo Sovereign 204-Pillar Master Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 205-208. Núcleo Transcendente 208-Pillar Master Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 209-212. Núcleo Soberano 212-Pillar Master Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 213-216. Núcleo Gran Epistémico 216-Pillar Master Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 217-220. Núcleo Soberano 220-Pillar Master Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 221-224. Núcleo Gran Epistémico 224-Pillar Master Matrix (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 225-228. Núcleo Soberano 228-Pillar Master Matrix v63 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 229-232. Núcleo Soberano 232-Pillar Human-in-the-Loop & Dynamic Steering Matrix v64 (hitl-guard/)
-├── 233-236. Núcleo Soberano 236-Pillar Intent-Integrity & High-Assurance Runtime Matrix v65 (hitl-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 237-240. Núcleo Soberano 240-Pillar Omnipresent Master Matrix v66 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 241-244. Núcleo Soberano 244-Pillar Infinite Transcendence Matrix v67 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 245-248. Núcleo Soberano 248-Pillar Omnipresent Master Matrix v68 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-├── 249-252. Núcleo Soberano 252-Pillar Epistemic Hyper-Core Matrix v69 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-└── 253-256. Núcleo Soberano 256-Pillar Omnipresent Master Matrix v70 (storage-guard/, config-guard/, security-guard/, sandbox-guard/)
-    ├── file-atomic-temp-extension-guard.mjs: Auditoría estática de nomenclatura y prefijo oculto en staging (.${file}.${id}.tmp).
-    ├── dead-tsconfig-check-js-allow-js-dependency-pruner.mjs: Saneamiento estático de checkJs: true con allowJs: true obligatorio (TS5052).
-    ├── crypto-rsa-pss-key-export-guard.mjs: Auditoría estática de exportación de claves RSA-PSS en formato estándar PKCS#8.
-    └── sandbox-process-posix-rlimit-fsize-prover.mjs: Demostración formal de cotas máximas de tamaño de archivo (RLimit FSIZE) en sandboxes.
-```
-
----
-
-## 🖥️ C2 Command Deck (Nuxt UI v4 + Tailwind CSS v4 + TanStack)
-
-El panel de operaciones en `aoi_apps/agentic-ops-dashboard` ofrece una experiencia de Comando y Control (C2) de primer nivel:
-
-* **📋 Tablero Kanban**: Visualización por estados del ciclo SDD.
-* **📊 Matriz TanStack**: Búsqueda global, ordenamiento multi-columna, filtros facetados y paginación ultra-rápida.
-* **⚡ Matriz DAG & Playback**: Controles interactivos (Pause, Resume, Step Wave) y Node Inspector Drawer.
-* **🌐 Arquitectura C4 en Vivo**: Diagrama dinámico Mermaid C4 conectado a `/api/aoi-os/c4`.
-* **📁 Explorador de Recursos**: Navegación por historias, especificaciones y contratos.
-* **📈 Observabilidad de Tokens**: Métricas de consumo, velocidad y alertas de anomalías.
-
----
-
-## 👨‍💻 Tu Rol: De "Escribano de Código" a "Gobernador de Sistemas"
-
-Con **AOI-OS**, tu paradigma de desarrollo evoluciona:
-
-1. **Diseñador de Contratos e Invariantes**: En `/sdd-ff`, tú defines los esquemas, interfaces públicas y restricciones de seguridad.
-2. **Comandante de Operaciones C2**: En el dashboard de Nuxt 4, supervisas la ejecución de olas del DAG, pausas o avanzas el sistema paso a paso e inspeccionas cualquier nodo.
-3. **Juez de Escalación Estratégica**: El 95% de los errores de compilación o aserciones los resuelve la auto-sanación; tú solo intervienes ante ambigüedades arquitectónicas reales o compuertas críticas de aprobación.
-
----
-
-## 🛠️ Instalación y Configuración
+## Inicio Rápido
 
 ### macOS / Linux
+
 ```bash
 bash "/path/to/AOI/setup.sh" /path/to/my-project
 ```
 
-### Windows 11+
+### Windows 11+ (PowerShell)
+
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\AOI\setup.ps1" "C:\path\to\my-project"
 ```
 
-### Prerrequisitos
-- Node.js ≥ 20.19
-- pnpm ≥ 11.3
-- [ICM](https://github.com/rtk-ai/icm) (memoria persistente de contexto infinito)
-- GitHub Copilot en VS Code o Antigravity IDE
+### Windows 11+ (Git Bash)
 
----
-
-## 🚀 Modos de Ejecución
-
-### Modo Autónomo OS (Recomendado)
 ```bash
-# Ejecutar un feature completo en modo autónomo:
-node scripts/aoi-os/aoi-os-cli.mjs --tasks .tasks/{feature}/{task-id}/tasks.md --workspace "$WORKSPACE" --auto-apply
-
-# Simular compilación del DAG sin mutaciones (Dry Run):
-node scripts/aoi-os/aoi-os-cli.mjs --tasks .tasks/{feature}/{task-id}/tasks.md --dry-run
+bash "/c/path/to/AOI/setup.sh" "/c/path/to/my-project"
 ```
 
-### Modo Interactivo SDD en Copilot
+Luego, en el chat de Copilot dentro de VS Code:
+
 ```text
-/sdd-apply --os-mode
+/init # Configura el stack del proyecto, los agentes y la constitución
+/sdd-new # Inicia la primera feature
 ```
 
+## Onboarding
+
+Podés usar AOI de dos maneras:
+
+1. **Instalar AOI dentro de otro proyecto**
+   Ejecutás `setup.sh` o `setup.ps1` y apuntás al repositorio destino que querés bootstrapear con el stack de AOI.
+2. **Trabajar sobre AOI mismo**
+   Abrís este repositorio, instalás las dependencias del workspace y usás el dashboard interno junto con los prompts SDD para evolucionar la plantilla.
+
+Prerrequisitos mínimos antes de la primera ejecución:
+
+- Node `>=20.19.0`
+- `corepack` o `pnpm >=11.3.0`
+- `icm`
+- GitHub Copilot en VS Code
+
+Primera sesión recomendada dentro de este repositorio:
+
+1. Abrí el repositorio en VS Code.
+2. Ejecutá `pnpm install` o `corepack pnpm install`.
+3. Levantá el dashboard con `pnpm dev:dashboard`.
+4. Abrí Copilot Chat y corré `/speckit.constitution` si vas a preparar una nueva instalación downstream.
+5. Iniciá el primer flujo con `/sdd-new`.
+
+El repositorio público de AOI arranca limpio: los registries de tareas están vacíos, no hay sandboxes activas y la memoria versionada todavía no tiene ningún workspace activo registrado.
+
+Artefactos de release y validación:
+
+- [docs/internal/releases/v0.1.0.es.md](docs/internal/releases/v0.1.0.es.md) — notas de la primera baseline pública de la plantilla.
+- [docs/internal/verification/external-smoke-plan.es.md](docs/internal/verification/external-smoke-plan.es.md) — checklist externa para validar AOI como repo y bootstrapper.
+
+Límite de documentación:
+
+- `docs/internal/` contiene la documentación de mantenimiento de AOI como bootstrapper.
+- `scaffold/docs/` queda reservado para la documentación que sí debe instalarse en proyectos downstream.
+
+## Qué Se Instala
+
+### Herramientas (en orden de prioridad)
+
+| Herramienta             | Propósito                                  | macOS / Linux                                        | Windows 11+                                                       |
+| ----------------------- | ------------------------------------------ | ---------------------------------------------------- | ----------------------------------------------------------------- |
+| **RTK**                 | Optimización de tokens (60-90%)            | `brew install rtk`                                   | Binario desde GitHub Releases vía `setup.ps1`                     |
+| **ICM**                 | Memoria persistente (4 métodos)            | `brew tap rtk-ai/tap && brew install icm`            | `install.ps1` oficial vía `setup.ps1`                             |
+| **Headroom**            | Capa de compresión CLI (60-95%)            | `bash scripts/install-headroom.sh --yes`             | `powershell scripts/install-headroom.ps1 -Yes`                    |
+| **Codebase Memory MCP** | Inteligencia estructural de código / grafo | `bash scripts/install-codebase-memory.sh --ui --yes` | `powershell scripts/install-codebase-memory.ps1 -Yes -Variant ui` |
+| **Specify CLI**         | Ciclo de vida de Spec-Driven Development   | `uv tool install specify-cli`                        | `winget install --id astral-sh.uv -e` + `uv tool install ...`     |
+
+En Windows, AOI usa `winget` para `uv` cuando está disponible. RTK no
+documenta por ahora un paquete oficial para `winget`, así que `setup.ps1`
+instala directamente el binario de Windows.
+
+`ICM` es obligatorio: el setup aborta si no puede verificar un comando `icm` operativo. `RTK` y `Headroom` son recomendados pero no bloqueantes: si su instalación falla, AOI continúa.
+
+`Headroom` comprime contexto para agentes basados en CLI (Claude Code, Codex, `gh copilot`). **No** intercepta el tráfico de VS Code Copilot Chat — esa extensión llama directamente a la API de GitHub. El ahorro de tokens en VS Code Chat proviene de **RTK** (filtrado de salida de terminal) y **Codebase Memory MCP** (120× menos tokens en exploración de código).
+
+`Codebase Memory MCP` es opcional. AOI lo instala en modo seguro con `--skip-config`, así que el binario queda disponible pero los archivos de instrucciones del home del operador no se tocan. Si el binario está presente, AOI lo registra sólo en el `.vscode/mcp.json` local del proyecto.
+
+El setup ofrece dos variantes durante la Phase 1.8:
+
+- **`standard`** — sólo el binario, sin visualización de grafo.
+- **`ui`** (recomendado) — incluye la visualización 3D interactiva del grafo en `http://localhost:9749`, disponible cada vez que VS Code tiene el servidor MCP conectado.
+
+Tras una instalación exitosa, el setup activa automáticamente:
+
+- `auto_index true` — watcher nativo de git que re-indexa de forma incremental ante cualquier cambio.
+- `ui true` + `port 9749` — visualización HTTP del grafo habilitada al iniciar la próxima sesión de VS Code.
+- `index_repository` inicial en background — el proyecto queda indexado antes de la primera sesión de agente.
+
+El runtime del dashboard también es obligatorio. El setup ya no saltea su bootstrap: ahora falla si antes de instalar dependencias no tiene Node `>=20.19.0` y `corepack` o `pnpm@11.3.0` disponibles.
+
+### Scaffold (copiado a tu proyecto)
+
+```text
+.vscode/
+├── settings.json # Configuración de terminal del workspace para resolver herramientas
+└── mcp.json # Registro MCP local del workspace (ICM obligatorio, codebase-memory-mcp opcional)
+
+.githooks/
+└── pre-commit-aoi-guard.sh  # Bloquea headroom learn para que no sobreescriba archivos gestionados por AOI
+
+.resources/
+├── constitution.md # Contrato local del subárbol de recursos
+├── userstories/ # Contexto reutilizable de historias de usuario
+└── workflows/ # Definiciones de interacción entre componentes (no ejecutables)
+
+.github/
+├── agents/ # 11 definiciones de agentes de Copilot
+│   ├── supervisor.agent.md # Orquestador SDD (Hub-and-Spoke)
+│   ├── functional-analyst.agent.md
+│   ├── solution-architect.agent.md
+│   ├── frontend-developer.agent.md
+│   ├── backend-developer.agent.md
+│   ├── devops-engineer.agent.md
+│   ├── ux-designer.agent.md
+│   ├── documentation-analyst.agent.md
+│   ├── integration-specialist.agent.md
+│   ├── project-analyzer.agent.md
+│   └── project-expert.agent.md
+├── prompts/ # Comandos del flujo SDD
+│   ├── init.prompt.md # /init — asistente de configuración del proyecto
+│   ├── sdd-new.prompt.md # /sdd-new — exploración + especificación
+│   ├── sdd-ff.prompt.md # /sdd-ff — plan + tareas
+│   ├── sdd-apply.prompt.md # /sdd-apply — implementación
+│   ├── sdd-verify.prompt.md # /sdd-verify — QA
+│   ├── sdd-archive.prompt.md # /sdd-archive — cierre
+│   ├── export-memory-bundle.prompt.md # /export-memory-bundle — exportación portable gobernada de memoria
+│   ├── import-memory-bundle.prompt.md # /import-memory-bundle — importación de bundle hacia candidata
+│   ├── sync-workspace-memory.prompt.md # /sync-workspace-memory — importación gobernada de memoria
+│   └── rollback-workspace-memory.prompt.md # /rollback-workspace-memory — restauración de la versión previa
+└── instructions/ # Reglas siempre cargadas
+  ├── icm-protocol.instructions.md # Cumplimiento ICM de 4 métodos
+    └── model-selection.instructions.md # Política obligatoria de selección de modelo
+```
+
+## Protocolo de Descubrimiento de Código
+
+Cuando `codebase-memory-mcp` está registrado en `.vscode/mcp.json`, los agentes prefieren automáticamente sus herramientas de grafo sobre `grep` amplio o lecturas archivo por archivo:
+
+| Prioridad | Herramienta              | Caso de uso                                          |
+| --------- | ------------------------ | ---------------------------------------------------- |
+| 1         | `search_graph`           | Encontrar funciones, clases, routes por patrón       |
+| 2         | `trace_path`             | Seguir call chains inbound/outbound                  |
+| 3         | `get_code_snippet`       | Leer el source exacto de un símbolo ya encontrado    |
+| 4         | `query_graph`            | Queries estructurales complejas tipo Cypher          |
+| 5         | `get_architecture`       | Overview del codebase: lenguajes, hotspots, clusters |
+| 6         | `grep` / lectura directa | Literales, configs, non-code files, o fallback       |
+
+Si el proyecto todavía no está indexado, llamar `index_repository` primero. Si el servidor MCP no está presente, se aplica el flujo normal de búsqueda local.
+
+## Ciclo de Vida SDD
+
+Construido sobre [spec-kit](https://github.com/github/spec-kit). Nuestros
+prompts orquestan comandos de spec-kit con asignación de agentes y
+persistencia en ICM.
+
+```text
+/sdd-new → Explorar + Especificar → @functional-analyst
+↓
+/sdd-ff → Plan + Tareas → @solution-architect
+↓
+/sdd-apply → Implementar (por lotes) → @frontend/@backend/@devops
+↓
+/sdd-verify → QA + Validación → @integration-specialist
+↓
+/sdd-archive → Documentación + Cierre → @documentation-analyst
+```
+
+Cada fase tiene una **puerta de aprobación del Owner** antes de avanzar.
+
+## Subsistema Opcional de Recursos
+
+AOI ahora instala un subárbol gobernado `.resources/` para contexto
+reutilizable:
+
+```text
+.resources/
+├── constitution.md
+├── userstories/
+└── workflows/
+```
+
+- `userstories/` almacena contexto reutilizable para la construcción de tareas.
+- `workflows/` almacena definiciones de interacción entre componentes en una o
+  varias historias de usuario. Estos archivos **no son comandos ejecutables**.
+- Los workflows SDD **no** leen `.resources/` automáticamente. Un recurso solo
+  se usa si el Owner lo vincula explícitamente durante la construcción de una
+  tarea.
+
+La estructura se gobierna mediante:
+
+- autoridad raíz: `.specify/memory/constitution.md`
+- contrato local del subárbol: `.resources/constitution.md`
+
+Comandos administrativos:
+
+- `/new-resource-folder` — crea una carpeta gobernada dentro de `.resources/`
+- `/move-resource-folder` — mueve una carpeta gobernada dentro de `.resources/`
+- `/delete-resource-folder` — elimina una carpeta gobernada dentro de `.resources/`
+
+## Runtime Interno del Dashboard
+
+AOI ahora aprovisiona un paquete autocontenido en Nuxt para visibilidad
+operativa del proyecto en tiempo real.
+
+Superficies del runtime:
+
+```text
+aoi_apps/agentic-ops-dashboard/
+aoi_apps/agentic-ops-dashboard/package.json
+scaffold/aoi_apps/agentic-ops-dashboard/
+scaffold/aoi_apps/agentic-ops-dashboard/package.json
+```
+
+- El dashboard lee `.tasks/registry.md`, los directorios de artefactos de
+  tareas y el subárbol opcional `.resources/` como snapshot autoritativo del
+  workspace.
+- Los vínculos explícitos entre tareas y recursos se guardan junto a los
+  artefactos en `.tasks/{feature}/TASK-YYYY-NNN/relations.json`.
+- Las escrituras del servidor quedan limitadas a mutaciones gobernadas dentro
+  de `.resources/`.
+- La shell del dashboard expone un selector visible de inglés/español y guarda
+  la preferencia localmente para restaurarla al recargar.
+- La traducción es sólo de presentación: los IDs de tareas, los valores del
+  registro y los previews crudos de artefactos se mantienen tal como vienen del
+  repositorio.
+- Los cambios en tiempo real preservan el contexto del tablero: las cards
+  modificadas se resaltan y los cambios de estado se animan entre columnas sin
+  dar sensación de refresco completo.
+
+Comandos del runtime:
+
+- `pnpm --dir aoi_apps/agentic-ops-dashboard dev` — corre el dashboard interno localmente
+- `pnpm --dir aoi_apps/agentic-ops-dashboard test` — ejecuta la suite de validación del dashboard
+- `pnpm --dir aoi_apps/agentic-ops-dashboard exec nuxt prepare` — genera los tipos de Nuxt para el runtime
+- `pnpm --dir aoi_apps/agentic-ops-dashboard build` — compila el dashboard para chequeos de smoke
+
+## Gobernanza de Memoria Versionada
+
+AOI ahora aprovisiona un version store gobernado para el estado operativo de
+la memoria:
+
+```text
+.exportsmemories/
+└── *.memory-bundle.json.gz
+
+.specify/memory/versions/
+├── README.md
+├── active.json
+├── manifests/
+│   └── {workspace}/
+├── constitutions/
+│   └── {workspace}/
+└── templates/
+    ├── memory-version.template.json
+    ├── memory-bundle.template.json
+    └── dynamic-constitution.template.md
+```
+
+- `.exportsmemories/` es la carpeta base gobernada, local al repositorio, para
+  bundles portables de memoria exportados.
+- `active.json` es el puntero canónico hacia la versión activa y la versión
+  inmediatamente restaurable por workspace.
+- Cada manifest registra `sourceWorkspace`, `sourceVersionId`, scopes
+  seleccionados, contexto del Owner y decisiones `retain` / `complement` /
+  `discard`.
+- Los manifests originados en bundle también preservan `sourceTransport`, la
+  procedencia del bundle, scopes incluidos y omitidos, e integridad declarada.
+- Cada versión candidata o activa lleva su propio snapshot constitucional
+  dinámico para auditoría y rollback seguro.
+
+Workflows gobernados:
+
+- `/export-memory-bundle` — exporta una versión explícita de memoria hacia un
+  bundle portable gobernado dentro de `.exportsmemories/`.
+- `/import-memory-bundle` — valida un bundle portable y prepara una versión
+  candidata gobernada antes de cualquier activación.
+- `/sync-workspace-memory` — prepara una versión candidata desde un workspace y
+  versión fuente explícitos, y sólo la activa después de la aprobación del
+  Owner.
+- `/rollback-workspace-memory` — restaura la versión previa registrada con un
+  motivo explícito de rollback.
+
+Superficie determinística de scripts:
+
+- `scripts/memory-sync/resolve-active-version.mjs`
+- `scripts/memory-sync/prepare-version-manifest.mjs`
+- `scripts/memory-sync/export-memory-bundle.mjs`
+- `scripts/memory-sync/import-memory-bundle.mjs`
+- `scripts/memory-sync/activate-version.mjs`
+- `scripts/memory-sync/rollback-version.mjs`
+- `pnpm test:memory-sync` — valida el ciclo de vida versionado con Node tests
+- `pnpm test:memory-sync:bundle` — valida el contrato bundle portable, el flujo
+  de exportación/importación y la preservación del lifecycle
+
+## ICM — 4 Métodos de Memoria
+
+Todos los agentes usan [ICM](https://github.com/rtk-ai/icm) con cuatro métodos
+complementarios:
+
+| Método                              | Qué hace                                   | Cuándo                                            |
+| ----------------------------------- | ------------------------------------------ | ------------------------------------------------- |
+| **Memories** (episódica)            | Guardar/recuperar con decaimiento temporal | En cada fase: decisiones, progreso y contexto     |
+| **Memoirs** (grafo de conocimiento) | Conceptos y relaciones permanentes         | Decisiones de arquitectura, grafos de componentes |
+| **Feedback** (correcciones)         | Aprender de errores                        | Fase de Verify, post-implementación               |
+| **Transcripts** (verbatim)          | Captura el replay crudo de la sesión       | Fases de Explore y Archive                        |
+
+No se pierde contexto entre sesiones.
+
+## Regla de Doble Sincronización
+
+**OBLIGATORIO**: Cada agente/skill debe existir tanto en formato Copilot como
+
+## Integridad del Mirror Scaffold
+
+agentes divergen, `/sdd-verify` falla.
+
+## Notas para Windows
+
+- La instalación nativa en Windows 11+ está soportada mediante `setup.ps1`.
+- Si lanzás el setup desde Git Bash, ejecutá `setup.sh` con rutas de Git Bash como `/c/path/to/AOI/setup.sh`; el script delega a `setup.ps1` automáticamente.
+- El instalador inyecta `terminal.integrated.env.windows.Path` en el workspace
+  de destino para que `rtk`, `icm` y `specify` resuelvan desde las terminales
+  de VS Code.
+- AOI también reescribe hooks locales de Copilot para usar wrappers de
+  PowerShell en Windows.
+- RTK sigue recomendando WSL a nivel upstream para la compatibilidad más amplia
+  de shell hooks entre herramientas, pero esta plantilla ahora ofrece un camino
+  nativo con PowerShell para proyectos que usan GitHub Copilot.
+
+## Teardown
+
+```bash
+# macOS / Linux
+bash "/path/to/AOI/teardown.sh" /path/to/my-project
+```
+
+```powershell
+# Windows 11+
+powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\AOI\teardown.ps1" "C:\path\to\my-project"
+```
+
+## Agentes
+
+| Agente                      | Fase SDD                       | Archivo (Copilot)                 |
+| --------------------------- | ------------------------------ | --------------------------------- |
+| **@supervisor**             | Todas (orquestador)            | `supervisor.agent.md`             |
+| **@functional-analyst**     | Explore, Specify               | `functional-analyst.agent.md`     |
+| **@solution-architect**     | Plan, Tasks                    | `solution-architect.agent.md`     |
+| **@frontend-developer**     | Implement                      | `frontend-developer.agent.md`     |
+| **@backend-developer**      | Implement                      | `backend-developer.agent.md`      |
+| **@devops-engineer**        | Implement                      | `devops-engineer.agent.md`        |
+| **@ux-designer**            | Implement                      | `ux-designer.agent.md`            |
+| **@documentation-analyst**  | Archive                        | `documentation-analyst.agent.md`  |
+| **@integration-specialist** | Verify                         | `integration-specialist.agent.md` |
+| **@triage-specialist**      | Bug y Definición — transversal | `triage-specialist.agent.md`      |
+| **@resource-analyst**       | Recursos — transversal         | `resource-analyst.agent.md`       |
+
 ---
 
-## 📜 CHANGELOG
-
-### [70.0.0] - 2026-08-19 (The Sovereign 256-Pillar Omnipresent Master & Quantum Epistemic Hyper-Nexus Matrix)
-- **Atomic File Temp Extension & Hidden Naming Guard**: Audita estáticamente que los archivos de staging temporal utilicen prefijo de archivo oculto (`.${file}.${id}.tmp`), evitando que bundlers o indexadores ingieran archivos intermedios (`storage-guard/file-atomic-temp-extension-guard.mjs`).
-- **Dead TypeScript checkJs/allowJs Dependency Pruner**: Podado estático en `tsconfig.json` para certificar que `checkJs: true` declare explícitamente `allowJs: true` (`config-guard/dead-tsconfig-check-js-allow-js-dependency-pruner.mjs`).
-- **Safe Cryptographic RSA-PSS PKCS#8 Key Export Guard**: Auditoría estática de exportaciones de claves RSA-PSS para certificar el formato estándar `type: 'pkcs8'` (`security-guard/crypto-rsa-pss-key-export-guard.mjs`).
-- **Sandbox Process POSIX RLimit FSIZE Prover**: Demostración formal de cotas de tamaño máximo de archivo (`ulimit -f` / `maxDiskQuotaMb`) en sandboxes (`sandbox-guard/sandbox-process-posix-rlimit-fsize-prover.mjs`).
-- **622/622 Tests Pasando al 100%** y **699 archivos gobernados en paridad absoluta con scaffold/**.
-
-### [69.0.0] - 2026-08-19 (The Sovereign 252-Pillar Omnipresent Master & Quantum Epistemic Hyper-Core Matrix)
-- **Atomic File Advisory Lock Guard**: Audita estáticamente que las mutaciones de archivos concurrentes adquieran bloqueo consultivo (`flockSync` / `O_EXCL` / `proper-lockfile`) (`storage-guard/file-atomic-flock-guard.mjs`).
-- **Dead TypeScript exactOptionalPropertyTypes Pruner**: Podado estático en `tsconfig.json` para `exactOptionalPropertyTypes: true`, certificando `strict: true` (`config-guard/dead-tsconfig-exact-optional-property-types-pruner.mjs`).
-- **Safe Cryptographic RSA-PSS Hash Algorithm Guard**: Auditoría estática de firmas RSA-PSS para certificar uso exclusivo de funciones hash SHA-2/SHA-3 (`security-guard/crypto-rsa-pss-hash-algorithm-guard.mjs`).
-- **Sandbox Process POSIX Core Dump Filter Prover**: Demostración formal de que los subprocesos de sandbox supriman volcados de memoria (`ulimit -c 0`) (`sandbox-guard/sandbox-process-posix-core-dump-filter-prover.mjs`).
-
----
-
-## 📄 Licencia
-MIT — Creado y mantenido por el equipo de ingeniería agéntica de **AOI**.
+**AOI v3.0** — Agentic Operational Infrastructure impulsada por RTK, ICM, Spec-Kit y agentes Hub-and-Spoke

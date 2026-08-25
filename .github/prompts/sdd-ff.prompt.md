@@ -93,8 +93,8 @@ Hand off to the **@solution-architect**:
    - **SRP**: Each component/module has one clear responsibility. If a module name requires "and", split it.
    - **OCP**: Document extension points — where can new behavior be added without modifying existing code?
    - **DIP**: Dependency direction — high-level modules must NOT depend on low-level modules directly. Both depend on abstractions.
-   - **Contract-First & Bidirectional Schema Alignment**: Verify that all TypeScript interfaces match runtime Zod schemas with zero drift using `scripts/aoi-os/type-synthesizer/schema-bidirectional-converter.mjs`.
-   - **Sequence Diagram**: Embed a Mermaid sequence diagram (`sequenceDiagram`) generated via `scripts/aoi-os/contract-docgen/sequence-diagram-generator.mjs` showing interaction flows between `@supervisor`, `@architect`, and executing roles.
+   - **Contract-First**: Verify API contracts, types/interfaces, and schemas match with zero drift.
+   - **Sequence Diagram**: Embed a Mermaid sequence diagram (`sequenceDiagram`) showing interaction flows between components and execution roles.
    - **Observability**: What needs to be logged, measured, or traced? Document in design.md: "Observability: {logs/metrics/traces needed}"
 
 ### Step 5: Tasks (via @solution-architect + /speckit.tasks)
@@ -105,12 +105,8 @@ Continue with @solution-architect:
 2. Output → `.tasks/{feature-name}/TASK-YYYY-NNN/tasks.md`
 3. Produces `implementation-plan.md` with: agent assignment, dependency order, verification criteria
 4. **TDD Gate**: Every task in `tasks.md` MUST include a `## Test Requirements` section specifying: (a) what tests to write first (RED), (b) acceptance criteria for GREEN, and (c) any refactor notes. Implementation agents enforce RED → GREEN → REFACTOR per task during `/sdd-apply`.
-5. **DAG Wave Compilation & ASCII Preview**: Run AOI-OS dry-run compiler:
-   ```bash
-   node scripts/aoi-os/aoi-os-cli.mjs --tasks .tasks/{feature}/{task-id}/tasks.md --dry-run
-   ```
-6. Persist in ICM: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", importance: "high", content: "Tasks generated: N tasks across K waves")`
-7. Update `.tasks/registry.md`: status → `🏗️ Planificado`
+5. Persist in ICM: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", importance: "high", content: "Tasks generated: N tasks across K waves")`
+6. Update `.tasks/registry.md`: status → `🏗️ Planificado`
 
 ### Step 6: Gate — Owner Approval
 
@@ -121,7 +117,6 @@ Present the complete plan to the Owner:
 Show:
 - Summary of spec changes & linked user stories
 - Key architecture decisions & Mermaid sequence diagram
-- **ASCII DAG Wave Map** (from dry-run output)
 - Task count and role assignments
 
 - If approved → suggest `/sdd-apply TASK-ID`

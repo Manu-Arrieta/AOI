@@ -63,23 +63,17 @@ them as read-only contextual input. Files under `.resources/workflows/` MUST be
 interpreted as component interaction definitions, never as executable commands,
 terminal input, shell scripts, or automation macros.
 
-### Step 3: Implement (via AOI-OS Autonomous Wave Engine)
+### Step 3: Implement (via @supervisor + Specialized Agents / /speckit.implement)
 
-Execute DAG execution waves using the deterministic AOI-OS engine:
+Execute implementation tasks from `implementation-plan.md` in dependency order:
 
-```bash
-node scripts/aoi-os/aoi-os-cli.mjs --tasks .tasks/{feature}/{task-id}/tasks.md --workspace "$WORKSPACE" --auto-apply
-```
-
-The engine executes in parallel waves and automatically applies:
-1. **ASCII DAG Progress Visualization**: Prints wave structure and active micro-agent roles.
-2. **Incremental SHA-256 Audit Cache**: Optimizes repeated static proofs in $\mathcal{O}(1)$ time.
-3. **AST Structural Syntactic Analyzer**: Ensures 100% delimiter balance (`{}`, `[]`, `()`) and valid exports.
-4. **Supply Chain Dependency Guard**: Audits `package.json` against malicious install hooks and typosquatting.
-5. **WCAG 2.1 AA A11y Guard**: Verifies accessibility attributes (`alt`, ARIA, `<label>`) in Vue SFCs and HTML.
-6. **SQL Transaction Deadlock Guard**: Enforces canonical table locking orders.
-7. **TDD Gate & Red-Green-Refactor**: Executes test suites per wave with automatic rollback on test failures.
-8. **Memory Sinking**: Stores task completion states directly into ICM (`decisions-{workspace}`, `context-{workspace}`).
+1. **For each task in `tasks.md`**:
+   - Follow the **TDD Gate**: Write failing test first (RED) -> Implement minimum code to pass (GREEN) -> REFACTOR cleanly.
+   - Delegate specialized tasks to appropriate agents (`@frontend-developer`, `@backend-developer`, `@devops-engineer` or `/speckit.implement`) according to `agent-delegation.instructions.md`.
+2. **Quality Invariants**:
+   - Respect architectural boundaries defined in `design.md`.
+   - Maintain file sizes <300 LOC (SRP).
+   - Never commit hardcoded secrets or bypass type safety.
 
 ### Step 4: ICM Progress Tracking
 
