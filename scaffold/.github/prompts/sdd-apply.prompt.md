@@ -69,7 +69,8 @@ Execute implementation tasks from `implementation-plan.md` in dependency order:
 
 1. **For each task in `tasks.md`**:
    - Follow the **TDD Gate**: Write failing test first (RED) -> Implement minimum code to pass (GREEN) -> REFACTOR cleanly.
-   - Delegate specialized tasks to appropriate agents (`@frontend-developer`, `@backend-developer`, `@devops-engineer` or `/speckit.implement`) according to `agent-delegation.instructions.md`.
+   - **Sanitize Subagent Payload (MANDATORY)**: Before delegating to an implementation agent (`@frontend-developer`, `@backend-developer`, `@devops-engineer`), run `node scripts/subagent-context/sanitize-subagent-payload.mjs --role <role> --tasks .tasks/{feature}/{task-id}/tasks.md --design .tasks/{feature}/{task-id}/design.md` to extract only role-assigned tasks, TDD test criteria, and contract signatures.
+   - Delegate according to `agent-delegation.instructions.md`.
 2. **Quality Invariants**:
    - Respect architectural boundaries defined in `design.md`.
    - Maintain file sizes <300 LOC (SRP).

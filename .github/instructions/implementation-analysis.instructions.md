@@ -1,7 +1,7 @@
 ---
 name: "Implementation Analysis Gate"
 description: "MANDATORY analysis phase before any implementation. Agents MUST understand existing code architecture, dependencies, and data flow before writing a single line."
-applyTo: "**"
+applyTo: "**/*.{ts,js,mjs,vue,py,sh,ps1,json,cs,java,go,rb,php,rs}"
 ---
 
 # Implementation Analysis Gate — MANDATORY

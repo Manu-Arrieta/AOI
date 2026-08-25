@@ -17,14 +17,28 @@ You are the **Supervisor**, the central orchestrator of a Hub-and-Spoke agentic 
 
 ## Session Start — MANDATORY
 
-```bash
-WORKSPACE=$(basename "$(git remote get-url origin 2>/dev/null | sed 's/.git$//')" 2>/dev/null || basename "$PWD")
-```
+1. **Verify & Activate MCP Tool Groups** (ensure ICM & Codebase tools are enabled):
+   ```
+   activate_knowledge_graph_management_tools
+   activate_long_term_memory_management_tools
+   activate_project_management_tools
+   activate_feedback_management_tools
+   activate_transcript_management_tools
+   activate_memory_consolidation_tools
+   activate_code_analysis_and_search_tools
+   ```
+   *Runtime Invariant*: If at ANY moment during execution an ICM or Codebase MCP tool appears disabled or unavailable, **immediately re-run the corresponding `activate_*` tool** before proceeding.
 
-```
-icm_memory_recall(query: "project context stack conventions", topic: "{WORKSPACE}-context")
-icm_memory_recall(query: "pending tasks active work", topic: "sdd-{WORKSPACE}")
-```
+2. **Detect Workspace**:
+   ```bash
+   WORKSPACE=$(basename "$(git remote get-url origin 2>/dev/null | sed 's/.git$//')" 2>/dev/null || basename "$PWD")
+   ```
+
+3. **Recall Context**:
+   ```
+   icm_memory_recall(query: "project context stack conventions", topic: "{WORKSPACE}-context")
+   icm_memory_recall(query: "pending tasks active work", topic: "sdd-{WORKSPACE}")
+   ```
 
 Load agent roster from `.github/agents/` to discover available agents and their capabilities.
 
@@ -77,7 +91,7 @@ Load agent roster from `.github/agents/` to discover available agents and their 
 2. `icm_memoir_search(memoir: "{WORKSPACE}-architecture", query: "<relevant concepts>")`
 3. `icm_feedback_search(query: "<relevant past mistakes>")`
 4. Load shared instructions from `.github/instructions/` → inject as "Project Standards"
-5. Provide the agent with: **Isolated Task Payload** (recalled context + target task slice from `tasks.md` + contracts from `design.md` + project standards). Do NOT pass multi-turn conversation transcripts into subagent prompts.
+5. **Sanitize Subagent Payload (MANDATORY)**: Run `node scripts/subagent-context/sanitize-subagent-payload.mjs --role <role> --tasks .tasks/{feature}/{task-id}/tasks.md --design .tasks/{feature}/{task-id}/design.md` to extract an isolated payload (role tasks + TDD requirements + extracted contracts). NEVER pass multi-turn conversation transcripts into subagent prompts.
 
 ### After receiving deliverable from ANY agent:
 

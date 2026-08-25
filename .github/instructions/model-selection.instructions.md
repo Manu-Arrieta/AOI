@@ -1,7 +1,7 @@
 ---
 name: "Model Selection Protocol"
 description: "Mandatory model selection rules for all AOI agents. Covers reasoning, implementation, multi-provider config, and NVIDIA fallback."
-applyTo: "**"
+applyTo: ".github/{agents,prompts}/**,**/*.agent.md,**/*.prompt.md"
 ---
 
 # Model Selection Protocol

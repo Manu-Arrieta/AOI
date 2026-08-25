@@ -30,13 +30,13 @@ icm health                                # topic hygiene audit
 icm topics                                # list all topics
 ```
 
-### MCP Tool Activation
+### MCP Tool Activation & Runtime Invariant
 
-At the start of every Copilot session, ensure the following MCP tool groups are ENABLED:
+At the start of EVERY session, verify and ensure all 7 MCP tool groups are ACTIVE:
 
 ```
 activate_knowledge_graph_management_tools   # ICM memoir_*, memory_extract_patterns, learn
-activate_long_term_memory_management_tools  # ICM memory_*, feedback_* (if available)
+activate_long_term_memory_management_tools  # ICM memory_*, feedback_*
 activate_project_management_tools           # codebase-memory index/status
 activate_feedback_management_tools          # ICM feedback_record/search/stats
 activate_transcript_management_tools        # ICM transcript_start/record/search/show
@@ -44,8 +44,9 @@ activate_memory_consolidation_tools         # ICM memory_consolidate, memory_for
 activate_code_analysis_and_search_tools     # codebase-memory search_graph/code/trace_path/query_graph
 ```
 
-Without this activation, the `memoir_*`, `memory_*`, `codebase-memo_*` tools will appear "disabled". Activate them BEFORE calling any ICM or codebase operation.
-```
+**Zero-Disabled-Tools Invariant**:
+1. Activate all 7 tool groups at session start BEFORE calling any memory or code search operations.
+2. If at ANY point during execution an ICM (`memoir_*`, `memory_*`, `feedback_*`, `transcript_*`) or Codebase (`codebase-memo_*`, `search_graph`, `search_code`) tool appears as "disabled", unavailable, or uncalled, **IMMEDIATELY execute the corresponding `activate_*` tool** to restore full capabilities before continuing.
 <!-- icm:end -->
 
 ## Sandbox, Services, and Integration Standard

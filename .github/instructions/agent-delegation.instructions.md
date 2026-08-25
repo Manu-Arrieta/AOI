@@ -1,7 +1,7 @@
 ---
 name: "Agent Delegation Protocol"
-description: "Mandatory protocol for all agents that invoke runSubagent. Model selection, prompt template, and verification steps."
-applyTo: "**"
+description: "Mandatory protocol for all agents that invoke runSubagent. Model selection, prompt template, subagent payload sanitization, and verification steps."
+applyTo: ".github/{agents,prompts}/**,**/*.agent.md,**/*.prompt.md"
 ---
 
 # Agent Delegation Protocol
@@ -16,9 +16,15 @@ Consult the Agent Registry below to find:
 - `model` — exact value for the `runSubagent` parameter
 - `skillPath` — skill file the subagent MUST read as its first action
 
-## Step 2 — Construct the prompt
+## Step 2 — Construct Sanitized Payload (MANDATORY)
 
-Use this template. The FIRST instruction MUST tell the subagent to read its skill:
+To prevent conversation history bloat and massive token consumption, the supervisor **MUST ALWAYS** construct an isolated payload using `scripts/subagent-context/sanitize-subagent-payload.mjs`:
+
+```bash
+node scripts/subagent-context/sanitize-subagent-payload.mjs --role [agent-role] --tasks .tasks/{feature}/{task-id}/tasks.md --design .tasks/{feature}/{task-id}/design.md
+```
+
+The constructed prompt MUST follow this template:
 
 ```text
 Workspace: {WORKSPACE_NAME}, {ABSOLUTE_PATH}
@@ -28,10 +34,14 @@ ICM topic: sdd-{WORKSPACE_NAME}-{FEATURE}-TASK-{ID}
 FIRST: Read your skill file at {SKILL_PATH}. Follow its Session Start protocol (activate MCP tool groups, recall ICM context). Do NOT skip this step.
 
 THEN: [Specific task — what to do, constraints, deliverables]
+TDD Requirements: [Red -> Green -> Refactor test criteria]
+Contracts / Interfaces: [Extracted contract signatures from design.md]
 
 Relevant files: [Absolute paths to files the subagent needs]
 Expected output: [Exactly what to return or what files to create/modify]
 ```
+
+> ⚠️ **Zero Bloat Policy**: NEVER pass multi-turn chat history, irrelevant tasks, or entire full-file dumps into subagents.
 
 ## Step 3 — Invoke with model
 

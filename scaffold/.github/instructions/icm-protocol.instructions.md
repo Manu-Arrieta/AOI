@@ -30,7 +30,20 @@ WORKSPACE=$(basename "$(git remote get-url origin 2>/dev/null | sed 's/.git$//')
 
 ---
 
-## 2. The 4 Memory Systems
+## 2. The 4 Memory Systems & MCP Tool Activation
+
+### Mandatory MCP Activation & Auto-Reactivation Invariant
+At the start of every session (and whenever any tool appears disabled), activate all MCP tool groups:
+```
+activate_knowledge_graph_management_tools
+activate_long_term_memory_management_tools
+activate_project_management_tools
+activate_feedback_management_tools
+activate_transcript_management_tools
+activate_memory_consolidation_tools
+activate_code_analysis_and_search_tools
+```
+If an ICM or Codebase MCP tool is reported as disabled or missing during execution, **immediately run its corresponding `activate_*` tool** before proceeding.
 
 | Method | System Type | Purpose & Lifecycle | Primary MCP Tools | CLI Fallback |
 | :--- | :--- | :--- | :--- | :--- |
