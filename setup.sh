@@ -823,19 +823,17 @@ print(f'COMPARE_TMPDIR={td}')
   ok "Reinstall merge complete"
 
 else
-  # ── Fresh install: original behavior ────────────────────────────────────
+  # ── Fresh install: ensure scaffold overrides generic specify init templates ──
   if command -v rsync &>/dev/null; then
-    rsync -a --ignore-existing "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
+    rsync -a "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
     ok "Scaffold merged (rsync)"
   else
     # Fallback: cp with directory creation
     cd "$SCAFFOLD_DIR"
     find . -type f | while read -r file; do
       target="$PROJECT_PATH/$file"
-      if [ ! -f "$target" ]; then
-        mkdir -p "$(dirname "$target")"
-        cp "$file" "$target"
-      fi
+      mkdir -p "$(dirname "$target")"
+      cp "$file" "$target"
     done
     cd "$PROJECT_PATH"
     ok "Scaffold merged (cp)"
