@@ -91,7 +91,7 @@ Load agent roster from `.github/agents/` to discover available agents and their 
 2. `icm_memoir_search(memoir: "{WORKSPACE}-architecture", query: "<relevant concepts>")`
 3. `icm_feedback_search(query: "<relevant past mistakes>")`
 4. Load shared instructions from `.github/instructions/` → inject as "Project Standards"
-5. **Sanitize Subagent Payload (MANDATORY)**: Run `node scripts/subagent-context/sanitize-subagent-payload.mjs --role <role> --tasks .tasks/{feature}/{task-id}/tasks.md --design .tasks/{feature}/{task-id}/design.md` to extract an isolated payload (role tasks + TDD requirements + extracted contracts). NEVER pass multi-turn conversation transcripts into subagent prompts.
+5. **Sanitize Subagent Payload (MANDATORY)**: Run `node scripts/subagent-context/sanitize-subagent-payload.mjs --role <role> --task-dir .tasks/{feature}/{task-id} [--format toon]` to extract an isolated payload (role tasks + TDD requirements + extracted contracts). Using `--format toon` is recommended for ultra-low-token delivery. NEVER pass multi-turn conversation transcripts into subagent prompts.
 
 ### After receiving deliverable from ANY agent:
 

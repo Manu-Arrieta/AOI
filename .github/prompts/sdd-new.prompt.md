@@ -99,11 +99,12 @@ task directory exists.
 Investigate the codebase before committing to the change:
 
 1. Read relevant files (only what's needed — don't inflate context)
-2. Identify: current system state, impacted areas, reusable patterns, stack constraints
-3. Analyze alternative approaches with tradeoffs
-4. Consult OpenAPI spec if the feature involves backend data
-5. **Testability assessment**: identify existing test infrastructure (frameworks, fixtures, mocks) and note which areas will require test coverage in `/sdd-ff` and `/sdd-apply`
-6. **Principles checklist** (evaluate during exploration):
+2. **Relevance-Contrast Context**: When analyzing impact areas or triaging scope, include 30–50% of adjacent same-domain context (neighboring modules, related specs) alongside the directly affected items. This calibrated mix improves relevance accuracy by ~8% vs pure-signal-only filtering. Use `node scripts/sdd-lifecycle/context-arranger.mjs` for structured batching when working with large context sets.
+3. Identify: current system state, impacted areas, reusable patterns, stack constraints
+4. Analyze alternative approaches with tradeoffs
+5. Consult OpenAPI spec if the feature involves backend data
+6. **Testability assessment**: identify existing test infrastructure (frameworks, fixtures, mocks) and note which areas will require test coverage in `/sdd-ff` and `/sdd-apply`
+7. **Principles checklist** (evaluate during exploration):
    - **KISS**: Is there a simpler way to achieve this? Does the simplest solution already exist?
    - **YAGNI**: Does every point in the proposal solve a REAL Owner problem, not a hypothetical one?
    - **Separation of Concerns**: Which layers does this feature affect? (UI / Logic / Data / Infra)
