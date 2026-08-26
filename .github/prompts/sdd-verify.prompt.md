@@ -70,6 +70,7 @@ Hand off to **@integration-specialist** with isolated task context (via `node sc
    - **Contract-First**: Read `spec.md` for API contracts defined — verify that interfaces/types/endpoints match the spec. Breaking changes from spec? → WARNING
    Include findings in verify-report under `## Principles Compliance`.
 6. Run `/speckit.checklist` for formal verification
+7. **Mechanical Set Union Consolidation**: When consolidating multiple verification reports (test failures, lint violations, type errors), use deterministic Set Union aggregation (via `node scripts/sdd-lifecycle/mechanical-verify-union.mjs`) instead of paying for an LLM fuser/evaluator step.
 
 ### Step 4: Service Discovery Gate Check
 

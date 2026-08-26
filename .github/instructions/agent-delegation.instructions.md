@@ -21,7 +21,7 @@ Consult the Agent Registry below to find:
 To prevent conversation history bloat and massive token consumption, the supervisor **MUST ALWAYS** construct an isolated payload using `scripts/subagent-context/sanitize-subagent-payload.mjs`:
 
 ```bash
-node scripts/subagent-context/sanitize-subagent-payload.mjs --role [agent-role] --tasks .tasks/{feature}/{task-id}/tasks.md --design .tasks/{feature}/{task-id}/design.md
+node scripts/subagent-context/sanitize-subagent-payload.mjs --role [agent-role] --task-dir .tasks/{feature}/{task-id} [--format toon]
 ```
 
 The constructed prompt MUST follow this template:

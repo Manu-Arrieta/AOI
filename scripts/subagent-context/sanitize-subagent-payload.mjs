@@ -4,13 +4,15 @@
  *
  * Extracts a lightweight, isolated task context payload for subagents
  * (frontend, backend, devops, etc.) from task artifacts, avoiding multi-turn
- * conversational history bloat.
+ * conversational history bloat. Supports both standard Markdown and ultra-dense
+ * TOON (Token-Optimized Object Notation) serialization.
  */
 
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { serializeSubagentPayloadToTOON } from './toon-serializer.mjs'
 
 /**
  * Normalizes role names into canonical keys.
@@ -105,7 +107,8 @@ export function extractContractsFromDesign(designMd) {
  * @param {string} [params.specMd]
  * @param {string} [params.designMd]
  * @param {string} [params.relationsJson]
- * @returns {{ role: string, pendingTaskCount: number, payload: string }}
+ * @param {'markdown'|'toon'} [params.format]
+ * @returns {{ role: string, pendingTaskCount: number, payload: string, format: string }}
  */
 export function buildSubagentPayload({
   taskId = 'TASK-CURRENT',
@@ -116,11 +119,43 @@ export function buildSubagentPayload({
   specMd = '',
   designMd = '',
   relationsJson = '',
+  format = 'markdown',
 }) {
   const canonicalRole = normalizeRole(role)
   const matchedTasks = extractTasksForRole(tasksMd, canonicalRole)
   const pendingTasks = matchedTasks.filter((t) => t.status !== 'completed')
   const contracts = extractContractsFromDesign(designMd)
+
+  let parsedRelations = []
+  if (relationsJson && relationsJson.trim()) {
+    try {
+      const parsed = JSON.parse(relationsJson)
+      if (parsed.relations && Array.isArray(parsed.relations)) {
+        parsedRelations = parsed.relations
+      }
+    } catch {
+      // Ignore malformed relations json in fallback
+    }
+  }
+
+  if (format === 'toon') {
+    const toonPayload = serializeSubagentPayloadToTOON({
+      taskId,
+      feature,
+      workspace,
+      role: canonicalRole,
+      tasks: pendingTasks,
+      contracts,
+      relations: parsedRelations,
+    })
+
+    return {
+      role: canonicalRole,
+      pendingTaskCount: pendingTasks.length,
+      payload: toonPayload,
+      format: 'toon',
+    }
+  }
 
   const payloadLines = [
     `=== SUBAGENT ISOLATED CONTEXT ===`,
@@ -148,18 +183,11 @@ export function buildSubagentPayload({
     payloadLines.push(contracts)
   }
 
-  if (relationsJson && relationsJson.trim()) {
-    try {
-      const parsed = JSON.parse(relationsJson)
-      if (parsed.relations && parsed.relations.length) {
-        payloadLines.push(``)
-        payloadLines.push(`## Linked Resources`)
-        for (const rel of parsed.relations) {
-          payloadLines.push(`- ${rel.kind}: ${rel.targetPath || rel.path} (${rel.description || 'Context'})`)
-        }
-      }
-    } catch {
-      // Ignore malformed relations json in fallback
+  if (parsedRelations.length > 0) {
+    payloadLines.push(``)
+    payloadLines.push(`## Linked Resources`)
+    for (const rel of parsedRelations) {
+      payloadLines.push(`- ${rel.kind}: ${rel.targetPath || rel.path} (${rel.description || 'Context'})`)
     }
   }
 
@@ -174,6 +202,7 @@ export function buildSubagentPayload({
     role: canonicalRole,
     pendingTaskCount: pendingTasks.length,
     payload: payloadLines.join('\n'),
+    format: 'markdown',
   }
 }
 
@@ -182,9 +211,10 @@ export function buildSubagentPayload({
  *
  * @param {string} taskDir
  * @param {string} role
- * @returns {Promise<{ role: string, pendingTaskCount: number, payload: string }>}
+ * @param {'markdown'|'toon'} [format]
+ * @returns {Promise<{ role: string, pendingTaskCount: number, payload: string, format: string }>}
  */
-export async function sanitizeTaskPayloadFromDisk(taskDir, role) {
+export async function sanitizeTaskPayloadFromDisk(taskDir, role, format = 'markdown') {
   const absDir = path.resolve(taskDir)
   const readFileSafe = (filename) => {
     const filePath = path.join(absDir, filename)
@@ -206,6 +236,7 @@ export async function sanitizeTaskPayloadFromDisk(taskDir, role) {
     specMd,
     designMd,
     relationsJson,
+    format,
   })
 }
 
@@ -214,17 +245,20 @@ async function main() {
   const args = process.argv.slice(2)
   let taskDir = '.'
   let role = 'frontend'
+  let format = 'markdown'
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--task-dir' && args[i + 1]) {
       taskDir = args[++i]
     } else if (args[i] === '--role' && args[i + 1]) {
       role = args[++i]
+    } else if (args[i] === '--format' && args[i + 1]) {
+      format = args[++i]
     }
   }
 
   try {
-    const result = await sanitizeTaskPayloadFromDisk(taskDir, role)
+    const result = await sanitizeTaskPayloadFromDisk(taskDir, role, format)
     process.stdout.write(result.payload + '\n')
   } catch (err) {
     process.stderr.write(`Error generating subagent payload: ${err.message}\n`)

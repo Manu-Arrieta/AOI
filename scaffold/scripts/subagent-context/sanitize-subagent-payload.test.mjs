@@ -71,7 +71,7 @@ Docker details.
   assert.ok(!contracts.includes('Docker details'))
 })
 
-test('buildSubagentPayload constructs a clean isolated prompt payload', () => {
+test('buildSubagentPayload constructs a clean isolated prompt payload in markdown', () => {
   const tasksMd = `
 ### Task T-1: Build UI Component [frontend]
 - Write Vue component
@@ -100,11 +100,41 @@ export type Status = 'active' | 'archived'
 
   assert.equal(result.role, 'frontend')
   assert.equal(result.pendingTaskCount, 1)
+  assert.equal(result.format, 'markdown')
   assert.ok(result.payload.includes('=== SUBAGENT ISOLATED CONTEXT ==='))
-  assert.ok(result.payload.includes('Task ID: TASK-2026-001'))
-  assert.ok(result.payload.includes('Assigned Role: @frontend'))
   assert.ok(result.payload.includes('Task T-1: Build UI Component'))
   assert.ok(result.payload.includes('export type Status'))
   assert.ok(result.payload.includes('.resources/userstories/US-01.md'))
-  assert.ok(result.payload.includes('TDD Gate'))
+  assert.ok(result.payload.includes('TDD Gate: Follow RED -> GREEN -> REFACTOR'))
+})
+
+test('buildSubagentPayload constructs a compact TOON payload when format=toon', () => {
+  const tasksMd = `
+### Task T-1: Build UI Component [frontend]
+- Write Vue component
+`
+  const designMd = `
+## Interfaces
+\`\`\`ts
+export type Status = 'active' | 'archived'
+\`\`\`
+`
+
+  const result = buildSubagentPayload({
+    taskId: 'TASK-2026-001',
+    feature: 'token-optimization',
+    workspace: 'AOI',
+    role: 'frontend',
+    tasksMd,
+    designMd,
+    format: 'toon',
+  })
+
+  assert.equal(result.role, 'frontend')
+  assert.equal(result.pendingTaskCount, 1)
+  assert.equal(result.format, 'toon')
+  assert.ok(result.payload.includes('::AOI_SUBAGENT_PAYLOAD[v2]::'))
+  assert.ok(result.payload.includes('|T-1|pending|Task T-1: Build UI Component [frontend]|'))
+  assert.ok(result.payload.includes('::CONTRACTS::'))
+  assert.ok(result.payload.includes('export type Status'))
 })

@@ -1,0 +1,37 @@
+{
+  "$schema": "https://raw.githubusercontent.com/atlassian-labs/mcp-compressor/main/schema.json",
+  "version": "1.0.0",
+  "compressionMode": "hybrid",
+  "progressiveDisclosure": {
+    "enabled": true,
+    "maxInitialDescriptionLength": 60,
+    "omitFullSchemaOnList": true
+  },
+  "tier1CompactTools": [
+    "icm_recall",
+    "icm_store",
+    "icm_memoir",
+    "search_graph",
+    "trace_path"
+  ],
+  "servers": {
+    "icm": {
+      "command": "icm",
+      "args": ["mcp"],
+      "tier": 1,
+      "description": "Integrated Context Memory (Persistent state & decisions)"
+    },
+    "codebase-memory": {
+      "command": "codebase-memory-mcp",
+      "args": [],
+      "tier": 1,
+      "description": "AST & Symbol Knowledge Graph for codebase navigation"
+    },
+    "stitch-ui": {
+      "command": "npx",
+      "args": ["-y", "stitch-mcp"],
+      "tier": 2,
+      "description": "UI Design System & Screen Generation"
+    }
+  }
+}

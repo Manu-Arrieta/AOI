@@ -21,6 +21,8 @@ export const DEFAULT_SYNC_PATHS = [
   'scripts/sandbox',
   'scripts/scaffold',
   'scripts/memory-sync',
+  'scripts/sdd-lifecycle',
+  'scripts/mcp-gateway',
   'aoi_apps/agentic-ops-dashboard/app',
   'aoi_apps/agentic-ops-dashboard/server',
   'aoi_apps/agentic-ops-dashboard/shared',

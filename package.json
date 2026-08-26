@@ -15,7 +15,9 @@
     "test:memory-sync": "node --test scripts/memory-sync/*.test.mjs",
     "test:memory-sync:bundle": "node --test scripts/memory-sync/bundle-contract.test.mjs scripts/memory-sync/export-memory-bundle.test.mjs scripts/memory-sync/import-memory-bundle.test.mjs scripts/memory-sync/bundle-lifecycle.test.mjs",
     "test:subagent-payload": "node --test scripts/subagent-context/*.test.mjs",
+    "test:sdd-lifecycle": "node --test scripts/sdd-lifecycle/*.test.mjs",
+    "test:mcp-gateway": "node --test scripts/mcp-gateway/*.test.mjs",
     "test:parity": "node scripts/scaffold/validate-scaffold-parity.mjs && node --test scripts/scaffold/*.test.mjs",
-    "test": "pnpm test:parity && pnpm test:memory-sync && pnpm test:memory-sync:bundle && pnpm test:subagent-payload && pnpm test:dashboard"
+    "test": "pnpm test:parity && pnpm test:memory-sync && pnpm test:memory-sync:bundle && pnpm test:subagent-payload && pnpm test:sdd-lifecycle && pnpm test:mcp-gateway && pnpm test:dashboard"
   }
 }
