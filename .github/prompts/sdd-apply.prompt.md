@@ -70,6 +70,7 @@ Execute implementation tasks from `implementation-plan.md` in dependency order:
 1. **For each task in `tasks.md`**:
    - Follow the **TDD Gate**: Write failing test first (RED) -> Implement minimum code to pass (GREEN) -> REFACTOR cleanly.
    - **Sanitize Subagent Payload (MANDATORY)**: Before delegating to an implementation agent (`@frontend-developer`, `@backend-developer`, `@devops-engineer`), run `node scripts/subagent-context/sanitize-subagent-payload.mjs --role <role> --task-dir .tasks/{feature}/{task-id} [--format toon]` to extract only role-assigned tasks, TDD test criteria, and contract signatures. Using `--format toon` is recommended for high-density, ultra-low-token payload delivery.
+   - **Spatiotemporal Fiber Sandbox**: Micro-agents execute within isolated Reversible Fiber Sandboxes (`scripts/subagent-context/subagent-fiber-runner.mjs`), ensuring that all mutations carry explicit inverses that can be rolled back in 0ms / 0 tokens if `/sdd-verify` fails.
    - Delegate according to `agent-delegation.instructions.md`.
 2. **Quality Invariants**:
    - Respect architectural boundaries defined in `design.md`.

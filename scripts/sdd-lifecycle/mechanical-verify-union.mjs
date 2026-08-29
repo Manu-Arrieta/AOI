@@ -170,12 +170,16 @@ export function formatUnifiedVerificationReport(unified) {
 export async function main() {
   const args = process.argv.slice(2)
   if (args.length === 0 || args.includes('-h') || args.includes('--help')) {
-    process.stdout.write(`Usage: node scripts/sdd-lifecycle/mechanical-verify-union.mjs <report-files.json...>\n`)
+    process.stdout.write(`Usage: node scripts/sdd-lifecycle/mechanical-verify-union.mjs [--json] [--exit-code] <report-files.json...>\n`)
     process.exit(0)
   }
 
+  const asJson = args.includes('--json')
+  const enforceExitCode = args.includes('--exit-code')
+  const filePaths = args.filter(a => !a.startsWith('--'))
+
   const reports = []
-  for (const filePath of args) {
+  for (const filePath of filePaths) {
     if (fs.existsSync(filePath)) {
       try {
         const content = fs.readFileSync(filePath, 'utf8')
@@ -187,7 +191,15 @@ export async function main() {
   }
 
   const unified = unifyVerificationReports(reports)
-  process.stdout.write(formatUnifiedVerificationReport(unified) + '\n')
+  if (asJson) {
+    process.stdout.write(JSON.stringify(unified, null, 2) + '\n')
+  } else {
+    process.stdout.write(formatUnifiedVerificationReport(unified) + '\n')
+  }
+
+  if (enforceExitCode && unified.status !== 'PASSED') {
+    process.exit(1)
+  }
 }
 
 const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)

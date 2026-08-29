@@ -71,6 +71,7 @@ Hand off to **@integration-specialist** with isolated task context (via `node sc
    Include findings in verify-report under `## Principles Compliance`.
 6. Run `/speckit.checklist` for formal verification
 7. **Mechanical Set Union Consolidation**: When consolidating multiple verification reports (test failures, lint violations, type errors), use deterministic Set Union aggregation (via `node scripts/sdd-lifecycle/mechanical-verify-union.mjs`) instead of paying for an LLM fuser/evaluator step.
+8. **Spatiotemporal Rollback on Failure (0-Token Reversibility)**: If verification emits `FAIL` or critical defect count > 0, the active Fiber Sandbox executes `recover_Γ` (`sandbox.rollback()`), restoring the workspace state in 0ms and 0 LLM tokens, eliminating context pollution from broken attempts.
 
 ### Step 4: Service Discovery Gate Check
 

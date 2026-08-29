@@ -90,6 +90,13 @@ export async function main() {
       for (const t of config.tier1CompactTools || []) {
         process.stdout.write(`- ${generateCompactSignature(t)}\n`)
       }
+    } else if (args.includes('--filter-coeffects')) {
+      const filterIdx = args.indexOf('--filter-coeffects')
+      const targetTools = args.slice(filterIdx + 1).filter(a => !a.startsWith('--'))
+      process.stdout.write(`=== Dynamic Coeffect Signatures (${targetTools.length}) ===\n`)
+      for (const t of targetTools) {
+        process.stdout.write(`- ${generateCompactSignature(t)}\n`)
+      }
     } else {
       process.stdout.write(`✅ MCP Gateway Config OK (${Object.keys(config.servers).length} servers, ${config.tier1CompactTools.length} compact tools)\n`)
     }
