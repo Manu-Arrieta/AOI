@@ -2,7 +2,11 @@ param(
     [Parameter(Position = 0)]
     [string]$ProjectPath = "",
     [Parameter()]
-    [string]$Harness = "all"
+    [string]$Harness = "all",
+    [Parameter()]
+    [switch]$Yes = $false,
+    [Parameter()]
+    [switch]$NonInteractive = $false
 )
 
 Set-StrictMode -Version Latest
@@ -309,6 +313,10 @@ function Confirm-Update {
         [string]$CurrentVersion,
         [string]$DefaultAction = "Keep"
     )
+
+    if ($Yes.IsPresent -or $NonInteractive.IsPresent) {
+        return $false
+    }
 
     $choice = Read-Host "▸ $ToolName already installed ($CurrentVersion). [U]pdate / [K]eep? [k]"
     return ($choice -eq "u" -or $choice -eq "U")
@@ -789,7 +797,10 @@ $nvidiaScript = Join-Path $PSScriptRoot "scripts/nvidia-vscode-setup.ps1"
 if (Test-Path $nvidiaScript) {
     Write-Info "Detectando VS Code para configurar custom endpoint NVIDIA (Kimi K2.6, DeepSeek V4 Pro, MiniMax M3, Qwen 3.5)."
     Write-Info "Presione Enter para ejecutar ahora, o 'n' + Enter para omitir (AOI seguirá funcionando con defaults vendor-copilot)."
-    $nvidiaChoice = Read-Host "▸ Configurar customendpoint NVIDIA? [Y/n]"
+    $nvidiaChoice = "n"
+    if (-not ($Yes.IsPresent -or $NonInteractive.IsPresent)) {
+        $nvidiaChoice = Read-Host "▸ Configurar customendpoint NVIDIA? [Y/n]"
+    }
     if ($nvidiaChoice -match '^[nN]([oO])?$') {
         Write-Warn "Saltado por elección del operador. AOI continúa con defaults vendor-copilot (Gemini 3.1 Pro Preview / GPT-5.4 xhigh)."
     } else {
@@ -812,7 +823,10 @@ $headroomPreview = Join-Path $PSScriptRoot "scripts/headroom-vscode-setup.ps1"
 if (Test-Path $headroomInstall) {
     Write-Info "Headroom (headroomlabs-ai/headroom) provee compresión proxy/MCP/library para reducir 60-95% tokens en flujos CLI."
     Write-Info "NO intercepta VS Code Copilot Chat (extensión nativa). Para ese contexto el ahorro viene de RTK + codebase-memory-mcp."
-    $headroomChoice = Read-Host "▸ Instalar Headroom? [Y/n]"
+    $headroomChoice = "n"
+    if (-not ($Yes.IsPresent -or $NonInteractive.IsPresent)) {
+        $headroomChoice = Read-Host "▸ Instalar Headroom? [Y/n]"
+    }
     if ($headroomChoice -match '^[nN]([oO])?$') {
         Write-Warn "Headroom omitido. AOI continúa sin capa de compresión CLI."
     } else {
@@ -921,12 +935,18 @@ $codebaseMemoryInstall = Join-Path $PSScriptRoot "scripts/install-codebase-memor
 if (Test-Path $codebaseMemoryInstall) {
     Write-Info "codebase-memory-mcp indexa el repo en un knowledge graph local para reducir exploración file-by-file."
     Write-Info "AOI lo instala en modo binario-only (--skip-config) y registra el MCP solo en el workspace actual."
-    $cbmChoice = Read-Host "▸ Instalar codebase-memory-mcp? [Y/n]"
+    $cbmChoice = "n"
+    if (-not ($Yes.IsPresent -or $NonInteractive.IsPresent)) {
+        $cbmChoice = Read-Host "▸ Instalar codebase-memory-mcp? [Y/n]"
+    }
     if ($cbmChoice -match '^[nN]([oO])?$') {
         Write-Warn "codebase-memory-mcp omitido. AOI continúa con ICM/Headroom/RTK normales."
     } else {
         Write-Info "Variante UI incluye grafo 3D interactivo en http://localhost:9749"
-        $cbmUiChoice = Read-Host "▸ Instalar variante con UI (recomendado)? [Y/n]"
+        $cbmUiChoice = "n"
+        if (-not ($Yes.IsPresent -or $NonInteractive.IsPresent)) {
+            $cbmUiChoice = Read-Host "▸ Instalar variante con UI (recomendado)? [Y/n]"
+        }
         $cbmVariantArgs = if ($cbmUiChoice -match '^[nN]([oO])?$') { @("-Yes", "-Variant", "standard") } else { @("-Yes", "-Variant", "ui") }
         $cbmWithUi = $cbmVariantArgs -notcontains "standard"
         try {
@@ -985,6 +1005,23 @@ Write-Header "Phase 3: Agentic Infrastructure"
 Copy-ScaffoldMissing -From $ScaffoldDir -To $ProjectPath
 Write-Ok "Scaffold merged"
 
+# Replicate scaffold mirror inside target
+$targetScaffoldDir = Join-Path $ProjectPath "scaffold"
+Copy-ScaffoldMissing -From $ScaffoldDir -To $targetScaffoldDir
+Write-Ok "Scaffold mirror preserved in target (scaffold/)"
+
+# Copy pnpm workspace and lock configs
+$srcPnpmWorkspace = Join-Path $ScriptDir "pnpm-workspace.yaml"
+if (Test-Path -LiteralPath $srcPnpmWorkspace -PathType Leaf) {
+    Copy-Item -LiteralPath $srcPnpmWorkspace -Destination (Join-Path $ProjectPath "pnpm-workspace.yaml") -Force -ErrorAction SilentlyContinue
+    Copy-Item -LiteralPath $srcPnpmWorkspace -Destination (Join-Path $targetScaffoldDir "pnpm-workspace.yaml") -Force -ErrorAction SilentlyContinue
+}
+$srcPnpmLock = Join-Path $ScriptDir "pnpm-lock.yaml"
+if (Test-Path -LiteralPath $srcPnpmLock -PathType Leaf) {
+    Copy-Item -LiteralPath $srcPnpmLock -Destination (Join-Path $ProjectPath "pnpm-lock.yaml") -Force -ErrorAction SilentlyContinue
+    Copy-Item -LiteralPath $srcPnpmLock -Destination (Join-Path $targetScaffoldDir "pnpm-lock.yaml") -Force -ErrorAction SilentlyContinue
+}
+
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".tasks") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".sandboxes") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".resources") -Force | Out-Null
@@ -1033,7 +1070,7 @@ if (Test-Path -LiteralPath (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboa
             $joinedOutput = ($installResult.CombinedOutput | Select-Object -Last 80) -join "`n"
             if ($joinedOutput -match "ERR_PNPM_IGNORED_BUILDS") {
                 Write-Warn "pnpm blocked dependency build scripts; approving known builds and retrying..."
-                $approveBuildsResult = Invoke-ProcessWithCapture -FilePath $pnpmPath -Arguments @("approve-builds", "--all") -WorkingDirectory $dashboardInstallDir
+                $approveBuildsResult = Invoke-ProcessWithCapture -FilePath $pnpmPath -Arguments @("approve-builds") -WorkingDirectory $dashboardInstallDir
                 if ($approveBuildsResult.ExitCode -ne 0) {
                     $approveBuildsOutput = ($approveBuildsResult.CombinedOutput | Select-Object -Last 40) -join "`n"
                     throw "Dashboard dependency install failed during approve-builds.`n$approveBuildsOutput"
@@ -1141,6 +1178,21 @@ try { & $icmPath memoir add-concept -m "$ProjectName-architecture" -n "sdd-lifec
 try { & $icmPath memoir add-concept -m "$ProjectName-architecture" -n "hub-and-spoke" -d "Supervisor orchestrates specialized agents per SDD phase" -l "type:pattern,domain:orchestration" 2>$null } catch { }
 try { & $icmPath memoir link -m "$ProjectName-architecture" --from "hub-and-spoke" --to "sdd-lifecycle" -r depends_on 2>$null } catch { }
 Write-Ok "Memoir: architecture graph bootstrapped"
+
+# Fast Briefing: deterministic bootstrap
+$briefingsDir = Join-Path $ProjectPath ".specify\memory\briefings"
+New-Item -ItemType Directory -Path $briefingsDir -Force | Out-Null
+$briefingContent = @"
+# $ProjectName — Fast Operational Briefing
+
+- **Workspace**: $ProjectName
+- **Architecture**: AOI v4.0.0 (Hub-and-Spoke, SDD Lifecycle, Spatiotemporal Fibers)
+- **Harness**: $Harness
+- **Memory Protocol**: ICM v0.10+ Protocol v4 (5 Methods: Memories, Memoirs, Facts, Feedback, Transcripts)
+- **Health**: Governed via \`pnpm aoi:doctor\`
+"@
+Set-Content -LiteralPath (Join-Path $briefingsDir "active-briefing.md") -Value $briefingContent -Encoding utf8
+Write-Ok "Briefing: deterministic active-briefing.md initialized"
 
 Write-Header "Phase 6: Base-Project Map"
 # Pre-seed a base-project roots PROPOSAL by running the detector. This NEVER

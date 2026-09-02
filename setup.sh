@@ -206,10 +206,15 @@ invoke_windows_powershell() {
 run_windows_setup_from_git_bash() {
   local project_path=""
   local harness_choice="all"
+  local auto_yes=0
   local posix_script_path windows_project_path windows_script_path ps_exit_code ps_stderr saw_parser_error
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
+      -y|--yes|--non-interactive)
+        auto_yes=1
+        shift
+        ;;
       --harness)
         harness_choice="$2"
         shift 2
@@ -250,7 +255,11 @@ run_windows_setup_from_git_bash() {
 
   # Capture both streams so we can diagnose parse failures clearly.
   ps_stderr="$(mktemp -t "aoi-ps-err-XXXXXX.log")"
-  invoke_windows_powershell "$posix_script_path" "$windows_script_path" "$windows_project_path" "-Harness" "$harness_choice" \
+  local extra_ps_args=("-Harness" "$harness_choice")
+  if [ "$auto_yes" -eq 1 ]; then
+    extra_ps_args+=("-Yes")
+  fi
+  invoke_windows_powershell "$posix_script_path" "$windows_script_path" "$windows_project_path" "${extra_ps_args[@]}" \
       2> "$ps_stderr"
   ps_exit_code=$?
   if [ "$ps_exit_code" -eq 0 ]; then
@@ -291,9 +300,14 @@ fi
 # ── Parse arguments ────────────────────────────────────────────────────────
 SELECTED_HARNESS="all"
 RAW_PROJECT_PATH=""
+AUTO_YES=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    -y|--yes|--non-interactive)
+      AUTO_YES=1
+      shift
+      ;;
     --harness)
       SELECTED_HARNESS="$2"
       shift 2
@@ -319,8 +333,8 @@ else
   read -r PROJECT_PATH
 fi
 
-# Interactive harness selection if running in TTY without explicit harness flag
-if [ -t 0 ] && [ "$SELECTED_HARNESS" = "all" ] && [ -z "$RAW_PROJECT_PATH" ]; then
+# Interactive harness selection if running in TTY without explicit harness flag and not auto-yes
+if [ -t 0 ] && [ "$AUTO_YES" -eq 0 ] && [ "$SELECTED_HARNESS" = "all" ] && [ -z "$RAW_PROJECT_PATH" ]; then
   echo ""
   echo "🤖 Choose target AI assistant(s) for rule compilation:"
   echo "  1) Universal / All (Copilot, Claude, Cursor, Antigravity, Cline) [Default]"
@@ -364,8 +378,12 @@ header "Phase 1: Tools"
 install_rtk() {
   if command -v rtk &>/dev/null; then
     CURRENT_VER="$(rtk --version 2>/dev/null || echo 'unknown')"
-    printf "${YELLOW}▸${NC} RTK already installed (%s). [U]pdate / [K]eep? [k]: " "$CURRENT_VER"
-    read -r CHOICE
+    if [ "$AUTO_YES" -eq 1 ] || ! [ -t 0 ]; then
+      CHOICE="k"
+    else
+      printf "${YELLOW}▸${NC} RTK already installed (%s). [U]pdate / [K]eep? [k]: " "$CURRENT_VER"
+      read -r CHOICE
+    fi
     if [[ "$CHOICE" == "u" || "$CHOICE" == "U" ]]; then
       info "Updating RTK..."
       if command -v brew &>/dev/null; then
@@ -392,8 +410,12 @@ install_rtk() {
 install_icm() {
   if command -v icm &>/dev/null; then
     CURRENT_VER="$(icm --version 2>/dev/null || echo 'unknown')"
-    printf "${YELLOW}▸${NC} ICM already installed (%s). [U]pdate / [K]eep? [k]: " "$CURRENT_VER"
-    read -r CHOICE
+    if [ "$AUTO_YES" -eq 1 ] || ! [ -t 0 ]; then
+      CHOICE="k"
+    else
+      printf "${YELLOW}▸${NC} ICM already installed (%s). [U]pdate / [K]eep? [k]: " "$CURRENT_VER"
+      read -r CHOICE
+    fi
     if [[ "$CHOICE" == "u" || "$CHOICE" == "U" ]]; then
       info "Updating ICM..."
       if command -v brew &>/dev/null; then
@@ -557,8 +579,12 @@ header "Phase 1.5: NVIDIA customendpoint (opcional)"
 if [[ -f "$SCRIPT_DIR/scripts/nvidia-vscode-setup.sh" ]]; then
   info "Detectando VS Code para configurar custom endpoint NVIDIA (Kimi K2.6, DeepSeek V4 Pro, MiniMax M3, Qwen 3.5)"
   info "Presione Enter para ejecutar ahora, o 'n' + Enter para omitir (AOI seguirá funcionando con defaults vendor-copilot)."
-  printf "${YELLOW}▸${NC} Configurar customendpoint NVIDIA? [Y/n]: "
-  read -r NVIDIA_CHOICE
+  if [ "$AUTO_YES" -eq 1 ] || ! [ -t 0 ]; then
+    NVIDIA_CHOICE="n"
+  else
+    printf "${YELLOW}▸${NC} Configurar customendpoint NVIDIA? [Y/n]: "
+    read -r NVIDIA_CHOICE
+  fi
   case "$NVIDIA_CHOICE" in
     n|N|no|NO)
       warn "Saltado por elección del operador. AOI continúa con defaults vendor-copilot (Gemini 3.1 Pro Preview / GPT-5.4 xhigh)."
@@ -581,8 +607,12 @@ if [[ -f "$SCRIPT_DIR/scripts/install-headroom.sh" ]]; then
   info "Headroom (headroomlabs-ai/headroom) provee compresión proxy/MCP/library para reducir"
   info "tokens 60-95% en flujos CLI (Claude Code, Codex, gh copilot). NO intercepta VS Code"
   info "Copilot Chat (extensión nativa). Para ese contexto el ahorro viene de RTK + codebase-memory-mcp."
-  printf "${YELLOW}▸${NC} Instalar Headroom? [Y/n]: "
-  read -r HEADROOM_CHOICE
+  if [ "$AUTO_YES" -eq 1 ] || ! [ -t 0 ]; then
+    HEADROOM_CHOICE="n"
+  else
+    printf "${YELLOW}▸${NC} Instalar Headroom? [Y/n]: "
+    read -r HEADROOM_CHOICE
+  fi
   case "$HEADROOM_CHOICE" in
     n|N|no|NO)
       warn "Headroom omitido. AOI continúa sin capa de compresión CLI."
@@ -686,16 +716,24 @@ if [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then
   info "codebase-memory-mcp indexa el repo en un knowledge graph local para reducir"
   info "exploración file-by-file. AOI lo instala con --skip-config para NO tocar"
   info "copilot-instructions.md del operador y registra el MCP sólo en el workspace actual."
-  printf "${YELLOW}▸${NC} Instalar codebase-memory-mcp? [Y/n]: "
-  read -r CBM_CHOICE
+  if [ "$AUTO_YES" -eq 1 ] || ! [ -t 0 ]; then
+    CBM_CHOICE="n"
+  else
+    printf "${YELLOW}▸${NC} Instalar codebase-memory-mcp? [Y/n]: "
+    read -r CBM_CHOICE
+  fi
   case "$CBM_CHOICE" in
     n|N|no|NO)
       warn "codebase-memory-mcp omitido. AOI continúa con ICM/Headroom/RTK normales."
       ;;
     *)
       info "Variante UI incluye grafo 3D interactivo en http://localhost:9749"
-      printf "${YELLOW}▸${NC} Instalar variante con UI (recomendado)? [Y/n]: "
-      read -r CBM_UI_CHOICE
+      if [ "$AUTO_YES" -eq 1 ] || ! [ -t 0 ]; then
+        CBM_UI_CHOICE="n"
+      else
+        printf "${YELLOW}▸${NC} Instalar variante con UI (recomendado)? [Y/n]: "
+        read -r CBM_UI_CHOICE
+      fi
       CBM_VARIANT_FLAG="--ui"
       case "$CBM_UI_CHOICE" in
         n|N|no|NO) CBM_VARIANT_FLAG="--standard" ;;
@@ -904,6 +942,25 @@ else
   fi
 fi
 
+# Replicate scaffold mirror inside target so validate-scaffold-parity passes in target workspace
+mkdir -p "$PROJECT_PATH/scaffold"
+if command -v rsync &>/dev/null; then
+  rsync -a "$SCAFFOLD_DIR/" "$PROJECT_PATH/scaffold/"
+else
+  cp -R "$SCAFFOLD_DIR/"* "$PROJECT_PATH/scaffold/" 2>/dev/null || true
+fi
+ok "Scaffold mirror preserved in target (scaffold/)"
+
+# Copy pnpm workspace and lock configs
+if [ -f "$SCRIPT_DIR/pnpm-workspace.yaml" ]; then
+  cp "$SCRIPT_DIR/pnpm-workspace.yaml" "$PROJECT_PATH/pnpm-workspace.yaml"
+  cp "$SCRIPT_DIR/pnpm-workspace.yaml" "$PROJECT_PATH/scaffold/pnpm-workspace.yaml" 2>/dev/null || true
+fi
+if [ -f "$SCRIPT_DIR/pnpm-lock.yaml" ]; then
+  cp "$SCRIPT_DIR/pnpm-lock.yaml" "$PROJECT_PATH/pnpm-lock.yaml"
+  cp "$SCRIPT_DIR/pnpm-lock.yaml" "$PROJECT_PATH/scaffold/pnpm-lock.yaml" 2>/dev/null || true
+fi
+
 # Ensure required directories exist (rsync may skip empty dirs)
 mkdir -p "$PROJECT_PATH/.tasks"
 mkdir -p "$PROJECT_PATH/.sandboxes"
@@ -946,7 +1003,7 @@ if [ -f "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/package.json" ]; then
   else
     if grep -q "ERR_PNPM_IGNORED_BUILDS" "$DASHBOARD_INSTALL_LOG"; then
       warn "pnpm blocked dependency build scripts; approving known builds and retrying..."
-      if (cd "$DASHBOARD_INSTALL_DIR" && pnpm approve-builds --all) && run_dashboard_install 2>&1 | tee "$DASHBOARD_INSTALL_LOG"; then
+      if (cd "$DASHBOARD_INSTALL_DIR" && (pnpm approve-builds 2>/dev/null || true)) && run_dashboard_install 2>&1 | tee "$DASHBOARD_INSTALL_LOG"; then
         ok "Dashboard dependencies installed after approving build scripts"
       else
         err "Dashboard dependency install failed after approve-builds retry"
@@ -1133,6 +1190,19 @@ icm memoir link -m "$PROJECT_NAME-architecture" \
   --from "hub-and-spoke" --to "sdd-lifecycle" -r depends_on 2>/dev/null || true
 
 ok "Memoir: architecture graph bootstrapped"
+
+# Fast Briefing: deterministic bootstrap
+mkdir -p "$PROJECT_PATH/.specify/memory/briefings"
+cat > "$PROJECT_PATH/.specify/memory/briefings/active-briefing.md" <<EOF
+# $PROJECT_NAME — Fast Operational Briefing
+
+- **Workspace**: $PROJECT_NAME
+- **Architecture**: AOI v4.0.0 (Hub-and-Spoke, SDD Lifecycle, Spatiotemporal Fibers)
+- **Harness**: $SELECTED_HARNESS
+- **Memory Protocol**: ICM v0.10+ Protocol v4 (5 Methods: Memories, Memoirs, Facts, Feedback, Transcripts)
+- **Health**: Governed via \`pnpm aoi:doctor\`
+EOF
+ok "Briefing: deterministic active-briefing.md initialized"
 
 # ── Phase 6: Base-Project Map (pre-seed only) ─────────────────────────────
 header "Phase 6: Base-Project Map"

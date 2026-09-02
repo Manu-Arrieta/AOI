@@ -1,0 +1,11 @@
+# AOI Agentic Operational Infrastructure Runtime
+packages:
+  - aoi_apps/*
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  vue-demi: true
+onlyBuiltDependencies:
+  - "@parcel/watcher"
+  - esbuild
+  - vue-demi

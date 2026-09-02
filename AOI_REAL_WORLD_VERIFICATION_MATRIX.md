@@ -44,16 +44,25 @@ Validar el 100% de las capacidades modernizadas en la sesión:
 
 ## 🔬 FASE 0: Instalación y Bootstrap Limpio
 
-### Paso 0.1: Despliegue con el Selector de Harness
+### Paso 0.0: Limpieza Total Previa (Clean Slate)
+Ejecutar en la carpeta de destino:
+```bash
+find . -mindepth 1 -maxdepth 1 ! -name 'AOI_REAL_WORLD_VERIFICATION_MATRIX.md' -exec rm -rf {} + 2>/dev/null || true
+```
+
+### Paso 0.1: Despliegue con el Selector de Harness y Modo No Interactivo
 Ejecutar desde el repositorio de AOI hacia la carpeta de destino:
 ```bash
-./setup.sh --harness all /Users/equinox/Desktop/AOI\ TESTS
+bash /Users/equinox/Desktop/Proyectos/AOI/setup.sh -y --harness all "/Users/equinox/Desktop/AOI TESTS"
 ```
 
 **Criterios de Aceptación**:
-- [ ] Menú o flag `--harness` interpretado correctamente.
-- [ ] Archivos de reglas compilados: `CLAUDE.md`, `.cursorrules`, `.cursor/rules/aoi-rules.mdc`, `AGENTS.md`, `.agents/rules/aoi-rules.md`, `.clinerules`, `.github/copilot-instructions.md`.
+- [ ] Ejecución 100% autónoma y no interactiva sin bloqueos de `read -r`.
+- [ ] Espejo `scaffold/` preservado y replicado en el destino.
+- [ ] Archivos `pnpm-workspace.yaml` y `pnpm-lock.yaml` copiados al destino.
+- [ ] Archivos de reglas compilados para el workspace destino: `CLAUDE.md`, `.cursorrules`, `.cursor/rules/aoi-rules.mdc`, `AGENTS.md`, `.agents/rules/aoi-rules.md`, `.clinerules`, `.github/copilot-instructions.md`.
 - [ ] Hechos deterministas registrados en ICM: `harness.selected = all`, `icm.protocol = v4`.
+- [ ] Fast briefing determinista inicializado en `.specify/memory/briefings/active-briefing.md`.
 
 ### Paso 0.2: Diagnóstico Inicial con AOI Doctor
 ```bash
@@ -71,7 +80,7 @@ Ejecutar el prompt `/init`:
 - [ ] Creación de memoria de contexto `{WORKSPACE}-context`.
 - [ ] Creación de grafo arquitectónico en memoir `{WORKSPACE}-architecture`.
 - [ ] Registro de hechos $O(1)$ en `icm facts`.
-- [ ] Compilación final de adaptadores con `pnpm aoi:sync-rules`.
+- [ ] Compilación final de adaptadores con `pnpm aoi:sync-rules --workspace "{WORKSPACE}"`.
 
 ---
 
@@ -79,12 +88,12 @@ Ejecutar el prompt `/init`:
 
 | # | Invariante | Comando de Validación | Resultado Esperado |
 | :---: | :--- | :--- | :--- |
-| **I-01** | **Paridad Scaffold Mirror** | `pnpm test:parity` | 197/197 archivos gobernados con paridad 1:1 byte-for-byte. |
+| **I-01** | **Paridad Scaffold Mirror** | `pnpm test:parity` | 206/206 archivos gobernados con paridad 1:1 byte-for-byte. |
 | **I-02** | **AOI Doctor 360°** | `pnpm aoi:doctor` | 11/11 Checks PASSED en 0 ms sin consumo de tokens. |
 | **I-03** | **Multi-Harness Suite** | `pnpm test:multi-harness` | Compilación exitosa para Copilot, Claude, Cursor, Antigravity y Cline. |
 | **I-04** | **ICM Substrate (5 Métodos)** | `icm wake-up && icm facts list AOI` | Hechos deterministas devueltos en $O(1)$ y briefing estructurado. |
 | **I-05** | **Memory Sync & Bundles** | `pnpm test:memory-sync && pnpm test:memory-sync:bundle` | 67/67 tests pasando (digest SHA256, export/import/rollback). |
-| **I-06** | **Compresión TOON** | `pnpm test:subagent-payload` | Payloads tabulares para subagentes con 40-60% menos tokens que markdown. |
+| **I-06** | **Compresión TOON** | `pnpm test:subagent-payload` | Payloads tabulares para subagentes con 40-60% menos tokens que markdown (<1.600 bytes). |
 | **I-07** | **Aislamiento por Fibers** | `pnpm test:spatiotemporal` | Sandboxes con mutaciones reversibles ($\partial\Gamma$) y rollback instantáneo. |
 | **I-08** | **Gobernanza SDD & SRP** | `pnpm test:sdd-lifecycle` | Validación de LOC (<300 LOC), cobertura TDD y enlace de recursos. |
 | **I-09** | **MCP Gateway & Types** | `pnpm test:mcp-gateway` | Firmas TypeScript compactas y configuración de herramientas válida. |
