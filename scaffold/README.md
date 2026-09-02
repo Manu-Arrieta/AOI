@@ -1,401 +1,271 @@
-# AOI — Infraestructura Operativa Agéntica
-
-Instala un ecosistema agéntico completo en cualquier proyecto: **RTK**
-(optimización de tokens) + **ICM** (memoria persistente) + **Spec-Kit**
-(ciclo de vida SDD) + **11 agentes especializados** sincronizados entre
-Copilot.
-
-## Inicio Rápido
-
-### macOS / Linux
-
-```bash
-bash "/path/to/AOI/setup.sh" /path/to/my-project
-```
-
-### Windows 11+ (PowerShell)
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\AOI\setup.ps1" "C:\path\to\my-project"
-```
-
-### Windows 11+ (Git Bash)
-
-```bash
-bash "/c/path/to/AOI/setup.sh" "/c/path/to/my-project"
-```
-
-Luego, en el chat de Copilot dentro de VS Code:
-
-```text
-/init # Configura el stack del proyecto, los agentes y la constitución
-/sdd-new # Inicia la primera feature
-```
-
-## Onboarding
-
-Podés usar AOI de dos maneras:
-
-1. **Instalar AOI dentro de otro proyecto**
-   Ejecutás `setup.sh` o `setup.ps1` y apuntás al repositorio destino que querés bootstrapear con el stack de AOI.
-2. **Trabajar sobre AOI mismo**
-   Abrís este repositorio, instalás las dependencias del workspace y usás el dashboard interno junto con los prompts SDD para evolucionar la plantilla.
-
-Prerrequisitos mínimos antes de la primera ejecución:
-
-- Node `>=20.19.0`
-- `corepack` o `pnpm >=11.3.0`
-- `icm`
-- GitHub Copilot en VS Code
-
-Primera sesión recomendada dentro de este repositorio:
-
-1. Abrí el repositorio en VS Code.
-2. Ejecutá `pnpm install` o `corepack pnpm install`.
-3. Levantá el dashboard con `pnpm dev:dashboard`.
-4. Abrí Copilot Chat y corré `/speckit.constitution` si vas a preparar una nueva instalación downstream.
-5. Iniciá el primer flujo con `/sdd-new`.
-
-El repositorio público de AOI arranca limpio: los registries de tareas están vacíos, no hay sandboxes activas y la memoria versionada todavía no tiene ningún workspace activo registrado.
-
-Artefactos de release y validación:
-
-- [docs/internal/releases/v0.1.0.es.md](docs/internal/releases/v0.1.0.es.md) — notas de la primera baseline pública de la plantilla.
-- [docs/internal/verification/external-smoke-plan.es.md](docs/internal/verification/external-smoke-plan.es.md) — checklist externa para validar AOI como repo y bootstrapper.
-
-Límite de documentación:
-
-- `docs/internal/` contiene la documentación de mantenimiento de AOI como bootstrapper.
-- `scaffold/docs/` queda reservado para la documentación que sí debe instalarse en proyectos downstream.
-
-## Qué Se Instala
-
-### Herramientas (en orden de prioridad)
-
-| Herramienta             | Propósito                                  | macOS / Linux                                        | Windows 11+                                                       |
-| ----------------------- | ------------------------------------------ | ---------------------------------------------------- | ----------------------------------------------------------------- |
-| **RTK**                 | Optimización de tokens (60-90%)            | `brew install rtk`                                   | Binario desde GitHub Releases vía `setup.ps1`                     |
-| **ICM**                 | Memoria persistente (5 métodos)            | `brew tap rtk-ai/tap && brew install icm`            | `install.ps1` oficial vía `setup.ps1`                             |
-| **Headroom**            | Capa de compresión CLI (60-95%)            | `bash scripts/install-headroom.sh --yes`             | `powershell scripts/install-headroom.ps1 -Yes`                    |
-| **Codebase Memory MCP** | Inteligencia estructural de código / grafo | `bash scripts/install-codebase-memory.sh --ui --yes` | `powershell scripts/install-codebase-memory.ps1 -Yes -Variant ui` |
-| **Specify CLI**         | Ciclo de vida de Spec-Driven Development   | `uv tool install specify-cli`                        | `winget install --id astral-sh.uv -e` + `uv tool install ...`     |
-
-En Windows, AOI usa `winget` para `uv` cuando está disponible. RTK no
-documenta por ahora un paquete oficial para `winget`, así que `setup.ps1`
-instala directamente el binario de Windows.
-
-`ICM` es obligatorio: el setup aborta si no puede verificar un comando `icm` operativo. `RTK` y `Headroom` son recomendados pero no bloqueantes: si su instalación falla, AOI continúa.
-
-`Headroom` comprime contexto para agentes basados en CLI (Claude Code, Codex, `gh copilot`). **No** intercepta el tráfico de VS Code Copilot Chat — esa extensión llama directamente a la API de GitHub. El ahorro de tokens en VS Code Chat proviene de **RTK** (filtrado de salida de terminal) y **Codebase Memory MCP** (120× menos tokens en exploración de código).
-
-`Codebase Memory MCP` es opcional. AOI lo instala en modo seguro con `--skip-config`, así que el binario queda disponible pero los archivos de instrucciones del home del operador no se tocan. Si el binario está presente, AOI lo registra sólo en el `.vscode/mcp.json` local del proyecto.
-
-El setup ofrece dos variantes durante la Phase 1.8:
-
-- **`standard`** — sólo el binario, sin visualización de grafo.
-- **`ui`** (recomendado) — incluye la visualización 3D interactiva del grafo en `http://localhost:9749`, disponible cada vez que VS Code tiene el servidor MCP conectado.
-
-Tras una instalación exitosa, el setup activa automáticamente:
-
-- `auto_index true` — watcher nativo de git que re-indexa de forma incremental ante cualquier cambio.
-- `ui true` + `port 9749` — visualización HTTP del grafo habilitada al iniciar la próxima sesión de VS Code.
-- `index_repository` inicial en background — el proyecto queda indexado antes de la primera sesión de agente.
-
-El runtime del dashboard también es obligatorio. El setup ya no saltea su bootstrap: ahora falla si antes de instalar dependencias no tiene Node `>=20.19.0` y `corepack` o `pnpm@11.3.0` disponibles.
-
-### Scaffold (copiado a tu proyecto)
-
-```text
-.vscode/
-├── settings.json # Configuración de terminal del workspace para resolver herramientas
-└── mcp.json # Registro MCP local del workspace (ICM obligatorio, codebase-memory-mcp opcional)
-
-.githooks/
-└── pre-commit-aoi-guard.sh  # Bloquea headroom learn para que no sobreescriba archivos gestionados por AOI
-
-.resources/
-├── constitution.md # Contrato local del subárbol de recursos
-├── userstories/ # Contexto reutilizable de historias de usuario
-└── workflows/ # Definiciones de interacción entre componentes (no ejecutables)
-
-.github/
-├── agents/ # 11 definiciones de agentes de Copilot
-│   ├── supervisor.agent.md # Orquestador SDD (Hub-and-Spoke)
-│   ├── functional-analyst.agent.md
-│   ├── solution-architect.agent.md
-│   ├── frontend-developer.agent.md
-│   ├── backend-developer.agent.md
-│   ├── devops-engineer.agent.md
-│   ├── ux-designer.agent.md
-│   ├── documentation-analyst.agent.md
-│   ├── integration-specialist.agent.md
-│   ├── project-analyzer.agent.md
-│   └── project-expert.agent.md
-├── prompts/ # Comandos del flujo SDD
-│   ├── init.prompt.md # /init — asistente de configuración del proyecto
-│   ├── sdd-new.prompt.md # /sdd-new — exploración + especificación
-│   ├── sdd-ff.prompt.md # /sdd-ff — plan + tareas
-│   ├── sdd-apply.prompt.md # /sdd-apply — implementación
-│   ├── sdd-verify.prompt.md # /sdd-verify — QA
-│   ├── sdd-archive.prompt.md # /sdd-archive — cierre
-│   ├── export-memory-bundle.prompt.md # /export-memory-bundle — exportación portable gobernada de memoria
-│   ├── import-memory-bundle.prompt.md # /import-memory-bundle — importación de bundle hacia candidata
-│   ├── sync-workspace-memory.prompt.md # /sync-workspace-memory — importación gobernada de memoria
-│   └── rollback-workspace-memory.prompt.md # /rollback-workspace-memory — restauración de la versión previa
-└── instructions/ # Reglas siempre cargadas
-  ├── icm-protocol.instructions.md # Cumplimiento ICM de 5 métodos (v4)
-    └── model-selection.instructions.md # Política obligatoria de selección de modelo
-```
-
-## Protocolo de Descubrimiento de Código
-
-Cuando `codebase-memory-mcp` está registrado en `.vscode/mcp.json`, los agentes prefieren automáticamente sus herramientas de grafo sobre `grep` amplio o lecturas archivo por archivo:
-
-| Prioridad | Herramienta              | Caso de uso                                          |
-| --------- | ------------------------ | ---------------------------------------------------- |
-| 1         | `search_graph`           | Encontrar funciones, clases, routes por patrón       |
-| 2         | `trace_path`             | Seguir call chains inbound/outbound                  |
-| 3         | `get_code_snippet`       | Leer el source exacto de un símbolo ya encontrado    |
-| 4         | `query_graph`            | Queries estructurales complejas tipo Cypher          |
-| 5         | `get_architecture`       | Overview del codebase: lenguajes, hotspots, clusters |
-| 6         | `grep` / lectura directa | Literales, configs, non-code files, o fallback       |
-
-Si el proyecto todavía no está indexado, llamar `index_repository` primero. Si el servidor MCP no está presente, se aplica el flujo normal de búsqueda local.
-
-## Ciclo de Vida SDD
-
-Construido sobre [spec-kit](https://github.com/github/spec-kit). Nuestros
-prompts orquestan comandos de spec-kit con asignación de agentes y
-persistencia en ICM.
-
-```text
-/sdd-new → Explorar + Especificar → @functional-analyst
-↓
-/sdd-ff → Plan + Tareas → @solution-architect
-↓
-/sdd-apply → Implementar (por lotes) → @frontend/@backend/@devops
-↓
-/sdd-verify → QA + Validación → @integration-specialist
-↓
-/sdd-archive → Documentación + Cierre → @documentation-analyst
-```
-
-Cada fase tiene una **puerta de aprobación del Owner** antes de avanzar.
-
-## Subsistema Opcional de Recursos
-
-AOI ahora instala un subárbol gobernado `.resources/` para contexto
-reutilizable:
-
-```text
-.resources/
-├── constitution.md
-├── userstories/
-└── workflows/
-```
-
-- `userstories/` almacena contexto reutilizable para la construcción de tareas.
-- `workflows/` almacena definiciones de interacción entre componentes en una o
-  varias historias de usuario. Estos archivos **no son comandos ejecutables**.
-- Los workflows SDD **no** leen `.resources/` automáticamente. Un recurso solo
-  se usa si el Owner lo vincula explícitamente durante la construcción de una
-  tarea.
-
-La estructura se gobierna mediante:
-
-- autoridad raíz: `.specify/memory/constitution.md`
-- contrato local del subárbol: `.resources/constitution.md`
-
-Comandos administrativos y utilidades:
-
-- `/new-resource-folder` — crea una carpeta gobernada dentro de `.resources/`
-- `/move-resource-folder` — mueve una carpeta gobernada dentro de `.resources/`
-- `/delete-resource-folder` — elimina una carpeta gobernada dentro de `.resources/`
-- `node scripts/sdd-lifecycle/link-resources.mjs` — validador y auto-enlazador de recursos en `relations.json`
-
-## Diagnóstico y Salud del Workspace (AOI Doctor)
-
-AOI incluye un motor de diagnóstico integral 360° determinista que verifica la salud del repositorio en 0 ms y sin consumir tokens de IA:
-
-- `pnpm aoi:doctor` (o `pnpm doctor`) — ejecuta la auditoría de binarios CLI (`icm`, `rtk`, `headroom`, etc.), integridad de base de datos SQLite de ICM, registro `.tasks/registry.md`, gobernanza de versionado activo `.specify/` y paridad 1:1 de `scaffold/`.
-
-## Compilador y Soporte Multi-Harness
-
-AOI mantiene como **única fuente de verdad** las instrucciones canónicas en `.github/instructions/` y compila automáticamente adaptadores nativos para los principales asistentes de IA:
-
-| Asistente / Harness | Archivos Generados | Propósito |
-| :--- | :--- | :--- |
-| **GitHub Copilot** | `.github/copilot-instructions.md`, `.github/prompts/` | Reglas y slash commands para Copilot Chat |
-| **Claude Code** | `CLAUDE.md` | Protocolo ICM y directivas operativas |
-| **Cursor** | `.cursorrules`, `.cursor/rules/aoi-rules.mdc` | Reglas de contexto y SRP para Cursor IDE |
-| **Antigravity / Gemini** | `AGENTS.md`, `.agents/rules/aoi-rules.md` | Memoria y gobernanza de agentes en Antigravity |
-| **Cline / Roo Code** | `.clinerules` | Reglas y hooks para Cline/Roo |
-
-Comandos de sincronización:
-- `pnpm aoi:sync-rules` (o `pnpm sync:rules`) — compila y sincroniza las reglas para todos los harnesses.
-- `./setup.sh --harness <copilot|claude|cursor|antigravity|cline|all>` — instala y compila el harness elegido durante el setup.
-
-## Runtime Interno del Dashboard
-
-AOI ahora aprovisiona un paquete autocontenido en Nuxt para visibilidad
-operativa del proyecto en tiempo real.
-
-Superficies del runtime:
-
-```text
-aoi_apps/agentic-ops-dashboard/
-aoi_apps/agentic-ops-dashboard/package.json
-scaffold/aoi_apps/agentic-ops-dashboard/
-scaffold/aoi_apps/agentic-ops-dashboard/package.json
-```
-
-- El dashboard lee `.tasks/registry.md`, los directorios de artefactos de
-  tareas y el subárbol opcional `.resources/` como snapshot autoritativo del
-  workspace.
-- **Vistas Operativas**: Tablero Kanban de Tareas, Matriz TanStack, Explorador de Recursos, **Grafo de Conocimiento (Memoirs)**, **Explorador de Facts (O(1))** y **Telemetría de Tokens**.
-- **Badge de Salud 360°**: Semáforo interactivo de AOI Doctor en la cabecera con modal de diagnóstico detallado.
-- Los vínculos explícitos entre tareas y recursos se guardan junto a los
-  artefactos en `.tasks/{feature}/TASK-YYYY-NNN/relations.json`.
-- Las escrituras del servidor quedan limitadas a mutaciones gobernadas dentro
-  de `.resources/`.
-- La shell del dashboard expone un selector visible de inglés/español y guarda
-  la preferencia localmente para restaurarla al recargar.
-- La traducción es sólo de presentación: los IDs de tareas, los valores del
-  registro y los previews crudos de artefactos se mantienen tal como vienen del
-  repositorio.
-- Los cambios en tiempo real preservan el contexto del tablero: las cards
-  modificadas se resaltan y los cambios de estado se animan entre columnas sin
-  dar sensación de refresco completo.
-
-Comandos del runtime:
-
-- `pnpm --dir aoi_apps/agentic-ops-dashboard dev` (o `pnpm dev:dashboard`) — corre el dashboard interno localmente
-- `pnpm --dir aoi_apps/agentic-ops-dashboard test` (o `pnpm test:dashboard`) — ejecuta la suite de validación del dashboard
-- `pnpm --dir aoi_apps/agentic-ops-dashboard exec nuxt prepare` — genera los tipos de Nuxt para el runtime
-- `pnpm --dir aoi_apps/agentic-ops-dashboard build` — compila el dashboard para chequeos de smoke
-
-## Gobernanza de Memoria Versionada
-
-AOI ahora aprovisiona un version store gobernado para el estado operativo de
-la memoria:
-
-```text
-.exportsmemories/
-└── *.memory-bundle.json.gz
-
-.specify/memory/versions/
-├── README.md
-├── active.json
-├── manifests/
-│   └── {workspace}/
-├── constitutions/
-│   └── {workspace}/
-└── templates/
-    ├── memory-version.template.json
-    ├── memory-bundle.template.json
-    └── dynamic-constitution.template.md
-```
-
-- `.exportsmemories/` es la carpeta base gobernada, local al repositorio, para
-  bundles portables de memoria exportados.
-- `active.json` es el puntero canónico hacia la versión activa y la versión
-  inmediatamente restaurable por workspace.
-- Cada manifest registra `sourceWorkspace`, `sourceVersionId`, scopes
-  seleccionados, contexto del Owner y decisiones `retain` / `complement` /
-  `discard`.
-- Los manifests originados en bundle también preservan `sourceTransport`, la
-  procedencia del bundle, scopes incluidos y omitidos, e integridad declarada.
-- Cada versión candidata o activa lleva su propio snapshot constitucional
-  dinámico para auditoría y rollback seguro.
-
-Workflows gobernados:
-
-- `/export-memory-bundle` — exporta una versión explícita de memoria hacia un
-  bundle portable gobernado dentro de `.exportsmemories/`.
-- `/import-memory-bundle` — valida un bundle portable y prepara una versión
-  candidata gobernada antes de cualquier activación.
-- `/sync-workspace-memory` — prepara una versión candidata desde un workspace y
-  versión fuente explícitos, y sólo la activa después de la aprobación del
-  Owner.
-- `/rollback-workspace-memory` — restaura la versión previa registrada con un
-  motivo explícito de rollback.
-
-Superficie determinística de scripts:
-
-- `scripts/memory-sync/resolve-active-version.mjs`
-- `scripts/memory-sync/prepare-version-manifest.mjs`
-- `scripts/memory-sync/export-memory-bundle.mjs`
-- `scripts/memory-sync/import-memory-bundle.mjs`
-- `scripts/memory-sync/activate-version.mjs`
-- `scripts/memory-sync/rollback-version.mjs`
-- `pnpm test:memory-sync` — valida el ciclo de vida versionado con Node tests
-- `pnpm test:memory-sync:bundle` — valida el contrato bundle portable, el flujo
-  de exportación/importación y la preservación del lifecycle
-
-## ICM — 5 Métodos de Memoria (v4)
-
-Todos los agentes usan [ICM](https://github.com/rtk-ai/icm) con cinco métodos
-complementarios:
-
-| Método                              | Qué hace                                           | Cuándo                                            |
-| ----------------------------------- | -------------------------------------------------- | ------------------------------------------------- |
-| **Memories** (episódica)            | Guardar/recuperar con decaimiento temporal         | En cada fase: decisiones, progreso y contexto     |
-| **Memoirs** (grafo de conocimiento) | Conceptos y relaciones permanentes                 | Decisiones de arquitectura, grafos de componentes |
-| **Facts** (hechos exactos)          | Tripletas exactas (E-K-V) con historial activo     | Configs, endpoints, puertos, flags deterministas  |
-| **Feedback** (correcciones)         | Aprender de errores y asunciones fallidas          | Fase de Verify, post-implementación               |
-| **Transcripts** (verbatim)          | Captura el replay crudo y sesiones completas       | Fases de Explore y Archive                        |
-
-No se pierde contexto entre sesiones.
-
-## Regla de Doble Sincronización
-
-**OBLIGATORIO**: Cada agente/skill debe existir tanto en formato Copilot como
-
-## Integridad del Mirror Scaffold
-
-agentes divergen, `/sdd-verify` falla.
-
-## Notas para Windows
-
-- La instalación nativa en Windows 11+ está soportada mediante `setup.ps1`.
-- Si lanzás el setup desde Git Bash, ejecutá `setup.sh` con rutas de Git Bash como `/c/path/to/AOI/setup.sh`; el script delega a `setup.ps1` automáticamente.
-- El instalador inyecta `terminal.integrated.env.windows.Path` en el workspace
-  de destino para que `rtk`, `icm` y `specify` resuelvan desde las terminales
-  de VS Code.
-- AOI también reescribe hooks locales de Copilot para usar wrappers de
-  PowerShell en Windows.
-- RTK sigue recomendando WSL a nivel upstream para la compatibilidad más amplia
-  de shell hooks entre herramientas, pero esta plantilla ahora ofrece un camino
-  nativo con PowerShell para proyectos que usan GitHub Copilot.
-
-## Teardown
-
-```bash
-# macOS / Linux
-bash "/path/to/AOI/teardown.sh" /path/to/my-project
-```
-
-```powershell
-# Windows 11+
-powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\AOI\teardown.ps1" "C:\path\to\my-project"
-```
-
-## Agentes
-
-| Agente                      | Fase SDD                       | Archivo (Copilot)                 |
-| --------------------------- | ------------------------------ | --------------------------------- |
-| **@supervisor**             | Todas (orquestador)            | `supervisor.agent.md`             |
-| **@functional-analyst**     | Explore, Specify               | `functional-analyst.agent.md`     |
-| **@solution-architect**     | Plan, Tasks                    | `solution-architect.agent.md`     |
-| **@frontend-developer**     | Implement                      | `frontend-developer.agent.md`     |
-| **@backend-developer**      | Implement                      | `backend-developer.agent.md`      |
-| **@devops-engineer**        | Implement                      | `devops-engineer.agent.md`        |
-| **@ux-designer**            | Implement                      | `ux-designer.agent.md`            |
-| **@documentation-analyst**  | Archive                        | `documentation-analyst.agent.md`  |
-| **@integration-specialist** | Verify                         | `integration-specialist.agent.md` |
-| **@triage-specialist**      | Bug y Definición — transversal | `triage-specialist.agent.md`      |
-| **@resource-analyst**       | Recursos — transversal         | `resource-analyst.agent.md`       |
+# AOI — Agentic Operational Infrastructure 🚀
+
+> **Convierte cualquier repositorio en un entorno de desarrollo agéntico autónomo, seguro y de altísima eficiencia.**  
+> Diseñado para que humanos e inteligencias artificiales colaboren con memoria infinita, mínimo consumo de tokens y cero pérdida de contexto.
+
+[![AOI Doctor](https://img.shields.io/badge/AOI_Doctor-360%C2%B0_Healthy-success?style=flat-square&logo=shield)](file:///scripts/aoi-doctor.mjs)
+[![Tests](https://img.shields.io/badge/Tests-134%2F134_Passing-brightgreen?style=flat-square&logo=vitest)](file:///package.json)
+[![Scaffold Parity](https://img.shields.io/badge/Scaffold_Parity-227%2F227_Verified-blue?style=flat-square)](file:///scripts/scaffold/validate-scaffold-parity.mjs)
+[![Multi-Harness](https://img.shields.io/badge/Multi--Harness-5_Assistants-orange?style=flat-square)](file:///scripts/multi-harness/compile-rules.mjs)
+[![License](https://img.shields.io/badge/License-MIT-purple?style=flat-square)](file:///LICENSE)
 
 ---
 
-**AOI v3.0** — Agentic Operational Infrastructure impulsada por RTK, ICM, Spec-Kit y agentes Hub-and-Spoke
+## 🌟 ¿Qué es AOI? (En 30 segundos)
+
+**AOI** es la infraestructura operativa que le da a tus asistentes de IA lo que siempre necesitaron para programar de verdad: **memoria persistente que trasciende sesiones**, **optimización matemática de tokens**, un **ciclo de vida de desarrollo guiado por especificaciones (SDD)** y **mecanismos de seguridad deterministas** con reversión instantánea de cambios.
+
+En lugar de lidiar con chats aislados que olvidan decisiones a los 20 minutos o que consumen millones de tokens innecesarios leyendo repositorios enteros, AOI equipa tu proyecto con:
+- **27 Agentes especializados** coordinados en arquitectura Hub-and-Spoke.
+- **5 Métodos de Memoria (ICM v4)**: Recuerdos episódicos, grafos de arquitectura, hechos clave-valor exactos en $O(1)$, correcciones y transcripciones crudas.
+- **Motor Espaciotemporal & Sandboxes**: Ejecución aislada de tareas con reversión atómica de efectos ($\partial\Gamma$) si una prueba falla.
+- **Soporte Multi-Harness**: Una sola fuente de verdad para GitHub Copilot, Claude Code, Cursor, Antigravity/Gemini y Cline.
+- **Dashboard Operativo C2**: Tablero Kanban en tiempo real, matriz TanStack, visualizador 3D de dependencias y semáforo de salud 360°.
+
+---
+
+## ⚡ Inicio Rápido (Quickstart)
+
+Podés instalar AOI en cualquier proyecto existente con una sola línea de terminal.
+
+### 1. Requisitos Previos
+- **Node.js** `>=20.19.0`
+- **pnpm** `>=11.3.0` (o vía `corepack enable pnpm`)
+- Tu editor preferido (VS Code, Cursor, Claude Code, etc.)
+
+---
+
+### 2. Instalación en tu Proyecto
+
+#### macOS / Linux
+```bash
+bash "/path/to/AOI/setup.sh" /ruta/a/mi-proyecto
+```
+
+#### Windows 11+ (PowerShell)
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\AOI\setup.ps1" "C:\ruta\a\mi-proyecto"
+```
+
+#### Windows 11+ (Git Bash)
+```bash
+bash "/c/path/to/AOI/setup.sh" "/c/ruta/a/mi-proyecto"
+```
+
+> [!TIP]
+> **Modo no interactivo y selección de asistentes:**  
+> Podés pasar banderas adicionales al instalador:
+> ```bash
+> ./setup.sh --non-interactive --harness all /ruta/a/mi-proyecto
+> ```
+> Opciones válidas para `--harness`: `copilot`, `claude`, `cursor`, `antigravity`, `cline` o `all`.
+
+---
+
+### 3. Primeros Comandos en el Chat
+
+Una vez instalado en tu proyecto, abrí el chat de tu asistente favorito (ej. Copilot Chat o Claude Code) y ejecutá:
+
+```text
+/init       # Configura el stack tecnológico, las reglas y la constitución del proyecto
+/sdd-new    # Propone y especifica la primera funcionalidad (feature)
+```
+
+---
+
+## 🚀 Los 5 Superpoderes de AOI
+
+### 1. 📉 Ahorro Radical de Tokens (60% al 90%)
+AOI combate el desperdicio de tokens en múltiples niveles:
+- **RTK (Rust ToolKit)**: Filtra y comprime la salida de comandos de terminal, tests y builds antes de que lleguen al modelo.
+- **Serialización TOON**: Los subagentes reciben contratos y tareas en una notación tabular ultracompacta (`scripts/subagent-context/`), evitando enviar especificaciones gigantes.
+- **MCP Gateway Proxy**: Comprime los esquemas de herramientas y aplica *Progressive Disclosure*, reduciendo hasta un 85% la sobrecarga en cada turno.
+- **Codebase Memory MCP**: Grafo estructural de código en SQLite que reemplaza búsquedas amplias tipo `grep` por consultas semánticas y caminos de llamada exactos.
+
+### 2. 🧠 Memoria Persistente que Nunca Olvida (ICM v4)
+Integración nativa con [ICM](https://github.com/rtk-ai/icm) a través de **5 métodos complementarios**:
+
+| Método | Qué Almacena | Caso de Uso |
+| :--- | :--- | :--- |
+| **Memories** | Contexto episódico con decaimiento temporal | Decisiones de diseño, estado de avance y aprendizajes de sesión. |
+| **Memoirs** | Conceptos permanentes y dependencias | Grafo de arquitectura, entidades del dominio y patrones sagrados. |
+| **Facts** | Tripletas exactas clave-valor ($O(1)$) | Endpoints, puertos, configuraciones deterministas y versiones. |
+| **Feedback** | Registro de asunciones vs. resultados | Análisis post-verificación para no repetir errores pasados. |
+| **Transcripts** | Replay verbatim de sesiones | Trazabilidad completa de conversaciones y trayectorias. |
+
+### 3. 🎯 Spec-Driven Development (SDD)
+El software no se improvisa: se especifica, se planifica, se implementa bajo TDD y se verifica mecánicamente:
+
+```text
+[Requerimiento]
+       ↓
+   /sdd-new     → Exploración y Especificación Formal (@functional-analyst)
+       ↓
+   /sdd-ff      → Arquitectura, Contratos y Plan de Tareas (@solution-architect)
+       ↓
+   /sdd-apply   → Implementación en Lotes con TDD Obligatorio (@frontend, @backend, @devops)
+       ↓
+   /sdd-verify  → QA Mecánico, Validación de Límites y Tests (@integration-specialist)
+       ↓
+   /sdd-archive → Documentación Viva y Cierre en Memoria (@documentation-analyst)
+```
+*Cada fase cuenta con una compuerta de aprobación del Owner antes de avanzar a la siguiente.*
+
+### 4. 🔄 Compilador Multi-Harness Unificado
+Escribís las instrucciones una sola vez en `.github/instructions/` y AOI las compila automáticamente para todos tus entornos de trabajo:
+
+| Entorno / Asistente | Archivos Generados | Propósito |
+| :--- | :--- | :--- |
+| **GitHub Copilot** | `.github/copilot-instructions.md`, `.github/prompts/` | Reglas principales y 29 comandos slash |
+| **Claude Code** | `CLAUDE.md` | Protocolo de memoria ICM y compuertas de calidad |
+| **Cursor IDE** | `.cursorrules`, `.cursor/rules/aoi-rules.mdc` | Límites de SRP y directivas de contexto |
+| **Antigravity / Gemini** | `AGENTS.md`, `.agents/rules/aoi-rules.md` | Gobernanza de subagentes y persistencia |
+| **Cline / Roo Code** | `.clinerules` | Reglas operativas y flujos de trabajo |
+
+> Sincronizá todos los asistentes en cualquier momento con: `pnpm aoi:sync-rules`
+
+### 5. 🛡️ Runtime Espaciotemporal y Sandboxes con Rollback
+Los agentes de IA pueden fallar o alucinar, pero con AOI **nunca rompen tu repositorio**:
+- **Fundamento Matemático ($\partial\Gamma$)**: En lugar de pedirle al LLM *"arregla lo que rompiste"* (lo cual consume miles de tokens y genera alucinaciones), AOI formaliza el espacio de efectos reversibles:
+  $$E_\Gamma := \Gamma \to \Gamma \times (\Gamma \to \Gamma)$$
+  Toda mutación física sobre el disco o variables de entorno queda registrada junto a un morfismo inverso ($f^{-1}$). Si una prueba falla, el operador $\text{recover}_\Gamma$ restaura el estado original en **0 ms y 0 tokens**.
+- **Sandboxes Herméticas (`/sandbox-new`)**: Cada subagente se ejecuta en un *Fiber* aislado dentro de su propio reino ($\Sigma^{\text{iso}}$) y con cuotas estrictas de recursos (`.sandboxes/registry.md`).
+
+#### Nomenclatura del Runtime
+| Símbolo | Significado | Función Práctica |
+| :---: | :--- | :--- |
+| **$\Gamma$** | **Contexto / Entorno** | Estado completo del workspace (archivos, AST, variables, registros). |
+| **$\partial\Gamma$** | **Efecto Reversible** | Mutación que porta su propia función de reversión (*disposer*). |
+| **$\diamond$** | **Composición Monoidal** | Encadena transformaciones preservando la reversión LIFO contravariante. |
+| **$\text{recover}_\Gamma$** | **Operador de Rollback** | Restaura el estado previo al 100% sin inferencia de IA (0 tokens). |
+| **$\Sigma^{\text{iso}}$** | **Reino Aislado** | Espacio de nombres hermético para que los subagentes no colisionen. |
+
+> 📖 *Para profundizar en los teoremas, solidez de tipos y referencias académicas (Plotkin, Petricek, Landauer, Bennett), consultá [Fundamentos Matemáticos del Runtime Espaciotemporal](docs/internal/architecture/SPATIOTEMPORAL_MATHEMATICAL_FOUNDATIONS.es.md).*
+
+---
+
+## 🤖 Ecosistema de Agentes
+
+AOI cuenta con **27 agentes especializados** divididos en roles de ingeniería y utilidades de automatización:
+
+### Roles de Ingeniería y Arquitectura (13 Agentes)
+
+| Agente | Fase SDD | Especialidad |
+| :--- | :--- | :--- |
+| **`@supervisor`** | Todas | Orquestador general del ciclo de vida y asignador de tareas. |
+| **`@functional-analyst`** | Explore, Specify | Traduce necesidades de negocio en especificaciones y user stories. |
+| **`@solution-architect`** | Plan, Tasks | Diseña interfaces, contratos TypeScript y diagramas de componentes. |
+| **`@frontend-developer`** | Implement | Construye componentes, layouts y estilos modernos reactivos. |
+| **`@backend-developer`** | Implement | Implementa APIs, lógica de negocio, bases de datos y seguridad. |
+| **`@devops-engineer`** | Implement | Automatiza scripts, pipelines de CI/CD, contenedores y entornos. |
+| **`@ux-designer`** | Implement | Vela por la accesibilidad (a11y), consistencia visual y microinteracciones. |
+| **`@integration-specialist`** | Verify | Ejecuta suites de pruebas, valida cobertura TDD y audita límites de código (<300 LOC). |
+| **`@documentation-analyst`** | Archive | Genera documentación funcional viva y prepara reportes de release. |
+| **`@triage-specialist`** | Transversal | Diagnostica incidentes, reproduce bugs y aísla causas raíz. |
+| **`@resource-analyst`** | Transversal | Gobierna el subárbol `.resources/` (historias de usuario y workflows). |
+| **`@project-analyzer`** | Transversal | Auditoría estática y análisis de dependencias del repositorio. |
+| **`@project-expert`** | Transversal | Asistente contextual con conocimiento integral del proyecto. |
+
+### Automatización Spec-Kit (14 Agentes Especializados)
+Automatizan tareas puntuales del flujo de especificaciones y git:
+`speckit.specify`, `speckit.plan`, `speckit.tasks`, `speckit.implement`, `speckit.analyze`, `speckit.checklist`, `speckit.clarify`, `speckit.constitution`, `speckit.git.initialize`, `speckit.git.feature`, `speckit.git.validate`, `speckit.git.remote`, `speckit.git.commit`, `speckit.taskstoissues`.
+
+---
+
+## 🖥️ Dashboard de Operaciones en Tiempo Real (C2)
+
+AOI incluye una consola web operativa de alta fidelidad construida en **Nuxt 4** y **NuxtUI**:
+
+```bash
+pnpm dev:dashboard
+```
+*Abre automáticamente en `http://localhost:3000`*.
+
+### Características del Dashboard:
+- 📋 **Tablero Kanban Reactivo**: Visualización en tiempo real del progreso de las tareas gobernadas (`.tasks/registry.md`).
+- 📊 **Matriz TanStack Table**: Filtrado multifactorial, ordenamiento y vista de alta densidad para auditorías rápidas.
+- 🌐 **Grafo 3D de Arquitectura**: Inspección tridimensional interactiva de símbolos y dependencias mediante `codebase-memory-mcp` (`http://localhost:9749`).
+- 🧠 **Explorador de Memoria ICM**: Visualizador del grafo de conceptos (**Memoirs**) y tabla de hechos exactos (**Facts $O(1)$**).
+- 🩺 **Semáforo Interactivo AOI Doctor**: Modal de diagnóstico 360° en la barra superior que certifica la salud del entorno en vivo.
+- 🌐 **Bilingüe (ES / EN)**: Selector de idioma instantáneo con persistencia local.
+
+---
+
+## 🩺 Diagnóstico 360° y Salud del Workspace (AOI Doctor)
+
+Podés auditar la salud completa de tu entorno en cualquier momento sin consumir un solo token:
+
+```bash
+pnpm aoi:doctor
+```
+
+AOI Doctor verifica de forma determinista:
+1. **Herramientas CLI**: Disponibilidad de binarios esenciales (`icm`, `rtk`, `headroom`, `codebase-memory-mcp`, `specify`).
+2. **Integridad de Base de Datos**: Estado físico y lógico de SQLite de ICM (`memories.db`).
+3. **Registro de Tareas**: Coherencia de `.tasks/registry.md`.
+4. **Gobernanza de Memoria**: Punteros canónicos en `.specify/memory/versions/active.json`.
+5. **Multi-Harness**: Estado y paridad de los 5 adaptadores generados.
+6. **Integridad del Mirror Scaffold (Principio I)**: Certificación de paridad byte-por-byte entre los archivos raíz y la plantilla `scaffold/` (227 archivos gobernados).
+
+---
+
+## 📁 Estructura del Proyecto
+
+```text
+├── .github/
+│   ├── agents/               # 27 Definiciones de agentes
+│   ├── instructions/         # 6 Reglas canónicas del proyecto
+│   └── prompts/              # 29 Comandos de flujo SDD y administración
+├── .resources/               # Subárbol gobernado de contexto reutilizable
+│   ├── constitution.md       # Contrato local de gobernanza
+│   ├── userstories/          # Historias de usuario compartidas
+│   └── workflows/            # Definiciones de interacción de componentes
+├── .specify/                 # Motor Spec-Kit y control de memoria
+│   ├── extensions/git/       # Extensión de automatización de ramas Git
+│   └── memory/versions/      # Version store gobernado de memoria activa
+├── .tasks/                   # Tareas gobernadas del ciclo de vida SDD
+│   └── registry.md           # Registro autoritativo de estados
+├── aoi_apps/
+│   └── agentic-ops-dashboard # Dashboard operativo Nuxt 4 / NuxtUI
+├── scripts/                  # Runtimes y utilidades deterministas
+│   ├── aoi-doctor.mjs        # Motor de diagnóstico 360°
+│   ├── memory-sync/          # Exportación/importación de bundles de memoria
+│   ├── multi-harness/        # Compilador de reglas multi-asistente
+│   ├── sandbox/              # Gestión de sandboxes aisladas
+│   ├── scaffold/             # Validador de paridad de plantilla
+│   ├── sdd-lifecycle/        # Enlazador mecánico y unificador de verificación
+│   ├── spatiotemporal-runtime# Runtime de efectos reversibles (∂Γ)
+│   └── subagent-context/     # Serializador TOON y aislador de contexto
+└── scaffold/                 # Plantilla espejo para bootstrap de nuevos proyectos
+```
+
+---
+
+## 📖 Referencia Rápida de Comandos
+
+| Comando | Descripción |
+| :--- | :--- |
+| `pnpm dev:dashboard` | Inicia el Dashboard de Operaciones en `localhost:3000`. |
+| `pnpm aoi:doctor` | Ejecuta el chequeo integral de salud del repositorio (0 tokens). |
+| `pnpm aoi:sync-rules` | Compila y sincroniza reglas para Copilot, Claude, Cursor, Gemini y Cline. |
+| `pnpm test` | Ejecuta la suite de pruebas automatizadas completa (134 tests). |
+| `pnpm test:parity` | Valida paridad absoluta byte-a-byte entre raíz y `scaffold/`. |
+| `pnpm test:memory-sync` | Prueba el versionado y la importación/exportación de memoria. |
+| `pnpm test:spatiotemporal` | Prueba los efectos reversibles y coefectos en sandboxes. |
+| `bash teardown.sh <ruta>` | Desinstala de forma limpia la infraestructura AOI de un proyecto. |
+
+---
+
+## 📚 Documentación Adicional
+
+- [Fundamentos Matemáticos de Spatiotemporal Runtime](docs/internal/architecture/SPATIOTEMPORAL_MATHEMATICAL_FOUNDATIONS.es.md) — Especificación formal de efectos reversibles ($\partial\Gamma$), coefectos ($\Sigma$) y pruebas de solidez.
+- [Notas de la Versión v2.0.0](docs/internal/releases/v2.0.0.es.md) — Arquitectura de bootstrapper ligero y matriz TanStack.
+- [Matriz de Verificación en el Mundo Real](docs/internal/verification/AOI_REAL_WORLD_VERIFICATION_MATRIX.md) — Protocolo de validación integral.
+- [Benchmark de Optimización de Tokens](docs/internal/benchmarks/TOKEN_OPTIMIZATION_BENCHMARK_v2.0.0.es.md) — Métricas y mediciones de ahorro de tokens.
+- [Guía de Custom Endpoints de VS Code](scaffold/.vscode/README.md) — Configuración opcional multi-proveedor (DeepSeek, Zai, Alibaba, MiniMax, NVIDIA).
+
+---
+
+## 📄 Licencia
+
+MIT © Creado y mantenido con excelencia por el equipo de ingeniería agéntica de **AOI**.
