@@ -922,6 +922,15 @@ print(f'COMPARE_TMPDIR={td}')
     ok "aoi_apps/ replaced with latest scaffold version"
   fi
 
+  # Ensure AOI governed agents, scripts, and instructions override generic specify init outputs
+  if command -v rsync &>/dev/null; then
+    rsync -a "$SCAFFOLD_DIR/.github/" "$PROJECT_PATH/.github/"
+    rsync -a "$SCAFFOLD_DIR/scripts/" "$PROJECT_PATH/scripts/"
+  else
+    cp -R "$SCAFFOLD_DIR/.github/"* "$PROJECT_PATH/.github/" 2>/dev/null || true
+    cp -R "$SCAFFOLD_DIR/scripts/"* "$PROJECT_PATH/scripts/" 2>/dev/null || true
+  fi
+
   ok "Reinstall merge complete"
 
 else

@@ -29,7 +29,6 @@ export const DEFAULT_SYNC_PATHS = [
   'scripts/aoi-doctor.test.mjs',
   'package.json',
   'pnpm-workspace.yaml',
-  '.tasks/registry.md',
   '.resources/constitution.md',
   'AOI_REAL_WORLD_VERIFICATION_MATRIX.md',
   'CLAUDE.md',

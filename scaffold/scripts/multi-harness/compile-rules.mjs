@@ -137,54 +137,48 @@ export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = '
   const targetAll = harnesses.includes('all')
   const shouldCompile = (h) => targetAll || harnesses.includes(h)
   const compiledFiles = []
+  const hasScaffold = fs.existsSync(path.join(repoRoot, 'scaffold'))
+
+  const writeTargetFile = (relPath, content) => {
+    const fullPath = path.join(repoRoot, relPath)
+    fs.mkdirSync(path.dirname(fullPath), { recursive: true })
+    fs.writeFileSync(fullPath, content, 'utf8')
+    compiledFiles.push(fullPath)
+
+    if (hasScaffold) {
+      const scaffoldPath = path.join(repoRoot, 'scaffold', relPath)
+      fs.mkdirSync(path.dirname(scaffoldPath), { recursive: true })
+      fs.writeFileSync(scaffoldPath, content, 'utf8')
+    }
+  }
 
   // 1. Claude Code
   if (shouldCompile('claude')) {
-    const claudePath = path.join(repoRoot, 'CLAUDE.md')
-    fs.writeFileSync(claudePath, generateClaudeMd({ workspace }), 'utf8')
-    compiledFiles.push(claudePath)
+    writeTargetFile('CLAUDE.md', generateClaudeMd({ workspace }))
   }
 
   // 2. Cursor
   if (shouldCompile('cursor')) {
-    const cursorRulesPath = path.join(repoRoot, '.cursorrules')
-    const cursorRulesDir = path.join(repoRoot, '.cursor', 'rules')
-    fs.mkdirSync(cursorRulesDir, { recursive: true })
-    const cursorMdcPath = path.join(cursorRulesDir, 'aoi-rules.mdc')
-
     const content = generateCursorRules({ workspace })
-    fs.writeFileSync(cursorRulesPath, content, 'utf8')
-    fs.writeFileSync(cursorMdcPath, content, 'utf8')
-    compiledFiles.push(cursorRulesPath, cursorMdcPath)
+    writeTargetFile('.cursorrules', content)
+    writeTargetFile('.cursor/rules/aoi-rules.mdc', content)
   }
 
   // 3. Antigravity / Gemini
   if (shouldCompile('antigravity')) {
-    const agentsDir = path.join(repoRoot, '.agents', 'rules')
-    fs.mkdirSync(agentsDir, { recursive: true })
-    const antigravityPath = path.join(agentsDir, 'aoi-rules.md')
-    const agentsMdPath = path.join(repoRoot, 'AGENTS.md')
-
     const content = generateAntigravityRules({ workspace })
-    fs.writeFileSync(antigravityPath, content, 'utf8')
-    fs.writeFileSync(agentsMdPath, content, 'utf8')
-    compiledFiles.push(antigravityPath, agentsMdPath)
+    writeTargetFile('.agents/rules/aoi-rules.md', content)
+    writeTargetFile('AGENTS.md', content)
   }
 
   // 4. Cline / Roo Code
   if (shouldCompile('cline')) {
-    const clinePath = path.join(repoRoot, '.clinerules')
-    fs.writeFileSync(clinePath, generateClineRules({ workspace }), 'utf8')
-    compiledFiles.push(clinePath)
+    writeTargetFile('.clinerules', generateClineRules({ workspace }))
   }
 
   // 5. GitHub Copilot
   if (shouldCompile('copilot')) {
-    const copilotDir = path.join(repoRoot, '.github')
-    fs.mkdirSync(copilotDir, { recursive: true })
-    const copilotPath = path.join(copilotDir, 'copilot-instructions.md')
-    fs.writeFileSync(copilotPath, generateCopilotInstructions({ workspace }), 'utf8')
-    compiledFiles.push(copilotPath)
+    writeTargetFile('.github/copilot-instructions.md', generateCopilotInstructions({ workspace }))
   }
 
   return {

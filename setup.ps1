@@ -1005,9 +1005,15 @@ Write-Header "Phase 3: Agentic Infrastructure"
 Copy-ScaffoldMissing -From $ScaffoldDir -To $ProjectPath
 Write-Ok "Scaffold merged"
 
+# Ensure AOI governed assets override generic specify init outputs
+Copy-Item -LiteralPath (Join-Path $ScaffoldDir ".github\*") -Destination (Join-Path $ProjectPath ".github") -Recurse -Force -ErrorAction SilentlyContinue
+Copy-Item -LiteralPath (Join-Path $ScaffoldDir "scripts\*") -Destination (Join-Path $ProjectPath "scripts") -Recurse -Force -ErrorAction SilentlyContinue
+
 # Replicate scaffold mirror inside target
 $targetScaffoldDir = Join-Path $ProjectPath "scaffold"
 Copy-ScaffoldMissing -From $ScaffoldDir -To $targetScaffoldDir
+Copy-Item -LiteralPath (Join-Path $ScaffoldDir ".github\*") -Destination (Join-Path $targetScaffoldDir ".github") -Recurse -Force -ErrorAction SilentlyContinue
+Copy-Item -LiteralPath (Join-Path $ScaffoldDir "scripts\*") -Destination (Join-Path $targetScaffoldDir "scripts") -Recurse -Force -ErrorAction SilentlyContinue
 Write-Ok "Scaffold mirror preserved in target (scaffold/)"
 
 # Copy pnpm workspace and lock configs
