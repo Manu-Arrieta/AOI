@@ -63,6 +63,37 @@ export function parseMemoirConcepts(stdout: string): MemoirConcept[] {
   return concepts
 }
 
+export function parseMemoirJson(rawJson: string): { concepts: MemoirConcept[]; links: any[] } {
+  try {
+    const data = JSON.parse(rawJson)
+    const rawConcepts = Array.isArray(data.concepts) ? data.concepts : []
+    const rawLinks = Array.isArray(data.links) ? data.links : []
+
+    const concepts: MemoirConcept[] = rawConcepts.map((c: any) => {
+      const name = c.name || c.id || 'Concept'
+      const labels = Array.isArray(c.labels) ? c.labels : []
+      const typeLabel = labels.find((l: string) => l.startsWith('type:'))
+      const category = typeLabel ? typeLabel.split(':')[1] : (labels[0] || 'Architecture')
+      const dependencies = rawLinks
+        .filter((link: any) => link.source === name && (link.relation === 'depends_on' || link.relation === 'part_of'))
+        .map((link: any) => String(link.target))
+
+      return {
+        id: (c.id || name).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        name,
+        category: category.charAt(0).toUpperCase() + category.slice(1),
+        summary: c.definition || 'Architecture concept registered in ICM memoir',
+        dependencies,
+        tags: labels.length > 0 ? labels : ['architecture', 'icm'],
+      }
+    })
+
+    return { concepts, links: rawLinks }
+  } catch {
+    return { concepts: [], links: [] }
+  }
+}
+
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const workspaceRoot = resolveWorkspaceRoot()
@@ -70,8 +101,18 @@ export default defineEventHandler(async (event) => {
   const memoirName = (query.memoir as string) || `${workspaceName}-architecture`
 
   try {
-    const { stdout } = await execFileAsync('icm', ['memoir', 'show', memoirName])
-    let concepts = parseMemoirConcepts(stdout)
+    let concepts: MemoirConcept[] = []
+    let links: any[] = []
+
+    try {
+      const { stdout: jsonStdout } = await execFileAsync('icm', ['memoir', 'export', '-m', memoirName, '-f', 'json'])
+      const parsed = parseMemoirJson(jsonStdout)
+      concepts = parsed.concepts
+      links = parsed.links
+    } catch {
+      const { stdout } = await execFileAsync('icm', ['memoir', 'show', memoirName])
+      concepts = parseMemoirConcepts(stdout)
+    }
 
     // Fallback baseline concepts if memoir is currently empty
     if (concepts.length === 0) {
@@ -117,6 +158,7 @@ export default defineEventHandler(async (event) => {
       memoir: memoirName,
       totalConcepts: concepts.length,
       concepts,
+      links,
     }
   } catch (error: any) {
     return {

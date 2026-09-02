@@ -37,10 +37,16 @@ export const DEFAULT_SYNC_PATHS = [
   '.clinerules',
   '.cursor/rules',
   '.agents/rules',
+  '.agents/skills',
+  '.github/scripts',
+  '.github/skills',
+  'scripts/aoi-headroom-wrap.sh',
+  'scripts/aoi-headroom-wrap.ps1',
   'aoi_apps/agentic-ops-dashboard/app',
   'aoi_apps/agentic-ops-dashboard/server',
   'aoi_apps/agentic-ops-dashboard/shared',
   'aoi_apps/agentic-ops-dashboard/test',
+  'aoi_apps/agentic-ops-dashboard/tsconfig.json',
 ]
 
 /**

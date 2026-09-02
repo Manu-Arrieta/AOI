@@ -5,3 +5,4 @@
 - Persist architecture decisions and facts via `icm store` and `icm facts set "AOI" "key" "value"`.
 - Keep all source code files modular: enforce Single Responsibility Principle (< 300 LOC per file).
 - Run mechanical verification and health checks via `pnpm aoi:doctor` before finalizing changes.
+- Read SDD workflow instructions from `.github/prompts/<command>.prompt.md`.

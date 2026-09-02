@@ -17,15 +17,28 @@ export function parseFactsOutput(stdout: string, defaultEntity: string): FactIte
   const facts: FactItem[] = []
 
   for (const line of lines) {
-    // Expected formats:
-    // 1. "entity.key = value" or "key = value"
-    // 2. "entity : key : value"
-    // 3. "key: value"
+    // Skip header and divider lines from tabular `icm facts list`
+    if (/^key\s+value$/i.test(line) || /^[-=_\s]+$/.test(line)) {
+      continue
+    }
+
     let entity = defaultEntity
     let key = ''
     let value = ''
 
-    if (line.includes('=')) {
+    // 1. Columnar table match (key followed by 2+ spaces and value)
+    const colMatch = line.match(/^(\S+)\s{2,}(.+)$/)
+    if (colMatch) {
+      const fullKey = colMatch[1].trim()
+      value = colMatch[2].trim()
+      const parts = fullKey.split('.')
+      if (parts.length > 1 && parts[0] === defaultEntity) {
+        entity = parts[0]
+        key = parts.slice(1).join('.')
+      } else {
+        key = fullKey
+      }
+    } else if (line.includes('=')) {
       const [left, ...rest] = line.split('=')
       const right = rest.join('=').trim()
       const parts = left.trim().split('.')

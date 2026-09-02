@@ -33,12 +33,13 @@ export const RECOMMENDED_BINARIES = [
  */
 export async function checkBinaries(binaries = [...MANDATORY_BINARIES, ...RECOMMENDED_BINARIES], execFn = execFileAsync) {
   const results = []
+  const whichCmd = process.platform === 'win32' ? 'where' : 'which'
 
   for (const bin of binaries) {
     const isMandatory = MANDATORY_BINARIES.some((m) => m.name === bin.name)
     try {
-      const { stdout } = await execFn('which', [bin.name])
-      const binaryPath = stdout.trim()
+      const { stdout } = await execFn(whichCmd, [bin.name])
+      const binaryPath = stdout.trim().split(/\r?\n/)[0].trim()
       results.push({
         name: bin.name,
         description: bin.description,

@@ -11,3 +11,5 @@
 ## Governance & Quality Gates
 - Execute `pnpm aoi:doctor` to audit repository integrity in 0 tokens.
 - Follow Spec-Driven Development (SDD) lifecycle phases.
+- Headroom is an optional orthogonal compression layer; its absence produces warnings but never blocks execution.
+- SDD workflow prompts are defined in `.github/prompts/<command>.prompt.md` (e.g. `init.prompt.md`, `sdd-new.prompt.md`, `sdd-apply.prompt.md`, `sdd-verify.prompt.md`, `sdd-archive.prompt.md`).

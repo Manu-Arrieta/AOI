@@ -17,7 +17,7 @@
   "servers": {
     "icm": {
       "command": "icm",
-      "args": ["mcp"],
+      "args": ["serve"],
       "tier": 1,
       "description": "Integrated Context Memory (Persistent state & decisions)"
     },

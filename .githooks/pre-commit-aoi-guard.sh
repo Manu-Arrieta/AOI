@@ -21,6 +21,12 @@ set -euo pipefail
 
 AOI_MANAGED_FILES=(
   ".github/copilot-instructions.md"
+  "CLAUDE.md"
+  "AGENTS.md"
+  ".cursorrules"
+  ".cursor/rules/aoi-rules.mdc"
+  ".clinerules"
+  ".agents/rules/aoi-rules.md"
 )
 
 force=0

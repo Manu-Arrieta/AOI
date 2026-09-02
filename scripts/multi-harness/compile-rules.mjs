@@ -43,12 +43,12 @@ icm facts list "${workspace}"             # O(1) exact project facts
 pnpm aoi:doctor                          # 360° Repository health check
 \`\`\`
 
-### SDD Workflow Commands
-- \`/init\` — Bootstrap project, ICM facts, and base project map
-- \`/sdd-new\` — Explore domain, discover services, and author proposal
-- \`/sdd-apply\` — Implement planned tasks with TDD & Fiber sandboxes
-- \`/sdd-verify\` — Verify implementation, test gates, and SRP limits (<300 LOC)
-- \`/sdd-archive\` — Close task, distill patterns, and refresh fast briefings
+### SDD Workflow Commands (Read from .github/prompts/<command>.prompt.md)
+- \`/init\` — Bootstrap project, ICM facts, and base project map (\`.github/prompts/init.prompt.md\`)
+- \`/sdd-new\` — Explore domain, discover services, and author proposal (\`.github/prompts/sdd-new.prompt.md\`)
+- \`/sdd-apply\` — Implement planned tasks with TDD & Fiber sandboxes (\`.github/prompts/sdd-apply.prompt.md\`)
+- \`/sdd-verify\` — Verify implementation, test gates, and SRP limits (<300 LOC) (\`.github/prompts/sdd-verify.prompt.md\`)
+- \`/sdd-archive\` — Close task, distill patterns, and refresh fast briefings (\`.github/prompts/sdd-archive.prompt.md\`)
 `
 }
 
@@ -60,6 +60,7 @@ export function generateCursorRules({ workspace = 'AOI' } = {}) {
 - Persist architecture decisions and facts via \`icm store\` and \`icm facts set "${workspace}" "key" "value"\`.
 - Keep all source code files modular: enforce Single Responsibility Principle (< 300 LOC per file).
 - Run mechanical verification and health checks via \`pnpm aoi:doctor\` before finalizing changes.
+- Read SDD workflow instructions from \`.github/prompts/<command>.prompt.md\`.
 `
 }
 
@@ -77,6 +78,8 @@ export function generateAntigravityRules({ workspace = 'AOI' } = {}) {
 ## Governance & Quality Gates
 - Execute \`pnpm aoi:doctor\` to audit repository integrity in 0 tokens.
 - Follow Spec-Driven Development (SDD) lifecycle phases.
+- Headroom is an optional orthogonal compression layer; its absence produces warnings but never blocks execution.
+- SDD workflow prompts are defined in \`.github/prompts/<command>.prompt.md\` (e.g. \`init.prompt.md\`, \`sdd-new.prompt.md\`, \`sdd-apply.prompt.md\`, \`sdd-verify.prompt.md\`, \`sdd-archive.prompt.md\`).
 `
 }
 
@@ -169,6 +172,21 @@ export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = '
     const content = generateAntigravityRules({ workspace })
     writeTargetFile('.agents/rules/aoi-rules.md', content)
     writeTargetFile('AGENTS.md', content)
+
+    // Sync canonical skills from .github/skills/ into .agents/skills/
+    const githubSkillsDir = path.join(repoRoot, '.github', 'skills')
+    if (fs.existsSync(githubSkillsDir)) {
+      const skills = fs.readdirSync(githubSkillsDir, { withFileTypes: true })
+      for (const s of skills) {
+        if (s.isDirectory()) {
+          const skillFilePath = path.join(githubSkillsDir, s.name, 'SKILL.md')
+          if (fs.existsSync(skillFilePath)) {
+            const skillContent = fs.readFileSync(skillFilePath, 'utf8')
+            writeTargetFile(path.join('.agents', 'skills', s.name, 'SKILL.md'), skillContent)
+          }
+        }
+      }
+    }
   }
 
   // 4. Cline / Roo Code

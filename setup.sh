@@ -342,13 +342,15 @@ if [ -t 0 ] && [ "$AUTO_YES" -eq 0 ] && [ "$SELECTED_HARNESS" = "all" ] && [ -z 
   echo "  3) Claude Code only"
   echo "  4) Cursor only"
   echo "  5) Antigravity / Gemini only"
-  printf "Select [1-5] (default 1): "
+  echo "  6) Cline / Roo Code only"
+  printf "Select [1-6] (default 1): "
   read -r H_CHOICE
   case "$H_CHOICE" in
     2) SELECTED_HARNESS="copilot" ;;
     3) SELECTED_HARNESS="claude" ;;
     4) SELECTED_HARNESS="cursor" ;;
     5) SELECTED_HARNESS="antigravity" ;;
+    6) SELECTED_HARNESS="cline" ;;
     *) SELECTED_HARNESS="all" ;;
   esac
 fi

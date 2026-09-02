@@ -223,6 +223,7 @@ if ($confirm -ne "y" -and $confirm -ne "Y") {
 Write-Header "Removing Infrastructure"
 
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".agent"
+Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".agents"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".specify"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".resources"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".atl"
@@ -230,6 +231,11 @@ Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".conf"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".sandboxes"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".exportsmemories"
 Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath "aoi_apps\agentic-ops-dashboard"
+Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath "scaffold"
+
+if (Test-Path -LiteralPath (Join-Path $ProjectPath ".tasks") -PathType Container) {
+    Write-Ok "Preserved .tasks/ (work history retained for recovery)"
+}
 
 $appsDir = Join-Path $ProjectPath "aoi_apps"
 if (Test-Path -LiteralPath $appsDir -PathType Container) {
@@ -304,6 +310,11 @@ if (Test-Path -LiteralPath $githubDir -PathType Container) {
 }
 
 Remove-IaBaseFile -Root $ProjectPath -RelativePath ".windsurfrules" -Marker "icm"
+Remove-IaBaseFile -Root $ProjectPath -RelativePath "CLAUDE.md" -Marker "AOI"
+Remove-IaBaseFile -Root $ProjectPath -RelativePath "AGENTS.md" -Marker "AOI"
+Remove-IaBaseFile -Root $ProjectPath -RelativePath ".cursorrules" -Marker "AOI"
+Remove-IaBaseFile -Root $ProjectPath -RelativePath ".clinerules" -Marker "AOI"
+Remove-IaBaseFile -Root $ProjectPath -RelativePath ".cursor\rules\aoi-rules.mdc" -Marker "AOI"
 
 # Legacy cleanup: older AOI installs created dashboard workspace files at repo root.
 $runtimePackage = Join-Path $ProjectPath "package.json"

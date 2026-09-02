@@ -81,6 +81,7 @@ remove_dir() {
 }
 
 remove_dir ".agent"
+remove_dir ".agents"
 remove_dir ".specify"
 remove_dir ".resources"
 remove_dir ".atl"
@@ -88,6 +89,11 @@ remove_dir ".conf"
 remove_dir ".sandboxes"
 remove_dir ".exportsmemories"
 remove_dir "aoi_apps/agentic-ops-dashboard"
+remove_dir "scaffold"
+
+if [ -d "$PROJECT_PATH/.tasks" ]; then
+  ok "Preserved .tasks/ (work history retained for recovery)"
+fi
 
 if [ -d "$PROJECT_PATH/aoi_apps" ] && [ -z "$(ls -A "$PROJECT_PATH/aoi_apps" 2>/dev/null)" ]; then
   rm -rf "$PROJECT_PATH/aoi_apps"
@@ -156,6 +162,16 @@ remove_aoi_file() {
 }
 
 remove_aoi_file ".windsurfrules"   "icm"
+remove_aoi_file "CLAUDE.md"        "AOI"
+remove_aoi_file "AGENTS.md"        "AOI"
+remove_aoi_file ".cursorrules"     "AOI"
+remove_aoi_file ".clinerules"      "AOI"
+remove_aoi_file ".cursor/rules/aoi-rules.mdc" "AOI"
+
+if [ -d "$PROJECT_PATH/.cursor/rules" ] && [ -z "$(ls -A "$PROJECT_PATH/.cursor/rules" 2>/dev/null)" ]; then
+  rm -rf "$PROJECT_PATH/.cursor/rules"
+  [ -z "$(ls -A "$PROJECT_PATH/.cursor" 2>/dev/null)" ] && rm -rf "$PROJECT_PATH/.cursor"
+fi
 
 # Legacy cleanup: older AOI installs created dashboard workspace files at repo root.
 if [ -f "$PROJECT_PATH/package.json" ] && grep -q "AOI Agentic Operational Infrastructure Runtime" "$PROJECT_PATH/package.json" 2>/dev/null; then
