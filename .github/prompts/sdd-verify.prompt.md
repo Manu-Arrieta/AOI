@@ -70,7 +70,7 @@ Hand off to **@integration-specialist** with isolated task context (via `node sc
    - **Contract-First**: Read `spec.md` for API contracts defined — verify that interfaces/types/endpoints match the spec. Breaking changes from spec? → WARNING
    Include findings in verify-report under `## Principles Compliance`.
 6. Run `/speckit.checklist` for formal verification
-7. **Mechanical Set Union Consolidation**: When consolidating multiple verification reports (test failures, lint violations, type errors), use deterministic Set Union aggregation (via `node scripts/sdd-lifecycle/mechanical-verify-union.mjs`) instead of paying for an LLM fuser/evaluator step.
+7. **Mechanical Set Union Consolidation**: When consolidating multiple verification reports (test failures, lint violations, type errors, LOC limits, and TDD coverage pairs), use deterministic Set Union aggregation (via `node scripts/sdd-lifecycle/mechanical-verify-union.mjs`) instead of paying for an LLM fuser/evaluator step.
 8. **Spatiotemporal Rollback on Failure (0-Token Reversibility)**: If verification emits `FAIL` or critical defect count > 0, the active Fiber Sandbox executes `recover_Γ` (`sandbox.rollback()`), restoring the workspace state in 0ms and 0 LLM tokens, eliminating context pollution from broken attempts.
 
 ### Step 4: Service Discovery Gate Check
@@ -115,7 +115,12 @@ If there is **no active sandbox**, skip this step — it is not applicable and i
 not a failure. The resulting migration-plan lines feed the Verify Report (Step 7)
 and the `@integration-specialist` rules from Step 3.
 
-### Step 6: ICM Memory Health Audit
+### Step 6: Workspace & ICM Memory Health Audit
+
+Run the automated workspace health diagnostic:
+```bash
+node scripts/aoi-doctor.mjs
+```
 
 ```
 icm_memory_health()
@@ -125,7 +130,7 @@ Check for:
 
 - Topics with 7+ entries needing consolidation → run `icm_memory_consolidate` immediately
 - Stale entries → flag for review
-- Missing critical topics → warn
+- Missing critical topics or facts → warn
 
 ### Step 7: Produce Verify Report
 

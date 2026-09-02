@@ -166,6 +166,70 @@ export function formatUnifiedVerificationReport(unified) {
   return lines.join('\n').trim()
 }
 
+/**
+ * Validates file sizes against Single Responsibility Principle (SRP) limit (<300 LOC).
+ *
+ * @param {string[]} filePaths
+ * @param {number} [maxLines=300]
+ * @returns {Array<{ file: string, lines: number, rule: string }>}
+ */
+export function validateFileSizes(filePaths = [], maxLines = 300) {
+  const violations = []
+
+  for (const file of filePaths) {
+    if (!fs.existsSync(file)) continue
+    try {
+      const content = fs.readFileSync(file, 'utf8')
+      const lines = content.split('\n').length
+      if (lines > maxLines) {
+        violations.push({
+          file,
+          lines,
+          rule: `SRP_LOC_LIMIT: ${lines} lines exceeds maximum allowed of ${maxLines}`,
+        })
+      }
+    } catch {
+      // Ignore unreadable or binary files
+    }
+  }
+
+  return violations
+}
+
+/**
+ * Validates TDD gate compliance by ensuring test files accompany modified source files.
+ *
+ * @param {string[]} sourceFiles
+ * @param {string[]} testFiles
+ * @returns {{ compliant: boolean, missingTests: string[] }}
+ */
+export function validateTddCompliance(sourceFiles = [], testFiles = []) {
+  const codeExtensions = new Set(['.ts', '.js', '.vue', '.jsx', '.tsx', '.py', '.rs', '.go'])
+  const codeFiles = sourceFiles.filter((f) => {
+    const ext = path.extname(f)
+    return codeExtensions.has(ext) && !f.includes('.test.') && !f.includes('.spec.')
+  })
+
+  if (codeFiles.length === 0) {
+    return { compliant: true, missingTests: [] }
+  }
+
+  const missingTests = []
+  const testBasenames = new Set(testFiles.map((t) => path.basename(t).replace(/\.(test|spec)\.[^.]+$/, '')))
+
+  for (const src of codeFiles) {
+    const srcBase = path.basename(src).replace(/\.[^.]+$/, '')
+    if (!testBasenames.has(srcBase)) {
+      missingTests.push(src)
+    }
+  }
+
+  return {
+    compliant: missingTests.length === 0,
+    missingTests,
+  }
+}
+
 // CLI Execution
 export async function main() {
   const args = process.argv.slice(2)

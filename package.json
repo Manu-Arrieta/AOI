@@ -18,7 +18,10 @@
     "test:sdd-lifecycle": "node --test scripts/sdd-lifecycle/*.test.mjs",
     "test:spatiotemporal": "node --test scripts/spatiotemporal-runtime/*.test.mjs",
     "test:mcp-gateway": "node --test scripts/mcp-gateway/*.test.mjs",
+    "doctor": "node scripts/aoi-doctor.mjs",
+    "aoi:doctor": "node scripts/aoi-doctor.mjs",
+    "test:doctor": "node --test scripts/aoi-doctor.test.mjs",
     "test:parity": "node scripts/scaffold/validate-scaffold-parity.mjs && node --test scripts/scaffold/*.test.mjs",
-    "test": "pnpm test:parity && pnpm test:memory-sync && pnpm test:memory-sync:bundle && pnpm test:subagent-payload && pnpm test:sdd-lifecycle && pnpm test:spatiotemporal && pnpm test:mcp-gateway && pnpm test:dashboard"
+    "test": "pnpm test:parity && pnpm test:doctor && pnpm test:memory-sync && pnpm test:memory-sync:bundle && pnpm test:subagent-payload && pnpm test:sdd-lifecycle && pnpm test:spatiotemporal && pnpm test:mcp-gateway && pnpm test:dashboard"
   }
 }

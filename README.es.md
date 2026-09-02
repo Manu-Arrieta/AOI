@@ -206,11 +206,18 @@ La estructura se gobierna mediante:
 - autoridad raíz: `.specify/memory/constitution.md`
 - contrato local del subárbol: `.resources/constitution.md`
 
-Comandos administrativos:
+Comandos administrativos y utilidades:
 
 - `/new-resource-folder` — crea una carpeta gobernada dentro de `.resources/`
 - `/move-resource-folder` — mueve una carpeta gobernada dentro de `.resources/`
 - `/delete-resource-folder` — elimina una carpeta gobernada dentro de `.resources/`
+- `node scripts/sdd-lifecycle/link-resources.mjs` — validador y auto-enlazador de recursos en `relations.json`
+
+## Diagnóstico y Salud del Workspace (AOI Doctor)
+
+AOI incluye un motor de diagnóstico integral 360° determinista que verifica la salud del repositorio en 0 ms y sin consumir tokens de IA:
+
+- `pnpm aoi:doctor` (o `pnpm doctor`) — ejecuta la auditoría de binarios CLI (`icm`, `rtk`, `headroom`, etc.), integridad de base de datos SQLite de ICM, registro `.tasks/registry.md`, gobernanza de versionado activo `.specify/` y paridad 1:1 de `scaffold/`.
 
 ## Runtime Interno del Dashboard
 

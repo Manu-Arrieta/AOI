@@ -1222,4 +1222,5 @@ Write-Host "    5. Start your first cycle: /sdd-new"
 if (Test-Path -LiteralPath (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\package.json") -PathType Leaf) {
     Write-Host "    6. Start the dashboard runtime: pnpm --dir aoi_apps/agentic-ops-dashboard dev"
 }
+Write-Host "    7. Verify workspace health: pnpm aoi:doctor"
 Write-Host ""

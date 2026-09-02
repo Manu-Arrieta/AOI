@@ -98,6 +98,12 @@ If the Owner explicitly links one or more files under `.resources/`, you MUST
 create or update `.tasks/{feature-name}/TASK-YYYY-NNN/relations.json` after the
 task directory exists.
 
+Use the automated helper to validate paths and avoid manual formatting errors:
+```bash
+node scripts/sdd-lifecycle/link-resources.mjs --task-dir .tasks/{feature-name}/TASK-YYYY-NNN --story "userstories/{file}.md"
+```
+
+Canonical format:
 ```json
 {
   "userstories": [],

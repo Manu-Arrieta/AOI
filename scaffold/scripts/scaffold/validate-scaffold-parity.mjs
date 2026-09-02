@@ -4,8 +4,8 @@
  *
  * Validates Principle I (Scaffold Mirror Integrity):
  * Ensures that all governed directories (.github/instructions, .github/agents,
- * .github/prompts, scripts/, dashboard components, server, shared) have
- * 100% byte-for-byte parity between root and scaffold/.
+ * .github/prompts, scripts/, dashboard components, server, shared) and governed
+ * root files have 100% byte-for-byte parity between root and scaffold/.
  */
 
 import fs from 'node:fs'
@@ -23,13 +23,16 @@ export const DEFAULT_SYNC_PATHS = [
   'scripts/memory-sync',
   'scripts/sdd-lifecycle',
   'scripts/mcp-gateway',
+  'scripts/aoi-doctor.mjs',
+  'scripts/aoi-doctor.test.mjs',
+  'package.json',
   'aoi_apps/agentic-ops-dashboard/app',
   'aoi_apps/agentic-ops-dashboard/server',
   'aoi_apps/agentic-ops-dashboard/shared',
 ]
 
 /**
- * Recursively collects all relative file paths inside a directory.
+ * Recursively collects all relative file paths inside a directory or single file.
  * @param {string} baseDir
  * @param {string} [relDir='']
  * @returns {string[]}
@@ -37,6 +40,11 @@ export const DEFAULT_SYNC_PATHS = [
 export function collectFilePaths(baseDir, relDir = '') {
   const currentDir = path.join(baseDir, relDir)
   if (!fs.existsSync(currentDir)) return []
+
+  const stat = fs.statSync(currentDir)
+  if (stat.isFile()) {
+    return ['']
+  }
 
   const entries = fs.readdirSync(currentDir, { withFileTypes: true })
   let files = []
@@ -64,7 +72,7 @@ export function collectFilePaths(baseDir, relDir = '') {
 }
 
 /**
- * Verifies parity for a list of relative directory paths between root and scaffold.
+ * Verifies parity for a list of relative directory paths or files between root and scaffold.
  *
  * @param {string} repoRoot
  * @param {string[]} pathsToCheck

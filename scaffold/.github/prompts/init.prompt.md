@@ -307,7 +307,12 @@ framework roots, confirm with the Owner, then write the map.
    icm_memoir_add_concept(memoir: "{WORKSPACE}-architecture", name: "BaseProjectMap", ...)
    ```
 
-### Step 18: Summary
+### Step 18: Summary & Workspace Health Diagnostic
+
+Run the automated 360° health diagnostic:
+```bash
+node scripts/aoi-doctor.mjs
+```
 
 Present a comprehensive checklist:
 
@@ -315,6 +320,9 @@ Present a comprehensive checklist:
 ✅ Workspace: {name}
 ✅ Stack: {languages} / {frameworks} / {packageManager}
 ✅ ICM: bootstrapped ({WORKSPACE}-context + {WORKSPACE}-architecture)
+✅ Facts: exact configuration keys registered
+✅ Briefing: fast wake-up pack generated
+✅ AOI Doctor: 360° health diagnostic PASSED
 ✅ Directories: .tasks/ .sandboxes/ .resources/
 ✅ spec-kit: Copilot integration installed
 ✅ Constitution: {found|generated}

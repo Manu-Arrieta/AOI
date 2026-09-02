@@ -1140,4 +1140,5 @@ echo "    4. Start your first cycle: /sdd-new"
 if [ -f "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/package.json" ]; then
   echo "    5. Start the dashboard runtime: pnpm --dir aoi_apps/agentic-ops-dashboard dev"
 fi
+echo "    6. Verify workspace health: pnpm aoi:doctor"
 echo ""
