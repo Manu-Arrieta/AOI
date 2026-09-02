@@ -37,7 +37,7 @@ grep -l "nuxt\|next\|react\|vue\|angular\|svelte\|express\|fastapi\|django\|gin"
 
 Present findings: "Detected stack: {languages}, {frameworks}, {packageManager}."
 
-### Step 3: ICM Bootstrap
+### Step 3: ICM Bootstrap (5-Method Protocol v4)
 
 Initialize project memory:
 
@@ -45,13 +45,22 @@ Initialize project memory:
 icm_memory_store(
   topic: "{WORKSPACE}-context",
   importance: "critical",
-  content: "## Project: {WORKSPACE}\n**Stack**: {detected stack}\n**Architecture**: {detected or TBD}\n**Team**: {ask user}\n**Conventions**: {from constitution or TBD}\n**ICM Protocol**: v3\n**SDD Version**: scaffold-based"
+  content: "## Project: {WORKSPACE}\n**Stack**: {detected stack}\n**Architecture**: {detected or TBD}\n**Team**: {ask user}\n**Conventions**: {from constitution or TBD}\n**ICM Protocol**: v4 (Memories, Memoirs, Facts, Feedback, Transcripts)\n**SDD Version**: scaffold-based"
 )
+```
+
+Initialize deterministic exact facts:
+
+```bash
+icm facts set "{WORKSPACE}.stack.languages" "{detected languages}"
+icm facts set "{WORKSPACE}.stack.frameworks" "{detected frameworks}"
+icm facts set "{WORKSPACE}.stack.packageManager" "{detected packageManager}"
+icm facts set "{WORKSPACE}.icm.protocol" "v4"
 ```
 
 Create the architecture memoir:
 
-```
+```bash
 icm learn
 ```
 
@@ -59,6 +68,12 @@ Or via MCP:
 
 ```
 icm_memoir_create(name: "{WORKSPACE}-architecture", description: "Architecture knowledge graph for {WORKSPACE}")
+```
+
+Generate initial fast wake-up briefing:
+
+```bash
+icm briefing --project "{WORKSPACE}"
 ```
 
 ### Step 4: Verify Directory Structure

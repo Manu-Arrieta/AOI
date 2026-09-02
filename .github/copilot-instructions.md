@@ -25,6 +25,8 @@ Do NOT store: trivial details, info already in copilot-instructions.md, ephemera
 
 ### Other commands
 ```bash
+icm facts set "{project}" "key" "value"  # deterministic exact fact (O(1))
+icm wake-up                              # instant critical facts pack
 icm update <id> -c "updated content"     # edit memory in-place
 icm health                                # topic hygiene audit
 icm topics                                # list all topics

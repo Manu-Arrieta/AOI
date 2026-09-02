@@ -11,17 +11,24 @@ Start a new Spec-Driven Development cycle for a feature or change.
 
 You are the @supervisor. Execute these steps IN ORDER.
 
-### Step 1: Detect Workspace + Recall Context
+### Step 1: Detect Workspace + Instant Wake-Up Context
 
 ```bash
 WORKSPACE=$(basename "$(git remote get-url origin 2>/dev/null | sed 's/.git$//')" 2>/dev/null || basename "$PWD")
 ```
 
-```
-icm_memory_recall(query: "project context stack conventions", topic: "{WORKSPACE}-context")
-icm_memoir_search(memoir: "{WORKSPACE}-architecture", query: "current architecture")
-icm_feedback_search(query: "requirements specification")
-```
+1. **Instant Briefing & Facts (0 ms Latency)**:
+   ```bash
+   icm wake-up
+   icm facts list "{WORKSPACE}"
+   ```
+
+2. **Recall Additional Specific Context**:
+   ```
+   icm_memory_recall(query: "project context stack conventions", topic: "{WORKSPACE}-context")
+   icm_memoir_search(memoir: "{WORKSPACE}-architecture", query: "current architecture")
+   icm_feedback_search(query: "requirements specification")
+   ```
 
 > **Headroom mandatory policy.** Any Copilot CLI invocation in this workspace MUST be routed through `bash scripts/aoi-headroom-wrap.sh` (or the `aoi-copilot` shim) so the call exits via `headroom wrap copilot --subscription`. Direct `copilot` invocations are forbidden by AOI bootstrap. The wrapper refuses to run when `headroom` is missing.
 
@@ -49,13 +56,23 @@ Record every user message and agent response during this phase. Transcripts capt
 
 ### Step 4: Service Discovery Gate (MANDATORY)
 
-Before exploring the requirement, search for existing services:
+Before exploring the requirement, check exact facts and search for existing services:
+
+```bash
+icm facts list "{WORKSPACE}.service"
+icm facts list "{WORKSPACE}.endpoint"
+```
 
 ```
 icm_memory_recall(query: "services composables endpoints", topic: "{WORKSPACE}-services-catalog")
 ```
 
-Also scan the codebase for existing services, composables, utils, API endpoints that may be relevant. Persist any discoveries:
+Also scan the codebase for existing services, composables, utils, API endpoints that may be relevant. Persist any discoveries as exact facts and in the services catalog:
+
+```bash
+icm facts set "{WORKSPACE}.service.{name}" "{path/to/service}"
+icm facts set "{WORKSPACE}.endpoint.{operationId}" "{METHOD} {/path}"
+```
 
 ```
 icm_memory_store(
@@ -152,4 +169,3 @@ Present the proposal to the Owner. Ask:
 
 **The change to start is:**
 {{input}}
-

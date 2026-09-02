@@ -77,7 +77,7 @@ Execute implementation tasks from `implementation-plan.md` in dependency order:
    - Maintain file sizes <300 LOC (SRP).
    - Never commit hardcoded secrets or bypass type safety.
 
-### Step 4: ICM Progress Tracking
+### Step 4: ICM Progress & Facts Tracking
 
 Every 3-5 completed sub-tasks, persist progress:
 
@@ -89,7 +89,15 @@ icm_memory_store(
 )
 ```
 
-On errors/discoveries, store immediately with `importance: "high"`.
+**Register Exact Facts for Discovered/Created Components**:
+When a new service, route, endpoint, or environment variable is added or modified:
+```bash
+icm facts set "{WORKSPACE}.service.{name}" "{service_path}"
+icm facts set "{WORKSPACE}.endpoint.{operationId}" "{METHOD} {/path}"
+icm facts set "{WORKSPACE}.config.{key}" "{value}"
+```
+
+On errors/discoveries, store immediately in ICM with `importance: "high"`.
 
 ### Step 5: Implementation Checkpoint
 

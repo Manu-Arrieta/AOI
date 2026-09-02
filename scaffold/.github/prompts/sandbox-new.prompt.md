@@ -17,7 +17,7 @@ existing sandbox to add a compartment, which triggers a MINOR constitution bump.
 
 You are the @supervisor. Execute these steps IN ORDER.
 
-### Step 1: Detect Workspace + Recall
+### Step 1: Detect Workspace + Recall (Sandbox Isolation)
 
 ```bash
 WORKSPACE=$(basename "$(git remote get-url origin 2>/dev/null | sed 's/.git$//')" 2>/dev/null || basename "$PWD")
@@ -27,6 +27,8 @@ WORKSPACE=$(basename "$(git remote get-url origin 2>/dev/null | sed 's/.git$//')
 icm_memory_recall(query: "context conventions", topic: "{WORKSPACE}-context")
 icm_memory_recall(query: "sandbox compartments constitution", topic: "sandbox-{WORKSPACE}-{name}")
 ```
+
+> **ICM Sandbox Isolation Policy (MANDATORY)**: When running exploratory code, evaluations, or benchmarks inside `.sandboxes/{name}/`, export `ICM_READONLY=1` or pass `--read-only` to prevent accidental mutation of the core project memory database. All sandbox writes MUST strictly target `sandbox-{WORKSPACE}-{name}` topics.
 
 ### Step 2: Detect Branch — CREATE vs EVOLVE (OQ-3)
 

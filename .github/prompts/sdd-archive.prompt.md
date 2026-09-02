@@ -1,11 +1,11 @@
 ---
-description: "Formally close a task: consolidate ICM, generate docs, produce archive report, record transcript."
+description: "Formally close a task: distill & consolidate ICM, generate docs, produce archive report, record transcript, refresh briefing."
 agent: "agent"
 ---
 
 # /sdd-archive — Formal Closure
 
-Formally close a completed task: consolidate memory, generate documentation, produce archive report.
+Formally close a completed task: distill permanent knowledge, consolidate episodic memory, generate documentation, produce archive report, and refresh project briefing.
 
 ## Instructions
 
@@ -55,27 +55,36 @@ Hand off to **@documentation-analyst**:
 2. Produce `functional-docs.md` — end-user documentation, non-technical language
 3. Cover: what was implemented, how to use it, edge cases, screenshots if applicable
 
-### Step 5: ICM Consolidation
+### Step 5: Knowledge Distillation & ICM Consolidation
 
-Consolidate all memories for this task:
+1. **Distill Permanent Knowledge to Graph (MANDATORY)**:
+   Extract architectural patterns and distill concepts before consolidating episodic memory:
+   ```bash
+   icm extract-patterns -t "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN" -m "{WORKSPACE}-architecture"
+   icm memoir distill -t "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN" -m "{WORKSPACE}-architecture"
+   ```
 
-```
-icm_memory_consolidate(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN")
-```
+2. **Consolidate Episodic Memories for this task**:
+   ```
+   icm_memory_consolidate(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN")
+   ```
 
-Also consolidate progress sub-topic if it exists:
+3. Also consolidate progress sub-topic if it exists:
+   ```
+   icm_memory_consolidate(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN-apply-progress")
+   ```
 
-```
-icm_memory_consolidate(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN-apply-progress")
-```
+### Step 6: Memoir Export & Refresh Project Briefing
 
-### Step 6: Memoir Export
+1. Export architecture knowledge for long-term preservation:
+   ```
+   icm_memoir_export(memoir: "{WORKSPACE}-architecture", format: "ai")
+   ```
 
-Export architecture knowledge for long-term preservation:
-
-```
-icm_memoir_export(memoir: "{WORKSPACE}-architecture", format: "ai")
-```
+2. **Regenerate Fast Wake-Up Briefing**:
+   ```bash
+   icm briefing --project "{WORKSPACE}"
+   ```
 
 ### Step 7: Feedback Review
 
@@ -126,8 +135,8 @@ Write `.tasks/{feature-name}/TASK-YYYY-NNN/archive-report.md`:
 - **Security**: {threats identified in /sdd-new, mitigations applied}
 - **Observability**: {logs/metrics/traces configured, dashboards/alerts if any}
 
-## Services Discovered/Created
-- {service path}: {what it does}
+## Services & Facts Created/Discovered
+- {service path}: {what it does} (Facts recorded: {fact keys})
 
 ## Lessons Learned
 - {learning 1}
@@ -135,7 +144,9 @@ Write `.tasks/{feature-name}/TASK-YYYY-NNN/archive-report.md`:
 
 ## ICM State
 - Memories: consolidated
-- Memoirs: updated
+- Memoirs: distilled & updated ({WORKSPACE}-architecture)
+- Facts: registered exact keys
+- Briefing: refreshed ({WORKSPACE})
 - Feedback: {N} corrections applied
 - Transcripts: Explore + Archive sessions recorded
 
@@ -146,7 +157,11 @@ Write `.tasks/{feature-name}/TASK-YYYY-NNN/archive-report.md`:
 ### Step 9: Update Registry + Close
 
 1. Update `.tasks/registry.md`: status → `📦 Archivado`, set Closed date
-2. Persist final summary in ICM:
+2. Register closure fact in deterministic store:
+   ```bash
+   icm facts set "{WORKSPACE}.task.TASK-YYYY-NNN.status" "archived"
+   ```
+3. Persist final summary in ICM:
    ```
    icm_memory_store(
      topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN",

@@ -75,7 +75,7 @@ Límite de documentación:
 | Herramienta             | Propósito                                  | macOS / Linux                                        | Windows 11+                                                       |
 | ----------------------- | ------------------------------------------ | ---------------------------------------------------- | ----------------------------------------------------------------- |
 | **RTK**                 | Optimización de tokens (60-90%)            | `brew install rtk`                                   | Binario desde GitHub Releases vía `setup.ps1`                     |
-| **ICM**                 | Memoria persistente (4 métodos)            | `brew tap rtk-ai/tap && brew install icm`            | `install.ps1` oficial vía `setup.ps1`                             |
+| **ICM**                 | Memoria persistente (5 métodos)            | `brew tap rtk-ai/tap && brew install icm`            | `install.ps1` oficial vía `setup.ps1`                             |
 | **Headroom**            | Capa de compresión CLI (60-95%)            | `bash scripts/install-headroom.sh --yes`             | `powershell scripts/install-headroom.ps1 -Yes`                    |
 | **Codebase Memory MCP** | Inteligencia estructural de código / grafo | `bash scripts/install-codebase-memory.sh --ui --yes` | `powershell scripts/install-codebase-memory.ps1 -Yes -Variant ui` |
 | **Specify CLI**         | Ciclo de vida de Spec-Driven Development   | `uv tool install specify-cli`                        | `winget install --id astral-sh.uv -e` + `uv tool install ...`     |
@@ -143,7 +143,7 @@ El runtime del dashboard también es obligatorio. El setup ya no saltea su boots
 │   ├── sync-workspace-memory.prompt.md # /sync-workspace-memory — importación gobernada de memoria
 │   └── rollback-workspace-memory.prompt.md # /rollback-workspace-memory — restauración de la versión previa
 └── instructions/ # Reglas siempre cargadas
-  ├── icm-protocol.instructions.md # Cumplimiento ICM de 4 métodos
+  ├── icm-protocol.instructions.md # Cumplimiento ICM de 5 métodos (v4)
     └── model-selection.instructions.md # Política obligatoria de selección de modelo
 ```
 
@@ -307,17 +307,18 @@ Superficie determinística de scripts:
 - `pnpm test:memory-sync:bundle` — valida el contrato bundle portable, el flujo
   de exportación/importación y la preservación del lifecycle
 
-## ICM — 4 Métodos de Memoria
+## ICM — 5 Métodos de Memoria (v4)
 
-Todos los agentes usan [ICM](https://github.com/rtk-ai/icm) con cuatro métodos
+Todos los agentes usan [ICM](https://github.com/rtk-ai/icm) con cinco métodos
 complementarios:
 
-| Método                              | Qué hace                                   | Cuándo                                            |
-| ----------------------------------- | ------------------------------------------ | ------------------------------------------------- |
-| **Memories** (episódica)            | Guardar/recuperar con decaimiento temporal | En cada fase: decisiones, progreso y contexto     |
-| **Memoirs** (grafo de conocimiento) | Conceptos y relaciones permanentes         | Decisiones de arquitectura, grafos de componentes |
-| **Feedback** (correcciones)         | Aprender de errores                        | Fase de Verify, post-implementación               |
-| **Transcripts** (verbatim)          | Captura el replay crudo de la sesión       | Fases de Explore y Archive                        |
+| Método                              | Qué hace                                           | Cuándo                                            |
+| ----------------------------------- | -------------------------------------------------- | ------------------------------------------------- |
+| **Memories** (episódica)            | Guardar/recuperar con decaimiento temporal         | En cada fase: decisiones, progreso y contexto     |
+| **Memoirs** (grafo de conocimiento) | Conceptos y relaciones permanentes                 | Decisiones de arquitectura, grafos de componentes |
+| **Facts** (hechos exactos)          | Tripletas exactas (E-K-V) con historial activo     | Configs, endpoints, puertos, flags deterministas  |
+| **Feedback** (correcciones)         | Aprender de errores y asunciones fallidas          | Fase de Verify, post-implementación               |
+| **Transcripts** (verbatim)          | Captura el replay crudo y sesiones completas       | Fases de Explore y Archive                        |
 
 No se pierde contexto entre sesiones.
 

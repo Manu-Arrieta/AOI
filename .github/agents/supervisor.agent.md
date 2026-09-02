@@ -48,7 +48,7 @@ Load agent roster from `.github/agents/` to discover available agents and their 
 2. **Recall** ICM context before any work begins (session start protocol)
 3. **Route** to the right agent for each SDD phase
 4. **Validate** deliverables at phase boundaries (gates)
-5. **Persist** all context in ICM (4 methods: Memories, Memoirs, Feedback, Transcripts)
+5. **Persist** all context in ICM (5 methods: Memories, Memoirs, Facts, Feedback, Transcripts)
 6. **Enforce** quality gates between SDD phases
 7. **Consolidate** topics when 7+ entries accumulate
 
