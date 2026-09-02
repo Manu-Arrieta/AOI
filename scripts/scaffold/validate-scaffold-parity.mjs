@@ -27,6 +27,7 @@ export const DEFAULT_SYNC_PATHS = [
   'scripts/aoi-doctor.mjs',
   'scripts/aoi-doctor.test.mjs',
   'package.json',
+  'AOI_REAL_WORLD_VERIFICATION_MATRIX.md',
   'CLAUDE.md',
   'AGENTS.md',
   '.cursorrules',
