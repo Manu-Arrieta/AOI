@@ -236,6 +236,8 @@ scaffold/aoi_apps/agentic-ops-dashboard/package.json
 - El dashboard lee `.tasks/registry.md`, los directorios de artefactos de
   tareas y el subárbol opcional `.resources/` como snapshot autoritativo del
   workspace.
+- **Vistas Operativas**: Tablero Kanban de Tareas, Matriz TanStack, Explorador de Recursos, **Grafo de Conocimiento (Memoirs)**, **Explorador de Facts (O(1))** y **Telemetría de Tokens**.
+- **Badge de Salud 360°**: Semáforo interactivo de AOI Doctor en la cabecera con modal de diagnóstico detallado.
 - Los vínculos explícitos entre tareas y recursos se guardan junto a los
   artefactos en `.tasks/{feature}/TASK-YYYY-NNN/relations.json`.
 - Las escrituras del servidor quedan limitadas a mutaciones gobernadas dentro
@@ -251,8 +253,8 @@ scaffold/aoi_apps/agentic-ops-dashboard/package.json
 
 Comandos del runtime:
 
-- `pnpm --dir aoi_apps/agentic-ops-dashboard dev` — corre el dashboard interno localmente
-- `pnpm --dir aoi_apps/agentic-ops-dashboard test` — ejecuta la suite de validación del dashboard
+- `pnpm --dir aoi_apps/agentic-ops-dashboard dev` (o `pnpm dev:dashboard`) — corre el dashboard interno localmente
+- `pnpm --dir aoi_apps/agentic-ops-dashboard test` (o `pnpm test:dashboard`) — ejecuta la suite de validación del dashboard
 - `pnpm --dir aoi_apps/agentic-ops-dashboard exec nuxt prepare` — genera los tipos de Nuxt para el runtime
 - `pnpm --dir aoi_apps/agentic-ops-dashboard build` — compila el dashboard para chequeos de smoke
 

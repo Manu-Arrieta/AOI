@@ -33,7 +33,7 @@ const {
 
 const { locale, messages, setLocale } = useLocale()
 
-type WorkspaceView = 'tasks' | 'table' | 'resources' | 'metrics'
+type WorkspaceView = 'tasks' | 'table' | 'resources' | 'memoir' | 'facts' | 'metrics'
 
 const dialogMode       = ref<'create' | 'move' | 'delete' | null>(null)
 const dialogAnchorPath = ref('.resources')
@@ -107,6 +107,16 @@ const workspaceViewItems = computed(() => [
     badge: resourceRoots.value,
   },
   {
+    label: messages.value.memoir.title,
+    value: 'memoir',
+    icon: 'i-lucide-network',
+  },
+  {
+    label: messages.value.facts.title,
+    value: 'facts',
+    icon: 'i-lucide-database',
+  },
+  {
     label: messages.value.tokenMetrics.title,
     value: 'metrics',
     icon: 'i-lucide-chart-no-axes-column',
@@ -121,6 +131,20 @@ const activeWorkspaceViewMeta = computed(() => {
       badge:   tokenUsageSummary.value?.status === 'disabled'
         ? messages.value.tokenMetrics.statusDisabled
         : `${tokenUsageSummary.value?.totals.requestCount ?? 0} ${messages.value.tokenMetrics.requests}`,
+    }
+  }
+  if (activeWorkspaceView.value === 'memoir') {
+    return {
+      eyebrow: messages.value.memoir.eyebrow,
+      title:   messages.value.memoir.title,
+      badge:   'ICM Memoir',
+    }
+  }
+  if (activeWorkspaceView.value === 'facts') {
+    return {
+      eyebrow: messages.value.facts.eyebrow,
+      title:   messages.value.facts.title,
+      badge:   'ICM Facts (O(1))',
     }
   }
   if (activeWorkspaceView.value === 'resources') {
@@ -343,6 +367,7 @@ watch(activeWorkspaceView, (view) => {
         </template>
 
         <template #right>
+          <DoctorHealthBadge />
           <UButton
             v-if="selectedTask"
             color="neutral"
@@ -446,6 +471,14 @@ watch(activeWorkspaceView, (view) => {
                 @create="openResourceDialog('create', $event)"
                 @move="openResourceDialog('move', $event)"
                 @delete="openResourceDialog('delete', $event)"
+              />
+
+              <MemoirGraphViewer
+                v-else-if="activeWorkspaceView === 'memoir'"
+              />
+
+              <FactsExplorer
+                v-else-if="activeWorkspaceView === 'facts'"
               />
 
               <TokenUsagePanel
