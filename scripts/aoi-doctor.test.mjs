@@ -6,6 +6,7 @@ import { describe, it } from 'node:test'
 import {
   checkBinaries,
   checkMemoryGovernance,
+  checkMultiHarnessRules,
   checkResourcesStructure,
   checkTaskRegistry,
   runAoiDoctor,
@@ -95,6 +96,19 @@ describe('aoi-doctor unit tests', () => {
 
     const res = checkResourcesStructure(tmpDir)
     assert.equal(res.status, 'PASSED')
+
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+  })
+
+  it('checkMultiHarnessRules verifies active harness rule files', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-doctor-harness-'))
+    const failRes = checkMultiHarnessRules(tmpDir)
+    assert.equal(failRes.status, 'WARNING')
+
+    fs.writeFileSync(path.join(tmpDir, 'CLAUDE.md'), '# Claude')
+    const passRes = checkMultiHarnessRules(tmpDir)
+    assert.equal(passRes.status, 'PASSED')
+    assert.ok(passRes.details.includes('Claude'))
 
     fs.rmSync(tmpDir, { recursive: true, force: true })
   })

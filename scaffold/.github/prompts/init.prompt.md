@@ -309,6 +309,12 @@ framework roots, confirm with the Owner, then write the map.
 
 ### Step 18: Summary & Workspace Health Diagnostic
 
+Compile and synchronize multi-harness instruction adapters:
+```bash
+node scripts/multi-harness/compile-rules.mjs --harness "all" --workspace "$WORKSPACE"
+icm facts set "$WORKSPACE" "harness.selected" "all"
+```
+
 Run the automated 360° health diagnostic:
 ```bash
 node scripts/aoi-doctor.mjs
@@ -322,6 +328,7 @@ Present a comprehensive checklist:
 ✅ ICM: bootstrapped ({WORKSPACE}-context + {WORKSPACE}-architecture)
 ✅ Facts: exact configuration keys registered
 ✅ Briefing: fast wake-up pack generated
+✅ Multi-Harness: rules compiled for all target assistants (Copilot, Claude, Cursor, Antigravity, Cline)
 ✅ AOI Doctor: 360° health diagnostic PASSED
 ✅ Directories: .tasks/ .sandboxes/ .resources/
 ✅ spec-kit: Copilot integration installed

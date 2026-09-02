@@ -206,6 +206,30 @@ export function checkResourcesStructure(repoRoot) {
 }
 
 /**
+ * Validates multi-harness rules presence.
+ */
+export function checkMultiHarnessRules(repoRoot) {
+  const harnesses = [
+    { name: 'Copilot', file: '.github/copilot-instructions.md' },
+    { name: 'Claude', file: 'CLAUDE.md' },
+    { name: 'Cursor', file: '.cursorrules' },
+    { name: 'Antigravity', file: 'AGENTS.md' },
+    { name: 'Cline', file: '.clinerules' },
+  ]
+  const present = harnesses.filter((h) => fs.existsSync(path.join(repoRoot, h.file)))
+  if (present.length === 0) {
+    return {
+      status: 'WARNING',
+      details: 'No multi-harness instruction adapters found. Run `pnpm aoi:sync-rules` to compile.',
+    }
+  }
+  return {
+    status: 'PASSED',
+    details: `${present.length} harness adapter(s) active (${present.map((h) => h.name).join(', ')})`,
+  }
+}
+
+/**
  * Runs full 360° diagnostic check.
  */
 export async function runAoiDoctor(options = {}) {
@@ -217,6 +241,7 @@ export async function runAoiDoctor(options = {}) {
   const registryCheck = checkTaskRegistry(repoRoot)
   const governanceCheck = checkMemoryGovernance(repoRoot)
   const resourcesCheck = checkResourcesStructure(repoRoot)
+  const harnessCheck = checkMultiHarnessRules(repoRoot)
 
   let parityCheck
   try {
@@ -244,6 +269,7 @@ export async function runAoiDoctor(options = {}) {
     { category: 'Memory Engine', name: 'ICM Doctor & DB Integrity', status: icmCheck.status, details: icmCheck.details, mandatory: true },
     { category: 'SDD Lifecycle', name: 'Task Registry (.tasks/registry.md)', status: registryCheck.status, details: registryCheck.details, mandatory: true },
     { category: 'Governance', name: 'Memory Versioning (active.json)', status: governanceCheck.status, details: governanceCheck.details, mandatory: true },
+    { category: 'Multi-Harness', name: 'AI Assistant Rules & Adapters', status: harnessCheck.status, details: harnessCheck.details, mandatory: false },
     { category: 'Scaffold Mirror', name: 'Root <-> Scaffold Parity', status: parityCheck.status, details: parityCheck.details, mandatory: true },
     { category: 'Resources', name: '.resources/ Subtree', status: resourcesCheck.status, details: resourcesCheck.details, mandatory: false },
   ]

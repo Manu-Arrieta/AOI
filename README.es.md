@@ -219,6 +219,22 @@ AOI incluye un motor de diagnóstico integral 360° determinista que verifica la
 
 - `pnpm aoi:doctor` (o `pnpm doctor`) — ejecuta la auditoría de binarios CLI (`icm`, `rtk`, `headroom`, etc.), integridad de base de datos SQLite de ICM, registro `.tasks/registry.md`, gobernanza de versionado activo `.specify/` y paridad 1:1 de `scaffold/`.
 
+## Compilador y Soporte Multi-Harness
+
+AOI mantiene como **única fuente de verdad** las instrucciones canónicas en `.github/instructions/` y compila automáticamente adaptadores nativos para los principales asistentes de IA:
+
+| Asistente / Harness | Archivos Generados | Propósito |
+| :--- | :--- | :--- |
+| **GitHub Copilot** | `.github/copilot-instructions.md`, `.github/prompts/` | Reglas y slash commands para Copilot Chat |
+| **Claude Code** | `CLAUDE.md` | Protocolo ICM y directivas operativas |
+| **Cursor** | `.cursorrules`, `.cursor/rules/aoi-rules.mdc` | Reglas de contexto y SRP para Cursor IDE |
+| **Antigravity / Gemini** | `AGENTS.md`, `.agents/rules/aoi-rules.md` | Memoria y gobernanza de agentes en Antigravity |
+| **Cline / Roo Code** | `.clinerules` | Reglas y hooks para Cline/Roo |
+
+Comandos de sincronización:
+- `pnpm aoi:sync-rules` (o `pnpm sync:rules`) — compila y sincroniza las reglas para todos los harnesses.
+- `./setup.sh --harness <copilot|claude|cursor|antigravity|cline|all>` — instala y compila el harness elegido durante el setup.
+
 ## Runtime Interno del Dashboard
 
 AOI ahora aprovisiona un paquete autocontenido en Nuxt para visibilidad

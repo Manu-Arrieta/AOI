@@ -165,6 +165,8 @@ invoke_windows_powershell() {
   local posix_script_path="$1"
   local windows_script_path="$2"
   local windows_project_path="$3"
+  shift 3
+  local extra_args=("$@")
   local bin
 
   for bin in pwsh.exe pwsh powershell.exe powershell; do
@@ -184,13 +186,13 @@ invoke_windows_powershell() {
             err "Could not convert sanitized setup.ps1 path for Windows PowerShell: $tmp_posix"
             return 1
           fi
-          "$bin" -NoProfile -ExecutionPolicy Bypass -File "$tmp_windows" "$windows_project_path"
+          "$bin" -NoProfile -ExecutionPolicy Bypass -File "$tmp_windows" "$windows_project_path" "${extra_args[@]}"
           local rc=$?
           rm -f "$tmp_posix"
           return $rc
           ;;
         *)
-          "$bin" -NoProfile -File "$windows_script_path" "$windows_project_path"
+          "$bin" -NoProfile -File "$windows_script_path" "$windows_project_path" "${extra_args[@]}"
           return $?
           ;;
       esac
@@ -202,11 +204,30 @@ invoke_windows_powershell() {
 }
 
 run_windows_setup_from_git_bash() {
-  local project_path posix_script_path windows_project_path windows_script_path ps_exit_code ps_stderr saw_parser_error
+  local project_path=""
+  local harness_choice="all"
+  local posix_script_path windows_project_path windows_script_path ps_exit_code ps_stderr saw_parser_error
 
-  if [ -n "${1:-}" ]; then
-    project_path="$1"
-  else
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --harness)
+        harness_choice="$2"
+        shift 2
+        ;;
+      --harness=*)
+        harness_choice="${1#*=}"
+        shift
+        ;;
+      *)
+        if [ -z "$project_path" ]; then
+          project_path="$1"
+        fi
+        shift
+        ;;
+    esac
+  done
+
+  if [ -z "$project_path" ]; then
     printf "📂 Project path to install AOI into:\n> "
     read -r project_path
   fi
@@ -225,11 +246,11 @@ run_windows_setup_from_git_bash() {
     exit 1
   fi
 
-  info "Git Bash on Windows detected — delegating to setup.ps1"
+  info "Git Bash on Windows detected — delegating to setup.ps1 (harness: $harness_choice)"
 
   # Capture both streams so we can diagnose parse failures clearly.
   ps_stderr="$(mktemp -t "aoi-ps-err-XXXXXX.log")"
-  invoke_windows_powershell "$posix_script_path" "$windows_script_path" "$windows_project_path" \
+  invoke_windows_powershell "$posix_script_path" "$windows_script_path" "$windows_project_path" "-Harness" "$harness_choice" \
       2> "$ps_stderr"
   ps_exit_code=$?
   if [ "$ps_exit_code" -eq 0 ]; then
@@ -264,15 +285,58 @@ run_windows_setup_from_git_bash() {
 }
 
 if is_windows_git_bash; then
-  run_windows_setup_from_git_bash "${1:-}"
+  run_windows_setup_from_git_bash "$@"
 fi
 
+# ── Parse arguments ────────────────────────────────────────────────────────
+SELECTED_HARNESS="all"
+RAW_PROJECT_PATH=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --harness)
+      SELECTED_HARNESS="$2"
+      shift 2
+      ;;
+    --harness=*)
+      SELECTED_HARNESS="${1#*=}"
+      shift
+      ;;
+    *)
+      if [ -z "$RAW_PROJECT_PATH" ]; then
+        RAW_PROJECT_PATH="$1"
+      fi
+      shift
+      ;;
+  esac
+done
+
 # ── Target project path ────────────────────────────────────────────────────
-if [ -n "${1:-}" ]; then
-  PROJECT_PATH="$1"
+if [ -n "$RAW_PROJECT_PATH" ]; then
+  PROJECT_PATH="$RAW_PROJECT_PATH"
 else
   printf "📂 Project path to install AOI into:\n> "
   read -r PROJECT_PATH
+fi
+
+# Interactive harness selection if running in TTY without explicit harness flag
+if [ -t 0 ] && [ "$SELECTED_HARNESS" = "all" ] && [ -z "$RAW_PROJECT_PATH" ]; then
+  echo ""
+  echo "🤖 Choose target AI assistant(s) for rule compilation:"
+  echo "  1) Universal / All (Copilot, Claude, Cursor, Antigravity, Cline) [Default]"
+  echo "  2) GitHub Copilot only"
+  echo "  3) Claude Code only"
+  echo "  4) Cursor only"
+  echo "  5) Antigravity / Gemini only"
+  printf "Select [1-5] (default 1): "
+  read -r H_CHOICE
+  case "$H_CHOICE" in
+    2) SELECTED_HARNESS="copilot" ;;
+    3) SELECTED_HARNESS="claude" ;;
+    4) SELECTED_HARNESS="cursor" ;;
+    5) SELECTED_HARNESS="antigravity" ;;
+    *) SELECTED_HARNESS="all" ;;
+  esac
 fi
 
 PROJECT_PATH="$(eval echo "$PROJECT_PATH")"
@@ -1031,14 +1095,25 @@ rm -f "$PROJECT_PATH/.windsurfrules" 2>/dev/null && warn "Removed .windsurfrules
 chmod +x "$PROJECT_PATH/.github/scripts/icm-serve.sh" 2>/dev/null || true
 chmod +x "$PROJECT_PATH/.github/scripts/icm-hook.sh" 2>/dev/null || true
 
+# Multi-Harness Rules Compilation
+if [ -f "$SCRIPT_DIR/scripts/multi-harness/compile-rules.mjs" ]; then
+  node "$SCRIPT_DIR/scripts/multi-harness/compile-rules.mjs" --harness "$SELECTED_HARNESS" --workspace "$PROJECT_NAME" 2>/dev/null || true
+  ok "Multi-harness rules compiled ($SELECTED_HARNESS)"
+fi
+
 # ── Phase 5: Persist Initial Context in ICM ──────────────────────────────
 header "Phase 5: ICM Bootstrap"
 
 require_icm
 
+# Facts: deterministic metadata
+icm facts set "$PROJECT_NAME" "harness.selected" "$SELECTED_HARNESS" 2>/dev/null || true
+icm facts set "$PROJECT_NAME" "icm.protocol" "v4" 2>/dev/null || true
+ok "Facts: initial configuration registered ($SELECTED_HARNESS, v4)"
+
 # Memory: store initialization context (project-isolated)
 icm store -t "$PROJECT_NAME-context" \
-  -c "$PROJECT_NAME initialized with AOI (Agentic Operational Infrastructure) v3. Stack: Hub-and-Spoke orchestration, SDD lifecycle (spec-kit), ICM persistence (4 methods: memories, memoirs, feedback, transcripts), RTK token optimization. Agents in .github/agents/. Task artifacts in .tasks/{feature}/TASK-YYYY-NNN/." \
+  -c "$PROJECT_NAME initialized with AOI (Agentic Operational Infrastructure) v4. Harness: $SELECTED_HARNESS. Stack: Hub-and-Spoke orchestration, SDD lifecycle (spec-kit), ICM persistence (5 methods: memories, memoirs, facts, feedback, transcripts), RTK token optimization. Agents in .github/agents/. Task artifacts in .tasks/{feature}/TASK-YYYY-NNN/." \
   -i critical \
   -k "init,aoi,architecture" 2>/dev/null && ok "Memory: init context stored (topic: $PROJECT_NAME-context)"
 

@@ -1,0 +1,7 @@
+<!-- AOI / .clinerules — Auto-compiled by aoi:sync-rules -->
+# AOI Cline / Roo Code Operational Rules for AOI
+
+- Execute `icm wake-up` at session start to load critical facts and briefings.
+- Record resolved errors and task closures in ICM.
+- Validate health using `pnpm aoi:doctor`.
+- Enforce strict TDD and single responsibility (<300 LOC per file).

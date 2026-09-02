@@ -1,8 +1,8 @@
-#!/usr/bin/env pwsh
-[CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [string]$ProjectPath = ""
+    [string]$ProjectPath = "",
+    [Parameter()]
+    [string]$Harness = "all"
 )
 
 Set-StrictMode -Version Latest
@@ -1102,6 +1102,15 @@ try {
     }
 
     Remove-Item -LiteralPath (Join-Path $ProjectPath ".windsurfrules") -Force -ErrorAction SilentlyContinue
+
+    $compileRulesScript = Join-Path $ScriptDir "scripts\multi-harness\compile-rules.mjs"
+    $nodePath = Get-ExecutablePath -Name "node"
+    if ($nodePath -and (Test-Path -LiteralPath $compileRulesScript -PathType Leaf)) {
+        try {
+            & $nodePath $compileRulesScript --harness $Harness --workspace $ProjectName 2>$null
+            Write-Ok "Multi-harness rules compiled ($Harness)"
+        } catch { }
+    }
 } finally {
     Pop-Location
 }
@@ -1109,7 +1118,13 @@ try {
 Write-Header "Phase 5: ICM Bootstrap"
 $icmPath = Ensure-IcmAvailable
 try {
-    & $icmPath store -t "$ProjectName-context" -c "$ProjectName initialized with AOI (Agentic Operational Infrastructure) v3. Stack: Hub-and-Spoke orchestration, SDD lifecycle (spec-kit), ICM persistence (4 methods: memories, memoirs, feedback, transcripts), RTK token optimization. Agents in .github/agents/. Task artifacts in .tasks/{feature}/TASK-YYYY-NNN/." -i critical -k "init,aoi,architecture" 2>$null
+    & $icmPath facts set "$ProjectName" "harness.selected" "$Harness" 2>$null
+    & $icmPath facts set "$ProjectName" "icm.protocol" "v4" 2>$null
+    Write-Ok "Facts: initial configuration registered ($Harness, v4)"
+} catch { }
+
+try {
+    & $icmPath store -t "$ProjectName-context" -c "$ProjectName initialized with AOI (Agentic Operational Infrastructure) v4. Harness: $Harness. Stack: Hub-and-Spoke orchestration, SDD lifecycle (spec-kit), ICM persistence (5 methods: memories, memoirs, facts, feedback, transcripts), RTK token optimization. Agents in .github/agents/. Task artifacts in .tasks/{feature}/TASK-YYYY-NNN/." -i critical -k "init,aoi,architecture" 2>$null
     Write-Ok "Memory: init context stored (topic: $ProjectName-context)"
 } catch {
     Write-Warn "Memory bootstrap skipped"
