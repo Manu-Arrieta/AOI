@@ -642,6 +642,36 @@ function Prune-UnselectedHarnessFiles {
     }
 }
 
+function Convert-ToUnixLineEndings {
+    param([string]$TargetDir)
+
+    if (-not (Test-Path -LiteralPath $TargetDir)) { return }
+
+    Get-ChildItem -LiteralPath $TargetDir -Recurse -File | Where-Object {
+        $_.Extension -in @(".sh", ".bash", ".zsh") -or $_.Name -in @("aoi-copilot", "pre-commit")
+    } | ForEach-Object {
+        try {
+            $raw = [System.IO.File]::ReadAllBytes($_.FullName)
+            $hasCr = $false
+            for ($i = 0; $i -lt $raw.Length; $i++) {
+                if ($raw[$i] -eq 13) {
+                    $hasCr = $true
+                    break
+                }
+            }
+            if ($hasCr) {
+                $cleaned = New-Object System.Collections.Generic.List[byte]
+                for ($i = 0; $i -lt $raw.Length; $i++) {
+                    if ($raw[$i] -ne 13) {
+                        $cleaned.Add($raw[$i])
+                    }
+                }
+                [System.IO.File]::WriteAllBytes($_.FullName, $cleaned.ToArray())
+            }
+        } catch { }
+    }
+}
+
 function ConvertTo-NativeObject {
     param([object]$Value)
 
@@ -1092,6 +1122,8 @@ Copy-ScaffoldMissing -From $ScaffoldDir -To $targetScaffoldDir
 Copy-Item -LiteralPath (Join-Path $ScaffoldDir ".github\*") -Destination (Join-Path $targetScaffoldDir ".github") -Recurse -Force -ErrorAction SilentlyContinue
 Copy-Item -LiteralPath (Join-Path $ProjectPath "scripts\*") -Destination (Join-Path $targetScaffoldDir "scripts") -Recurse -Force -ErrorAction SilentlyContinue
 Prune-UnselectedHarnessFiles -TargetDir $targetScaffoldDir -SelectedHarness $Harness
+Convert-ToUnixLineEndings -TargetDir $ProjectPath
+Convert-ToUnixLineEndings -TargetDir $targetScaffoldDir
 Write-Ok "Scaffold mirror preserved in target (scaffold/)"
 
 # Copy pnpm workspace and lock configs
@@ -1389,6 +1421,8 @@ if ($specifyPath) {
 } else {
     Write-ConsoleLine -Message "    ✗ Specify CLI"
 }
+
+Convert-ToUnixLineEndings -TargetDir $ProjectPath
 
 Write-ConsoleLine -Message ""
 Write-ConsoleLine -Message "  Next steps:"

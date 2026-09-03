@@ -1,0 +1,21 @@
+# Auto-detect text files and normalize line endings
+* text=auto
+
+# Enforce LF for all shell scripts, prompts, and Unix binaries across all platforms
+*.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+*.prompt.md text eol=lf
+aoi-copilot text eol=lf
+pre-commit text eol=lf
+
+# JavaScript and TypeScript
+*.js text eol=lf
+*.mjs text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+
+# PowerShell scripts can be CRLF or LF on Windows
+*.ps1 text
+*.psm1 text
+*.psd1 text
