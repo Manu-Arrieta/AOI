@@ -1,7 +1,6 @@
 # AOI Node runtime artifacts
 node_modules/
 .pnpm-store/
-pnpm-lock.yaml
 
 # Nuxt runtime artifacts
 .nuxt/

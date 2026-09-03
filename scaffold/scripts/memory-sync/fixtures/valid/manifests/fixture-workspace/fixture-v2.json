@@ -1,0 +1,30 @@
+{
+  "versionId": "fixture-v2",
+  "workspace": "fixture-workspace",
+  "status": "active",
+  "previousVersionId": "fixture-v1",
+  "sourceWorkspace": "fixture-source",
+  "sourceVersionId": "source-v7",
+  "sourceTransport": "workspace-sync",
+  "selectedScopes": [
+    "memories",
+    "memoir",
+    "feedback"
+  ],
+  "ownerContext": "Fixture active version",
+  "decisions": {
+    "retain": [
+      "trusted current context"
+    ],
+    "complement": [
+      "source memoir facts"
+    ],
+    "discard": [
+      "obsolete source notes"
+    ]
+  },
+  "bundleMetadata": null,
+  "dynamicConstitutionPath": ".specify/memory/versions/constitutions/fixture-workspace/fixture-v2.md",
+  "createdAt": "2026-05-27T00:00:00.000Z",
+  "activatedAt": "2026-05-27T00:05:00.000Z"
+}

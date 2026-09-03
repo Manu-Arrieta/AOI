@@ -1,7 +1,6 @@
 # AOI Node runtime artifacts
 node_modules/
 .pnpm-store/
-pnpm-lock.yaml
 
 # Nuxt runtime artifacts
 .nuxt/
@@ -12,52 +11,33 @@ dist/
 coverage/
 *.tsbuildinfo
 
-# ─────────────────────────────────────────────────────────────────────────────
-# AOI agentic infrastructure — local-only tooling.
-# Installed by AOI setup into this repo; do NOT commit it to the application repo.
-# Remove it entirely with AOI teardown. Files still live on disk — they are just
-# kept out of version control.
-# ─────────────────────────────────────────────────────────────────────────────
-
-# Copilot surface
-.github/agents/
-.github/hooks/
-.github/instructions/
-.github/prompts/
-.github/scripts/
-.github/copilot-instructions.md
-
-# Antigravity surface
-.agent/
-
-# Spec-kit (SDD) memory, skill registry, and resources
-.specify/
-.atl/
-.resources/
-
-# Agentic ops dashboard
-aoi_apps/agentic-ops-dashboard/
-
-# AOI tooling scripts
-scripts/sandbox/
-scripts/memory-sync/
-
-# Agent context manifests
-GEMINI.md
-AGENTS.md
-CLAUDE.md
-
-# Agentic runtime trail (SDD tasks, sandboxes, ICM local artifacts)
-.tasks/
-.sandboxes/
-.icm/
-
 # Exported memory bundle artifacts
 .exportsmemories/
 
 # NVIDIA customendpoint credentials — keep example tracked, ignore real keyfile
 .vscode/ChatLanguageModel.json
-!.vscode/ChatLanguageModel.example.json
+!.vscode/ChatLanguageModel.example.json*
+!.exportsmemories/.gitkeep
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Agentic runtime trail — keep this bootstrapper pristine.
+# The product (prompts, agents, templates, constitution, scripts) stays tracked.
+# Only the operational trail generated while working with the ecosystem is ignored.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# SDD task artifacts — keep only the empty registry, ignore per-feature folders
+.tasks/*/
+
+# Real sandboxes — keep templates + registry, ignore generated sandbox dirs
+.sandboxes/*/
+!.sandboxes/_templates/
+
+# Memory-sync runtime snapshots (manifests + dynamic constitutions are generated)
+.specify/memory/versions/manifests/
+.specify/memory/versions/constitutions/
+
+# ICM local artifacts (the DB lives globally; guard any in-repo spillover)
+.icm/
 
 # AOI configuration snapshots (system-generated, local state)
-.conf/
+/.conf/
