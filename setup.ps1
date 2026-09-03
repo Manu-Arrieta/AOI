@@ -1084,13 +1084,13 @@ Write-Ok "Scaffold merged"
 
 # Ensure AOI governed assets override generic specify init outputs
 Copy-Item -LiteralPath (Join-Path $ScaffoldDir ".github\*") -Destination (Join-Path $ProjectPath ".github") -Recurse -Force -ErrorAction SilentlyContinue
-Copy-Item -LiteralPath (Join-Path $ScaffoldDir "scripts\*") -Destination (Join-Path $ProjectPath "scripts") -Recurse -Force -ErrorAction SilentlyContinue
+Copy-Item -LiteralPath (Join-Path $ScriptDir "scripts\*") -Destination (Join-Path $ProjectPath "scripts") -Recurse -Force -ErrorAction SilentlyContinue
 
 # Replicate scaffold mirror inside target
 $targetScaffoldDir = Join-Path $ProjectPath "scaffold"
 Copy-ScaffoldMissing -From $ScaffoldDir -To $targetScaffoldDir
 Copy-Item -LiteralPath (Join-Path $ScaffoldDir ".github\*") -Destination (Join-Path $targetScaffoldDir ".github") -Recurse -Force -ErrorAction SilentlyContinue
-Copy-Item -LiteralPath (Join-Path $ScaffoldDir "scripts\*") -Destination (Join-Path $targetScaffoldDir "scripts") -Recurse -Force -ErrorAction SilentlyContinue
+Copy-Item -LiteralPath (Join-Path $ProjectPath "scripts\*") -Destination (Join-Path $targetScaffoldDir "scripts") -Recurse -Force -ErrorAction SilentlyContinue
 Prune-UnselectedHarnessFiles -TargetDir $targetScaffoldDir -SelectedHarness $Harness
 Write-Ok "Scaffold mirror preserved in target (scaffold/)"
 
@@ -1326,7 +1326,13 @@ if ($nodePath -and (Test-Path -LiteralPath $baseMapDetector -PathType Leaf)) {
 
 Write-Header "Phase 7: Configuration Snapshot"
 $confSnapshotScript = Join-Path $PSScriptRoot "scripts\conf\snapshot-conf.sh"
-$bashPath = Get-ExecutablePath -Name "bash"
+$bashPath = Get-ExecutablePath -Name "bash" -Candidates @(
+    "C:\Program Files\Git\bin\bash.exe",
+    "C:\Program Files\Git\usr\bin\bash.exe",
+    "C:\Program Files (x86)\Git\bin\bash.exe",
+    (Join-Path $env:LOCALAPPDATA "Programs\Git\bin\bash.exe"),
+    (Join-Path $env:ProgramFiles "Git\bin\bash.exe")
+)
 if ($bashPath -and (Test-Path -LiteralPath $confSnapshotScript -PathType Leaf)) {
     $confAction = "install"
     if (Test-Path -LiteralPath (Join-Path $ProjectPath ".conf\manifest.json")) {

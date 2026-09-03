@@ -1001,6 +1001,11 @@ else
   cp -R "$SCAFFOLD_DIR/"* "$PROJECT_PATH/scaffold/" 2>/dev/null || true
 fi
 prune_unselected_harness_files "$PROJECT_PATH/scaffold" "$SELECTED_HARNESS"
+if command -v rsync &>/dev/null; then
+  rsync -a "$PROJECT_PATH/scripts/" "$PROJECT_PATH/scaffold/scripts/"
+else
+  cp -R "$PROJECT_PATH/scripts/"* "$PROJECT_PATH/scaffold/scripts/" 2>/dev/null || true
+fi
 ok "Scaffold mirror preserved in target (scaffold/)"
 
 # Copy pnpm workspace and lock configs
