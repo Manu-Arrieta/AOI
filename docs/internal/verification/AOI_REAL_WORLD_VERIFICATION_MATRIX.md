@@ -55,12 +55,12 @@ pnpm test
 ## 2. Fundamentos de AOI: Qué estás probando y sus 7 Invariantes
 
 ```mermaid
-graph LR
-    SUP["@supervisor"] -->|1. TOON Payload (-85%)| SUB["Micro-Agentes (@backend/@frontend)"]
-    SUP -->|2. Fiber Sandbox (Σiso)| RUN["Spatiotemporal Runtime (∂Γ)"]
-    SUP -->|3. Gateway MCP Compressor| MCP["7 Grupos MCP Activos"]
-    SUB -->|4. TDD Gate| CODE["Código <300 LOC"]
-    CODE -->|5. Mechanical Set Union + 0-Token Rollback| QA["/sdd-verify"]
+flowchart LR
+    SUP["@supervisor"] -->|"1. TOON Payload (-85%)"| SUB["Micro-Agentes (@backend/@frontend)"]
+    SUP -->|"2. Fiber Sandbox (Σiso)"| RUN["Spatiotemporal Runtime (∂Γ)"]
+    SUP -->|"3. Gateway MCP Compressor"| MCP["7 Grupos MCP Activos"]
+    SUB -->|"4. TDD Gate"| CODE["Código <300 LOC"]
+    CODE -->|"5. Mechanical Set Union + 0-Token Rollback"| QA["/sdd-verify"]
 ```
 
 1. **Invariante 1 — Zero-Disabled-Tools**: Las 7 suites de herramientas MCP permanecen activas; el ahorro de tokens se logra mediante el proxy `mcp-compressor`.

@@ -68,7 +68,8 @@ Una vez instalado en tu proyecto, abrí el chat de tu asistente favorito (ej. Co
 
 ```text
 /init       # Configura el stack tecnológico, las reglas y la constitución del proyecto
-/sdd-new    # Propone y especifica la primera funcionalidad (feature)
+/sdd-frame  # (Pre-Flight) Diálogo socrático en lenguaje natural y cristalización del Behavioral Intent Contract (BIC)
+/sdd-new    # Propone y especifica la funcionalidad técnica formal (feature)
 ```
 
 ---
@@ -93,23 +94,32 @@ Integración nativa con [ICM](https://github.com/rtk-ai/icm) a través de **5 m�
 | **Feedback** | Registro de asunciones vs. resultados | Análisis post-verificación para no repetir errores pasados. |
 | **Transcripts** | Replay verbatim de sesiones | Trazabilidad completa de conversaciones y trayectorias. |
 
-### 3. 🎯 Spec-Driven Development (SDD)
-El software no se improvisa: se especifica, se planifica, se implementa bajo TDD y se verifica mecánicamente:
+### 3. 🎯 Spec-Driven Development (SDD) & El Paradigma de la Intención (BIC)
+El software no se improvisa: se expresa en lenguaje natural, se cristaliza en contratos matemáticamente rigurosos, se planifica, se implementa bajo TDD y se verifica mecánicamente.
+
+AOI evoluciona sobre el Scrum tradicional: **reemplaza la clásica "Historia de Usuario" por el Behavioral Intent Contract (BIC)** y añade la fase **Pre-Flight (`/sdd-frame`)**:
 
 ```text
-[Requerimiento]
+[Intención Humana en Lenguaje Natural]
        ↓
-   /sdd-new     → Exploración y Especificación Formal (@functional-analyst)
-       ↓
-   /sdd-ff      → Arquitectura, Contratos y Plan de Tareas (@solution-architect)
-       ↓
+   /sdd-frame   → Pre-Flight: Diálogo Socrático, Sonda ICM O(1) y Contrato Conductual (BIC)
+       ↓ (Intent Gate: Aprobación de Invariantes y Estados)
+   /sdd-new     → Exploración Técnica y Especificación Formal (@functional-analyst)
+       ↓ (Proposal Gate)
+   /sdd-ff      → Arquitectura, Contratos TypeScript y Plan de Tareas (@solution-architect)
+       ↓ (Design & Implementation Gate)
    /sdd-apply   → Implementación en Lotes con TDD Obligatorio (@frontend, @backend, @devops)
-       ↓
+       ↓ (TDD & Verify Gate)
    /sdd-verify  → QA Mecánico, Validación de Límites y Tests (@integration-specialist)
-       ↓
-   /sdd-archive → Documentación Viva y Cierre en Memoria (@documentation-analyst)
+       ↓ (Archive Gate)
+   /sdd-archive → Documentación Viva, Distilación a Memoirs y Cierre (@documentation-analyst)
 ```
-*Cada fase cuenta con una compuerta de aprobación del Owner antes de avanzar a la siguiente.*
+
+- **Zero-Task Footprint**: En `/sdd-frame`, dialogás con el agente en lenguaje cotidiano (voz o texto) para auditar hechos en $O(1)$ y fijar las reglas "NUNCA" (invariantes) sin contaminar el registro de tareas.
+- **Las 4 Dimensiones del BIC**: Todo requerimiento se decanta en Delta de Estado ($\Delta S = S_0 \to S_1$), Invariantes Inquebrantables, Topología de Actores y un Oráculo Observable de Negocio.
+- **Total Desacople**: Podés iniciar con `/sdd-frame` si la necesidad requiere decantación o entrar directo a `/sdd-new` si ya tenés el requerimiento técnico 100% maduro.
+
+> 📖 *Para comprender a fondo la metodología, galería de ejemplos y estrategias de ejecución (Tracer Bullet vs. Wavefront), consultá el tratado completo: [El Paradigma de la Intención: De la Historia de Usuario al Contrato Conductual en la Era Agéntica](docs/internal/architecture/BEHAVIORAL_INTENT_CONTRACTS_PARADIGM.md).*
 
 ### 4. 🔄 Compilador Multi-Harness Unificado
 Escribís las instrucciones una sola vez en `.github/instructions/` y AOI las compila automáticamente para todos tus entornos de trabajo:
@@ -258,6 +268,7 @@ AOI Doctor verifica de forma determinista:
 
 ## 📚 Documentación Adicional
 
+- [El Paradigma de la Intención: Behavioral Intent Contracts (BIC)](docs/internal/architecture/BEHAVIORAL_INTENT_CONTRACTS_PARADIGM.md) — Tratado metodológico sobre el estándar agéntico que reemplaza las historias de usuario por contratos conductuales ($\Delta S$, Invariantes "Never Rules", Topología de Actores y Oráculos de Negocio) y la fase Pre-SDD (`/sdd-frame`).
 - [Fundamentos Matemáticos de Spatiotemporal Runtime](docs/internal/architecture/SPATIOTEMPORAL_MATHEMATICAL_FOUNDATIONS.es.md) — Especificación formal de efectos reversibles ($\partial\Gamma$), coefectos ($\Sigma$) y pruebas de solidez.
 - [Notas de la Versión v2.0.0](docs/internal/releases/v2.0.0.es.md) — Arquitectura de bootstrapper ligero y matriz TanStack.
 - [Matriz de Verificación en el Mundo Real](docs/internal/verification/AOI_REAL_WORLD_VERIFICATION_MATRIX.md) — Protocolo de validación integral.

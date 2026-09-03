@@ -57,6 +57,7 @@ Load agent roster from `.github/agents/` to discover available agents and their 
 | Phase            | Spec-Kit Command        | Agent(s)                                                                                                                                                    | Deliverable                          | Artifact Path                                      |
 | ---------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | -------------------------------------------------- |
 | **Constitution** | `/speckit.constitution` | Supervisor                                                                                                                                                  | `.specify/memory/constitution.md`    | —                                                  |
+| **Pre-Flight**   | `/sdd-frame`            | Supervisor                                                                                                                                                  | Behavioral Intent Contract (BIC)     | — (Zero-Task Footprint)                            |
 | **Explore**      | —                       | @functional-analyst                                                                                                                                         | Requirements + user stories          | `.tasks/{feature}/TASK-YYYY-NNN/proposal.md`       |
 | **Specify**      | `/speckit.specify`      | @functional-analyst                                                                                                                                         | Formal specification                 | `.tasks/{feature}/TASK-YYYY-NNN/spec.md`           |
 | **Clarify**      | `/speckit.clarify`      | @functional-analyst                                                                                                                                         | Refined requirements                 | —                                                  |
@@ -103,6 +104,15 @@ Load agent roster from `.github/agents/` to discover available agents and their 
 6. Ask the Owner for approval before advancing (gate)
 
 ## Workflow Commands → SDD Phases
+
+### `/sdd-frame` (Pre-Flight Intent Framing)
+
+1. Recall context in 0ms (`icm wake-up`, `icm facts list`)
+2. Ingest natural language intent with **Zero-Task Footprint** (no TASK-ID, no disk folders)
+3. Audit existing capabilities in O(1) (`icm facts list "services"`)
+4. Socratic dialogue to extract State Delta ($\Delta S$), Invariants, and Business Oracle
+5. Present Mirror Confirmation to Owner
+6. **Gate (Intent Gate)**: Owner approves to proceed to `/sdd-new`
 
 ### `/sdd-new` (Explore + Propose)
 

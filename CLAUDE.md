@@ -27,6 +27,7 @@ pnpm aoi:doctor                          # 360° Repository health check
 
 ### SDD Workflow Commands (Read from .github/prompts/<command>.prompt.md)
 - `/init` — Bootstrap project, ICM facts, and base project map (`.github/prompts/init.prompt.md`)
+- `/sdd-frame` — Pre-Flight: Socratic dialogue in natural language & Behavioral Intent Contract (BIC) (`.github/prompts/sdd-frame.prompt.md`)
 - `/sdd-new` — Explore domain, discover services, and author proposal (`.github/prompts/sdd-new.prompt.md`)
 - `/sdd-apply` — Implement planned tasks with TDD & Fiber sandboxes (`.github/prompts/sdd-apply.prompt.md`)
 - `/sdd-verify` — Verify implementation, test gates, and SRP limits (<300 LOC) (`.github/prompts/sdd-verify.prompt.md`)
