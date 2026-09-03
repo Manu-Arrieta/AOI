@@ -129,7 +129,7 @@ Detect workflows, cloud providers:
 
 ```
 ⚙️ CI/CD
-  ├── System: <GitHub Actions/GitLab CI/etc>
+  ├── System: <GitHub Actions/CI/etc>
   └── Workflows: <list with triggers>
 
 ☁️ CLOUD
