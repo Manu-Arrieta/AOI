@@ -102,10 +102,9 @@ sanitize_ps1_for_windows_powershell5() {
   fi
 
   # Replace curly quotes that editors love to inject.
-  # bash's `tr` does not interpret \uXXXX, so use python or perl if available;
-  # otherwise skip silently (the file in the repo never has these).
-  if command -v python3 &>/dev/null && python3 -V >/dev/null 2>&1 && [ -s "$stage_path" ]; then
-    python3 - "$stage_path" <<'PYEOF'
+  # Use python3 -c (without stdin pipe) or perl if available; otherwise skip.
+  if command -v python3 &>/dev/null && python3 -c 'import sys' 2>/dev/null && [ -s "$stage_path" ]; then
+    python3 -c '
 import sys
 stage = sys.argv[1]
 table = str.maketrans({
@@ -117,11 +116,14 @@ table = str.maketrans({
     chr(0x2014): "-",
     chr(0x2026): "...",
 })
-with open(stage, "rb") as f:
-    data = f.read().decode("utf-8", errors="replace")
-with open(stage, "wb") as f:
-    f.write(data.translate(table).encode("utf-8"))
-PYEOF
+try:
+    with open(stage, "rb") as f:
+        data = f.read().decode("utf-8", errors="replace")
+    with open(stage, "wb") as f:
+        f.write(data.translate(table).encode("utf-8"))
+except Exception:
+    pass
+' "$stage_path" 2>/dev/null || true
   elif command -v perl &>/dev/null && [ -s "$stage_path" ]; then
     perl -CSDA -i -pe '
         s/\x{2018}|\x{2019}|\x{201C}|\x{201D}/'\''/g;
@@ -186,13 +188,13 @@ invoke_windows_powershell() {
             err "Could not convert sanitized setup.ps1 path for Windows PowerShell: $tmp_posix"
             return 1
           fi
-          "$bin" -NoProfile -ExecutionPolicy Bypass -File "$tmp_windows" "$windows_project_path" "${extra_args[@]}"
+          "$bin" -NoProfile -ExecutionPolicy Bypass -File "$tmp_windows" -ProjectPath "$windows_project_path" "${extra_args[@]}"
           local rc=$?
           rm -f "$tmp_posix"
           return $rc
           ;;
         *)
-          "$bin" -NoProfile -File "$windows_script_path" "$windows_project_path" "${extra_args[@]}"
+          "$bin" -NoProfile -File "$windows_script_path" -ProjectPath "$windows_project_path" "${extra_args[@]}"
           return $?
           ;;
       esac
@@ -237,7 +239,19 @@ run_windows_setup_from_git_bash() {
     read -r project_path
   fi
 
-  project_path="$(eval echo "$project_path")"
+  # Strip surrounding quotes if user entered them
+  project_path="${project_path#\"}"
+  project_path="${project_path%\"}"
+  project_path="${project_path#\'}"
+  project_path="${project_path%\'}"
+
+  # Expand ~ if provided
+  project_path="${project_path/#\~/$HOME}"
+
+  if [ ! -d "$project_path" ]; then
+    err "Directory not found: $project_path"
+    exit 1
+  fi
 
   posix_script_path="$SCRIPT_DIR/setup.ps1"
 
@@ -257,6 +271,12 @@ run_windows_setup_from_git_bash() {
   ps_stderr="$(mktemp -t "aoi-ps-err-XXXXXX.log")"
   local extra_ps_args=("-Harness" "$harness_choice")
   if [ "$auto_yes" -eq 1 ]; then
+    extra_ps_args+=("-Yes")
+  else
+    # In Git Bash (mintty), Windows PowerShell 5.1 Read-Host blocks indefinitely
+    # because mintty cannot provide a Win32 console input buffer.
+    warn "Git Bash (mintty) cannot receive input for interactive PowerShell prompts (Read-Host)."
+    info "Defaulting to non-interactive mode (-Yes) to prevent terminal freeze."
     extra_ps_args+=("-Yes")
   fi
   invoke_windows_powershell "$posix_script_path" "$windows_script_path" "$windows_project_path" "${extra_ps_args[@]}" \

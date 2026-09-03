@@ -765,6 +765,7 @@ if (-not $ProjectPath) {
 }
 
 $ProjectPath = Expand-UserPath -PathValue $ProjectPath
+$ProjectPath = $ProjectPath.Trim('"').Trim("'")
 if (-not (Test-Path -LiteralPath $ProjectPath -PathType Container)) {
     Write-Err "Directory not found: $ProjectPath"
     exit 1
