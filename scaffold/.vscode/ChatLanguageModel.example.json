@@ -71,7 +71,7 @@
       {
         "id": "qwen3.7-plus",
         "name": "Qwen 3.7 plus - Provider - Alibaba",
-        "url": "https://ws-3ec31q7rubgzd4bl.eu-central-1.maas.aliyuncs.com/compatible-mode/v1",
+        "url": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
         "toolCalling": true,
         "vision": true,
         "thinking": true,
