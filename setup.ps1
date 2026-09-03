@@ -6,7 +6,9 @@ param(
     [Parameter()]
     [switch]$Yes = $false,
     [Parameter()]
-    [switch]$NonInteractive = $false
+    [switch]$NonInteractive = $false,
+    [Parameter()]
+    [switch]$SkipDashboardDeps = $false
 )
 
 Set-StrictMode -Version Latest
@@ -32,6 +34,28 @@ function Write-ConsoleLine {
         Write-Host $Message -ForegroundColor $ForegroundColor
     } else {
         [Console]::Out.WriteLine($Message)
+    }
+}
+
+function Read-Prompt {
+    param(
+        [string]$Prompt,
+        [string]$Default = ""
+    )
+    if (-not [Console]::IsInputRedirected) {
+        $val = Read-Host $Prompt
+        if ([string]::IsNullOrWhiteSpace($val)) {
+            return $Default
+        }
+        return $val
+    } else {
+        [Console]::Out.Write("$Prompt ")
+        try { [Console]::Out.Flush() } catch { }
+        $line = [Console]::In.ReadLine()
+        if ([string]::IsNullOrWhiteSpace($line)) {
+            return $Default
+        }
+        return $line.Trim()
     }
 }
 
@@ -339,7 +363,7 @@ function Confirm-Update {
         return $false
     }
 
-    $choice = Read-Host "▸ $ToolName already installed ($CurrentVersion). [U]pdate / [K]eep? [k]"
+    $choice = Read-Prompt -Prompt "▸ $ToolName already installed ($CurrentVersion). [U]pdate / [K]eep? [k]" -Default "k"
     return ($choice -eq "u" -or $choice -eq "U")
 }
 
@@ -782,7 +806,7 @@ function Set-WorkspaceMcpConfig {
 }
 
 if (-not $ProjectPath) {
-    $ProjectPath = Read-Host "📂 Project path to install AOI into"
+    $ProjectPath = Read-Prompt -Prompt "📂 Project path to install AOI into"
 }
 
 $ProjectPath = Expand-UserPath -PathValue $ProjectPath
@@ -821,7 +845,7 @@ if (Test-Path $nvidiaScript) {
     Write-Info "Presione Enter para ejecutar ahora, o 'n' + Enter para omitir (AOI seguirá funcionando con defaults vendor-copilot)."
     $nvidiaChoice = "n"
     if (-not ($Yes.IsPresent -or $NonInteractive.IsPresent)) {
-        $nvidiaChoice = Read-Host "▸ Configurar customendpoint NVIDIA? [Y/n]"
+        $nvidiaChoice = Read-Prompt -Prompt "▸ Configurar customendpoint NVIDIA? [Y/n]" -Default "Y"
     }
     if ($nvidiaChoice -match '^[nN]([oO])?$') {
         Write-Warn "Saltado por elección del operador. AOI continúa con defaults vendor-copilot (Gemini 3.1 Pro Preview / GPT-5.4 xhigh)."
@@ -847,7 +871,7 @@ if (Test-Path $headroomInstall) {
     Write-Info "NO intercepta VS Code Copilot Chat (extensión nativa). Para ese contexto el ahorro viene de RTK + codebase-memory-mcp."
     $headroomChoice = "n"
     if (-not ($Yes.IsPresent -or $NonInteractive.IsPresent)) {
-        $headroomChoice = Read-Host "▸ Instalar Headroom? [Y/n]"
+        $headroomChoice = Read-Prompt -Prompt "▸ Instalar Headroom? [Y/n]" -Default "Y"
     }
     if ($headroomChoice -match '^[nN]([oO])?$') {
         Write-Warn "Headroom omitido. AOI continúa sin capa de compresión CLI."
@@ -959,7 +983,7 @@ if (Test-Path $codebaseMemoryInstall) {
     Write-Info "AOI lo instala en modo binario-only (--skip-config) y registra el MCP solo en el workspace actual."
     $cbmChoice = "n"
     if (-not ($Yes.IsPresent -or $NonInteractive.IsPresent)) {
-        $cbmChoice = Read-Host "▸ Instalar codebase-memory-mcp? [Y/n]"
+        $cbmChoice = Read-Prompt -Prompt "▸ Instalar codebase-memory-mcp? [Y/n]" -Default "Y"
     }
     if ($cbmChoice -match '^[nN]([oO])?$') {
         Write-Warn "codebase-memory-mcp omitido. AOI continúa con ICM/Headroom/RTK normales."
@@ -967,7 +991,7 @@ if (Test-Path $codebaseMemoryInstall) {
         Write-Info "Variante UI incluye grafo 3D interactivo en http://localhost:9749"
         $cbmUiChoice = "n"
         if (-not ($Yes.IsPresent -or $NonInteractive.IsPresent)) {
-            $cbmUiChoice = Read-Host "▸ Instalar variante con UI (recomendado)? [Y/n]"
+            $cbmUiChoice = Read-Prompt -Prompt "▸ Instalar variante con UI (recomendado)? [Y/n]" -Default "Y"
         }
         $cbmVariantArgs = if ($cbmUiChoice -match '^[nN]([oO])?$') { @("-Yes", "-Variant", "standard") } else { @("-Yes", "-Variant", "ui") }
         $cbmWithUi = $cbmVariantArgs -notcontains "standard"
@@ -1066,61 +1090,81 @@ New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops
 Write-Ok "Directories: .tasks/ .sandboxes/ .resources/ aoi_apps/agentic-ops-dashboard/"
 
 if (Test-Path -LiteralPath (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\package.json") -PathType Leaf) {
-    $dashboardInstaller = Ensure-DashboardRuntimePrerequisites
-    Write-Info "Installing dashboard package dependencies..."
-    $pnpmPath = Get-ExecutablePath -Name "pnpm"
-    $corepackPath = Get-ExecutablePath -Name "corepack"
-    $dashboardInstallDir = Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard"
-
-    function Invoke-DashboardInstall {
-        if ($dashboardInstaller -eq "corepack") {
-            $enableResult = Invoke-ProcessWithCapture -FilePath $corepackPath -Arguments @("enable") -WorkingDirectory $dashboardInstallDir
-            if ($enableResult.ExitCode -ne 0) {
-                return $enableResult
-            }
-
-            return Invoke-ProcessWithCapture -FilePath $corepackPath -Arguments @("pnpm", "install") -WorkingDirectory $dashboardInstallDir
-        } else {
-            return Invoke-ProcessWithCapture -FilePath $pnpmPath -Arguments @("install") -WorkingDirectory $dashboardInstallDir
+    $installDashboardDeps = $true
+    if ($SkipDashboardDeps.IsPresent) {
+        $installDashboardDeps = $false
+    } elseif (-not ($Yes.IsPresent -or $NonInteractive.IsPresent)) {
+        $dashChoice = Read-Prompt -Prompt "▸ ¿Instalar dependencias del dashboard ahora (pnpm install)? [Y/n]" -Default "Y"
+        if ($dashChoice -match '^[nN]([oO])?$') {
+            $installDashboardDeps = $false
         }
     }
 
-    try {
-        $installResult = Invoke-DashboardInstall
+    $dashboardInstallDir = Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard"
 
-        if ($installResult.ExitCode -eq 0) {
+    if ($installDashboardDeps) {
+        $dashboardInstaller = Ensure-DashboardRuntimePrerequisites
+        Write-Info "Installing dashboard package dependencies..."
+        $pnpmPath = Get-ExecutablePath -Name "pnpm"
+        $corepackPath = Get-ExecutablePath -Name "corepack"
+
+        function Invoke-DashboardInstall {
             if ($dashboardInstaller -eq "corepack") {
-                Write-Ok "Dashboard dependencies installed (corepack pnpm)"
+                $enableResult = Invoke-ProcessWithCapture -FilePath $corepackPath -Arguments @("enable") -WorkingDirectory $dashboardInstallDir
+                if ($enableResult.ExitCode -ne 0) {
+                    return $enableResult
+                }
+
+                return Invoke-ProcessWithCapture -FilePath $corepackPath -Arguments @("pnpm", "install") -WorkingDirectory $dashboardInstallDir
             } else {
-                Write-Ok "Dashboard dependencies installed (pnpm)"
-            }
-        } else {
-            $joinedOutput = ($installResult.CombinedOutput | Select-Object -Last 80) -join "`n"
-            if ($joinedOutput -match "ERR_PNPM_IGNORED_BUILDS") {
-                Write-Warn "pnpm blocked dependency build scripts; approving known builds and retrying..."
-                $approveBuildsResult = Invoke-ProcessWithCapture -FilePath $pnpmPath -Arguments @("approve-builds") -WorkingDirectory $dashboardInstallDir
-                if ($approveBuildsResult.ExitCode -ne 0) {
-                    $approveBuildsOutput = ($approveBuildsResult.CombinedOutput | Select-Object -Last 40) -join "`n"
-                    throw "Dashboard dependency install failed during approve-builds.`n$approveBuildsOutput"
-                }
-
-                $retryResult = Invoke-DashboardInstall
-                if ($retryResult.ExitCode -ne 0) {
-                    $retryOutput = ($retryResult.CombinedOutput | Select-Object -Last 80) -join "`n"
-                    throw "Dashboard dependency install failed after approve-builds retry.`n$retryOutput"
-                }
-
-                Write-Ok "Dashboard dependencies installed after approving build scripts"
-            } else {
-                if ([string]::IsNullOrWhiteSpace($joinedOutput)) {
-                    $joinedOutput = "No process output captured."
-                }
-
-                throw "Dashboard dependency install failed.`n$joinedOutput"
+                return Invoke-ProcessWithCapture -FilePath $pnpmPath -Arguments @("install") -WorkingDirectory $dashboardInstallDir
             }
         }
-    } catch {
-        throw "Dashboard dependency install failed: $($_.Exception.Message)"
+
+        try {
+            $installResult = Invoke-DashboardInstall
+
+            if ($installResult.ExitCode -eq 0) {
+                if ($dashboardInstaller -eq "corepack") {
+                    Write-Ok "Dashboard dependencies installed (corepack pnpm)"
+                } else {
+                    Write-Ok "Dashboard dependencies installed (pnpm)"
+                }
+            } else {
+                $joinedOutput = ($installResult.CombinedOutput | Select-Object -Last 80) -join "`n"
+                if ($joinedOutput -match "ERR_PNPM_IGNORED_BUILDS") {
+                    Write-Warn "pnpm blocked dependency build scripts; approving known builds and retrying..."
+                    $approveBuildsResult = Invoke-ProcessWithCapture -FilePath $pnpmPath -Arguments @("approve-builds") -WorkingDirectory $dashboardInstallDir
+                    if ($approveBuildsResult.ExitCode -ne 0) {
+                        $approveBuildsOutput = ($approveBuildsResult.CombinedOutput | Select-Object -Last 40) -join "`n"
+                        Write-Warn "Dashboard dependency install failed during approve-builds.`n$approveBuildsOutput"
+                    } else {
+                        $retryResult = Invoke-DashboardInstall
+                        if ($retryResult.ExitCode -ne 0) {
+                            $retryOutput = ($retryResult.CombinedOutput | Select-Object -Last 80) -join "`n"
+                            Write-Warn "Dashboard dependency install failed after approve-builds retry.`n$retryOutput"
+                        } else {
+                            Write-Ok "Dashboard dependencies installed after approving build scripts"
+                        }
+                    }
+                } else {
+                    if ([string]::IsNullOrWhiteSpace($joinedOutput)) {
+                        $joinedOutput = "No process output captured."
+                    }
+                    Write-Warn "Dashboard dependency install failed.`n$joinedOutput"
+                }
+                Write-Info "El dashboard es opcional. Puedes instalar sus dependencias manualmente ejecutando:"
+                Write-Info "  cd `"$dashboardInstallDir`" && pnpm install"
+            }
+        } catch {
+            Write-Warn "Dashboard dependency install failed: $($_.Exception.Message)"
+            Write-Info "El dashboard es opcional. Puedes instalar sus dependencias manualmente ejecutando:"
+            Write-Info "  cd `"$dashboardInstallDir`" && pnpm install"
+        }
+    } else {
+        Write-Ok "Dashboard dependencies install omitido (modo manual seleccionado)"
+        Write-Info "Para instalar las dependencias del dashboard manualmente cuando lo desees:"
+        Write-Info "  cd `"$dashboardInstallDir`" && pnpm install"
     }
 }
 

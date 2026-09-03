@@ -212,12 +212,17 @@ run_windows_setup_from_git_bash() {
   local project_path=""
   local harness_choice="all"
   local auto_yes=0
+  local skip_dashboard_deps=0
   local posix_script_path windows_project_path windows_script_path ps_exit_code ps_stderr saw_parser_error
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
       -y|--yes|--non-interactive)
         auto_yes=1
+        shift
+        ;;
+      --skip-dashboard-deps|--no-dashboard-deps)
+        skip_dashboard_deps=1
         shift
         ;;
       --harness)
@@ -273,12 +278,9 @@ run_windows_setup_from_git_bash() {
   local extra_ps_args=("-Harness" "$harness_choice")
   if [ "$auto_yes" -eq 1 ]; then
     extra_ps_args+=("-Yes")
-  else
-    # In Git Bash (mintty), Windows PowerShell 5.1 Read-Host blocks indefinitely
-    # because mintty cannot provide a Win32 console input buffer.
-    warn "Git Bash (mintty) cannot receive input for interactive PowerShell prompts (Read-Host)."
-    info "Defaulting to non-interactive mode (-Yes) to prevent terminal freeze."
-    extra_ps_args+=("-Yes")
+  fi
+  if [ "$skip_dashboard_deps" -eq 1 ]; then
+    extra_ps_args+=("-SkipDashboardDeps")
   fi
 
   invoke_windows_powershell "$posix_script_path" "$windows_script_path" "$windows_project_path" "${extra_ps_args[@]}"
@@ -302,11 +304,16 @@ fi
 SELECTED_HARNESS="all"
 RAW_PROJECT_PATH=""
 AUTO_YES=0
+SKIP_DASHBOARD_DEPS=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -y|--yes|--non-interactive)
       AUTO_YES=1
+      shift
+      ;;
+    --skip-dashboard-deps|--no-dashboard-deps)
+      SKIP_DASHBOARD_DEPS=1
       shift
       ;;
     --harness)
@@ -990,46 +997,62 @@ mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/test"
 ok "Directories: .tasks/ .sandboxes/ .resources/ aoi_apps/agentic-ops-dashboard/"
 
 if [ -f "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/package.json" ]; then
-  ensure_dashboard_runtime
-  info "Installing dashboard package dependencies..."
-  DASHBOARD_INSTALL_DIR="$PROJECT_PATH/aoi_apps/agentic-ops-dashboard"
-  DASHBOARD_INSTALL_LOG="$(mktemp)"
-
-  run_dashboard_install() {
-    if command -v corepack &>/dev/null; then
-      corepack enable &>/dev/null || true
-      (cd "$DASHBOARD_INSTALL_DIR" && corepack pnpm install)
-      return $?
-    fi
-
-    (cd "$DASHBOARD_INSTALL_DIR" && pnpm install)
-    return $?
-  }
-
-  if run_dashboard_install 2>&1 | tee "$DASHBOARD_INSTALL_LOG"; then
-    if command -v corepack &>/dev/null; then
-      ok "Dashboard dependencies installed (corepack pnpm)"
-    else
-      ok "Dashboard dependencies installed (pnpm)"
-    fi
-  else
-    if grep -q "ERR_PNPM_IGNORED_BUILDS" "$DASHBOARD_INSTALL_LOG"; then
-      warn "pnpm blocked dependency build scripts; approving known builds and retrying..."
-      if (cd "$DASHBOARD_INSTALL_DIR" && (pnpm approve-builds 2>/dev/null || true)) && run_dashboard_install 2>&1 | tee "$DASHBOARD_INSTALL_LOG"; then
-        ok "Dashboard dependencies installed after approving build scripts"
-      else
-        err "Dashboard dependency install failed after approve-builds retry"
-        rm -f "$DASHBOARD_INSTALL_LOG"
-        exit 1
-      fi
-    else
-      err "Dashboard dependency install failed"
-      rm -f "$DASHBOARD_INSTALL_LOG"
-      exit 1
+  INSTALL_DASH_DEPS=1
+  if [ "$SKIP_DASHBOARD_DEPS" -eq 1 ]; then
+    INSTALL_DASH_DEPS=0
+  elif [ "$AUTO_YES" -eq 0 ] && [ -t 0 ]; then
+    printf "${YELLOW}▸${NC} ¿Instalar dependencias del dashboard ahora (pnpm install)? [Y/n]: "
+    read -r DASH_CHOICE
+    if [[ "$DASH_CHOICE" =~ ^[nN] ]]; then
+      INSTALL_DASH_DEPS=0
     fi
   fi
 
-  rm -f "$DASHBOARD_INSTALL_LOG"
+  DASHBOARD_INSTALL_DIR="$PROJECT_PATH/aoi_apps/agentic-ops-dashboard"
+
+  if [ "$INSTALL_DASH_DEPS" -eq 1 ]; then
+    ensure_dashboard_runtime
+    info "Installing dashboard package dependencies..."
+    DASHBOARD_INSTALL_LOG="$(mktemp)"
+
+    run_dashboard_install() {
+      if command -v corepack &>/dev/null; then
+        corepack enable &>/dev/null || true
+        (cd "$DASHBOARD_INSTALL_DIR" && corepack pnpm install)
+        return $?
+      fi
+
+      (cd "$DASHBOARD_INSTALL_DIR" && pnpm install)
+      return $?
+    }
+
+    if run_dashboard_install 2>&1 | tee "$DASHBOARD_INSTALL_LOG"; then
+      if command -v corepack &>/dev/null; then
+        ok "Dashboard dependencies installed (corepack pnpm)"
+      else
+        ok "Dashboard dependencies installed (pnpm)"
+      fi
+    else
+      if grep -q "ERR_PNPM_IGNORED_BUILDS" "$DASHBOARD_INSTALL_LOG"; then
+        warn "pnpm blocked dependency build scripts; approving known builds and retrying..."
+        if (cd "$DASHBOARD_INSTALL_DIR" && (pnpm approve-builds 2>/dev/null || true)) && run_dashboard_install 2>&1 | tee "$DASHBOARD_INSTALL_LOG"; then
+          ok "Dashboard dependencies installed after approving build scripts"
+        else
+          warn "Dashboard dependency install failed after approve-builds retry"
+          info "El dashboard es opcional. Puedes instalarlo manualmente: cd \"$DASHBOARD_INSTALL_DIR\" && pnpm install"
+        fi
+      else
+        warn "Dashboard dependency install failed"
+        info "El dashboard es opcional. Puedes instalarlo manualmente: cd \"$DASHBOARD_INSTALL_DIR\" && pnpm install"
+      fi
+    fi
+
+    rm -f "$DASHBOARD_INSTALL_LOG"
+  else
+    ok "Dashboard dependencies install omitido (modo manual seleccionado)"
+    info "Para instalar las dependencias del dashboard manualmente cuando lo desees:"
+    info "  pnpm --dir \"$DASHBOARD_INSTALL_DIR\" install"
+  fi
 fi
 
 # Patch .vscode/settings.json — replace __LOCAL_BIN__ placeholder with real user home
