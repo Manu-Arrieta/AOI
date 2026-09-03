@@ -27,6 +27,7 @@ export const DEFAULT_SYNC_PATHS = [
   'scripts/multi-harness',
   'scripts/aoi-doctor.mjs',
   'scripts/aoi-doctor.test.mjs',
+  'LICENSE',
   'package.json',
   'pnpm-workspace.yaml',
   '.resources/constitution.md',

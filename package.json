@@ -1,6 +1,7 @@
 {
   "name": "aoi-workspace",
   "private": true,
+  "license": "MIT",
   "description": "AOI Agentic Operational Infrastructure Runtime",
   "packageManager": "pnpm@11.3.0",
   "engines": {
