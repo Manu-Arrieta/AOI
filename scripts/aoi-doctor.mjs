@@ -67,7 +67,7 @@ export async function checkBinaries(binaries = [...MANDATORY_BINARIES, ...RECOMM
 export async function checkIcmHealth(execFn = execFileAsync) {
   try {
     const { stdout } = await execFn('icm', ['doctor'])
-    const isOk = stdout.includes('All') && stdout.includes('healthy')
+    const isOk = (stdout.includes('healthy') || stdout.includes('Database integrity: ok')) && !stdout.includes('error') && !stdout.includes('corrupt')
     return {
       status: isOk ? 'PASSED' : 'WARNING',
       details: stdout.trim().split('\n').pop() || 'ICM doctor check complete',
