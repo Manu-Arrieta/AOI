@@ -11,6 +11,11 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+$InformationPreference = "Continue"
+
+try {
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+} catch { }
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ScaffoldDir = Join-Path $ScriptDir "scaffold"
@@ -18,31 +23,47 @@ $RtkInstallDir = Join-Path $env:LOCALAPPDATA "rtk\bin"
 $IcmInstallDir = Join-Path $env:LOCALAPPDATA "icm\bin"
 $LocalBinDir = Join-Path $env:USERPROFILE ".local\bin"
 
+function Write-ConsoleLine {
+    param(
+        [string]$Message = "",
+        [ConsoleColor]$ForegroundColor
+    )
+    if ($PSBoundParameters.ContainsKey("ForegroundColor") -and -not [Console]::IsOutputRedirected) {
+        Write-Host $Message -ForegroundColor $ForegroundColor
+    } else {
+        [Console]::Out.WriteLine($Message)
+    }
+}
+
 function Write-Info {
     param([string]$Message)
-    Write-Host "▸ $Message" -ForegroundColor Blue
+    Write-ConsoleLine -Message "▸ $Message" -ForegroundColor Blue
 }
 
 function Write-Ok {
     param([string]$Message)
-    Write-Host "✓ $Message" -ForegroundColor Green
+    Write-ConsoleLine -Message "✓ $Message" -ForegroundColor Green
 }
 
 function Write-Warn {
     param([string]$Message)
-    Write-Host "⚠ $Message" -ForegroundColor Yellow
+    Write-ConsoleLine -Message "⚠ $Message" -ForegroundColor Yellow
 }
 
 function Write-Err {
     param([string]$Message)
-    Write-Host "✗ $Message" -ForegroundColor Red
+    if (-not [Console]::IsErrorRedirected) {
+        Write-Host "✗ $Message" -ForegroundColor Red
+    } else {
+        [Console]::Error.WriteLine("✗ $Message")
+    }
 }
 
 function Write-Header {
     param([string]$Message)
-    Write-Host ""
-    Write-Host "═══ $Message ═══" -ForegroundColor Cyan
-    Write-Host ""
+    Write-ConsoleLine -Message ""
+    Write-ConsoleLine -Message "═══ $Message ═══" -ForegroundColor Cyan
+    Write-ConsoleLine -Message ""
 }
 
 function Write-Utf8File {
@@ -1254,47 +1275,47 @@ if ($bashPath -and (Test-Path -LiteralPath $confSnapshotScript -PathType Leaf)) 
 }
 
 Write-Header "Installation Complete"
-Write-Host "  Project: $ProjectPath"
-Write-Host ""
-Write-Host "  Tools installed:"
+Write-ConsoleLine -Message "  Project: $ProjectPath"
+Write-ConsoleLine -Message ""
+Write-ConsoleLine -Message "  Tools installed:"
 
 $rtkPath = Get-RtkPath
 if ($rtkPath) {
-    Write-Host "    ✓ RTK   $(Get-CommandOutput -BinaryPath $rtkPath -Arguments @("--version"))"
+    Write-ConsoleLine -Message "    ✓ RTK   $(Get-CommandOutput -BinaryPath $rtkPath -Arguments @("--version"))"
 } else {
-    Write-Host "    ✗ RTK"
+    Write-ConsoleLine -Message "    ✗ RTK"
 }
 
 $icmPath = Get-IcmPath
 if ($icmPath) {
-    Write-Host "    ✓ ICM   $(Get-CommandOutput -BinaryPath $icmPath -Arguments @("--version"))"
+    Write-ConsoleLine -Message "    ✓ ICM   $(Get-CommandOutput -BinaryPath $icmPath -Arguments @("--version"))"
 } else {
-    Write-Host "    ✗ ICM"
+    Write-ConsoleLine -Message "    ✗ ICM"
 }
 
 $cbmPath = Get-CodebaseMemoryPath
 if ($cbmPath) {
-    Write-Host "    ✓ Codebase Memory MCP   $(Get-CommandOutput -BinaryPath $cbmPath -Arguments @("--version"))"
+    Write-ConsoleLine -Message "    ✓ Codebase Memory MCP   $(Get-CommandOutput -BinaryPath $cbmPath -Arguments @("--version"))"
 } else {
-    Write-Host "    ○ Codebase Memory MCP   optional / not installed"
+    Write-ConsoleLine -Message "    ○ Codebase Memory MCP   optional / not installed"
 }
 
 $specifyPath = Get-SpecifyPath
 if ($specifyPath) {
-    Write-Host "    ✓ Specify CLI"
+    Write-ConsoleLine -Message "    ✓ Specify CLI"
 } else {
-    Write-Host "    ✗ Specify CLI"
+    Write-ConsoleLine -Message "    ✗ Specify CLI"
 }
 
-Write-Host ""
-Write-Host "  Next steps:"
-Write-Host "    1. cd $ProjectPath"
-Write-Host "    2. code ."
-Write-Host "    3. Run /init in Copilot Chat (bootstrap ICM, directories, base-project map)"
-Write-Host "    4. (optional) Run /speckit.constitution to customize project rules"
-Write-Host "    5. Start your first cycle: /sdd-new"
+Write-ConsoleLine -Message ""
+Write-ConsoleLine -Message "  Next steps:"
+Write-ConsoleLine -Message "    1. cd $ProjectPath"
+Write-ConsoleLine -Message "    2. code ."
+Write-ConsoleLine -Message "    3. Run /init in Copilot Chat (bootstrap ICM, directories, base-project map)"
+Write-ConsoleLine -Message "    4. (optional) Run /speckit.constitution to customize project rules"
+Write-ConsoleLine -Message "    5. Start your first cycle: /sdd-new"
 if (Test-Path -LiteralPath (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\package.json") -PathType Leaf) {
-    Write-Host "    6. Start the dashboard runtime: pnpm --dir aoi_apps/agentic-ops-dashboard dev"
+    Write-ConsoleLine -Message "    6. Start the dashboard runtime: pnpm --dir aoi_apps/agentic-ops-dashboard dev"
 }
-Write-Host "    7. Verify workspace health: pnpm aoi:doctor"
-Write-Host ""
+Write-ConsoleLine -Message "    7. Verify workspace health: pnpm aoi:doctor"
+Write-ConsoleLine -Message ""

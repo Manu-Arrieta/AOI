@@ -80,8 +80,11 @@ sanitize_ps1_for_windows_powershell5() {
   fi
 
   source_dir="$(cd "$(dirname "$source_path")" && pwd)"
-  target_path="$(mktemp "$source_dir/aoi-setup-XXXXXX.ps1")"
-  stage_path="$(mktemp "$source_dir/aoi-setup-stage-XXXXXX.ps1")"
+  local tmp_base
+  tmp_base="$(mktemp "$source_dir/aoi-setup-XXXXXX" 2>/dev/null || mktemp)"
+  target_path="${tmp_base}.ps1"
+  stage_path="${tmp_base}.stage"
+  touch "$target_path" "$stage_path"
   if [ -z "$target_path" ] || [ ! -f "$target_path" ] || [ -z "$stage_path" ]; then
     err "sanitize_ps1_for_windows_powershell5: could not create tempfile"
     return 1
@@ -267,8 +270,6 @@ run_windows_setup_from_git_bash() {
 
   info "Git Bash on Windows detected — delegating to setup.ps1 (harness: $harness_choice)"
 
-  # Capture both streams so we can diagnose parse failures clearly.
-  ps_stderr="$(mktemp -t "aoi-ps-err-XXXXXX.log")"
   local extra_ps_args=("-Harness" "$harness_choice")
   if [ "$auto_yes" -eq 1 ]; then
     extra_ps_args+=("-Yes")
@@ -279,37 +280,17 @@ run_windows_setup_from_git_bash() {
     info "Defaulting to non-interactive mode (-Yes) to prevent terminal freeze."
     extra_ps_args+=("-Yes")
   fi
-  invoke_windows_powershell "$posix_script_path" "$windows_script_path" "$windows_project_path" "${extra_ps_args[@]}" \
-      2> "$ps_stderr"
+
+  invoke_windows_powershell "$posix_script_path" "$windows_script_path" "$windows_project_path" "${extra_ps_args[@]}"
   ps_exit_code=$?
   if [ "$ps_exit_code" -eq 0 ]; then
-    rm -f "$ps_stderr"
+    ok "AOI setup completed successfully for $project_path"
     exit 0
   fi
 
-  saw_parser_error=0
   warn "PowerShell exited with code $ps_exit_code"
-  if [ -s "$ps_stderr" ]; then
-    if grep -qiE 'Unexpected token|ParserError' "$ps_stderr"; then
-      saw_parser_error=1
-    fi
-    err "PowerShell stderr:"
-    while IFS= read -r line; do
-      err "  $line"
-    done < "$ps_stderr"
-    rm -f "$ps_stderr"
-  fi
-
-  if [ "$saw_parser_error" -eq 1 ]; then
-    # Common parser pitfalls surfaced to the operator.
-    warn "If you see 'Unexpected token' parser errors, the most common causes are:"
-    warn "  1) A UTF-8 BOM at the start of setup.ps1 — from Git Bash run: powershell -NoProfile -Command '\$utf8NoBom = New-Object Text.UTF8Encoding(\$false); [IO.File]::WriteAllText(\"setup.ps1\", ([IO.File]::ReadAllText(\"setup.ps1\") -replace \"^\\uFEFF\",\"\"), \$utf8NoBom)'"
-    warn "  2) CRLF line endings mixed with Set-StrictMode Latest — sanity script handled this automatically; if it still fails, run: sed -i 's/\r$//' setup.ps1"
-    warn "  3) The script being interpreted is NOT the one in this repo — verify from Git Bash with: powershell -NoProfile -Command \"Get-Content -Path 'D:\\AOI\\AOI\\setup.ps1' -TotalCount 1 | Format-Hex\""
-  else
-    warn "PowerShell failed before setup.ps1 completed. Copy the 'PowerShell stderr:' lines shown above and rerun with the current setup.sh if you want a narrower diagnosis."
-  fi
-
+  warn "If you need a narrower diagnosis, run directly from native PowerShell:"
+  warn "  powershell -NoProfile -ExecutionPolicy Bypass -File .\\setup.ps1 -ProjectPath \"$windows_project_path\""
   exit $ps_exit_code
 }
 
