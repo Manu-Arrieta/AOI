@@ -907,12 +907,12 @@ Write-Ok "Installed pre-commit-aoi-guard.sh → PROJECT/.githooks/"
 
 # Install the aoi-copilot shim
 New-Item -ItemType Directory -Path $projectBinDir -Force | Out-Null
-$shimContent = @'
-#!/usr/bin/env bash
-# AOI Copilot shim — routes to aoi-headroom-wrap.sh so the call exits via
-# `headroom wrap copilot --subscription`.
-exec bash "$(dirname "$0")/../aoi-headroom-wrap.sh" "$@"
-'@
+$shimContent = @(
+    '#!/usr/bin/env bash'
+    '# AOI Copilot shim — routes to aoi-headroom-wrap.sh so the call exits via'
+    '# `headroom wrap copilot --subscription`.'
+    'exec bash "$(dirname "$0")/../aoi-headroom-wrap.sh" "$@"'
+) -join "`n"
 [System.IO.File]::WriteAllText((Join-Path $projectBinDir "aoi-copilot"), $shimContent, (New-Object System.Text.UTF8Encoding($false)))
 Write-Ok "Installed aoi-copilot shim → PROJECT/scripts/bin/"
 
@@ -926,16 +926,16 @@ if (Test-Path -LiteralPath $projectGitDir -PathType Container) {
         $existingContent = Get-Content -LiteralPath $preCommitPath -Raw
         if ($existingContent -notmatch "pre-commit-aoi-guard.sh") {
             Copy-Item -LiteralPath $preCommitPath -Destination "$preCommitPath.aoi-bak" -Force
-            $chainContent = @"
-#!/usr/bin/env bash
-# AOI bootstrap chain: run guard first, then delegate to project pre-commit.
-SELF_DIR=`$(cd `"$(dirname `"`$0`")`" && pwd)
-bash `"`$SELF_DIR/../../.githooks/pre-commit-aoi-guard.sh`" `"`$@`" || exit `$?
-if [ -f `"`$SELF_DIR/pre-commit.aoi-bak`" ]; then
-  exec bash `"`$SELF_DIR/pre-commit.aoi-bak`" `"`$@`"
-fi
-exit 0
-"@
+            $chainContent = @(
+                '#!/usr/bin/env bash'
+                '# AOI bootstrap chain: run guard first, then delegate to project pre-commit.'
+                'SELF_DIR=$(cd "$(dirname "$0")" && pwd)'
+                'bash "$SELF_DIR/../../.githooks/pre-commit-aoi-guard.sh" "$@" || exit $?'
+                'if [ -f "$SELF_DIR/pre-commit.aoi-bak" ]; then'
+                '  exec bash "$SELF_DIR/pre-commit.aoi-bak" "$@"'
+                'fi'
+                'exit 0'
+            ) -join "`n"
             [System.IO.File]::WriteAllText($preCommitPath, $chainContent, (New-Object System.Text.UTF8Encoding($false)))
             Write-Ok "Chained AOI guard into existing pre-commit hook"
         } else {
@@ -1210,15 +1210,15 @@ Write-Ok "Memoir: architecture graph bootstrapped"
 # Fast Briefing: deterministic bootstrap
 $briefingsDir = Join-Path $ProjectPath ".specify\memory\briefings"
 New-Item -ItemType Directory -Path $briefingsDir -Force | Out-Null
-$briefingContent = @"
-# $ProjectName — Fast Operational Briefing
-
-- **Workspace**: $ProjectName
-- **Architecture**: AOI v4.0.0 (Hub-and-Spoke, SDD Lifecycle, Spatiotemporal Fibers)
-- **Harness**: $Harness
-- **Memory Protocol**: ICM v0.10+ Protocol v4 (5 Methods: Memories, Memoirs, Facts, Feedback, Transcripts)
-- **Health**: Governed via \`pnpm aoi:doctor\`
-"@
+$briefingContent = @(
+    "# $ProjectName - Fast Operational Briefing"
+    ""
+    "- **Workspace**: $ProjectName"
+    "- **Architecture**: AOI v4.0.0 (Hub-and-Spoke, SDD Lifecycle, Spatiotemporal Fibers)"
+    "- **Harness**: $Harness"
+    "- **Memory Protocol**: ICM v0.10+ Protocol v4 (5 Methods: Memories, Memoirs, Facts, Feedback, Transcripts)"
+    "- **Health**: Governed via ``pnpm aoi:doctor``"
+) -join "`n"
 Set-Content -LiteralPath (Join-Path $briefingsDir "active-briefing.md") -Value $briefingContent -Encoding utf8
 Write-Ok "Briefing: deterministic active-briefing.md initialized"
 
