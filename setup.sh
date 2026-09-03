@@ -59,6 +59,37 @@ to_windows_path() {
   cygpath -w "$path_value"
 }
 
+prune_unselected_harness_files() {
+  local target_dir="$1"
+  local selected_harness="$2"
+
+  if [ -z "$selected_harness" ] || [ "$selected_harness" = "all" ]; then
+    return 0
+  fi
+
+  if [ "$selected_harness" != "claude" ]; then
+    rm -f "$target_dir/CLAUDE.md"
+  fi
+
+  if [ "$selected_harness" != "cursor" ]; then
+    rm -f "$target_dir/.cursorrules"
+    rm -rf "$target_dir/.cursor"
+  fi
+
+  if [ "$selected_harness" != "antigravity" ]; then
+    rm -f "$target_dir/AGENTS.md"
+    rm -rf "$target_dir/.agents"
+  fi
+
+  if [ "$selected_harness" != "cline" ]; then
+    rm -f "$target_dir/.clinerules"
+  fi
+
+  if [ "$selected_harness" != "copilot" ]; then
+    rm -f "$target_dir/.github/copilot-instructions.md"
+  fi
+}
+
 # Sanitize a PowerShell script before passing it to Windows PowerShell 5.1.
 #
 # Windows PowerShell 5.1 (powershell.exe) is notoriously picky:
@@ -959,6 +990,7 @@ else
     cd "$PROJECT_PATH"
     ok "Scaffold merged (cp)"
   fi
+  prune_unselected_harness_files "$PROJECT_PATH" "$SELECTED_HARNESS"
 fi
 
 # Replicate scaffold mirror inside target so validate-scaffold-parity passes in target workspace
@@ -968,6 +1000,7 @@ if command -v rsync &>/dev/null; then
 else
   cp -R "$SCAFFOLD_DIR/"* "$PROJECT_PATH/scaffold/" 2>/dev/null || true
 fi
+prune_unselected_harness_files "$PROJECT_PATH/scaffold" "$SELECTED_HARNESS"
 ok "Scaffold mirror preserved in target (scaffold/)"
 
 # Copy pnpm workspace and lock configs
@@ -1189,7 +1222,8 @@ chmod +x "$PROJECT_PATH/.github/scripts/icm-hook.sh" 2>/dev/null || true
 
 # Multi-Harness Rules Compilation
 if [ -f "$SCRIPT_DIR/scripts/multi-harness/compile-rules.mjs" ]; then
-  node "$SCRIPT_DIR/scripts/multi-harness/compile-rules.mjs" --harness "$SELECTED_HARNESS" --workspace "$PROJECT_NAME" 2>/dev/null || true
+  node "$SCRIPT_DIR/scripts/multi-harness/compile-rules.mjs" --harness "$SELECTED_HARNESS" --workspace "$PROJECT_NAME" --prune 2>/dev/null || true
+  prune_unselected_harness_files "$PROJECT_PATH" "$SELECTED_HARNESS"
   ok "Multi-harness rules compiled ($SELECTED_HARNESS)"
 fi
 

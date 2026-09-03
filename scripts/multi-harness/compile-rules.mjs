@@ -137,11 +137,38 @@ icm topics                                # list all topics
 /**
  * Compiles and writes harness configuration files.
  */
-export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = 'AOI') {
+export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = 'AOI', options = {}) {
+  const { prune = false } = options
   const targetAll = harnesses.includes('all')
   const shouldCompile = (h) => targetAll || harnesses.includes(h)
   const compiledFiles = []
   const hasScaffold = fs.existsSync(path.join(repoRoot, 'scaffold'))
+
+  if (prune && !targetAll) {
+    const HARNESS_ITEMS = {
+      claude: ['CLAUDE.md'],
+      cursor: ['.cursorrules', '.cursor'],
+      antigravity: ['AGENTS.md', '.agents'],
+      cline: ['.clinerules'],
+      copilot: ['.github/copilot-instructions.md'],
+    }
+    for (const [h, items] of Object.entries(HARNESS_ITEMS)) {
+      if (!shouldCompile(h)) {
+        for (const item of items) {
+          const rootTarget = path.join(repoRoot, item)
+          if (fs.existsSync(rootTarget)) {
+            fs.rmSync(rootTarget, { recursive: true, force: true })
+          }
+          if (hasScaffold) {
+            const scaffoldTarget = path.join(repoRoot, 'scaffold', item)
+            if (fs.existsSync(scaffoldTarget)) {
+              fs.rmSync(scaffoldTarget, { recursive: true, force: true })
+            }
+          }
+        }
+      }
+    }
+  }
 
   const writeTargetFile = (relPath, content) => {
     const fullPath = path.join(repoRoot, relPath)
@@ -212,17 +239,19 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   const args = process.argv.slice(2)
   let harnessArg = 'all'
   let workspaceArg = 'AOI'
+  let pruneArg = false
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--harness' && args[i + 1]) harnessArg = args[++i]
     else if (args[i] === '--workspace' && args[i + 1]) workspaceArg = args[++i]
+    else if (args[i] === '--prune') pruneArg = true
   }
 
   const harnesses = harnessArg.split(',').map((h) => h.trim().toLowerCase())
   const repoRoot = process.cwd()
 
   console.log(`\n⚙️  Compiling AOI Multi-Harness Rules (harness: ${harnessArg}, workspace: ${workspaceArg})...\n`)
-  const result = compileHarnessRules(repoRoot, harnesses, workspaceArg)
+  const result = compileHarnessRules(repoRoot, harnesses, workspaceArg, { prune: pruneArg })
 
   for (const file of result.compiledFiles) {
     console.log(`  ✓ Generated: ${path.relative(repoRoot, file)}`)

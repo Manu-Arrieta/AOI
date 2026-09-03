@@ -612,6 +612,36 @@ function Copy-ScaffoldMissing {
     }
 }
 
+function Prune-UnselectedHarnessFiles {
+    param(
+        [string]$TargetDir,
+        [string]$SelectedHarness
+    )
+
+    if ([string]::IsNullOrWhiteSpace($SelectedHarness) -or $SelectedHarness -eq "all") {
+        return
+    }
+
+    $harnessMap = @{
+        "claude" = @("CLAUDE.md")
+        "cursor" = @(".cursorrules", ".cursor")
+        "antigravity" = @("AGENTS.md", ".agents")
+        "cline" = @(".clinerules")
+        "copilot" = @(".github\copilot-instructions.md")
+    }
+
+    foreach ($h in $harnessMap.Keys) {
+        if ($h -ne $SelectedHarness) {
+            foreach ($relItem in $harnessMap[$h]) {
+                $itemPath = Join-Path $TargetDir $relItem
+                if (Test-Path -LiteralPath $itemPath) {
+                    Remove-Item -LiteralPath $itemPath -Recurse -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }
+    }
+}
+
 function ConvertTo-NativeObject {
     param([object]$Value)
 
@@ -1049,6 +1079,7 @@ try {
 
 Write-Header "Phase 3: Agentic Infrastructure"
 Copy-ScaffoldMissing -From $ScaffoldDir -To $ProjectPath
+Prune-UnselectedHarnessFiles -TargetDir $ProjectPath -SelectedHarness $Harness
 Write-Ok "Scaffold merged"
 
 # Ensure AOI governed assets override generic specify init outputs
@@ -1060,6 +1091,7 @@ $targetScaffoldDir = Join-Path $ProjectPath "scaffold"
 Copy-ScaffoldMissing -From $ScaffoldDir -To $targetScaffoldDir
 Copy-Item -LiteralPath (Join-Path $ScaffoldDir ".github\*") -Destination (Join-Path $targetScaffoldDir ".github") -Recurse -Force -ErrorAction SilentlyContinue
 Copy-Item -LiteralPath (Join-Path $ScaffoldDir "scripts\*") -Destination (Join-Path $targetScaffoldDir "scripts") -Recurse -Force -ErrorAction SilentlyContinue
+Prune-UnselectedHarnessFiles -TargetDir $targetScaffoldDir -SelectedHarness $Harness
 Write-Ok "Scaffold mirror preserved in target (scaffold/)"
 
 # Copy pnpm workspace and lock configs
@@ -1216,7 +1248,8 @@ try {
     $nodePath = Get-ExecutablePath -Name "node"
     if ($nodePath -and (Test-Path -LiteralPath $compileRulesScript -PathType Leaf)) {
         try {
-            & $nodePath $compileRulesScript --harness $Harness --workspace $ProjectName 2>$null
+            & $nodePath $compileRulesScript --harness $Harness --workspace $ProjectName --prune 2>$null
+            Prune-UnselectedHarnessFiles -TargetDir $ProjectPath -SelectedHarness $Harness
             Write-Ok "Multi-harness rules compiled ($Harness)"
         } catch { }
     }
