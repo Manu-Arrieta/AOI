@@ -635,7 +635,7 @@ function ConvertTo-NativeObject {
         return $items
     }
 
-    if ($Value.PSObject -and $Value.PSObject.Properties.Count -gt 0) {
+    if ($Value -is [System.Management.Automation.PSCustomObject]) {
         $table = @{}
         foreach ($property in $Value.PSObject.Properties) {
             $table[$property.Name] = ConvertTo-NativeObject -Value $property.Value
