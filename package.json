@@ -30,6 +30,7 @@
     "test:code-lens": "node --test scripts/code-lens/*.test.mjs",
     "aoi:ast-lens": "node scripts/code-lens/ast-skeletonizer.mjs",
     "aoi:cache-guard": "node scripts/multi-harness/cache-guard.mjs",
+    "aoi:stress-sdd": "node scripts/sdd-lifecycle/sdd-stress-suite.mjs",
     "test": "pnpm test:parity && pnpm test:doctor && pnpm test:multi-harness && pnpm test:sandbox && pnpm test:memory-sync && pnpm test:memory-sync:bundle && pnpm test:subagent-payload && pnpm test:sdd-lifecycle && pnpm test:spatiotemporal && pnpm test:mcp-gateway && pnpm test:code-lens && pnpm aoi:cache-guard && pnpm test:dashboard"
   }
 }
