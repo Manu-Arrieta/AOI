@@ -27,6 +27,9 @@
     "test:sandbox": "node --test scripts/sandbox/*.test.mjs",
     "test:multi-harness": "node --test scripts/multi-harness/*.test.mjs",
     "test:parity": "node scripts/scaffold/validate-scaffold-parity.mjs && node --test scripts/scaffold/*.test.mjs",
-    "test": "pnpm test:parity && pnpm test:doctor && pnpm test:multi-harness && pnpm test:sandbox && pnpm test:memory-sync && pnpm test:memory-sync:bundle && pnpm test:subagent-payload && pnpm test:sdd-lifecycle && pnpm test:spatiotemporal && pnpm test:mcp-gateway && pnpm test:dashboard"
+    "test:code-lens": "node --test scripts/code-lens/*.test.mjs",
+    "aoi:ast-lens": "node scripts/code-lens/ast-skeletonizer.mjs",
+    "aoi:cache-guard": "node scripts/multi-harness/cache-guard.mjs",
+    "test": "pnpm test:parity && pnpm test:doctor && pnpm test:multi-harness && pnpm test:sandbox && pnpm test:memory-sync && pnpm test:memory-sync:bundle && pnpm test:subagent-payload && pnpm test:sdd-lifecycle && pnpm test:spatiotemporal && pnpm test:mcp-gateway && pnpm test:code-lens && pnpm aoi:cache-guard && pnpm test:dashboard"
   }
 }
