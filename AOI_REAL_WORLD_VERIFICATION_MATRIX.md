@@ -416,19 +416,19 @@ Ninguna fase perdió porcentaje más allá del ruido de muestreo (±0,3 pp).
 
 | Fase | Prompt | Agentes | Spec-Kit | Instructions | TOTAL fijo |
 | :--- | ---: | ---: | ---: | ---: | ---: |
-| 0 `/sdd-frame` | 2.067 | 5.313 | 0 | 5.260 | 12.640 |
-| 1 `/sdd-new` | 1.915 | 4.272 | 0 | 5.260 | 11.447 |
-| 2 `/sdd-ff` | 1.955 | 5.509 | **16.759** | 5.260 | **29.483** |
-| 3 `/sdd-apply` | 1.547 | 6.726 | 2.660 | 5.260 | 16.193 |
-| 4 `/sdd-verify` | 2.741 | 4.378 | 0 | 5.260 | 12.379 |
-| 5 `/sdd-archive` | 1.597 | 3.752 | 0 | 5.260 | 10.609 |
-| **TOTAL** | **11.822** | **29.950** | **19.419** | **31.560** | **92.751** |
+| 0 `/sdd-frame` | 2.067 | 5.313 | 0 | 4.995 | 12.375 |
+| 1 `/sdd-new` | 1.915 | 4.272 | 0 | 4.995 | 11.182 |
+| 2 `/sdd-ff` | 1.955 | 5.509 | **16.759** | 4.995 | **29.218** |
+| 3 `/sdd-apply` | 1.547 | 6.726 | 2.660 | 4.995 | 15.928 |
+| 4 `/sdd-verify` | 2.741 | 4.378 | 0 | 4.995 | 12.114 |
+| 5 `/sdd-archive` | 1.597 | 3.752 | 0 | 4.995 | 10.344 |
+| **TOTAL** | **11.822** | **29.950** | **19.419** | **29.970** | **91.161** |
 
 **Ganancia medida del ciclo 2026-09-08 (antes → después, en AOI TESTS):**
 
 | Métrica | Antes | Después | Delta |
 | :--- | ---: | ---: | ---: |
-| Costo fijo por ciclo | 96.946 | **92.751** | **−4.195** |
+| Costo fijo por ciclo | 96.946 | **91.161** | **−5.785 (−6,0%)** |
 | Payload optimizado | 4.784 | 4.783 | −1 |
 | Reducción neta del payload | 76,1% | 76,2% | +0,1 pp |
 
@@ -445,6 +445,20 @@ mecanismos de compresión, solo la prosa fija. Tres cambios lo produjeron:
    fallback; `model-selection` conserva sus reglas de selección y apunta al registro.
 3. **Bloques `## Model Requirement` comprimidos** en los 27 agentes, de 3.179 a 1.726
    tokens, conservando el valor exacto del modelo, su fallback y el aviso del picker.
+4. **`icm-protocol.instructions.md` comprimido** de 2.368 a 2.087 tokens. Lleva
+   `applyTo: "**"`, así que cada token se paga en cada operación. Nueve de las quince
+   filas de su tabla de disparadores eran el mismo verbo `icm_memory_store` variando solo
+   el evento y la importancia, y la tabla de política de la sección 7 ya mapeaba esos
+   mismos escenarios en la dirección inversa. Ahora cada dato vive una sola vez y en la
+   dirección en que se usa: los disparadores en forma compacta, y la política sin repetir
+   los escenarios.
+
+> [!CAUTION]
+> Durante esa compresión **perdí el nivel de importancia `low`** y no lo noté hasta releer
+> el diff. Nada lo habría detectado: un agente que ya no sabe que una nota exploratoria va
+> como `low` simplemente la guarda mal, para siempre, sin error en ninguna parte. Por eso
+> existe `icm-protocol-completeness.test.mjs`, que fija el contenido operativo con
+> independencia del formato y fue verificado inyectando exactamente esa pérdida.
 
 > [!IMPORTANT]
 > **La consolidación del ruteo solo es segura porque algo la verifica en cada corrida.**

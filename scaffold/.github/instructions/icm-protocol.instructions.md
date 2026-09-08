@@ -107,12 +107,14 @@ When operating in experimental sandboxes (`.sandboxes/{name}/`) or automated ben
 
 ## 7. Importance Policy & Lifecycle Rules
 
-| Importance | Decay Rate | Auto-prune | Mandatory Usage Scenarios |
-| :--- | :--- | :--- | :--- |
-| `critical` | **NONE** | Never | Project context, stack, architecture decisions, conventions, user preferences |
-| `high` | Slow | Never | Specs, plans, completed tasks, design decisions, QA reports, resolved errors |
-| `medium` | Normal | Yes | Implementation progress, batch checkpoints (3-5 tasks completed) |
-| `low` | Fast | Yes | Exploration scratchpad notes, temporary ideas |
+| Importance | Decay Rate | Auto-prune |
+| :--- | :--- | :--- |
+| `critical` | **NONE** | Never |
+| `high` | Slow | Never |
+| `medium` | Normal | Yes |
+| `low` | Fast | Yes |
+
+Qué guardar con cada nivel: ver los disparadores de la sección 8.
 
 * **Auto-Dedup**: Storing content with >85% similarity in the same topic **automatically updates** the existing record.
 * **Consolidation**: When a topic exceeds 7 entries, run `icm_memory_consolidate(topic)` immediately.
@@ -123,23 +125,23 @@ When operating in experimental sandboxes (`.sandboxes/{name}/`) or automated ben
 
 ## 8. Phase-by-Phase Operational Action Triggers
 
-| Event / Phase Boundary | Tool Invocation | CLI Fallback | Importance / Mode |
-| :--- | :--- | :--- | :--- |
-| **Session Start** | `icm wake-up` / `icm_memory_recall` | `icm wake-up` | — |
-| **Task Start** | `icm_memory_recall(query, topic: "sdd-{WS}-{FEAT}-TASK-YYYY-NNN")` | `icm recall "query" -t "topic"` | — |
-| **Project Stack / Context** | `icm_memory_store(topic, content, importance: "critical")` | `icm store -t topic -c "..." -i critical` | `critical` |
-| **Deterministic Config/Port** | `icm facts set "{WS}" "key" "value"` | `icm facts set "{WS}" "key" "value"` | Exact Fact |
-| **Architecture Decision** | `icm_memory_store(topic, content, importance: "critical")` | `icm store -t topic -c "..." -i critical` | `critical` |
-| **Convention Established** | `icm_memory_store(topic, content, importance: "critical")` | `icm store -t topic -c "..." -i critical` | `critical` |
-| **User Preference Found** | `icm_memory_store("preferences", content, importance: "critical")` | `icm store -t preferences -c "..." -i critical` | `critical` |
-| **Spec / Plan Produced** | `icm_memory_store(topic, content, importance: "high")` | `icm store -t topic -c "..." -i high` | `high` |
-| **Task Completed** | `icm_memory_store(topic, content, importance: "high")` | `icm store -t topic -c "..." -i high` | `high` |
-| **QA / Verify Report** | `icm_memory_store(topic, content, importance: "high")` | `icm store -t topic -c "..." -i high` | `high` |
-| **Error Resolved** | `icm_memory_store("errors-resolved", content, importance: "high")` | `icm store -t errors-resolved -c "..." -i high` | `high` |
-| **Task Archive Closure** | `icm extract-patterns` + `icm memoir distill` | `icm memoir distill -t topic -m arch` | Permanent Graph |
-| **Post-Archive Briefing** | `icm briefing --project "$WORKSPACE"` | `icm briefing -p "$WORKSPACE"` | Cached Briefing |
-| **Batch Progress (3-5 tasks)**| `icm_memory_store(topic, content, importance: "medium")` | `icm store -t topic -c "..." -i medium` | `medium` |
-| **Topic >7 entries** | `icm_memory_consolidate(topic)` | `icm consolidate topic` | — |
+**Store triggers** — `icm_memory_store(topic, content, importance)`, CLI `icm store -t topic -c "..." -i {importance}`:
+
+* `critical` → project stack o contexto · decisión de arquitectura · convención establecida · preferencia del Owner (topic `preferences`)
+* `high` → spec o plan producido · tarea completada · reporte de QA o verify · error resuelto (topic `errors-resolved`)
+* `medium` → progreso de implementación, checkpoint cada 3-5 tareas
+* `low` → notas de exploración, ideas temporales (se podan solas)
+
+**Non-store triggers** — cada uno invoca un verbo distinto:
+
+| Event / Phase Boundary | Tool Invocation | CLI Fallback |
+| :--- | :--- | :--- |
+| **Session Start** | `icm wake-up` / `icm_memory_recall` | `icm wake-up` |
+| **Task Start** | `icm_memory_recall(query, topic: "sdd-{WS}-{FEAT}-TASK-YYYY-NNN")` | `icm recall "query" -t "topic"` |
+| **Deterministic Config/Port** | `icm facts set "{WS}" "key" "value"` | `icm facts set "{WS}" "key" "value"` |
+| **Task Archive Closure** | `icm extract-patterns` + `icm memoir distill` | `icm memoir distill -t topic -m arch` |
+| **Post-Archive Briefing** | `icm briefing --project "$WORKSPACE"` | `icm briefing -p "$WORKSPACE"` |
+| **Topic >7 entries** | `icm_memory_consolidate(topic)` | `icm consolidate topic` |
 
 ---
 
