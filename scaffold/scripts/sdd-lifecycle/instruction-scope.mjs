@@ -99,3 +99,45 @@ export function instructionsFor(root, contextPath, dir = '.github/instructions')
   }
   return matched
 }
+
+// ── Skills ──────────────────────────────────────────────────────────────────
+// Skills are loaded by the harness on their own declared trigger, and were
+// missing from the budget entirely. That omission was larger than every saving
+// this branch achieved put together, and no audit of a diff would ever have
+// surfaced it: the cost was never wrong, it was never counted.
+//
+// Applicability is written down HERE rather than inferred from each skill's
+// description at runtime. Reading intent out of English is the mistake this
+// module already made once with `applyTo`; a reviewed map is deterministic and
+// can be argued with. Each entry quotes the trigger it was derived from.
+export const SKILL_SCOPE = {
+  // "Use when running any /sdd-* command"
+  'sdd-lifecycle': () => true,
+  // "Use when the task involves remembering context, decisions, errors, or
+  //  project knowledge across sessions" — every phase opens by recalling ICM.
+  icm: () => true,
+  // "Use when running terminal commands" — every phase shells out.
+  rtk: () => true,
+  // "Use when running any /speckit.* command or when generating spec/plan/tasks"
+  'spec-kit-integration': (phase) => /_FF$|_Apply$/.test(phase),
+  // "Use when running /export-memory-bundle, /import..." — outside the cycle.
+  'memory-governance': () => false,
+}
+
+/** Lists the skills the harness loads for a phase, with the cost of each. */
+export function skillsFor(root, phase, dir = '.github/skills') {
+  const full = path.join(root, dir)
+  if (!fs.existsSync(full)) return []
+
+  const loaded = []
+  for (const name of fs.readdirSync(full).sort()) {
+    const file = path.join(dir, name, 'SKILL.md')
+    if (!fs.existsSync(path.join(root, file))) continue
+    const applies = SKILL_SCOPE[name]
+    // An unmapped skill is charged rather than ignored: a silent omission is
+    // exactly how 21.792 tokens went unmeasured in the first place.
+    if (applies && !applies(phase)) continue
+    loaded.push({ file, name, tokens: fileTokens(path.join(root, file)), mapped: Boolean(applies) })
+  }
+  return loaded
+}

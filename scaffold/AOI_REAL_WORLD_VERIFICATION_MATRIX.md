@@ -416,9 +416,21 @@ invocación condicional de una línea que menciona una condición por otro motiv
 
 | Métrica | `main` | Rama | Delta |
 | :--- | ---: | ---: | ---: |
-| Piso declarado | 91.161 | **76.682** | −14.479 |
-| Techo | 91.161 | 91.333 | +172 |
+| Piso declarado | 91.161 | **98.254** | +7.093 |
+| Techo | 91.161 | 112.905 | +21.744 |
 | Payload | 4.811 | 4.811 | 0 |
+
+> [!CAUTION]
+> **El piso SUBIÓ, y esa es la conclusión importante de la rama.** Una cuarta auditoría,
+> hecha atacando las propiedades que el instrumento afirma cumplir en vez de releer el
+> diff, encontró que **el presupuesto nunca contó las skills**: el harness las carga por
+> su propio disparador declarado, y son 21.792 tokens por ciclo, el 28% del costo real.
+> Todas las cifras anteriores de esta sesión subestimaban el costo, incluida la que
+> `main` reporta hoy.
+>
+> El ahorro real de la rama sigue siendo el mismo, 4.837 tokens. Lo que cambió es la base
+> contra la cual se mide: 98.254 y no 91.161. Un ahorro no se agranda porque el
+> denominador estuviera mal contado.
 
 **El delta se descompone así, y la distinción no es cosmética:**
 

@@ -242,6 +242,29 @@ describe('floor versus ceiling', () => {
   })
 })
 
+describe('the reported totals actually add up', () => {
+  it('every phase floor equals the sum of its declared components', () => {
+    // The skills surface was added to the model only after it turned out to be
+    // 28% of the real cost. Whatever component comes next, this fails the
+    // moment it is measured but not included in the floor it belongs to.
+    const b = auditContextBudget(process.cwd())
+    for (const r of b.rows) {
+      assert.equal(
+        r.prompt + r.agents + r.speckit + r.instructions + r.skills,
+        r.floor,
+        `${r.phase}: a component is measured but missing from the floor`
+      )
+      assert.equal(r.floor + r.conditional, r.total, `${r.phase}: ceiling is not floor plus margin`)
+    }
+  })
+
+  it('cycle totals equal the sum of the phases', () => {
+    const b = auditContextBudget(process.cwd())
+    assert.equal(b.rows.reduce((n, r) => n + r.floor, 0), b.floor)
+    assert.equal(b.rows.reduce((n, r) => n + r.total, 0), b.total)
+  })
+})
+
 describe('auditContextBudget', () => {
   it('skips phases whose prompt is absent instead of inventing a cost', () => {
     const root = workspace({ '.github/prompts/sdd-frame.prompt.md': 'hello' })

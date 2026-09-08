@@ -22,9 +22,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { estimateTokens } from './token-accounting.mjs'
-import { fileTokens, instructionsFor, read } from './instruction-scope.mjs'
+import { fileTokens, instructionsFor, read, skillsFor } from './instruction-scope.mjs'
 
-export { fileTokens, instructionsFor, expandBraces, matchesApplyTo } from './instruction-scope.mjs'
+export { fileTokens, instructionsFor, expandBraces, matchesApplyTo, skillsFor, SKILL_SCOPE } from './instruction-scope.mjs'
 
 const AGENT_REF = /(?:^|[^\w.@])@([a-z][a-z0-9.-]*[a-z0-9])/g
 // Segments are matched one at a time so a sentence-ending period is not
@@ -122,7 +122,7 @@ export function speckitIn(text) {
  * @returns {{ prompt: number, agents: number, speckit: number, instructions: number,
  *             total: number, detail: object }}
  */
-export function phaseContextCost(root, promptRel) {
+export function phaseContextCost(root, promptRel, phase = '') {
   const text = read(path.join(root, promptRel))
   const prompt = estimateTokens(text)
 
@@ -158,15 +158,19 @@ export function phaseContextCost(root, promptRel) {
   const instrList = instructionsFor(root, promptRel)
   const instructions = instrList.reduce((n, i) => n + i.tokens, 0)
 
+  const skillList = skillsFor(root, phase)
+  const skills = skillList.reduce((n, s) => n + s.tokens, 0)
+
   // `floor` is what every run of this phase costs. `total` adds what it costs
   // when every conditional branch also fires — the worst case, not the norm.
-  const floor = prompt + agents + speckit + instructions
+  const floor = prompt + agents + speckit + instructions + skills
   return {
     prompt,
     agents,
     speckit,
     conditional,
     instructions,
+    skills,
     floor,
     total: floor + conditional,
     detail: {
@@ -180,6 +184,7 @@ export function phaseContextCost(root, promptRel) {
       // of each group always does, and its cheapest member sits in the floor.
       oneOf: oneOfGroups.map((g) => [...g].sort()),
       instructions: instrList.map((i) => i.file),
+      skills: skillList.map((s) => s.name),
     },
   }
 }
@@ -201,7 +206,7 @@ export function auditContextBudget(root, phases = SDD_PHASES) {
   let floor = 0
   for (const [key, rel] of phases) {
     if (!fs.existsSync(path.join(root, rel))) continue
-    const cost = phaseContextCost(root, rel)
+    const cost = phaseContextCost(root, rel, key)
     rows.push({ phase: key, ...cost })
     total += cost.total
     floor += cost.floor
@@ -247,7 +252,8 @@ export function toBudgetRows({ rows }) {
     Agentes: r.agents,
     'Spec-Kit': r.speckit,
     'Si aplica': r.conditional,
-    Instructions: r.instructions,
+    Instr: r.instructions,
+    Skills: r.skills,
     PISO: r.floor,
     TECHO: r.total,
   }))
