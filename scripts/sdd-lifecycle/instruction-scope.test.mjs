@@ -5,6 +5,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
 import { skillsFor, SKILL_SCOPE } from './instruction-scope.mjs'
+import { secondOrderAgents, SECOND_ORDER } from './phase-references.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
@@ -77,6 +78,36 @@ describe('the shipped skill map', () => {
       for (const phase of ['Phase_0_Frame', 'Phase_1_New', 'Phase_2_FF', 'Phase_3_Apply', 'Phase_4_Verify', 'Phase_5_Archive']) {
         assert.equal(typeof applies(phase), 'boolean', `scope for ${phase} must be a plain boolean`)
       }
+    }
+  })
+})
+
+describe('second-order delegations', () => {
+  it('reaches the UX designer only from the phase that writes code', () => {
+    // supervisor.agent.md: "UX Gate: @ux-designer is MANDATORY before any new
+    // UI component." The rule lives in an agent file, so no phase prompt names
+    // it and the ceiling never knew it could be loaded.
+    assert.deepEqual(secondOrderAgents('Phase_3_Apply', ['supervisor']), ['ux-designer'])
+    assert.deepEqual(secondOrderAgents('Phase_0_Frame', ['supervisor']), [])
+  })
+
+  it('reaches the architect when a developer may escalate to it', () => {
+    // {frontend,backend,devops}-developer.agent.md: "If a test is hard to
+    // write, the design may need revisiting — escalate to @solution-architect"
+    assert.deepEqual(secondOrderAgents('Phase_3_Apply', ['backend-developer']), ['solution-architect'])
+  })
+
+  it('never returns an agent the phase already charges', () => {
+    // Otherwise the same file would be counted twice in the same ceiling.
+    assert.deepEqual(secondOrderAgents('Phase_2_FF', ['frontend-developer', 'solution-architect']), [])
+  })
+
+  it('names only agents that actually exist', () => {
+    for (const rule of SECOND_ORDER) {
+      assert.ok(
+        fs.existsSync(path.join(REPO, `.github/agents/${rule.agent}.agent.md`)),
+        `second-order rule points at a missing agent: ${rule.agent}`
+      )
     }
   })
 })

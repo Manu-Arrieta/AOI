@@ -417,7 +417,7 @@ invocación condicional de una línea que menciona una condición por otro motiv
 | Métrica | `main` | Rama | Delta |
 | :--- | ---: | ---: | ---: |
 | Piso declarado | 91.161 | **98.254** | +7.093 |
-| Techo | 91.161 | 112.905 | +21.744 |
+| Techo | 91.161 | 115.059 | +23.898 |
 | Payload | 4.811 | 4.811 | 0 |
 
 > [!CAUTION]
@@ -427,6 +427,18 @@ invocación condicional de una línea que menciona una condición por otro motiv
 > su propio disparador declarado, y son 21.792 tokens por ciclo, el 28% del costo real.
 > Todas las cifras anteriores de esta sesión subestimaban el costo, incluida la que
 > `main` reporta hoy.
+>
+> **Quinta pasada, sobre P2.** El techo tampoco era una cota superior. Un agente puede
+> delegar en otro por una regla escrita dentro de su propio archivo, que ningún prompt
+> nombra: `supervisor.agent.md` declara que `@ux-designer` es obligatorio antes de todo
+> componente de UI nuevo, y los tres developers escalan a `@solution-architect` cuando un
+> test resulta difícil de escribir. Son 2.154 tokens alcanzables en `/sdd-apply` que el
+> techo ignoraba.
+>
+> El cierre transitivo ingenuo daba 50.485, pero **la mayor parte de esas referencias son
+> una tabla de ruteo dentro de `supervisor.agent.md`, no delegaciones**. Distinguirlas es
+> la misma diferencia entre mención e invocación que ya había fallado dos veces; medir el
+> cierre completo habría inflado el techo en un 45% con referencias que nadie carga.
 >
 > El ahorro real de la rama sigue siendo el mismo, 4.837 tokens. Lo que cambió es la base
 > contra la cual se mide: 98.254 y no 91.161. Un ahorro no se agranda porque el
