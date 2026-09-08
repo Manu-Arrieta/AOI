@@ -301,25 +301,29 @@ EOF
 | Fase | Comando | Origen | Tokens Base | Tokens AOI | % Reducción |
 | :--- | :--- | :--- | ---: | ---: | ---: |
 | 0 | `/sdd-frame` | ● real | 2.497 | 165 | **93,4%** |
-| 1 | `/sdd-new` | ○ fixture | 2.400 | 625 | **74,0%** |
+| 1 | `/sdd-new` | ● real | 10.599 | 2.836 | **73,2%** |
 | 2 | `/sdd-ff` | ● real | 332 | 251 | **24,4%** |
-| 3 | `/sdd-apply` | ○ fixture | 4.509 | 1.014 | **77,5%** |
-| 4 | `/sdd-verify` | ○ fixture | 297 | 127 | **57,2%** |
+| 3 | `/sdd-apply` | ● real | 5.431 | 1.045 | **80,8%** |
+| 4 | `/sdd-verify` | ● real | 720 | 455 | **36,8%** |
 | 5 | `/sdd-archive` | ● real | 261 | 32 | **87,7%** |
-| **TOTAL** | **ciclo completo** | 3 real / 3 fixture | **10.296** | **2.214** | **78,5%** |
+| **TOTAL** | **ciclo completo** | **6 real / 0 fixture** | **19.840** | **4.784** | **75,9%** |
 
 > [!CAUTION]
-> **Esta línea base reemplaza a la anterior de 83,9%, que estaba inflada.** El benchmark
-> previo fabricaba seis números: las fases 0 y 5 eran constantes inventadas de punta a
-> punta, y las fases 3 y 4 usaban baselines ficticios (`320` para el scaffolding y `2000`
-> para el fusor LLM). Al medir la fusión de verdad resultó costar 297 tokens, no 2.134, y
-> la Fase 4 cayó de un 98,2% declarado a un 57,2% real. Las cifras de abajo son medidas o
-> están marcadas como fixture; ninguna es inventada.
+> **Reemplaza a la línea base de 83,9%, que estaba inflada por constantes fabricadas.**
+> El benchmark previo inventaba seis valores: las fases 0 y 5 eran constantes de punta a
+> punta, y las fases 3 y 4 usaban baselines ficticios (`320` para el scaffolding, `2000`
+> para el fusor LLM). Medida de verdad, la fusión cuesta 297 tokens y no 2.000.
+>
+> **El porcentaje bajó pero el ahorro absoluto subió**: de 11.060 tokens declarados a
+> **15.056 medidos** por ciclo. Un ciclo real mueve mucho más contexto del que asumían
+> los fixtures, así que AOI ahorra más tokens de los que decía, sobre una base mayor.
 
-**Cómo leer la columna Origen:** `● real` mide artefactos reales del workspace (requiere
-el binario `icm` y una tarea completa en `.tasks/`). `○ fixture` ejercita el mecanismo
-real con entrada sintética: el porcentaje es representativo, el volumen absoluto no.
-`– skipped` significa que no se pudo medir y **no aporta un baseline inventado** al total.
+**Cómo leer la columna Origen:** `● real` mide artefactos reales — requiere el binario
+`icm`, un árbol de fuentes legible y una tarea completa en `.tasks/`. `○ fixture`
+ejercita el mecanismo real con entrada sintética: el porcentaje es representativo, el
+volumen absoluto no. `– skipped` no pudo medirse y **no aporta baseline inventado**.
+Ejecutar `pnpm aoi:stress-sdd` en un workspace con una tarea real lleva las 6 fases a
+`● real`; en el repo de desarrollo las fases 2 y 5 caen a fixture/skipped por diseño.
 
 ### Ciclo REAL ejecutado en AOI TESTS — TASK-2026-101 (token-budget)
 

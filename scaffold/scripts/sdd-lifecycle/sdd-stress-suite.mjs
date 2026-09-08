@@ -28,6 +28,10 @@ import {
   createLedger, estimateTokens, findRealTaskDir, formatTotals, readIfPresent,
   toTableRows, tryCommand, FIXTURE, MEASURED, SKIPPED,
 } from './token-accounting.mjs'
+import {
+  buildDebuggingTurns, buildDiscoveryCorpus, captureRealTestRun,
+  fallbackDebuggingTurns, fallbackDiscoveryCorpus, FALLBACK_CRASH,
+} from './real-corpus.mjs'
 
 const ledger = createLedger()
 const WORKSPACE = path.basename(process.cwd())
@@ -69,8 +73,11 @@ if (groundingProbe.trim() && naiveRecall.trim()) {
 // FASE 1: /sdd-new — Explore & Relevance Contrast
 // ─────────────────────────────────────────────────────────────────────────────
 console.log('▶ [Fase 1: /sdd-new] Testing Calibrated Relevance-Contrast Context Arranger...')
-const signalItems = Array.from({ length: 10 }, (_, i) => ({ id: `sig-${i}`, content: 'Critical service signature and interface constraint block '.repeat(5) }))
-const bgItems = Array.from({ length: 20 }, (_, i) => ({ id: `bg-${i}`, content: 'Unrelated background workspace context and obsolete historical log '.repeat(5) }))
+// Real corpus: actual workspace files, split by whether they mention the
+// feature keyword — the same signal/noise split a real exploration produces.
+const corpus = buildDiscoveryCorpus(process.cwd(), { keyword: 'token', searchDir: 'scripts', maxFiles: 30 })
+const usingRealCorpus = corpus.signalItems.length > 0 && corpus.backgroundItems.length > 0
+const { signalItems, backgroundItems: bgItems } = usingRealCorpus ? corpus : fallbackDiscoveryCorpus()
 
 // Raw context: All 30 items dumped into prompt
 const rawNewChars = [...signalItems, ...bgItems].reduce((acc, item) => acc + item.content.length, 0)
@@ -82,10 +89,14 @@ const optNewChars = arranged.reduce((acc, item) => acc + item.content.length, 0)
 const optNewTokens = Math.round(optNewChars / 4)
 
 const p1 = ledger.record('Phase_1_New', '/sdd-new (Explore & Discovery)', {
-  raw: rawNewTokens, opt: optNewTokens, provenance: FIXTURE, source: '30 synthetic discovery items',
+  raw: rawNewTokens, opt: optNewTokens,
+  provenance: usingRealCorpus ? MEASURED : FIXTURE,
+  source: usingRealCorpus
+    ? `${corpus.sampled} real files (${corpus.signalItems.length} signal / ${corpus.backgroundItems.length} noise)`
+    : '30 synthetic discovery items',
   details: 'Saving comes from the maxItems=8 window cap, not from reordering',
 })
-console.log(`  ✓ Phase 1 complete: ${p1.rawTokens} tokens -> ${p1.optimizedTokens} tokens (${p1.percentSaved} saved) [fixture]\n`)
+console.log(`  ✓ Phase 1 complete: ${p1.rawTokens} tokens -> ${p1.optimizedTokens} tokens (${p1.percentSaved} saved) [${usingRealCorpus ? 'real' : 'fixture'}]\n`)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FASE 2: /sdd-ff — Specify & Plan (TOON Payload Serialization)
@@ -159,14 +170,10 @@ const scaffoldOutput = `${synthRes.implementationStub}\n${synthRes.testSuite}`
 const rawScaffoldOutputTokens = estimateTokens(scaffoldOutput)
 const optScaffoldOutputTokens = 0
 
-// Stress 3.3: Context Tombstoning over a 5-turn stress debugging sequence
-const stressTurns = [
-  { id: '1', turnNumber: 1, tool: 'test', summary: 'RED test failed (AssertionError in evaluateFiberHealth)', content: 'Stack trace with 80 lines: '.repeat(20) },
-  { id: '2', turnNumber: 2, tool: 'edit_file', target: 'fiber-health.ts', content: 'partial patch' },
-  { id: '3', turnNumber: 3, tool: 'test', summary: 'Type error TS2322 in FiberStatus assignment', content: 'Stack trace with 60 lines: '.repeat(15) },
-  { id: '4', turnNumber: 4, tool: 'edit_file', target: 'fiber-health.ts', content: 'type fix' },
-  { id: '5', turnNumber: 5, tool: 'test', summary: 'GREEN test passed (100% OK)', content: '1 passed in 2ms' }
-]
+// Stress 3.3: Context Tombstoning over a real RED -> fix -> GREEN sequence.
+// The turn contents are diagnostics this machine's runner actually emitted.
+const realRun = captureRealTestRun()
+const stressTurns = realRun.ok ? buildDebuggingTurns(realRun) : fallbackDebuggingTurns()
 const shrunkTurns = shrinkTurns(stressTurns)
 const rawTurnsChars = stressTurns.reduce((acc, t) => acc + t.content.length, 0)
 const optTurnsChars = shrunkTurns.reduce((acc, t) => acc + t.content.length, 0)
@@ -180,11 +187,14 @@ const optApplyTotal = optReadTokens + optScaffoldOutputTokens + optTurnsTokens
 // Composite provenance is only as strong as its weakest input: AST-Lens and the
 // scaffolder run on real content, the tombstoning turns are still synthetic.
 const p3 = ledger.record('Phase_3_Apply', '/sdd-apply (Implement & TDD)', {
-  raw: rawApplyTotal, opt: optApplyTotal, provenance: FIXTURE,
-  source: 'AST-Lens: real files · scaffolder: real output · tombstoning: synthetic turns',
+  raw: rawApplyTotal, opt: optApplyTotal,
+  provenance: realRun.ok ? MEASURED : FIXTURE,
+  source: realRun.ok
+    ? 'AST-Lens: real files · scaffolder: real output · tombstoning: real runner output'
+    : 'AST-Lens: real files · scaffolder: real output · tombstoning: synthetic turns',
   details: 'AST-Lens + Zero-Token Scaffolding + Context Tombstoning',
 })
-console.log(`  ✓ Phase 3 complete: ${p3.rawTokens} tokens -> ${p3.optimizedTokens} tokens (${p3.percentSaved} saved) [mixed]\n`)
+console.log(`  ✓ Phase 3 complete: ${p3.rawTokens} tokens -> ${p3.optimizedTokens} tokens (${p3.percentSaved} saved) [${realRun.ok ? 'real' : 'fixture'}]\n`)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FASE 4: /sdd-verify — Verify & QA (Mechanical Set Union, Distiller, Rollback)
@@ -192,19 +202,9 @@ console.log(`  ✓ Phase 3 complete: ${p3.rawTokens} tokens -> ${p3.optimizedTok
 console.log('▶ [Fase 4: /sdd-verify] Stress testing Mechanical Union, Diagnostic Distiller, and Rollback...')
 
 // Stress 4.1: Diagnostic Distiller on massive vitest and tsc crash
-const rawCrash = `
-RUN v4.1.7 /Users/equinox/Desktop/AOI TESTS
-FAIL test/server/fiber-health.test.ts
-  AssertionError: expected 'stable' to equal 'degraded'
-    at evaluateFiberHealth (server/utils/fiber-health.ts:15:9)
-    at runTest (node_modules/vitest/dist/runner.js:12:3)
-    at runSuite (node_modules/vitest/dist/runner.js:45:9)
-    at node_modules/vitest/dist/chunk-runtime.js:120:15
-    at processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at node:internal/main/run_main_module:17:47
-Test Files 1 failed (1)
-Duration 350ms
-`
+// Real diagnostics: the failing runner output captured in Phase 3, not a
+// hand-written trace. Falls back to a fixture only if the capture failed.
+const rawCrash = realRun.ok ? realRun.failing : FALLBACK_CRASH
 const distilledCrash = distillTestOutput(rawCrash)
 const rawCrashTokens = Math.round(rawCrash.length / 4)
 const optCrashTokens = Math.round(distilledCrash.length / 4)
@@ -235,11 +235,14 @@ if (!rollbackSuccess) throw new Error('Sandbox rollback failed')
 const rawVerifyTotal = rawCrashTokens + rawVerifyFuserTokens
 const optVerifyTotal = optCrashTokens + optVerifyFuserTokens
 const p4 = ledger.record('Phase_4_Verify', '/sdd-verify (Verification & QA)', {
-  raw: rawVerifyTotal, opt: optVerifyTotal, provenance: FIXTURE,
-  source: 'union: real serialization · distiller: synthetic crash · rollback: real side effect',
+  raw: rawVerifyTotal, opt: optVerifyTotal,
+  provenance: realRun.ok ? MEASURED : FIXTURE,
+  source: realRun.ok
+    ? 'union: real serialization · distiller: real runner output · rollback: real side effect'
+    : 'union: real serialization · distiller: synthetic crash · rollback: real side effect',
   details: 'Mechanical Set Union (0 inference) + Diagnostic Distiller + 0-Token Fiber Rollback',
 })
-console.log(`  ✓ Phase 4 complete: ${p4.rawTokens} tokens -> ${p4.optimizedTokens} tokens (${p4.percentSaved} saved) [mixed]\n`)
+console.log(`  ✓ Phase 4 complete: ${p4.rawTokens} tokens -> ${p4.optimizedTokens} tokens (${p4.percentSaved} saved) [${realRun.ok ? 'real' : 'fixture'}]\n`)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FASE 5: /sdd-archive — Archive & Cognitive Distillation
