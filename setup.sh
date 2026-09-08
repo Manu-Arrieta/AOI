@@ -855,10 +855,24 @@ if [ -f "$PROJECT_PATH/.conf/manifest.json" ]; then
 
   # ── 3b: Smart merge for non-aoi_apps files ──────────────────────────────
   if [ -f "$CONF_SCRIPTS_DIR/compare-install.sh" ]; then
+    COMPARE_STDERR="$(mktemp)"
     COMPARE_OUTPUT="$(bash "$CONF_SCRIPTS_DIR/compare-install.sh" \
       "$SCAFFOLD_DIR" \
       "$PROJECT_PATH/.conf/checksums.json" \
-      "$PROJECT_PATH" 2>/dev/null || echo '{}')"
+      "$PROJECT_PATH" 2>"$COMPARE_STDERR" || echo '{}')"
+
+    # Fail LOUDLY: a malformed comparison silently degrades the reinstall to
+    # `rsync --ignore-existing`, which never updates an already-present file.
+    # That failure mode shipped unnoticed for months on macOS (bash 3.2).
+    if ! printf '%s' "$COMPARE_OUTPUT" | python3 -c "import json,sys; json.load(sys.stdin)" 2>/dev/null; then
+      warn "compare-install.sh returned invalid JSON — SMART MERGE DISABLED."
+      warn "Existing files will NOT be updated by this reinstall. Fix before relying on it."
+      if [ -s "$COMPARE_STDERR" ]; then
+        warn "  reason: $(head -2 "$COMPARE_STDERR" | tr '\n' ' ')"
+      fi
+      COMPARE_OUTPUT='{}'
+    fi
+    rm -f "$COMPARE_STDERR"
 
     # Parse comparison results using python3 (mandatory dependency via ICM)
     COMPARE_TMPDIR=""
