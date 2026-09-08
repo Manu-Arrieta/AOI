@@ -66,7 +66,7 @@ describe('reference extraction', () => {
   it('separates delegated agents from spec-kit commands', () => {
     const text = 'Hand off to @solution-architect, then @supervisor runs /speckit.plan and /speckit.tasks.'
 
-    assert.deepEqual(agentsIn(text), ['solution-architect', 'supervisor'])
+    assert.deepEqual(agentsIn(text).map((a) => a.name), ['solution-architect', 'supervisor'])
     assert.deepEqual(speckitIn(text).map((s) => s.command), ['speckit.plan', 'speckit.tasks'])
   })
 
@@ -93,6 +93,18 @@ describe('reference extraction', () => {
 
   it('never counts a spec-kit agent twice as a plain agent', () => {
     assert.deepEqual(agentsIn('@speckit.checklist runs here'), [])
+  })
+
+  it('flags a conditional agent delegation the same way as a command', () => {
+    // @triage-specialist is delegated only when the input turns out to be a
+    // defect, a branch that ends the SDD path. Charging it to every run
+    // overstated Phase 0 by its full weight.
+    const text = '- **[conditional]** If it is a bug: route to `@triage-specialist`.\n- Always hand off to @supervisor.'
+
+    assert.deepEqual(agentsIn(text), [
+      { name: 'supervisor', conditional: false },
+      { name: 'triage-specialist', conditional: true },
+    ])
   })
 
   it('ignores commands named inside an explanatory blockquote', () => {

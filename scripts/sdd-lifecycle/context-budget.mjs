@@ -111,13 +111,38 @@ export function instructionsFor(root, contextPath, dir = '.github/instructions')
   return matched
 }
 
+/**
+ * Collects references line by line, flagging each by whether its invocation is
+ * declared conditional. Shared by agents and spec-kit commands because both
+ * can be branch-only: `@triage-specialist` is delegated solely when the input
+ * turns out to be a defect, and charging it to every run overstates the phase
+ * exactly as an unconditional checklist did.
+ *
+ * @returns {Array<{ name: string, conditional: boolean }>}
+ */
+function collectRefs(text, pattern, keep = () => true) {
+  const seen = new Map()
+  for (const line of text.split('\n')) {
+    // Blockquotes are callouts explaining a step, never a step themselves. A
+    // note that merely names a command was being scored as an invocation, and
+    // because notes carry no marker it silently forced the command back into
+    // the floor — inflating the very number this module exists to report.
+    if (/^\s*>/.test(line)) continue
+    const conditional = line.includes(CONDITIONAL_MARKER)
+    for (const m of line.matchAll(pattern)) {
+      if (!keep(m[1])) continue
+      // Invoked plainly anywhere means paid on every run, whatever other lines say.
+      if (!seen.has(m[1]) || !conditional) seen.set(m[1], conditional)
+    }
+  }
+  return [...seen.entries()]
+    .map(([name, conditional]) => ({ name, conditional }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+}
+
 /** Distinct agents a prompt delegates to, excluding spec-kit command names. */
 export function agentsIn(text) {
-  const found = new Set()
-  for (const m of text.matchAll(AGENT_REF)) {
-    if (!m[1].startsWith('speckit.')) found.add(m[1])
-  }
-  return [...found].sort()
+  return collectRefs(text, AGENT_REF, (n) => !n.startsWith('speckit.'))
 }
 
 /**
@@ -141,23 +166,7 @@ export const CONDITIONAL_MARKER = '[conditional]'
  * @returns {Array<{ command: string, conditional: boolean }>}
  */
 export function speckitIn(text) {
-  const seen = new Map()
-  for (const line of text.split('\n')) {
-    // Blockquotes are callouts explaining a step, never a step themselves. A
-    // note that merely names a command was being scored as an invocation, and
-    // because notes carry no marker it silently forced the command back into
-    // the floor — inflating the very number this module exists to report.
-    if (/^\s*>/.test(line)) continue
-    for (const m of line.matchAll(SPECKIT_REF)) {
-      const conditional = line.includes(CONDITIONAL_MARKER)
-      // A command invoked unconditionally anywhere is paid on every run, even
-      // if some other line also mentions it under a condition.
-      if (!seen.has(m[1]) || !conditional) seen.set(m[1], conditional)
-    }
-  }
-  return [...seen.entries()]
-    .map(([command, conditional]) => ({ command, conditional }))
-    .sort((a, b) => a.command.localeCompare(b.command))
+  return collectRefs(text, SPECKIT_REF).map(({ name, conditional }) => ({ command: name, conditional }))
 }
 
 /**
@@ -172,16 +181,21 @@ export function phaseContextCost(root, promptRel) {
   const text = read(path.join(root, promptRel))
   const prompt = estimateTokens(text)
 
-  const agentList = agentsIn(text)
-  const agents = agentList.reduce((n, a) => n + fileTokens(path.join(root, `.github/agents/${a}.agent.md`)), 0)
-
-  const speckitList = speckitIn(text)
   const costOf = (c) =>
     fileTokens(path.join(root, `.github/agents/${c}.agent.md`)) +
     fileTokens(path.join(root, `.github/prompts/${c}.prompt.md`))
 
+  let agents = 0
   let speckit = 0
   let conditional = 0
+
+  const agentList = agentsIn(text)
+  for (const { name, conditional: isCond } of agentList) {
+    if (isCond) conditional += costOf(name)
+    else agents += costOf(name)
+  }
+
+  const speckitList = speckitIn(text)
   for (const { command, conditional: isCond } of speckitList) {
     if (isCond) conditional += costOf(command)
     else speckit += costOf(command)
@@ -202,9 +216,12 @@ export function phaseContextCost(root, promptRel) {
     floor,
     total: floor + conditional,
     detail: {
-      agents: agentList,
+      agents: agentList.filter((a) => !a.conditional).map((a) => a.name),
       speckit: speckitList.filter((s) => !s.conditional).map((s) => s.command),
-      conditional: speckitList.filter((s) => s.conditional).map((s) => s.command),
+      conditional: [
+        ...agentList.filter((a) => a.conditional).map((a) => a.name),
+        ...speckitList.filter((s) => s.conditional).map((s) => s.command),
+      ].sort(),
       instructions: instrList.map((i) => i.file),
     },
   }

@@ -75,6 +75,57 @@ describe('spec checklist runs where its findings are still actionable', () => {
   })
 })
 
+describe('the [conditional] marker cannot be used to invent savings', () => {
+  const prompts = fs
+    .readdirSync(path.join(ROOT, '.github/prompts'))
+    .filter((f) => f.startsWith('sdd-'))
+    .map((f) => ({ file: f, lines: read(`.github/prompts/${f}`).split('\n') }))
+
+  const CONDITION = /\b(?:if|when|unless|only|cuando|si)\b/i
+
+  it('every marked line actually states the condition it claims', () => {
+    // The marker takes a step out of the floor, which is exactly how a saving
+    // is claimed. Marking something that always runs would report a reduction
+    // that does not exist — the most dangerous direction of this convention,
+    // because the number moves and nothing else does.
+    const unjustified = []
+    for (const { file, lines } of prompts) {
+      lines.forEach((l, i) => {
+        if (l.includes('[conditional]') && !CONDITION.test(l)) unjustified.push(`${file}:${i + 1}`)
+      })
+    }
+    assert.deepEqual(unjustified, [], 'a [conditional] marker with no stated condition is an unearned discount')
+  })
+
+  it('a step whose line opens with a condition carries the marker', () => {
+    // The safe direction: forgetting the marker overstates the floor rather
+    // than understating it. Still worth catching — an unmarked branch makes
+    // the phase look more expensive than it is and hides real headroom.
+    // Una condición encabeza una viñeta, un paso numerado, o la segunda celda
+    // de una tabla de decisión — donde vive en el Intent Gate de /sdd-frame.
+    const LEADS_WITH_CONDITION =
+      /^\s*(?:[-*]|\d+\.)?\s*(?:\*\*)?(?:If|When|Unless|Si|Cuando)\b|^\s*\|[^|]*\|\s*(?:\*\*)?(?:\[conditional\]\*\*\s*)?(?:If|When|Unless|Si|Cuando)\b/
+    // Restricted to exactly what the budget charges — an @agent delegation or a
+    // /speckit command. A looser pattern flagged file paths, next-phase
+    // suggestions like `/sdd-apply`, and prose naming whose output a file is.
+    const CHARGED = /(?:^|[^\w.@])@(?!speckit\.)[a-z][a-z0-9.-]*[a-z0-9]|\/speckit\.[a-z]/
+    const unmarked = []
+    for (const { file, lines } of prompts) {
+      const steps = lines.filter((l) => !/^\s*>/.test(l))
+      for (const name of new Set(steps.flatMap((l) => [...l.matchAll(new RegExp(CHARGED, 'g'))].map((m) => m[0].replace(/^[^@/]+/, '').trim())))) {
+        const mentions = steps.filter((l) => l.includes(name))
+        // Only worth flagging when EVERY mention is a conditional branch: if the
+        // same agent is also delegated outright somewhere, it belongs in the
+        // floor regardless and marking this line would change nothing.
+        const allConditional = mentions.every((l) => LEADS_WITH_CONDITION.test(l))
+        const anyMarked = mentions.some((l) => l.includes('[conditional]'))
+        if (allConditional && !anyMarked) unmarked.push(`${file} → ${name}`)
+      }
+    }
+    assert.deepEqual(unmarked, [], 'a conditional invocation is being charged to the floor of every run')
+  })
+})
+
 describe('per-agent model blocks stay compressed', () => {
   const agents = fs
     .readdirSync(path.join(ROOT, '.github/agents'))

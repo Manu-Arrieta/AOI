@@ -69,7 +69,7 @@ icm_memory_recall(query: "{keywords from intent}", topic: "{WORKSPACE}-services-
 
 - **If 80%+ already exists**: Notify the Owner immediately in plain language:
   > "Detecto que el servicio `{service}` y el endpoint `{endpoint}` ya resuelven la mayor parte de esto. ¿Podemos resolver tu caso simplemente consumiendo esa capacidad existente?"
-- **If it is a bug or defect**: Route to `@triage-specialist` without creating an SDD task.
+- **[conditional]** **If it is a bug or defect**: Route to `@triage-specialist` without creating an SDD task.
 - **If it is genuinely new or a delta**: Proceed to Step 4.
 
 ---
@@ -143,7 +143,7 @@ Based on the Owner's response:
 | :--- | :--- |
 | **Aprobado ("Sí", "Adelante", "Dale")** | **Intent Gate SUPERADO.** Persistir el contrato mínimo (ver abajo) y disparar la sugerencia de `/sdd-new` inyectando el BIC estructurado como argumento. El Task ID y las carpetas físicas nacerán allí con base limpia. |
 | **Ajustar Límites** | Iterar el diálogo en lenguaje natural re-calibrando las invariantes o el oráculo (Step 4 ➔ 6). |
-| **Redirigir a Triaje** | Si durante el diálogo se evidenció que es un defecto existente, transferir a `@triage-specialist`. |
+| **Redirigir a Triaje** | **[conditional]** Si durante el diálogo se evidenció que es un defecto existente, transferir a `@triage-specialist`. |
 | **Resolver sin Código** | Si se resolvió con capacidades existentes, documentar el fact y cerrar sin consumir ciclo SDD. |
 | **Descartar** | Si el Owner decide no avanzar o choca con la constitución, archivar la conversación en 0 tokens de disco. |
 

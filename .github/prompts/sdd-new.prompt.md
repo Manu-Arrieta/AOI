@@ -169,7 +169,7 @@ Present the proposal to the Owner. Ask:
 
 > "Proposal ready for TASK-YYYY-NNN. Approve to proceed to planning (/sdd-ff), or request changes?"
 
-- If approved → hand off to **@functional-analyst** for `requirement.md`, then suggest `/sdd-ff TASK-ID`
+- **[conditional]** If approved → hand off to **@functional-analyst** for `requirement.md`, then suggest `/sdd-ff TASK-ID`
 - If changes requested → iterate the proposal
 - If cancelled → update registry to `❌ Cancelado`, persist reason in ICM
 

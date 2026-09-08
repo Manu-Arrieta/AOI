@@ -416,20 +416,43 @@ invocación condicional de una línea que menciona una condición por otro motiv
 
 | Métrica | `main` | Rama | Delta |
 | :--- | ---: | ---: | ---: |
-| Piso declarado | 91.161¹ | **82.643** | — |
-| Piso real | 87.494 | **82.643** | **−4.851** |
-| Techo | 91.161 | 91.315 | +154² |
+| Piso declarado | 91.161 | **79.248** | −11.913 |
+| Techo | 91.161 | 91.329 | +168 |
 | Payload | 4.811 | 4.810 | −1 |
 
-¹ `main` reportaba el techo: no sabía que `/speckit.clarify` ya era condicional, así que
-sobreestimaba el piso en 3.667 tokens. Parte de la diferencia es corrección de medición,
-no ahorro; por eso la fila "piso real" separa ambas cosas.
-² El techo sube porque el prompt ganó el marcador y una nota que explica el criterio.
-Se gastaron 154 tokens de prosa para ahorrar 4.851 en el caso común.
+**El delta se descompone así, y la distinción no es cosmética:**
+
+| Concepto | Tokens | ¿Es ahorro? |
+| :--- | ---: | :--- |
+| `/speckit.checklist` vuelto condicional | 5.005 | **Sí** |
+| Prosa del marcador y sus notas | −168 | costo del cambio |
+| **Ahorro real** | **4.837** | **Sí** |
+| `/speckit.clarify` ya era condicional | 3.667 | No — corrección de medición |
+| `@triage-specialist` ya era condicional | 2.225 | No — corrección de medición |
+| `@functional-analyst` en `/sdd-new` ya era condicional | 1.184 | No — corrección de medición |
+
+**7.076 de los 11.913 son corrección de medición, no ahorro.** `main` cobraba al piso tres
+ramas que nunca corrían en un ciclo normal. Reportar los 11.913 como ganancia sería inflar
+el resultado exactamente como lo hacía la línea base fabricada del 83,9%.
 
 **Fase 2, la más cara del ciclo: piso de 25.551 a 20.700.** `/speckit.checklist` (5.005)
 pasa a dispararse solo si el contrato es no trivial — si `/speckit.clarify` corrió, o si el
 BIC declara más de una Never Rule. Ambas señales existen sin costo de inferencia.
+
+**Auditoría posterior — tres gaps más, todos en trabajo propio:**
+
+1. **El modelo de condicionalidad no cubría las delegaciones a agentes**, solo los comandos
+   spec-kit. `@triage-specialist` se delega únicamente si la entrada resulta ser un defecto,
+   y `@functional-analyst` en `/sdd-new` solo si el Owner aprueba. Ambos se cobraban al piso
+   de todo ciclo. El modelo ahora es uniforme.
+2. **Una condición dentro de una fila de tabla escapaba a todo.** El Intent Gate de
+   `/sdd-frame` es una tabla de decisión donde cada fila es una rama, pero la condición vive
+   en la segunda celda y la línea empieza con `|`, así que ni llevaba marcador ni el guardián
+   la veía.
+3. **Nada impedía usar el marcador para inventar un ahorro.** Ponerlo en un paso que siempre
+   corre lo saca del piso y reporta una reducción inexistente. Es la dirección peligrosa de
+   esta convención, porque el número se mueve y nada más lo hace. Ahora un marcador sin
+   condición declarada falla el gate, verificado inyectando exactamente ese abuso.
 
 > [!NOTE]
 > **Dos defectos del propio instrumento se encontraron midiendo, no razonando.** El primero:
