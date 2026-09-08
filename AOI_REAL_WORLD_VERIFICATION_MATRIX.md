@@ -404,6 +404,198 @@ Ninguna fase perdió porcentaje más allá del ruido de muestreo (±0,3 pp).
 > **15.164 medidos** por ciclo. Un ciclo real mueve mucho más contexto del que asumían
 > los fixtures, así que AOI ahorra más tokens de los que decía, sobre una base mayor.
 
+### Benchmark v2.2.0 — `main` contra la rama, con el MISMO instrumento
+
+Las dos ramas se midieron con el medidor de v2.2.0 sobre un worktree de `main`, porque el
+número que `main` publica hoy (91.161) se obtuvo con un instrumento ciego a las skills y a
+la condicionalidad. Compararlo contra el nuevo mezclaría ahorro con corrección de medición.
+
+| Componente | `main` | v2.2.0 | Delta |
+| :--- | ---: | ---: | ---: |
+| Prompts | 11.822 | 12.056 | +234 |
+| Agentes | 29.950 | 21.505 | −8.445 |
+| Spec-Kit | 19.419 | 10.747 | −8.672 |
+| Instructions | 29.970 | 28.482 | −1.488 |
+| Skills | 21.572 | 22.106 | +534 |
+| **PISO** | **112.733** | **94.896** | **−17.837 (−15,8%)** |
+| **TECHO** | **114.887** | **111.701** | **−3.186** |
+
+> [!IMPORTANT]
+> **De esos 17.837, el ahorro real es de 3.192 a 8.197 por ciclo.** El resto es contabilidad
+> corregida, y decirlo importa tanto como el número.
+>
+> | Concepto | Tokens | ¿Se gastaba antes? |
+> | :--- | ---: | :--- |
+> | Prosa que ya no existe en ningún archivo | **−3.192** | Sí — ahorro en todo ciclo |
+> | `/speckit.checklist` vuelto condicional | **−5.005** | Sí — ahorro cuando el contrato es trivial |
+> | Ramas que `main` cobraba y nunca corrían | 9.640 | **No** — medición, no gasto |
+>
+> `@ux-designer` solo se cargaba ante un componente de UI, `@triage-specialist` solo ante un
+> defecto, y de los tres desarrolladores nunca corrían los tres. `main` los contaba igual.
+> Reportar los 17.837 como ahorro sería un número real describiendo algo que no es, que es
+> exactamente la forma del 83,9% fabricado que esta misma sesión corrigió.
+
+**Lo que más vale de v2.2.0 no son los 8.200 tokens.** Es que el piso pasó de una cifra
+imaginaria a una medida: la próxima optimización se compara contra 94.896 reales y cada
+token que se mueva se ve donde corresponde. El costo grande sigue intacto y ya está
+localizado — Instructions 28.482 y Skills 22.106, ambos pagados en las seis fases sin
+condicionalidad que reclasificar.
+
+### Reducción por hallazgo — medido en AOI TESTS
+
+Cada fila es una corrida real de `pnpm aoi:stress-sdd` sobre la instalación, antes y
+después del cambio. El payload se mantuvo en 4.811 en toda la serie: la señal de que
+estos cambios tocaron prosa fija y no los mecanismos de compresión.
+
+| Hallazgo | Piso antes | Piso después | Delta |
+| :--- | ---: | ---: | ---: |
+| F1 · La skill de ICM omitía el sistema Facts | 98.254 | 98.650 | **+396** |
+| F3 · El supervisor arrastraba las 7 fases a cada fase | 98.650 | **96.246** | **−2.404** |
+| Guardianes de ruteo (solo tests) | 96.246 | 96.246 | 0 |
+| F2 · La skill de RTK omitía dos mapeos | 96.246 | 96.384 | **+138** |
+| F4 · Columna derivable en el registro de agentes | 96.384 | **94.896** | **−1.488** |
+| | | **neto** | **−3.358** |
+
+**F4 se recortó a lo demostrable.** La hipótesis era mover el registro de 27 filas a hechos
+O(1) de ICM, unos 6.030 por ciclo. No se hizo: el registro es la fuente única que
+`pnpm aoi:routing` verifica **desde el repositorio**, y llevarlo a una base de datos
+cambiaría una garantía comprobable offline por una que depende de que ICM esté sembrado.
+Una instalación nueva se quedaría sin ruteo hasta el `/init`.
+
+Lo que sí se demostró es que la columna `Skill Path` era derivable: `.github/agents/<agente>.agent.md`
+en los 27 casos, sin una sola excepción. Solo repetía el nombre con envoltorio, y se pagaba
+en cada inyección. El gate ahora la deriva y sigue verificando que el archivo exista, así
+que la garantía es idéntica — comprobado reponiendo un agente sin fila y viendo que lo
+detecta igual. La columna `Category` se conservó: no la consume ningún script, pero tampoco
+se probó que sea inútil, y esta rama no corta lo que no demuestra.
+
+**F2 no dio ahorro, y conviene decirlo con todas las letras.** La hipótesis era deduplicar
+`rtk`, que existe como instruction y como skill, unos 4.392 tokens por ciclo. No es
+deduplicable: `.github/instructions/` se inyecta en **cada subagente** como "Project
+Standards" según el Hub-and-Spoke, mientras `.github/skills/` la carga el **orquestador** y
+se espeja a `.agents/` para antigravity. Audiencias distintas, igual que en F1.
+
+Lo que sí apareció al comparar las dos es que **ninguna era superset de la otra**: la skill
+omitía los mapeos de `docker logs` y `pytest`, así que un agente en un harness que solo lee
+skills nunca aprendía a comprimir esas dos salidas. Se completó, y cuesta 138 tokens por
+ciclo. La estimación de 4.392 de ahorro era falsa; el hallazgo real fue de corrección.
+
+La última fila se midió igual que las otras. El commit solo agregaba tests, así que el
+consumo no debía moverse — pero *no debía moverse* es una deducción, y una deducción
+correcta sigue sin ser una medición. Toda afirmación sobre tokens en este documento tiene
+una corrida detrás, incluida la que dice que no cambió nada.
+
+**F1 subió el consumo a propósito.** Dos superficies siempre inyectadas enseñaban ICM y se
+contradecían: el protocolo declara cinco sistemas de memoria, la skill declaraba cuatro y
+no nombraba Facts en ningún lado — ni en la tabla, ni en los disparadores, ni en su propia
+descripción, que es el disparador con el que el harness decide cargarla. Facts es el lookup
+exacto O(1) del que depende el Invariant Gate. Un agente barato que no sabe que Facts
+existe no persiste el contrato BIC, y la compuerta se queda sin nada que verificar.
+
+**No se dedujo deduplicando, y ahí estuvo el riesgo.** La salida obvia era apuntar la skill
+al protocolo y ahorrar 700 tokens, pero `compile-rules.mjs` mapea el harness *antigravity*
+a `.agents/` y **no** a `.github/instructions/`: para ese harness la skill es la única
+doctrina ICM que existe. Los dos archivos deben existir, luego los dos deben concordar, y
+eso solo lo sostiene un test.
+
+**F3 quitó duplicación pura.** `supervisor.agent.md` se carga en las seis fases y dedicaba
+682 tokens a describir los pasos de los siete comandos, que el prompt de la fase ya
+especifica en detalle y que el harness acaba de cargar. Quedó la cadena de compuertas del
+Owner, que es lo que el Supervisor sí posee y no vive en ningún otro lado. La regla de
+Service Discovery que **solo** existía ahí —usar recall de ICM y `find`, nunca la búsqueda
+de workspace de VS Code— se movió al prompt de `/sdd-new` antes de comprimir: comprimir un
+archivo es exactamente donde muere el contenido único.
+
+### Piso y Techo — rama `perf/conditional-phase-cost` (aislada)
+
+Un paso condicional no se paga siempre. Contarlo como fijo sobreestima el ciclo y, peor,
+**haría invisible cualquier mejora que consista precisamente en volver condicional un
+paso**: el instrumento tenía que aprender a verlo antes de que lo usáramos para optimizar.
+
+La conditionalidad se **declara** con el marcador `**[conditional]**`, nunca se infiere de
+la prosa. Una versión anterior adivinaba por palabras como "if" y no distinguía una
+invocación condicional de una línea que menciona una condición por otro motivo.
+
+| Métrica | `main` | Rama | Delta |
+| :--- | ---: | ---: | ---: |
+| Piso declarado | 91.161 | **98.254** | +7.093 |
+| Techo | 91.161 | 115.059 | +23.898 |
+| Payload | 4.811 | 4.811 | 0 |
+
+> [!CAUTION]
+> **El piso SUBIÓ, y esa es la conclusión importante de la rama.** Una cuarta auditoría,
+> hecha atacando las propiedades que el instrumento afirma cumplir en vez de releer el
+> diff, encontró que **el presupuesto nunca contó las skills**: el harness las carga por
+> su propio disparador declarado, y son 21.792 tokens por ciclo, el 28% del costo real.
+> Todas las cifras anteriores de esta sesión subestimaban el costo, incluida la que
+> `main` reporta hoy.
+>
+> **Quinta pasada, sobre P2.** El techo tampoco era una cota superior. Un agente puede
+> delegar en otro por una regla escrita dentro de su propio archivo, que ningún prompt
+> nombra: `supervisor.agent.md` declara que `@ux-designer` es obligatorio antes de todo
+> componente de UI nuevo, y los tres developers escalan a `@solution-architect` cuando un
+> test resulta difícil de escribir. Son 2.154 tokens alcanzables en `/sdd-apply` que el
+> techo ignoraba.
+>
+> El cierre transitivo ingenuo daba 50.485, pero **la mayor parte de esas referencias son
+> una tabla de ruteo dentro de `supervisor.agent.md`, no delegaciones**. Distinguirlas es
+> la misma diferencia entre mención e invocación que ya había fallado dos veces; medir el
+> cierre completo habría inflado el techo en un 45% con referencias que nadie carga.
+>
+> El ahorro real de la rama sigue siendo el mismo, 4.837 tokens. Lo que cambió es la base
+> contra la cual se mide: 98.254 y no 91.161. Un ahorro no se agranda porque el
+> denominador estuviera mal contado.
+
+**El delta se descompone así, y la distinción no es cosmética:**
+
+| Concepto | Tokens | ¿Es ahorro? |
+| :--- | ---: | :--- |
+| `/speckit.checklist` vuelto condicional | 5.005 | **Sí** |
+| Prosa del marcador y sus notas | −168 | costo del cambio |
+| **Ahorro real** | **4.837** | **Sí** |
+| `/speckit.clarify` ya era condicional | 3.667 | No — corrección de medición |
+| `@triage-specialist` ya era condicional | 2.225 | No — corrección de medición |
+| `@functional-analyst` en `/sdd-new` ya era condicional | 1.184 | No — corrección de medición |
+| Los tres desarrolladores son un `[one-of]`, no tres delegaciones | 2.566 | No — corrección de medición |
+
+**9.642 de los 14.479 son corrección de medición, no ahorro.** `main` cobraba al piso tres
+ramas que nunca corrían en un ciclo normal. Reportar los 11.913 como ganancia sería inflar
+el resultado exactamente como lo hacía la línea base fabricada del 83,9%.
+
+**Fase 2, la más cara del ciclo: piso de 25.551 a 20.700.** `/speckit.checklist` (5.005)
+pasa a dispararse solo si el contrato es no trivial — si `/speckit.clarify` corrió, o si el
+BIC declara más de una Never Rule. Ambas señales existen sin costo de inferencia.
+
+**Auditoría posterior — tres gaps más, todos en trabajo propio:**
+
+1. **El modelo de condicionalidad no cubría las delegaciones a agentes**, solo los comandos
+   spec-kit. `@triage-specialist` se delega únicamente si la entrada resulta ser un defecto,
+   y `@functional-analyst` en `/sdd-new` solo si el Owner aprueba. Ambos se cobraban al piso
+   de todo ciclo. El modelo ahora es uniforme.
+2. **Una condición dentro de una fila de tabla escapaba a todo.** El Intent Gate de
+   `/sdd-frame` es una tabla de decisión donde cada fila es una rama, pero la condición vive
+   en la segunda celda y la línea empieza con `|`, así que ni llevaba marcador ni el guardián
+   la veía.
+3. **Un conjunto de candidatos no es ni fijo ni condicional.** `/sdd-apply` nombra tres
+   agentes de implementación y delega en el que la tarea necesite. Cobrar los tres dice que
+   cada ciclo corre un frontend, un backend **y** un devops; marcarlos condicionales dice
+   que un ciclo puede no correr ninguno, y **un piso sin ningún desarrollador es un número
+   que ningún ciclo real alcanza**. Se agregó el marcador `[one-of]`: el candidato más
+   barato entra al piso, que así vuelve a ser una cota inferior alcanzable, y el resto al
+   margen condicional.
+4. **Nada impedía usar el marcador para inventar un ahorro.** Ponerlo en un paso que siempre
+   corre lo saca del piso y reporta una reducción inexistente. Es la dirección peligrosa de
+   esta convención, porque el número se mueve y nada más lo hace. Ahora un marcador sin
+   condición declarada falla el gate, verificado inyectando exactamente ese abuso.
+
+> [!NOTE]
+> **Dos defectos del propio instrumento se encontraron midiendo, no razonando.** El primero:
+> clasificaba por prosa inglesa y no podía sostener un guardián, porque la línea del
+> checklist contiene la palabra "if" por otro motivo. El segundo, más sutil: contaba como
+> invocación el nombre de un comando citado dentro de una nota `>`, lo que devolvía
+> `/speckit.clarify` al piso en silencio. Los dos habrían producido cifras plausibles y
+> falsas.
+
 ### Evidencia Comparativa Acumulada — Auditoría de Cierre 2026-09-08
 
 Ejecutado en `/Users/equinox/Desktop/AOI TESTS`, instalación real, 6 fases medidas sobre

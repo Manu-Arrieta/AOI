@@ -19,7 +19,9 @@ ls -la                     rtk ls
 find . -name "*.py"        rtk find . -name "*.py"
 grep -r "pattern" .         rtk grep -r "pattern" .
 docker ps                  rtk docker ps
+docker logs <ctr>          rtk docker logs <ctr>
 npm test                   rtk test npm test
+pytest                     rtk test pytest
 cat file.json              rtk json file.json
 diff a.txt b.txt           rtk diff a.txt b.txt
 ```

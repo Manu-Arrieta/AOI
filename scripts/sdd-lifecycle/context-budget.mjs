@@ -22,108 +22,12 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { estimateTokens } from './token-accounting.mjs'
+import { fileTokens, instructionsFor, read, skillsFor } from './instruction-scope.mjs'
+import { agentGroupsIn, agentsIn, secondOrderAgents, speckitIn } from './phase-references.mjs'
 
-const AGENT_REF = /(?:^|[^\w.@])@([a-z][a-z0-9.-]*[a-z0-9])/g
-// Segments are matched one at a time so a sentence-ending period is not
-// swallowed into the command name: `/speckit.plan.` must yield `speckit.plan`.
-const SPECKIT_REF = /\/(speckit\.[a-z0-9]+(?:\.[a-z0-9]+)*)/g
-const APPLY_TO = /^applyTo:\s*["']?(.+?)["']?\s*$/m
+export { fileTokens, instructionsFor, expandBraces, matchesApplyTo, skillsFor, SKILL_SCOPE } from './instruction-scope.mjs'
+export { agentGroupsIn, agentsIn, secondOrderAgents, speckitIn, CONDITIONAL_MARKER, ONE_OF_MARKER, SECOND_ORDER } from './phase-references.mjs'
 
-/** Reads a file, returning '' when absent. */
-function read(file) {
-  try {
-    return fs.readFileSync(file, 'utf8')
-  } catch {
-    return ''
-  }
-}
-
-/** Token cost of a file, 0 when it does not exist. */
-export function fileTokens(file) {
-  return estimateTokens(read(file))
-}
-
-/** Expands `{a,b}` alternations into separate patterns. */
-export function expandBraces(pattern) {
-  const m = /\{([^{}]*)\}/.exec(pattern)
-  if (!m) return [pattern]
-  return m[1]
-    .split(',')
-    .flatMap((alt) => expandBraces(pattern.slice(0, m.index) + alt + pattern.slice(m.index + m[0].length)))
-}
-
-/** Converts one brace-free glob into an anchored regex. */
-function globToRegex(glob) {
-  let out = ''
-  for (let i = 0; i < glob.length; i++) {
-    const c = glob[i]
-    if (c === '*') {
-      if (glob[i + 1] === '*') {
-        // `**/` may match zero directories, so the slash is optional.
-        out += glob[i + 2] === '/' ? '(?:.*/)?' : '.*'
-        i += glob[i + 2] === '/' ? 2 : 1
-      } else {
-        out += '[^/]*'
-      }
-    } else if (c === '?') out += '[^/]'
-    else out += c.replace(/[.+^${}()|[\]\\]/g, '\\$&')
-  }
-  return new RegExp(`^${out}$`)
-}
-
-/**
- * True when a path matches any comma-separated glob in an applyTo value.
- *
- * Braces are expanded BEFORE splitting on commas. An applyTo like
- * `**\/*.{ts,js,vue}` separates its alternatives with the same character that
- * separates patterns, so splitting first shreds it into `**\/*.{ts`, `js` and
- * `vue}` and the whole rule silently stops matching.
- */
-export function matchesApplyTo(applyTo, filePath) {
-  for (const expanded of expandBraces(String(applyTo))) {
-    for (const raw of expanded.split(',')) {
-      const trimmed = raw.trim()
-      if (trimmed && globToRegex(trimmed).test(filePath)) return true
-    }
-  }
-  return false
-}
-
-/**
- * Lists the instruction files the harness injects for a given file in context,
- * with the cost of each.
- *
- * @returns {Array<{ file: string, tokens: number, applyTo: string }>}
- */
-export function instructionsFor(root, contextPath, dir = '.github/instructions') {
-  const full = path.join(root, dir)
-  if (!fs.existsSync(full)) return []
-
-  const matched = []
-  for (const name of fs.readdirSync(full).sort()) {
-    if (!name.endsWith('.md')) continue
-    const text = read(path.join(full, name))
-    const applyTo = APPLY_TO.exec(text)?.[1] ?? ''
-    if (applyTo && matchesApplyTo(applyTo, contextPath)) {
-      matched.push({ file: path.join(dir, name), tokens: estimateTokens(text), applyTo })
-    }
-  }
-  return matched
-}
-
-/** Distinct agents a prompt delegates to, excluding spec-kit command names. */
-export function agentsIn(text) {
-  const found = new Set()
-  for (const m of text.matchAll(AGENT_REF)) {
-    if (!m[1].startsWith('speckit.')) found.add(m[1])
-  }
-  return [...found].sort()
-}
-
-/** Distinct spec-kit commands a prompt invokes. */
-export function speckitIn(text) {
-  return [...new Set([...text.matchAll(SPECKIT_REF)].map((m) => m[1]))].sort()
-}
 
 /**
  * Full fixed cost of one phase.
@@ -133,29 +37,76 @@ export function speckitIn(text) {
  * @returns {{ prompt: number, agents: number, speckit: number, instructions: number,
  *             total: number, detail: object }}
  */
-export function phaseContextCost(root, promptRel) {
+export function phaseContextCost(root, promptRel, phase = '') {
   const text = read(path.join(root, promptRel))
   const prompt = estimateTokens(text)
 
+  const costOf = (c) =>
+    fileTokens(path.join(root, `.github/agents/${c}.agent.md`)) +
+    fileTokens(path.join(root, `.github/prompts/${c}.prompt.md`))
+
+  let agents = 0
+  let speckit = 0
+  let conditional = 0
+
   const agentList = agentsIn(text)
-  const agents = agentList.reduce((n, a) => n + fileTokens(path.join(root, `.github/agents/${a}.agent.md`)), 0)
+  for (const { name, conditional: isCond } of agentList) {
+    if (isCond) conditional += costOf(name)
+    else agents += costOf(name)
+  }
+
+  // Exactly one candidate of each one-of set always runs, so the cheapest is a
+  // genuine lower bound and belongs in the floor rather than the margin.
+  // Reachable only through a rule inside an agent's own file; conditional by
+  // nature, so it widens the ceiling without touching the floor.
+  const reached = secondOrderAgents(phase, agentList.map((a) => a.name))
+  for (const a of reached) conditional += costOf(a)
+
+  const oneOfGroups = agentGroupsIn(text)
+  for (const group of oneOfGroups) {
+    const cheapest = Math.min(...group.map(costOf))
+    agents += cheapest
+    conditional -= cheapest
+  }
 
   const speckitList = speckitIn(text)
-  const speckit = speckitList.reduce(
-    (n, c) => n + fileTokens(path.join(root, `.github/agents/${c}.agent.md`)) + fileTokens(path.join(root, `.github/prompts/${c}.prompt.md`)),
-    0
-  )
+  for (const { command, conditional: isCond } of speckitList) {
+    if (isCond) conditional += costOf(command)
+    else speckit += costOf(command)
+  }
 
   const instrList = instructionsFor(root, promptRel)
   const instructions = instrList.reduce((n, i) => n + i.tokens, 0)
 
+  const skillList = skillsFor(root, phase)
+  const skills = skillList.reduce((n, s) => n + s.tokens, 0)
+
+  // `floor` is what every run of this phase costs. `total` adds what it costs
+  // when every conditional branch also fires — the worst case, not the norm.
+  const floor = prompt + agents + speckit + instructions + skills
   return {
     prompt,
     agents,
     speckit,
+    conditional,
     instructions,
-    total: prompt + agents + speckit + instructions,
-    detail: { agents: agentList, speckit: speckitList, instructions: instrList.map((i) => i.file) },
+    skills,
+    floor,
+    total: floor + conditional,
+    detail: {
+      agents: agentList.filter((a) => !a.conditional).map((a) => a.name),
+      speckit: speckitList.filter((s) => !s.conditional).map((s) => s.command),
+      conditional: [
+        ...agentList.filter((a) => a.conditional).map((a) => a.name),
+        ...speckitList.filter((s) => s.conditional).map((s) => s.command),
+      ].sort(),
+      // Reported apart so the table does not read as if none of them runs: one
+      // of each group always does, and its cheapest member sits in the floor.
+      oneOf: oneOfGroups.map((g) => [...g].sort()),
+      secondOrder: reached,
+      instructions: instrList.map((i) => i.file),
+      skills: skillList.map((s) => s.name),
+    },
   }
 }
 
@@ -173,13 +124,15 @@ export const SDD_PHASES = [
 export function auditContextBudget(root, phases = SDD_PHASES) {
   const rows = []
   let total = 0
+  let floor = 0
   for (const [key, rel] of phases) {
     if (!fs.existsSync(path.join(root, rel))) continue
-    const cost = phaseContextCost(root, rel)
+    const cost = phaseContextCost(root, rel, key)
     rows.push({ phase: key, ...cost })
     total += cost.total
+    floor += cost.floor
   }
-  return { rows, total }
+  return { rows, total, floor }
 }
 
 /**
@@ -188,20 +141,25 @@ export function auditContextBudget(root, phases = SDD_PHASES) {
  * what let a 76% reduction describe a twentieth of the real bill.
  */
 export function formatBudgetSummary(budget, payloadTokens) {
-  const { total } = budget
-  const combined = total + payloadTokens
+  const { total, floor } = budget
+  const combined = floor + payloadTokens
   const share = combined > 0 ? ((payloadTokens / combined) * 100).toFixed(1) : '0.0'
-  const heaviest = [...budget.rows].sort((a, b) => b.total - a.total)[0]
+  const heaviest = [...budget.rows].sort((a, b) => b.floor - a.floor)[0]
+  const swing = total - floor
 
   return [
     'COSTO FIJO DE INFRAESTRUCTURA (prosa cargada antes de trabajar):',
-    `- Prompts + agentes + spec-kit + instructions: ${total.toLocaleString()} tokens`,
+    `- PISO, se paga en todo ciclo:                 ${floor.toLocaleString()} tokens`,
+    `- TECHO, si además dispara todo lo condicional: ${total.toLocaleString()} tokens`,
+    `- Margen condicional:                          ${swing.toLocaleString()} tokens`,
     `- Payload optimizado del ciclo:                ${payloadTokens.toLocaleString()} tokens`,
-    `- El payload es el ${share}% del costo total del ciclo.`,
-    heaviest ? `- Fase más cara: ${heaviest.phase} con ${heaviest.total.toLocaleString()} tokens fijos.` : '',
+    `- El payload es el ${share}% del costo de piso del ciclo.`,
+    heaviest ? `- Fase más cara: ${heaviest.phase} con ${heaviest.floor.toLocaleString()} tokens de piso.` : '',
     '',
-    'Este bloque es aritmética estática sobre archivos en disco: 0 tokens de inferencia.',
-    'Sirve de trinquete — si la prosa crece, el próximo benchmark lo muestra.',
+    'Piso y techo se reportan por separado porque un paso condicional no se paga',
+    'siempre; contarlo como fijo sobreestima el ciclo y, peor, haría invisible',
+    'cualquier mejora que consista precisamente en volver condicional un paso.',
+    'Todo esto es aritmética estática sobre archivos en disco: 0 tokens de inferencia.',
   ]
     .filter(Boolean)
     .join('\n')
@@ -214,7 +172,10 @@ export function toBudgetRows({ rows }) {
     Prompt: r.prompt,
     Agentes: r.agents,
     'Spec-Kit': r.speckit,
-    Instructions: r.instructions,
-    'TOTAL fijo': r.total,
+    'Si aplica': r.conditional,
+    Instr: r.instructions,
+    Skills: r.skills,
+    PISO: r.floor,
+    TECHO: r.total,
   }))
 }

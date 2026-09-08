@@ -1,11 +1,11 @@
 ---
 name: icm
-description: Infinite Context Memory (ICM) protocol — store, recall, memoir graph, feedback, and transcripts across agent sessions. Use when the task involves remembering context, decisions, errors, or project knowledge across sessions.
+description: Infinite Context Memory (ICM) protocol — store, recall, exact O(1) facts, memoir graph, feedback, and transcripts across agent sessions. Use when the task involves remembering context, decisions, errors, or project knowledge across sessions.
 ---
 
 # ICM — Infinite Context Memory Protocol
 
-You MUST use ICM (Infinite Context Memory) throughout ALL work. ICM has four memory systems. Each one serves a different purpose and ALL FOUR must be used.
+You MUST use ICM (Infinite Context Memory) throughout ALL work. ICM has five memory systems. Each one serves a different purpose and ALL FIVE must be used.
 
 ## Session Start — MANDATORY
 
@@ -36,14 +36,16 @@ Store IMMEDIATELY when:
 2. Architecture decision → `icm_memory_store(topic: "{WORKSPACE}-context", content: "...", importance: "critical")`
 3. User preference discovered → `icm_memory_store(topic: "{WORKSPACE}-preferences", content: "...", importance: "critical")`
 4. Task completed → `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", content: "...", importance: "high")`
-5. 20+ tool calls without store → store progress summary
+5. Exact configuration, endpoint, port or BIC invariant → `icm facts set "{WORKSPACE}" "key" "value"` — three separate arguments, NOT a memory
+6. 20+ tool calls without store → store progress summary
 
-## Four Memory Systems
+## Five Memory Systems
 
 | System      | Tool                     | Persistence | Use for                               |
 | ----------- | ------------------------ | ----------- | ------------------------------------- |
 | Memories    | `icm_memory_store`       | Decays      | Decisions, progress, context          |
 | Memoirs     | `icm_memoir_add_concept` | Permanent   | Architecture, component relationships |
+| Facts       | `icm facts set`          | Permanent   | Exact config: endpoints, ports, BIC contracts |
 | Feedback    | `icm_feedback_record`    | Permanent   | Learning from mistakes                |
 | Transcripts | `icm_transcript_record`  | Permanent   | Explore & Archive phases only         |
 
