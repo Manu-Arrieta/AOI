@@ -88,3 +88,44 @@ describe('ICM protocol — always-injected surface', () => {
     assert.ok(tokens <= 2200, `icm-protocol grew to ${tokens} tokens; it is injected on every operation`)
   })
 })
+
+describe('the ICM doctrine agrees across every surface that teaches it', () => {
+  // Two surfaces taught ICM at once and disagreed: the instructions declared
+  // five memory systems, the skill declared four and never mentioned Facts at
+  // all. Both are injected in every phase, so an agent read both and believed
+  // whichever it saw last.
+  //
+  // Deduplicating was not an option: compile-rules maps the antigravity
+  // harness to `.agents/` and NOT to `.github/instructions/`, so the skill is
+  // the only ICM doctrine that harness ever sees. Both must exist, so both
+  // must agree — and only a test can hold that.
+  const SKILL = path.join(ROOT, '.github/skills/icm/SKILL.md')
+  const skill = fs.readFileSync(SKILL, 'utf8')
+
+  const SYSTEMS = ['Memories', 'Memoirs', 'Facts', 'Feedback', 'Transcripts']
+
+  it('the skill names every memory system the protocol declares', () => {
+    for (const system of SYSTEMS) {
+      assert.match(skill, new RegExp(`\\b${system}\\b`), `the ICM skill omits the ${system} system`)
+    }
+  })
+
+  it('both surfaces claim the same number of systems', () => {
+    assert.match(text, /5-Method|five memory systems/i, 'the protocol changed its system count')
+    assert.match(skill, /five memory systems/i, 'the skill disagrees with the protocol on how many systems exist')
+  })
+
+  it('the skill teaches how to write a fact, not only how to store a memory', () => {
+    // Facts is the O(1) exact system the BIC Invariant Gate reads. A skill
+    // that never shows `icm facts set` leaves contracts unpersisted and the
+    // gate with nothing to check.
+    assert.match(skill, /icm facts set/, 'the skill never shows how to write a fact')
+  })
+
+  it('the skill description names facts, since the description is its trigger', () => {
+    // The harness decides whether to load a skill from this line. Omitting
+    // facts there means the skill may not even load for a task about facts.
+    const description = /^description:.*$/m.exec(skill)?.[0] ?? ''
+    assert.match(description, /facts/i, 'the trigger text omits facts')
+  })
+})
