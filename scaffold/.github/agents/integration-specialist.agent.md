@@ -47,6 +47,7 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
    - No spec drift (implementation matches what was planned)
    - Tests exist and pass
    - Code follows project conventions
+   - **Invariant Gate (0 tokens)**: `node scripts/sdd-lifecycle/invariant-gate.mjs --entity "{WORKSPACE}" --tests-dir . --exit-code`. Exit 1 is an automatic FAIL — a declared BIC invariant with no test enforcing it is an unguarded contract; copy the reported `Unenforced Contract Rules` verbatim into the report. Exit 2 means the contract could not be read (broken ICM toolchain) and is ALSO a FAIL — never treat an unreadable contract as a pass. `SKIPPED` means the task never passed through `/sdd-frame` and is not a failure.
 4. **Verify** scaffold-mirror compliance:
    - All agents exist in `.github/agents/`
    - `copilot-instructions.md` is up to date
@@ -71,6 +72,7 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
 - Dual-sync validation is MANDATORY — if agents are out of sync, verification fails
 - Spec drift must be flagged — implementation must match the approved plan
 - The QA report must clearly state: PASS or FAIL with evidence
+- An unenforced BIC invariant is a FAIL with the same severity as a failed Service Discovery Gate — never downgrade it to a warning
 - The `integration-manifest.json` is the source of truth for migration: only
   `disposition: integrate` elements migrate; `discard`/`visualization-only` are
   excluded; `undecided` is flagged for the Owner. Every `target` is resolved

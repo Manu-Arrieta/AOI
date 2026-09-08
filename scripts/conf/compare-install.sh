@@ -122,19 +122,24 @@ while IFS= read -r -d '' scaffold_file; do
 done < <(find "$SCAFFOLD_DIR" -type f -print0 | sort -z)
 
 # ── Output JSON ─────────────────────────────────────────────────────────────
+# Takes the array ELEMENTS as positional arguments, not an array name.
+# Namerefs (`local -n`) require bash 4.3+, and macOS ships bash 3.2 — using them
+# here made this script abort mid-JSON on every macOS reinstall.
 json_array() {
-  local -n arr=$1
-  local len=${#arr[@]}
+  local len=$#
   if [ "$len" -eq 0 ]; then
     echo "[]"
     return
   fi
   echo "["
-  for i in "${!arr[@]}"; do
-    if [ "$i" -eq $((len - 1)) ]; then
-      echo "      \"${arr[$i]}\""
+  local i=0
+  local item
+  for item in "$@"; do
+    i=$((i + 1))
+    if [ "$i" -eq "$len" ]; then
+      echo "      \"$item\""
     else
-      echo "      \"${arr[$i]}\","
+      echo "      \"$item\","
     fi
   done
   echo "    ]"
@@ -142,15 +147,15 @@ json_array() {
 
 echo "{"
 printf '  "skip": '
-json_array skip_files
+json_array ${skip_files[@]+"${skip_files[@]}"}
 echo ","
 printf '  "auto_update": '
-json_array update_files
+json_array ${update_files[@]+"${update_files[@]}"}
 echo ","
 printf '  "conflict": '
-json_array conflict_files
+json_array ${conflict_files[@]+"${conflict_files[@]}"}
 echo ","
 printf '  "new": '
-json_array new_files
+json_array ${new_files[@]+"${new_files[@]}"}
 echo ""
 echo "}"

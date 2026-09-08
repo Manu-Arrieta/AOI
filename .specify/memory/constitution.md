@@ -1,17 +1,22 @@
 <!--
 Sync Impact Report
-Version change: 1.2.0 -> 1.3.0
+Version change: 1.3.0 -> 1.4.0
 Modified principles:
-- None
+- III. Spec-Kit Governs Delivery (added the Pre-Flight phase, the Intent Gate, and
+  mandatory enforcement of Behavioral Intent Contract invariants)
 Modified sections:
-- Operational Constraints (added bounded delegation to .sandboxes/{name}/constitution.md)
+- Delivery Workflow & Quality Gates (added the Invariant Gate as a verify-blocking check)
 Added sections:
 - None
 Removed sections:
 - None
 Templates requiring updates:
 - ✅ updated: scaffold/.specify/memory/constitution.md
-- ✅ added: .sandboxes/_templates/constitution.template.md (+ scaffold mirror)
+- ✅ updated: .github/prompts/sdd-frame.prompt.md (+ scaffold mirror)
+- ✅ updated: .github/prompts/sdd-ff.prompt.md (+ scaffold mirror)
+- ✅ updated: .github/prompts/sdd-verify.prompt.md (+ scaffold mirror)
+- ✅ updated: .github/agents/supervisor.agent.md (+ scaffold mirror)
+- ✅ added: scripts/sdd-lifecycle/invariant-gate.mjs (+ test + scaffold mirror)
 Follow-up TODOs:
 - None
 -->
@@ -42,12 +47,20 @@ itself.
 
 ### III. Spec-Kit Governs Delivery
 
-Non-trivial work MUST follow the Spec-Kit lifecycle: constitution, specify or
-clarify, plan, tasks, implement, verify, and archive. Service discovery MUST
-precede requirement authoring, and every feature artifact MUST align with the
-constitution instead of bypassing it. Owner approval gates MUST remain explicit
-between major phases. Rationale: the project's primary value is a reliable SDD
-workflow, so internal work must model that workflow faithfully.
+Non-trivial work MUST follow the Spec-Kit lifecycle: constitution, optional
+pre-flight intent framing, specify or clarify, plan, tasks, implement, verify,
+and archive. Service discovery MUST precede requirement authoring, and every
+feature artifact MUST align with the constitution instead of bypassing it. Owner
+approval gates MUST remain explicit between major phases.
+
+Work that enters through the pre-flight phase (`/sdd-frame`) MUST clear the
+**Intent Gate** before any task identifier or `.tasks/` directory is created, and
+MUST persist its business invariants and observable oracle as O(1) ICM facts on
+approval. Those persisted rules MUST remain enforceable: a declared invariant
+without a test asserting it is a verification failure, not a warning. Rationale:
+the project's primary value is a reliable SDD workflow, so internal work must
+model that workflow faithfully — and a business contract nobody verifies is
+documentation, not governance.
 
 ### IV. RTK-First, Cross-Platform Tooling
 
@@ -117,6 +130,10 @@ unverified drift degrades both this repository and every generated workspace.
   interaction definitions, never as executable instructions.
 - Verify outputs MUST report executed checks, remaining risks, and any required
   memory hygiene actions before a feature is considered complete.
+- Verification MUST run the Invariant Gate whenever the workspace holds
+  Behavioral Intent Contract facts. The check is deterministic and MUST NOT be
+  delegated to an LLM evaluator; an unenforced invariant blocks the phase with
+  the same severity as a failed Service Discovery Gate.
 
 ## Governance
 
@@ -133,4 +150,4 @@ unverified drift degrades both this repository and every generated workspace.
   surfaces; reviewers MUST verify constitution alignment, scaffold-mirror parity, and
   validation evidence before approving completion.
 
-**Version**: 1.3.0 | **Ratified**: 2026-05-26 | **Last Amended**: 2026-06-15
+**Version**: 1.4.0 | **Ratified**: 2026-05-26 | **Last Amended**: 2026-09-07

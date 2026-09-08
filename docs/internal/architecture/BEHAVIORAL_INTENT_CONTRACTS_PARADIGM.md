@@ -61,7 +61,7 @@ Un principio no negociable de este paradigma es que **la persona humana NO debe 
 
 La persona funcional se expresa en su medio nativo: **lenguaje natural fluido, cotidiano y espontáneo** (mediante audio, mensajes de chat, notas de voz o texto libre).
 
-La responsabilidad de transformar ese lenguaje natural en un contrato matemáticamente riguroso recae en el **Agente Socrático de Intención (`@intent-framer`)** dentro de la fase `/sdd-frame`.
+La responsabilidad de transformar ese lenguaje natural en un contrato matemáticamente riguroso recae en el **`@supervisor` operando en modo Socratic Intent Framing**, que es la forma que adopta el orquestador durante la fase `/sdd-frame`. No es un agente aparte del roster: es el mismo hub cambiando de sombrero, y por eso esta fase no cuesta una delegación extra a un subagente.
 
 ```mermaid
 flowchart TD
@@ -81,8 +81,8 @@ El humano simplemente cuenta el problema o la necesidad tal como la vive el nego
 #### Paso 2: Escucha Activa y Sonda ICM en $O(1)$
 El agente no se limita a "procesar el texto". Consulta en tiempo real la memoria persistente del repositorio para aterrizar la solicitud en la realidad del software:
 ```bash
-icm facts list "{WORKSPACE}.service"
-icm facts list "{WORKSPACE}.endpoint"
+icm facts list "{WORKSPACE}" -p "service."
+icm facts list "{WORKSPACE}" -p "endpoint."
 icm recall-context "política de pagos suscripciones" --limit 3
 ```
 Con esta información, el agente no hace preguntas redundantes, sino que formula **preguntas socráticas de límites e invariantes** en lenguaje natural simple:
@@ -107,19 +107,33 @@ Cuando el humano responde *"Sí, adelante"*, la compuerta **Intent Gate** se abr
 
 ## 3. El Núcleo del Paradigma: El *Behavioral Intent Contract* (BIC)
 
-El **Behavioral Intent Contract (BIC)** es el artefacto que resulta de esta cristalización. No es una lista de deseos; es un contrato declarativo compuesto por sus dimensiones esenciales:
+El **Behavioral Intent Contract (BIC)** es el artefacto que resulta de esta cristalización. No es una lista de deseos; es un contrato declarativo con **4 dimensiones núcleo** envueltas en metadatos de contexto.
+
+> [!IMPORTANT]
+> **Conteo canónico:** el BIC tiene exactamente **4 dimensiones núcleo** ($\Delta S$, Invariantes, Topología de Actores y Oráculo). Todo lo demás — el enmarcado del problema, los metadatos de red y la sonda de grounding ICM — es **sobre** (*envelope*): contexto que rodea al contrato pero no forma parte de él. Cuando cualquier documento, prompt o agente hable de "las dimensiones del BIC", se refiere a estas 4.
 
 ```mermaid
 flowchart TD
-    subgraph BIC["Behavioral Intent Contract (BIC)"]
+    subgraph ENV["Sobre / Envelope (contexto, no contrato)"]
+        E1["Enmarcado del Problema<br/>• Dolor y No-Objetivos"]
+        E2["Metadatos de Red<br/>• DependsOn / Triggers"]
+        E3["Sonda de Grounding ICM<br/>• Servicios y endpoints existentes"]
+    end
+
+    subgraph BIC["Behavioral Intent Contract — 4 Dimensiones Núcleo"]
         direction TB
         D1["1. Delta de Estado (ΔS = S0 -> S1)<br/>• Estado Inicial (S0)<br/>• Estado Deseado (S1)<br/>• Disparador Causal"]
         D2["2. Invariantes Inquebrantables<br/>• Reglas Never<br/>• Límites de Cumplimiento<br/>• Fronteras de Seguridad"]
         D3["3. Topología de Actores<br/>• Roles Humanos y Sintéticos<br/>• Niveles de Confianza"]
         D4["4. Oráculo Observable de Negocio<br/>• Métrica Cuantitativa de Éxito<br/>• Semilla Directa para TDD"]
-        D5["5. Metadatos de Red<br/>• Dependencias (DependsOn)<br/>• Habilitaciones (Triggers)"]
     end
+
+    ENV -.->|"rodea"| BIC
+    D2 -->|"se persiste como fact O(1)"| GATE["Invariant Gate<br/>(invariant-gate.mjs, 0 tokens)"]
+    D4 -->|"se persiste como fact O(1)"| GATE
 ```
+
+De las 4 dimensiones núcleo, **solo dos se persisten**: las Invariantes y el Oráculo. Son las únicas que ningún artefacto posterior reconstruye. El $\Delta S$ y la Topología de Actores reaparecen íntegros en `spec.md` y `design.md`, así que guardarlos sería pagar dos veces por la misma información.
 
 ### Dimensión 1: El Delta de Estado ($\Delta S = S_0 \to S_1$)
 Define la **transformación del universo del sistema**:
@@ -146,6 +160,19 @@ Establece quiénes intervienen en la transición y su legitimidad:
 
 ---
 
+### Cómo se hace cumplir el contrato: el Handshake de Etiquetas
+
+Un contrato que nadie verifica es literatura. Las Invariantes y el Oráculo son las dos únicas piezas del BIC con mecanismo de enforcement real, y funciona así:
+
+1. Al superar la **Intent Gate**, `/sdd-frame` persiste cada regla como un hecho $O(1)$ de ICM: `{WORKSPACE}.bic.{BIC-ID}.never.{N}` y `{WORKSPACE}.bic.{BIC-ID}.oracle`. Son unas pocas líneas, no un archivo.
+2. Cada regla queda identificada por una **etiqueta**: `{BIC-ID}:never.{N}` y `{BIC-ID}:oracle`.
+3. En `/sdd-ff`, el `@solution-architect` convierte cada etiqueta en un test nombrado dentro de la sección `## Test Requirements`.
+4. En `/sdd-verify`, el script determinista [`invariant-gate.mjs`](../../../scripts/sdd-lifecycle/invariant-gate.mjs) cruza las etiquetas contra la suite de tests. **Si una invariante declarada no tiene test que la afirme, la verificación FALLA.**
+
+La compuerta no invoca a ningún LLM: es un cruce mecánico de cadenas, igual que `mechanical-verify-union.mjs`. Cuesta **cero tokens de inferencia**. Ese es el precio correcto para una regla que debe evaluarse en cada verificación del proyecto.
+
+---
+
 ## 4. La Fase Pre-SDD en AOI: `Intent Framing` (`/sdd-frame`)
 
 Dentro de la arquitectura de ciclo de vida de AOI, esta fase se posiciona como la **Fase -1**, anterior e independiente de `/sdd-new`.
@@ -154,9 +181,9 @@ Dentro de la arquitectura de ciclo de vida de AOI, esta fase se posiciona como l
 sequenceDiagram
     autonumber
     actor O as "Outcome Architect"
-    participant F as "Agente Socrático (@intent-framer)"
+    participant F as "@supervisor (modo Socratic Framing)"
     participant ICM as "Sustrato ICM (Facts y Memoirs)"
-    participant SDD as "Orquestador SDD (@supervisor)"
+    participant SDD as "@supervisor (modo Orquestación SDD)"
 
     O->>F: Expresa necesidad en lenguaje natural: Pausar suscripciones
     activate F
@@ -168,6 +195,7 @@ sequenceDiagram
     deactivate F
     F->>O: Presenta Validación en Espejo (Intent Gate)
     O->>F: Aprueba en lenguaje natural: Listo, adelante
+    F->>ICM: Persiste solo invariantes y oraculo como facts O(1)
     F->>SDD: Dispara /sdd-new TASK-YYYY-NNN con contrato limpio
 ```
 
@@ -175,7 +203,10 @@ sequenceDiagram
 Uno de los mayores defectos de los flujos de trabajo basados en agentes es la polución prematura del sistema. En AOI, la fase Pre-SDD opera bajo un principio estricto:
 
 > [!IMPORTANT]
-> **Zero-Task Footprint:** Ningún identificador de tarea (`TASK-YYYY-NNN`) se genera, ningún directorio en `.tasks/` se crea y ninguna entrada en [`.tasks/registry.md`](file:///Users/equinox/Desktop/Proyectos/AOI/.tasks/registry.md) se escribe hasta que la intención haya superado la compuerta **Intent Gate**.
+> **Zero-Task Footprint:** Ningún identificador de tarea (`TASK-YYYY-NNN`) se genera, ningún directorio en `.tasks/` se crea y ninguna entrada en [`.tasks/registry.md`](../../../.tasks/registry.md) se escribe hasta que la intención haya superado la compuerta **Intent Gate**.
+
+> [!NOTE]
+> **La huella cero aplica a la narrativa, no al contrato.** Al aprobarse la Intent Gate se escriben unos pocos hechos $O(1)$ en ICM con las invariantes y el oráculo. No es una excepción caprichosa: es la diferencia entre lo que se puede reconstruir y lo que no. La prosa del canvas la vuelven a expresar `spec.md` y `design.md` aguas abajo, así que persistirla sería pagarla dos veces. Las reglas "NUNCA" no las reconstruye nadie, y sin ellas la compuerta de verificación no tiene contra qué comparar. Se descarta el 99% y se guardan las cinco líneas que sostienen el resto.
 
 ### ¿En qué se diferencian `/sdd-frame` y `/sdd-new`? ¿Cuándo usar cada una?
 
@@ -184,9 +215,9 @@ Aunque forman una secuencia natural dentro de la metodología, `/sdd-frame` y `/
 | Criterio | `/sdd-frame` (Pre-Flight) | `/sdd-new` (Explore & Propose) |
 | :--- | :--- | :--- |
 | **Espacio de Trabajo** | **Espacio del Problema** *(Problem Space)* | **Espacio de la Solución** *(Solution Space)* |
-| **Huella en Disco** | **Zero-Task Footprint:** No genera IDs de tarea, no crea carpetas en `.tasks/`, no altera el registry. | **Materializada:** Genera `TASK-YYYY-NNN`, crea el directorio físico y registra en [`.tasks/registry.md`](file:///Users/equinox/Desktop/Proyectos/AOI/.tasks/registry.md). |
+| **Huella en Disco** | **Zero-Task Footprint:** No genera IDs de tarea, no crea carpetas en `.tasks/`, no altera el registry. | **Materializada:** Genera `TASK-YYYY-NNN`, crea el directorio físico y registra en [`.tasks/registry.md`](../../../.tasks/registry.md). |
 | **Entrada Típica** | Lenguaje natural libre, conversacional o informal (audio, notas, ideas abiertas). | Requerimiento maduro, concreto o contrato BIC ya calibrado. |
-| **Salida Formal** | **Behavioral Intent Contract (BIC)** (o canvas efímero de intención). | [**`proposal.md`**](file:///Users/equinox/Desktop/Proyectos/AOI/.github/prompts/sdd-new.prompt.md) con arquitectura, principios y criterios de aceptación. |
+| **Salida Formal** | **Behavioral Intent Contract (BIC)** (o canvas efímero de intención). | [**`proposal.md`**](../../../.github/prompts/sdd-new.prompt.md) con arquitectura, principios y criterios de aceptación. |
 | **Compuerta** | **Intent Gate:** Aprobación humana del modelo mental y de las reglas "NUNCA". | **Proposal Gate:** Aprobación humana de la propuesta técnica para habilitar `/sdd-ff`. |
 
 #### Guía de Decisión: ¿Con cuál comando iniciar?
@@ -365,6 +396,9 @@ En lugar de crear un Product Backlog plano de 150 historias de usuario en Jira:
 2. **Construir el Grafo Acíclico Dirigido (DAG):** Cada nodo es un `BIC`. Las aristas son dependencias causales explícitas (`BIC-B` no puede iniciar su exploración si `BIC-A` no ha definido sus contratos de salida).
 3. **Identificar las Invariantes Globales del Sistema:** Aquellas reglas constitucionales que rigen para *todos* los BICs del proyecto (ej. cumplimiento de normativas GDPR, límites de latencia <200ms, transaccionalidad ACID en finanzas). Se persisten en `.specify/memory/constitution.md`.
 
+> [!NOTE]
+> **El DAG es una disciplina de modelado, no infraestructura automatizada.** AOI no mantiene hoy un registro de BICs ni un asignador de identificadores, y `/sdd-archive` no desbloquea nodos por sí solo: el orden de las olas lo decide el equipo leyendo `.tasks/registry.md`, donde cada BIC ya vive materializado como su `TASK-YYYY-NNN`. Construir un sustrato de grafo dedicado antes de tener un proyecto que lo necesite sería violar el YAGNI que este mismo documento predica en la Sección 8. Cuando aparezca ese proyecto, el lugar natural para el grafo son los *memoirs* de ICM, que ya son un grafo tipado de conceptos.
+
 ---
 
 ### Fase B: Selección de la Estrategia de Ejecución
@@ -405,13 +439,13 @@ Cada BIC del proyecto transiciona de forma determinística por las compuertas de
    * Se ejecuta el ciclo estricto de **TDD Gate**: RED (escribir test que falle) ➔ GREEN (código mínimo para pasar) ➔ REFACTOR.
    * Se respeta la regla de **Responsabilidad Única (SRP <300 LOC)** por archivo.
 5. **Verificación Determinística (`/sdd-verify`):**
-   * Se evalúa la conformidad contra el oráculo del BIC original.
+   * **Invariant Gate:** `invariant-gate.mjs --entity {WORKSPACE} --exit-code` cruza las etiquetas de cada invariante y del oráculo contra la suite de tests. Si una regla "NUNCA" declarada no tiene test que la afirme, la verificación FALLA de forma automática. Cero tokens de inferencia.
    * Se ejecuta `mechanical-verify-union.mjs` para consolidar fallos de forma determinística sin gastar tokens de un LLM evaluador.
    * Si algo falla, el runtime ejecuta `recover_Γ` / `sandbox.rollback()` restaurando el estado en **0 ms y 0 tokens**.
 6. **Cierre y Memoria (`/sdd-archive`):**
    * Se extraen los patrones arquitectónicos y se destilan en las **Memoirs** del proyecto (`icm memoir distill`).
    * Se registran los nuevos servicios y endpoints en el almacén de **Facts $O(1)$** de ICM.
-   * El BIC queda formalmente archivado y habilita los BICs que dependían de él en el DAG.
+   * El BIC queda formalmente archivado. Sus invariantes **permanecen activas como hechos $O(1)$**: la Invariant Gate las sigue exigiendo en cada verificación futura del proyecto, de modo que una regla conquistada nunca se pierde por regresión.
 
 ---
 
@@ -432,7 +466,10 @@ En AOI, la salud del proyecto completo se mantiene mediante tres salvaguardas co
 
 ## 7. Plantilla Estándar: El Canvas Operativo del BIC (v2.0)
 
-Esta es la especificación formal del archivo `intent-canvas.md` que el Agente Socrático compila tras el diálogo en lenguaje natural con el humano:
+Esta es la estructura que el `@supervisor` compila **en la conversación** tras el diálogo en lenguaje natural con el humano.
+
+> [!WARNING]
+> **El canvas es efímero: no existe ningún archivo `intent-canvas.md`, y no debe crearse.** Esta plantilla describe cómo se organiza el razonamiento y cómo se presenta la Validación en Espejo, no un artefacto en disco. Crear el archivo violaría el Zero-Task Footprint y agregaría un costo de lectura permanente aguas abajo. Lo único que sobrevive a la fase son los hechos $O(1)$ de invariantes y oráculo.
 
 ```markdown
 # [BIC-ID] : [Nombre Formal de la Intención Conductual]
@@ -443,7 +480,8 @@ Esta es la especificación formal del archivo `intent-canvas.md` que el Agente S
 > **Dependencias en Grafo:**
 >   - DependsOn: [BIC-IDs previos necesarios para iniciar]
 >   - Triggers: [BIC-IDs posteriores habilitados por este contrato]
-> **Veredicto de Factibilidad:** [READY_FOR_SDD | REUSE_EXISTING | REQUIRES_TRIAGE | ARCHITECTURAL_CONFLICT]
+> **Veredicto de Factibilidad:** [READY_FOR_SDD | RECALIBRATING | REQUIRES_TRIAGE | REUSE_EXISTING | DISCARDED]
+>   *(Los cinco veredictos corresponden exactamente a las cinco salidas de la Intent Gate en `sdd-frame.prompt.md`: Aprobado, Ajustar Límites, Redirigir a Triaje, Resolver sin Código y Descartar.)*
 
 ---
 
@@ -476,8 +514,8 @@ Esta es la especificación formal del archivo `intent-canvas.md` que el Agente S
 ---
 
 ### 6. Sonda de Grounding ICM (Co-creada con el Agente Socrático)
-* **Servicios Existentes Identificados:** [Salida de icm facts list "{WORKSPACE}.service"].
-* **Endpoints Existentes Aprovechables:** [Salida de icm facts list "{WORKSPACE}.endpoint"].
+* **Servicios Existentes Identificados:** [Salida de icm facts list "{WORKSPACE}" -p "service."].
+* **Endpoints Existentes Aprovechables:** [Salida de icm facts list "{WORKSPACE}" -p "endpoint."].
 * **Alineación Constitucional:** [Certificación contra .specify/memory/constitution.md: OK / ADVERTENCIA].
 * **Ruta de Enrutamiento Recomendada:** [Avanzar a /sdd-new | Resolver como fact O(1) | Pasar a @triage-specialist].
 ```
@@ -500,7 +538,7 @@ flowchart TD
     Q1 -->|"El sistema hizo lo pedido, pero faltó un caso de negocio"| GAP["2. Brecha de Invariante / Regla Faltante<br/>Se descubre una nueva condición de dominio"]
     Q1 -->|"Cambio de texto, color, timeout o parámetro"| TWEAK["3. Ajuste Menor / Configuración<br/>Labels, variables de entorno, constantes"]
     
-    BUG --> ACT_BUG["Invocar a @triage-specialist<br/>Diagnóstico Causa Raíz + Test TDD en Rojo + Fix puntual<br/>0 Tareas SDD Nuevas"]
+    BUG --> ACT_BUG["Invocar a @triage-specialist<br/>Causa Raíz + Test TDD en Rojo, y rutea el GREEN al desarrollador<br/>0 Tareas SDD Nuevas"]
     GAP --> ACT_GAP["Invocar a /sdd-frame<br/>Calibrar la nueva invariante en lenguaje natural<br/>Nace o se actualiza un BIC formal"]
     TWEAK --> ACT_TWEAK["Fix Directo con Test o Fact ICM<br/>Actualizar hecho O(1) o test puntual en suite<br/>0 Ceremonia / KISS"]
 ```
@@ -515,7 +553,7 @@ flowchart TD
 
 ### Matriz de Decisión Rápida de Bolsillo
 
-* *¿El sistema está roto frente a lo que ya habíamos acordado?* ➔ **`@triage-specialist`** *(diagnóstico objetivo y corrección TDD)*.
+* *¿El sistema está roto frente a lo que ya habíamos acordado?* ➔ **`@triage-specialist`** *(causa raíz y test en rojo; el fix lo implementa el agente desarrollador)*.
 * *¿Nos dimos cuenta de que queremos cambiar o sumar una regla de negocio?* ➔ **`/sdd-frame`** *(calibración de intención en lenguaje natural)*.
 * *¿Es solo un parámetro, copia de texto o detalle menor que no altera la lógica?* ➔ **Fix directo con test o Fact de ICM** *(cero overhead)*.
 

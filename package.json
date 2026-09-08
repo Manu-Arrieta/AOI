@@ -11,11 +11,12 @@
     "dev:dashboard": "pnpm --filter agentic-ops-dashboard dev",
     "build:dashboard": "pnpm --filter agentic-ops-dashboard build",
     "preview:dashboard": "pnpm --filter agentic-ops-dashboard preview",
-    "test:dashboard": "pnpm --filter agentic-ops-dashboard test",
+    "test:dashboard": "pnpm --filter agentic-ops-dashboard exec nuxt prepare && pnpm --filter agentic-ops-dashboard test",
     "prepare:dashboard": "pnpm --filter agentic-ops-dashboard exec nuxt prepare",
     "test:memory-sync": "node --test scripts/memory-sync/*.test.mjs",
     "test:memory-sync:bundle": "node --test scripts/memory-sync/bundle-contract.test.mjs scripts/memory-sync/export-memory-bundle.test.mjs scripts/memory-sync/import-memory-bundle.test.mjs scripts/memory-sync/bundle-lifecycle.test.mjs",
     "test:subagent-payload": "node --test scripts/subagent-context/*.test.mjs",
+    "test:conf": "node --test scripts/conf/*.test.mjs",
     "test:sdd-lifecycle": "node --test scripts/sdd-lifecycle/*.test.mjs",
     "test:spatiotemporal": "node --test scripts/spatiotemporal-runtime/*.test.mjs",
     "test:mcp-gateway": "node --test scripts/mcp-gateway/*.test.mjs",
@@ -27,6 +28,11 @@
     "test:sandbox": "node --test scripts/sandbox/*.test.mjs",
     "test:multi-harness": "node --test scripts/multi-harness/*.test.mjs",
     "test:parity": "node scripts/scaffold/validate-scaffold-parity.mjs && node --test scripts/scaffold/*.test.mjs",
-    "test": "pnpm test:parity && pnpm test:doctor && pnpm test:multi-harness && pnpm test:sandbox && pnpm test:memory-sync && pnpm test:memory-sync:bundle && pnpm test:subagent-payload && pnpm test:sdd-lifecycle && pnpm test:spatiotemporal && pnpm test:mcp-gateway && pnpm test:dashboard"
+    "test:code-lens": "node --test scripts/code-lens/*.test.mjs",
+    "aoi:ast-lens": "node scripts/code-lens/ast-skeletonizer.mjs",
+    "aoi:cache-guard": "node scripts/multi-harness/cache-guard.mjs",
+    "aoi:lint-refs": "node scripts/multi-harness/reference-integrity.mjs",
+    "aoi:stress-sdd": "node scripts/sdd-lifecycle/sdd-stress-suite.mjs",
+    "test": "pnpm test:parity && pnpm test:doctor && pnpm test:multi-harness && pnpm test:sandbox && pnpm test:memory-sync && pnpm test:memory-sync:bundle && pnpm test:subagent-payload && pnpm test:conf && pnpm test:sdd-lifecycle && pnpm test:spatiotemporal && pnpm test:mcp-gateway && pnpm test:code-lens && pnpm aoi:cache-guard && pnpm aoi:lint-refs && pnpm test:dashboard"
   }
 }

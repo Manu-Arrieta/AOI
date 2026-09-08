@@ -69,6 +69,7 @@ Execute implementation tasks from `implementation-plan.md` in dependency order:
 
 1. **For each task in `tasks.md`**:
    - Follow the **TDD Gate**: Write failing test first (RED) -> Implement minimum code to pass (GREEN) -> REFACTOR cleanly.
+   - **Zero-Token Scaffolding & AST-Lens (Token Optimization)**: Generate interface stubs and RED test suites in 0 tokens via `node scripts/sdd-lifecycle/synthesize-stubs.mjs` from `design.md` contracts. Inspect files via `node scripts/code-lens/ast-skeletonizer.mjs <file>` (saving 90% inspection tokens). Subagents generate only the pure business logic bodies.
    - **Sanitize Subagent Payload (MANDATORY)**: Before delegating to an implementation agent (`@frontend-developer`, `@backend-developer`, `@devops-engineer`), run `node scripts/subagent-context/sanitize-subagent-payload.mjs --role <role> --task-dir .tasks/{feature}/{task-id} [--format toon]` to extract only role-assigned tasks, TDD test criteria, and contract signatures. Using `--format toon` is recommended for high-density, ultra-low-token payload delivery.
    - **Spatiotemporal Fiber Sandbox**: Micro-agents execute within isolated Reversible Fiber Sandboxes (`scripts/subagent-context/subagent-fiber-runner.mjs`), ensuring that all mutations carry explicit inverses that can be rolled back in 0ms / 0 tokens if `/sdd-verify` fails.
    - Delegate according to `agent-delegation.instructions.md`.
@@ -92,9 +93,9 @@ icm_memory_store(
 **Register Exact Facts for Discovered/Created Components**:
 When a new service, route, endpoint, or environment variable is added or modified:
 ```bash
-icm facts set "{WORKSPACE}.service.{name}" "{service_path}"
-icm facts set "{WORKSPACE}.endpoint.{operationId}" "{METHOD} {/path}"
-icm facts set "{WORKSPACE}.config.{key}" "{value}"
+icm facts set "{WORKSPACE}" "service.{name}" "{service_path}"
+icm facts set "{WORKSPACE}" "endpoint.{operationId}" "{METHOD} {/path}"
+icm facts set "{WORKSPACE}" "config.{key}" "{value}"
 ```
 
 On errors/discoveries, store immediately in ICM with `importance: "high"`.

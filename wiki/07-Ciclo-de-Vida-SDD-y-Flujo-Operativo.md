@@ -78,6 +78,9 @@ En el desarrollo de software agéntico con AOI, el **ciclo SDD (Spec-Driven Deve
   No usa un LLM para opinar si el código le gusta o no. Ejecuta un script en Node.js (`mechanical-verify-union.mjs`) que corre todas las pruebas del proyecto.
 * **¿Qué pasa si algo falló?**  
   El sistema presiona el botón `recover()` y **deshace los cambios defectuosos al instante en 0 tokens**.
+* **La compuerta extra (Invariant Gate) — en palabras simples:**  
+  Imaginate al inspector municipal que recibe un edificio terminado. En los planos decía *"el ascensor NUNCA debe moverse con las puertas abiertas"*. El inspector no opina ni confía: va, busca el sensor que impide eso y comprueba que esté instalado. Si el sensor no está, **no firma la habilitación**, por más lindo que haya quedado el edificio.  
+  Eso hace `invariant-gate.mjs`: agarra cada regla "NUNCA" que acordaste en `/sdd-frame` y verifica que exista una prueba real que la vigile. Si declaraste una regla y nadie escribió el test que la cuida, la verificación **falla**. Y como es un script que compara etiquetas, no una IA opinando, **cuesta 0 tokens**.
 * **La compuerta (Verify Gate):**  
   100% de pruebas aprobadas y cero violaciones de reglas NUNCA. La tarea pasa a estado `review`.
 

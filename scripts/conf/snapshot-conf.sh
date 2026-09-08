@@ -111,12 +111,34 @@ if [ -n "$CBM_BIN" ]; then
   CBM_VER="$("$CBM_BIN" --version 2>/dev/null || echo 'null')"
 fi
 
-# Quote non-null values
+# Quote non-null values as a SAFE JSON string.
+# Some CLIs (notably `specify version`) print a multi-line ASCII-art banner with
+# ANSI escapes. Embedding that raw produced an invalid .conf/manifest.json, which
+# silently broke every consumer that json.load()s the manifest.
 quote_ver() {
-  if [ "$1" = "null" ]; then
+  if [ "$1" = "null" ] || [ -z "$1" ]; then
+    echo "null"
+    return
+  fi
+  # ANSI stripped, control chars dropped, quotes escaped. Prefer the first line
+  # that actually carries a version number over banner art.
+  local stripped
+  stripped="$(printf '%s' "$1" \
+    | LC_ALL=C sed -e 's/\x1b\[[0-9;]*[A-Za-z]//g' \
+    | LC_ALL=C tr -d '\000-\010\013-\037' \
+    | grep -v '^[[:space:]]*$')"
+  local picked
+  picked="$(printf '%s\n' "$stripped" | grep -m1 -E '[0-9]+\.[0-9]+' || true)"
+  [ -z "$picked" ] && picked="$(printf '%s\n' "$stripped" | head -1)"
+  local clean
+  clean="$(printf '%s' "$picked" \
+    | LC_ALL=C sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+    | LC_ALL=C sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' \
+    | cut -c1-120)"
+  if [ -z "$clean" ]; then
     echo "null"
   else
-    echo "\"$1\""
+    echo "\"$clean\""
   fi
 }
 

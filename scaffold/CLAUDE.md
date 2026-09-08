@@ -29,6 +29,7 @@ pnpm aoi:doctor                          # 360° Repository health check
 - `/init` — Bootstrap project, ICM facts, and base project map (`.github/prompts/init.prompt.md`)
 - `/sdd-frame` — Pre-Flight: Socratic dialogue in natural language & Behavioral Intent Contract (BIC) (`.github/prompts/sdd-frame.prompt.md`)
 - `/sdd-new` — Explore domain, discover services, and author proposal (`.github/prompts/sdd-new.prompt.md`)
+- `/sdd-ff` — Fast-Forward: specify → plan → tasks with TDD requirements (`.github/prompts/sdd-ff.prompt.md`)
 - `/sdd-apply` — Implement planned tasks with TDD & Fiber sandboxes (`.github/prompts/sdd-apply.prompt.md`)
-- `/sdd-verify` — Verify implementation, test gates, and SRP limits (<300 LOC) (`.github/prompts/sdd-verify.prompt.md`)
+- `/sdd-verify` — Verify implementation, test gates, Invariant Gate, and SRP limits (<300 LOC) (`.github/prompts/sdd-verify.prompt.md`)
 - `/sdd-archive` — Close task, distill patterns, and refresh fast briefings (`.github/prompts/sdd-archive.prompt.md`)

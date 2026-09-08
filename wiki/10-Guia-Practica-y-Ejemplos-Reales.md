@@ -116,7 +116,7 @@ El agente `@integration-specialist` ejecuta las pruebas generales:
 El agente de documentación guarda lo aprendido en la memoria persistente:
 ```bash
 icm memoir add "PeriodoDeGracia" -t "Regla de 72 horas para cobros fallidos"
-icm facts set "AOI.billing.dias_gracia" "3"
+icm facts set "AOI" "billing.dias_gracia" "3"
 ```
 ¡Listo! La tarea quedó completada, documentada y la IA nunca la olvidará.
 

@@ -25,7 +25,7 @@ Bienvenido al repositorio de documentación arquitectónica, metodológica y ope
 ## 🛡️ Gobernanza y Verificación
 
 ### 🧪 [Matriz de Verificación en el Mundo Real](internal/verification/AOI_REAL_WORLD_VERIFICATION_MATRIX.md)
-* **Resumen:** Protocolo de validación integral y los 7 invariantes operativos de AOI probados bajo condiciones reales.
+* **Resumen:** Protocolo de validación integral y los 8 invariantes operativos de AOI probados bajo condiciones reales.
 
 ---
 

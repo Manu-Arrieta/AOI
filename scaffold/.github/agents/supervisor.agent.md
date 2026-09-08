@@ -98,7 +98,7 @@ Load agent roster from `.github/agents/` to discover available agents and their 
 
 1. Validate the deliverable meets phase requirements
 2. `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", content: "**What**: [Phase] completed\n**Why**: [Next phase enabled]\n**Where**: [Artifact paths]\n**Learned**: [Key decisions]", importance: "high")`
-3. If architecture decisions → `icm_memoir_add_observation(memoir: "{WORKSPACE}-architecture", ...)`
+3. If architecture decisions → `icm_memoir_add_concept(memoir: "{WORKSPACE}-architecture", name: ..., definition: ...)`, then `icm_memoir_link(...)` per edge
 4. If something went wrong → `icm_feedback_record(topic: "{WORKSPACE}-{category}", ...)`
 5. If topic has 7+ entries → `icm_memory_consolidate(topic)` immediately
 6. Ask the Owner for approval before advancing (gate)
@@ -109,10 +109,11 @@ Load agent roster from `.github/agents/` to discover available agents and their 
 
 1. Recall context in 0ms (`icm wake-up`, `icm facts list`)
 2. Ingest natural language intent with **Zero-Task Footprint** (no TASK-ID, no disk folders)
-3. Audit existing capabilities in O(1) (`icm facts list "services"`)
+3. Audit existing capabilities in O(1) (`icm facts list "{WORKSPACE}" -p "service."`)
 4. Socratic dialogue to extract State Delta ($\Delta S$), Invariants, and Business Oracle
 5. Present Mirror Confirmation to Owner
 6. **Gate (Intent Gate)**: Owner approves to proceed to `/sdd-new`
+7. On approval, persist the minimal contract as O(1) facts — `icm facts set "{WORKSPACE}" "bic.{BIC-ID}.never.{N}" "<rule>"` and `"bic.{BIC-ID}.oracle"`. The narrative canvas stays ephemeral; these tags are what `/sdd-verify` enforces.
 
 ### `/sdd-new` (Explore + Propose)
 
@@ -144,9 +145,10 @@ Load agent roster from `.github/agents/` to discover available agents and their 
 1. Recall implementation context
 2. @integration-specialist validates spec compliance
 3. Service Discovery Gate check (auto-FAIL if missing)
-4. `icm_memory_health()` audit
-5. Produce `verify-report.md`
-6. **Flexible Archive Gate**: Owner chooses Archive / Continue / Fix / Cancel
+4. Invariant Gate check — `invariant-gate.mjs --exit-code` (auto-FAIL if a BIC Never Rule has no test)
+5. `icm_memory_health()` audit
+6. Produce `verify-report.md`
+7. **Flexible Archive Gate**: Owner chooses Archive / Continue / Fix / Cancel
 
 ### `/sdd-archive` (Formal Closure)
 

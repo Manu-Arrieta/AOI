@@ -52,10 +52,10 @@ icm_memory_store(
 Initialize deterministic exact facts:
 
 ```bash
-icm facts set "{WORKSPACE}.stack.languages" "{detected languages}"
-icm facts set "{WORKSPACE}.stack.frameworks" "{detected frameworks}"
-icm facts set "{WORKSPACE}.stack.packageManager" "{detected packageManager}"
-icm facts set "{WORKSPACE}.icm.protocol" "v4"
+icm facts set "{WORKSPACE}" "stack.languages" "{detected languages}"
+icm facts set "{WORKSPACE}" "stack.frameworks" "{detected frameworks}"
+icm facts set "{WORKSPACE}" "stack.packageManager" "{detected packageManager}"
+icm facts set "{WORKSPACE}" "icm.protocol" "v4"
 ```
 
 Create the architecture memoir:

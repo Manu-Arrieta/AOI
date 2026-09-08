@@ -59,8 +59,8 @@ If `{{input}}` is empty, greet the Owner warmly and ask:
 Before discussing technical details, query the deterministic facts and services catalog to check if this capability (or parts of it) already exists:
 
 ```bash
-icm facts list "{WORKSPACE}.service"
-icm facts list "{WORKSPACE}.endpoint"
+icm facts list "{WORKSPACE}" -p "service."
+icm facts list "{WORKSPACE}" -p "endpoint."
 ```
 
 ```
@@ -95,16 +95,19 @@ Wait for the Owner's response.
 
 ### Step 5: Crystalize the Behavioral Intent Contract (BIC)
 
-With the answers received, compile the formal **Behavioral Intent Contract (BIC)** following the 4 core dimensions:
+With the answers received, compile the formal **Behavioral Intent Contract (BIC)**. It has exactly **4 core dimensions** wrapped in a context envelope:
 
-1. **Problem Space Framing**: The real pain point, impact, and explicit *Non-Goals* (Out of Scope).
-2. **State Delta ($\Delta S = S_0 \to S_1$)**: Current observable behavior vs. desired target behavior.
-3. **Unbreakable Business Invariants ("Never Rules")**: 2 to 4 strict operational boundaries.
-4. **Actor Topology & Trust**: Participating roles, permissions, and external dependencies.
-5. **Observable Business Oracle**: Concrete, testable verification scenario (direct seed for downstream TDD).
-6. **Network Metadata**:
-   - `DependsOn`: Existing BICs or capabilities required.
-   - `Triggers`: Downstream workflows or BICs unlocked.
+**Core dimensions (the contract itself):**
+
+1. **State Delta ($\Delta S = S_0 \to S_1$)**: Current observable behavior vs. desired target behavior.
+2. **Unbreakable Business Invariants ("Never Rules")**: 2 to 4 strict operational boundaries.
+3. **Actor Topology & Trust**: Participating roles, permissions, and external dependencies.
+4. **Observable Business Oracle**: Concrete, testable verification scenario (direct seed for downstream TDD).
+
+**Envelope (context around the contract, never persisted):**
+
+- **Problem Space Framing**: The real pain point, impact, and explicit *Non-Goals* (Out of Scope).
+- **Network Metadata**: `DependsOn` (capabilities required) and `Triggers` (workflows unlocked).
 
 ---
 
@@ -138,11 +141,30 @@ Based on the Owner's response:
 
 | Owner Decision | Action |
 | :--- | :--- |
-| **Aprobado ("Sí", "Adelante", "Dale")** | **Intent Gate SUPERADO.** Disparar automáticamente la sugerencia de `/sdd-new` inyectando el BIC estructurado como argumento. El Task ID y las carpetas físicas nacerán allí con base limpia. |
+| **Aprobado ("Sí", "Adelante", "Dale")** | **Intent Gate SUPERADO.** Persistir el contrato mínimo (ver abajo) y disparar la sugerencia de `/sdd-new` inyectando el BIC estructurado como argumento. El Task ID y las carpetas físicas nacerán allí con base limpia. |
 | **Ajustar Límites** | Iterar el diálogo en lenguaje natural re-calibrando las invariantes o el oráculo (Step 4 ➔ 6). |
 | **Redirigir a Triaje** | Si durante el diálogo se evidenció que es un defecto existente, transferir a `@triage-specialist`. |
 | **Resolver sin Código** | Si se resolvió con capacidades existentes, documentar el fact y cerrar sin consumir ciclo SDD. |
 | **Descartar** | Si el Owner decide no avanzar o choca con la constitución, archivar la conversación en 0 tokens de disco. |
+
+---
+
+### Step 8: Minimal Contract Persistence (Approved Path ONLY)
+
+Zero-Task Footprint keeps the **narrative** ephemeral, not the **contract**. The prose canvas is disposable — `spec.md` and `design.md` re-express it downstream. The Never Rules and the Oracle are the only parts nothing downstream reconstructs, so they are persisted as O(1) facts (a handful of lines, no disk artifact, no re-reading cost):
+
+```bash
+BIC_ID="BIC-$(date +%Y)-NNN"   # sequential; reuse the existing id when evolving a contract
+# Signature is: icm facts set <ENTITY> <KEY> <VALUE> — three separate arguments.
+icm facts set "{WORKSPACE}" "bic.${BIC_ID}.never.1" "{invariante 1 en una línea}"
+icm facts set "{WORKSPACE}" "bic.${BIC_ID}.never.2" "{invariante 2 en una línea}"
+icm facts set "{WORKSPACE}" "bic.${BIC_ID}.oracle"  "{escenario observable de éxito en una línea}"
+```
+
+> [!IMPORTANT]
+> **Contract Enforcement Handshake.** Each persisted rule owns a tag: `{BIC_ID}:never.{N}` and `{BIC_ID}:oracle`. Downstream tests MUST reference that tag verbatim (in the test name or a comment). `/sdd-verify` runs `invariant-gate.mjs`, which mechanically matches tags against the test suite and FAILS the task when a declared invariant has no test. Announce the assigned tags to the Owner in the handoff line so `/sdd-ff` can seed them into `## Test Requirements`.
+
+This is the only write this phase performs. Do NOT create `.tasks/` entries, task IDs, or canvas files.
 
 ---
 

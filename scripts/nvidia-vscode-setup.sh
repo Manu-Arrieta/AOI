@@ -94,7 +94,7 @@ resolve_profile_dest() {
     return
   fi
 
-  # Build a file:// URI for the repo root (e.g. file:///Users/equinox/Desktop/Proyectos/AOI)
+  # Build a file:// URI for the repo root (e.g. file:///path/to/AOI)
   local workspace_uri="file://$REPO_ROOT"
 
   local profile_id
