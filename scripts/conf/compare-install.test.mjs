@@ -40,6 +40,13 @@ function runComparison() {
   write(project, 'clashing.md', 'user-edit\n')
   write(scaffold, 'arrived.md', 'brand new\n')
 
+  // aoi_apps/ is governed like any other tree. The dashboard file AOI ships is
+  // upgradable; the file an SDD cycle implemented exists only in the project
+  // and must never be visited, because the loop walks the scaffold.
+  write(scaffold, 'aoi_apps/dashboard/server/utils/aoi-owned.ts', 'v2\n')
+  write(project, 'aoi_apps/dashboard/server/utils/aoi-owned.ts', 'v1\n')
+  write(project, 'aoi_apps/dashboard/server/utils/user-feature.ts', 'implemented by an SDD cycle\n')
+
   const checksums = {
     $schema: 'aoi-conf-checksums-v1',
     generated_at: new Date().toISOString(),
@@ -47,6 +54,7 @@ function runComparison() {
       'untouched.md': sha256('same\n'),
       'upgraded.md': sha256('v1\n'),
       'clashing.md': sha256('scaffold-v1\n'),
+      'aoi_apps/dashboard/server/utils/aoi-owned.ts': sha256('v1\n'),
     },
   }
   const checksumsPath = path.join(root, 'checksums.json')
@@ -82,9 +90,29 @@ describe('compare-install.sh', () => {
     const parsed = JSON.parse(runComparison())
 
     assert.deepEqual(parsed.skip, ['untouched.md'])
-    assert.deepEqual(parsed.auto_update, ['upgraded.md'])
+    assert.deepEqual(parsed.auto_update, ['aoi_apps/dashboard/server/utils/aoi-owned.ts', 'upgraded.md'])
     assert.deepEqual(parsed.conflict, ['clashing.md'])
     assert.deepEqual(parsed.new, ['arrived.md'])
+  })
+
+  it('upgrades AOI-owned files inside aoi_apps instead of replacing the whole tree', () => {
+    const parsed = JSON.parse(runComparison())
+
+    // Regression guard: aoi_apps/ used to be excluded here and wholesale
+    // replaced by setup.sh, which destroyed features implemented by an SDD
+    // cycle. It must now be classified like any other governed tree.
+    assert.ok(
+      parsed.auto_update.includes('aoi_apps/dashboard/server/utils/aoi-owned.ts'),
+      'aoi_apps/ is excluded from the comparison again'
+    )
+
+    // A file the user owns is absent from the scaffold, so it must be invisible
+    // to every bucket — that is precisely why it survives the reinstall.
+    const everything = [...parsed.skip, ...parsed.auto_update, ...parsed.conflict, ...parsed.new]
+    assert.ok(
+      !everything.some((f) => f.endsWith('user-feature.ts')),
+      'a project-only file leaked into a bucket and could be overwritten'
+    )
   })
 
   it('snapshot-conf.sh writes a manifest that is valid JSON even with banner-style tool output', () => {

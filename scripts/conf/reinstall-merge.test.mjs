@@ -117,6 +117,16 @@ describe('reinstall smart merge — bucket consumption', () => {
     assert.ok(src.indexOf('MERGE_DRIFT=0') < src.indexOf('rm -rf "$COMPARE_TMPDIR"'), 'integrity check runs after the bucket lists are deleted')
   })
 
+  it('never wipes a governed tree wholesale on reinstall', () => {
+    const src = readSetup()
+
+    // aoi_apps/ was deleted and re-copied on every reinstall, which destroyed
+    // whatever an SDD cycle had implemented in the dashboard. Nothing under
+    // the project may be removed outright — the three-way merge decides.
+    assert.doesNotMatch(src, /rm -rf "\$PROJECT_PATH\/aoi_apps"/, 'aoi_apps/ is being wiped on reinstall again')
+    assert.doesNotMatch(src, /--exclude='aoi_apps\/'/, 'aoi_apps/ is excluded from the merge again')
+  })
+
   it('the shipped loop header copies the final entry of a file with no trailing newline', () => {
     const header = extractLoopHeaders(readSetup())[0]
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-merge-'))

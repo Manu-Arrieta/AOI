@@ -13,6 +13,11 @@
 #   auto_update — scaffold changed, user did NOT modify → safe to replace
 #   conflict    — scaffold changed AND user modified → needs manual resolution
 #   new         — file exists in scaffold but not in previous checksums → copy
+#
+# aoi_apps/ is compared like every other governed tree. It used to be excluded
+# here and wholesale replaced by setup.sh, which destroyed any feature an SDD
+# cycle had implemented inside the dashboard. A file the user owns is never in
+# the scaffold, so it is never visited by this loop and cannot be touched.
 
 set -euo pipefail
 
@@ -82,11 +87,6 @@ while IFS= read -r -d '' scaffold_file; do
 
   # Skip .gitkeep files
   if [[ "$(basename "$scaffold_file")" == ".gitkeep" ]]; then
-    continue
-  fi
-
-  # Skip aoi_apps — handled separately (full replace)
-  if [[ "$rel_path" == aoi_apps/* ]]; then
     continue
   fi
 
