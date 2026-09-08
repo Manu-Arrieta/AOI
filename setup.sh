@@ -804,12 +804,28 @@ else
   warn "scripts/install-codebase-memory.sh no encontrado junto a setup.sh — saltando Phase 1.8"
 fi
 
+# Reinstall is detected HERE, before spec-kit runs, because that decision
+# changes what Phase 2 is allowed to do to an existing workspace.
+IS_REINSTALL=0
+if [ -f "$PROJECT_PATH/.conf/manifest.json" ]; then
+  IS_REINSTALL=1
+fi
+
 # ── Phase 2: Initialize Spec-Kit ──────────────────────────────────────────
 header "Phase 2: Spec-Kit"
 
 cd "$PROJECT_PATH"
 
-if command -v specify &>/dev/null; then
+if [ "$IS_REINSTALL" -eq 1 ]; then
+  # `specify init --force` overwrites .github/ and .specify/ wholesale. On a
+  # first install that is exactly what we want. On a reinstall it is pure
+  # destruction: AOI's scaffold already owns every artifact spec-kit writes
+  # (28 speckit files under .github/, 41 under .specify/), so the smart merge
+  # below reinstates them anyway — but only AFTER spec-kit has already
+  # flattened whatever the workspace had, which destroys the very information
+  # the three-way merge needs to tell an AOI update apart from a user edit.
+  info "Reinstall detected — skipping 'specify init --force' (AOI's scaffold owns these artifacts)"
+elif command -v specify &>/dev/null; then
   info "Initializing spec-kit for Copilot..."
   specify init . --ai copilot --force 2>/dev/null && ok "Spec-kit → Copilot" || warn "Spec-kit Copilot init skipped (may need manual setup)"
 
@@ -824,14 +840,13 @@ header "Phase 3: Agentic Infrastructure"
 cd "$PROJECT_PATH"
 
 CONF_SCRIPTS_DIR="$SCRIPT_DIR/scripts/conf"
-IS_REINSTALL=0
 REINSTALL_STATS_UPDATED=0
 REINSTALL_STATS_CONFLICTS=0
 REINSTALL_STATS_NEW=0
 REINSTALL_STATS_SKIPPED=0
 
-if [ -f "$PROJECT_PATH/.conf/manifest.json" ]; then
-  IS_REINSTALL=1
+# IS_REINSTALL was resolved before Phase 2 — see the note there.
+if [ "$IS_REINSTALL" -eq 1 ]; then
   info "Detected previous installation (.conf/manifest.json) — entering REINSTALL mode"
 
   # ── 3a: Cleanup stale/corrupted files from previous installs ───────────
@@ -1000,14 +1015,17 @@ print(f'COMPARE_TMPDIR={td}')
   # auto-updated; one that both sides changed becomes a reported conflict.
   # node_modules/ no longer needs rescuing because nothing is removed.
 
-  # Ensure AOI governed agents, scripts, and instructions override generic specify init outputs
-  if command -v rsync &>/dev/null; then
-    rsync -a "$SCAFFOLD_DIR/.github/" "$PROJECT_PATH/.github/"
-    rsync -a "$SCAFFOLD_DIR/scripts/" "$PROJECT_PATH/scripts/"
-  else
-    cp -R "$SCAFFOLD_DIR/.github/"* "$PROJECT_PATH/.github/" 2>/dev/null || true
-    cp -R "$SCAFFOLD_DIR/scripts/"* "$PROJECT_PATH/scripts/" 2>/dev/null || true
-  fi
+  # NOTE: .github/ and scripts/ used to be re-copied wholesale right here, to
+  # undo the damage `specify init --force` had just done in Phase 2. That
+  # blanket copy overwrote files the comparison had classified SKIP — 167 of
+  # the 316 governed files, 53% of the tree — so for most of the workspace the
+  # three-way merge was theatre: a conflict was detected, the new version was
+  # written to .conf/conflicts/, the operator was told their file had been
+  # preserved, and then it was overwritten two steps later.
+  #
+  # It is gone because its cause is gone: spec-kit no longer runs on reinstall,
+  # so there is nothing left to repair. The merge above is now the single
+  # authority over every governed file.
 
   ok "Reinstall merge complete"
 

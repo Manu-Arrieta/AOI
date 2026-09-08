@@ -61,6 +61,17 @@ pnpm test
 > instalación existente, así que este paso debe hacerse con AOI ya instalado — nunca sobre
 > una carpeta vacía. Dos defectos reales vivieron meses acá sin que ninguna suite los viera.
 
+> [!IMPORTANT]
+> **El merge de tres vías es la única autoridad sobre los archivos gobernados.** Nada puede
+> copiar por encima de su decisión después de que la tomó. Hubo dos infracciones a esta
+> regla: `aoi_apps/` se reemplazaba entero, y `.github/` más `scripts/` se re-copiaban al
+> final para deshacer lo que `specify init --force` había roto en la Fase 2 — 167 de 316
+> archivos, el 53% del árbol. La segunda se resolvió atacando la causa: spec-kit ya no
+> corre en un reinstall, porque el scaffold de AOI ya es dueño de todo lo que escribe.
+>
+> Para probarlo hace falta un archivo que el usuario haya editado y el scaffold no: se
+> clasifica `skip`, y tras reinstalar debe conservar exactamente el mismo hash.
+
 ```bash
 # 1. Qué PIENSA hacer el instalador (productor)
 bash "$AOI_REPO_ROOT/scripts/conf/compare-install.sh" \
@@ -85,6 +96,8 @@ tail -2 "/Users/equinox/Desktop/AOI TESTS/.conf/history.jsonl"
 | `not applied: <archivo>` | ❌ Se reportó como aplicado pero no coincide con el scaffold |
 | Cada archivo de `auto_update` idéntico al scaffold tras reinstalar | ✅ |
 | Un archivo propio bajo `aoi_apps/` desaparece o cambia de hash | ❌ El reinstall volvió a arrasar el árbol |
+| Un archivo clasificado `skip` cambia de hash tras reinstalar | ❌ Algo sobrescribió al merge después de que decidiera |
+| Aparece `Spec-kit → Copilot` en un reinstall | ❌ `specify init --force` volvió a correr y aplastó el workspace |
 
 > [!NOTE]
 > **`aoi_apps/` pasa por el mismo merge de tres vías que el resto.** Antes se reemplazaba
