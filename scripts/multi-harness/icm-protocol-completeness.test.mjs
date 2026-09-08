@@ -129,3 +129,29 @@ describe('the ICM doctrine agrees across every surface that teaches it', () => {
     assert.match(description, /facts/i, 'the trigger text omits facts')
   })
 })
+
+describe('the RTK doctrine agrees across both surfaces', () => {
+  // Same shape as the ICM case and the same reason it cannot be deduplicated:
+  // `.github/instructions/` is injected into every SUBAGENT as "Project
+  // Standards", while `.github/skills/` is loaded by the ORCHESTRATING harness
+  // and mirrored to `.agents/` for antigravity. Different audiences, so both
+  // must exist — and neither may be a strict subset of the other.
+  const instructions = fs.readFileSync(path.join(ROOT, '.github/instructions/rtk.instructions.md'), 'utf8')
+  const skill = fs.readFileSync(path.join(ROOT, '.github/skills/rtk/SKILL.md'), 'utf8')
+
+  it('both teach the same command mappings', () => {
+    // The skill was missing `docker logs` and `pytest`, so an agent on a
+    // harness that only reads skills never learned to compress either.
+    for (const cmd of ['git status', 'git log', 'find', 'grep', 'docker ps', 'docker logs', 'pytest', 'diff']) {
+      assert.ok(instructions.includes(cmd), `the RTK instructions lost the ${cmd} mapping`)
+      assert.ok(skill.includes(cmd), `the RTK skill omits the ${cmd} mapping`)
+    }
+  })
+
+  it('both list the same exceptions, since prefixing those breaks the command', () => {
+    for (const exception of ['icm', 'specify', 'nteractive']) {
+      assert.ok(instructions.toLowerCase().includes(exception.toLowerCase()), `instructions lost the ${exception} exception`)
+      assert.ok(skill.toLowerCase().includes(exception.toLowerCase()), `the skill lost the ${exception} exception`)
+    }
+  })
+})

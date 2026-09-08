@@ -415,7 +415,19 @@ estos cambios tocaron prosa fija y no los mecanismos de compresión.
 | F1 · La skill de ICM omitía el sistema Facts | 98.254 | 98.650 | **+396** |
 | F3 · El supervisor arrastraba las 7 fases a cada fase | 98.650 | **96.246** | **−2.404** |
 | Guardianes de ruteo (solo tests) | 96.246 | 96.246 | 0 |
-| | | **neto** | **−2.008** |
+| F2 · La skill de RTK omitía dos mapeos | 96.246 | 96.384 | **+138** |
+| | | **neto** | **−1.870** |
+
+**F2 no dio ahorro, y conviene decirlo con todas las letras.** La hipótesis era deduplicar
+`rtk`, que existe como instruction y como skill, unos 4.392 tokens por ciclo. No es
+deduplicable: `.github/instructions/` se inyecta en **cada subagente** como "Project
+Standards" según el Hub-and-Spoke, mientras `.github/skills/` la carga el **orquestador** y
+se espeja a `.agents/` para antigravity. Audiencias distintas, igual que en F1.
+
+Lo que sí apareció al comparar las dos es que **ninguna era superset de la otra**: la skill
+omitía los mapeos de `docker logs` y `pytest`, así que un agente en un harness que solo lee
+skills nunca aprendía a comprimir esas dos salidas. Se completó, y cuesta 138 tokens por
+ciclo. La estimación de 4.392 de ahorro era falsa; el hallazgo real fue de corrección.
 
 La última fila se midió igual que las otras. El commit solo agregaba tests, así que el
 consumo no debía moverse — pero *no debía moverse* es una deducción, y una deducción
