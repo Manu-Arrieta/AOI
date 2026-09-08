@@ -414,7 +414,13 @@ estos cambios tocaron prosa fija y no los mecanismos de compresión.
 | :--- | ---: | ---: | ---: |
 | F1 · La skill de ICM omitía el sistema Facts | 98.254 | 98.650 | **+396** |
 | F3 · El supervisor arrastraba las 7 fases a cada fase | 98.650 | **96.246** | **−2.404** |
+| Guardianes de ruteo (solo tests) | 96.246 | 96.246 | 0 |
 | | | **neto** | **−2.008** |
+
+La última fila se midió igual que las otras. El commit solo agregaba tests, así que el
+consumo no debía moverse — pero *no debía moverse* es una deducción, y una deducción
+correcta sigue sin ser una medición. Toda afirmación sobre tokens en este documento tiene
+una corrida detrás, incluida la que dice que no cambió nada.
 
 **F1 subió el consumo a propósito.** Dos superficies siempre inyectadas enseñaban ICM y se
 contradecían: el protocolo declara cinco sistemas de memoria, la skill declaraba cuatro y
