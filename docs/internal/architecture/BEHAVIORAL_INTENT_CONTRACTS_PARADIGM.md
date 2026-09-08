@@ -37,7 +37,7 @@ flowchart LR
         JIRA -->|"Interpretación humana libre"| DEV["Desarrollador Humano"]
     end
 
-    subgraph Presente["Nuevo Paradigma Agéntico (AOI)"]
+    subgraph Presente["Nuevo Paradigma Agéntico"]
         OIA["Outcome & Invariant Architect"] -->|"Expresión en Lenguaje Natural Puro"| DIAL["Diálogo Socrático Grounded"]
         DIAL -->|"Cristalización Asistida"| BIC["Behavioral Intent Contract (BIC)"]
         BIC -->|"Validación y Sonda O(1)"| SUP["Supervisor y Enjambre SDD"]
