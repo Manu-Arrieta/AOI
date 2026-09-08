@@ -52,7 +52,7 @@ If an ICM or Codebase MCP tool is reported as disabled or missing during executi
 | **2. Memoirs** | Knowledge Graph | Permanent structured concepts & typed relation graph | `icm_memoir_create`, `icm_memoir_list`, `icm_memoir_show`, `icm_memoir_add_concept`, `icm_memoir_refine`, `icm_memoir_search`, `icm_memoir_search_all`, `icm_memoir_link`, `icm_memoir_inspect`, `icm_memoir_export` | `icm memoir add-concept -m "{WORKSPACE}-architecture"` |
 | **3. Facts** | Structured Exact | Deterministic (entity, key, value) triples with supersession history | `icm facts set`, `icm facts get`, `icm facts list`, `icm facts history` | `icm facts set "{WORKSPACE}" "service.name" "endpoint"` |
 | **4. Feedback** | Self-Correction | Past mistake corrections & assumptions | `icm_feedback_record`, `icm_feedback_search`, `icm_feedback_stats` | `icm feedback record -t "{WORKSPACE}-{category}"` |
-| **5. Transcripts** | Verbatim Logs | Raw prompt & response session capture & replay | `icm_transcript_start_session`, `icm_transcript_record`, `icm_transcript_end_session`, `icm_transcript_search`, `icm_transcript_get_session` | `icm transcript record` |
+| **5. Transcripts** | Verbatim Logs | Raw prompt & response session capture & replay | `icm_transcript_start_session`, `icm_transcript_record`, `icm_transcript_search`, `icm_transcript_show`, `icm_transcript_stats` | `icm transcript record` |
 
 ---
 

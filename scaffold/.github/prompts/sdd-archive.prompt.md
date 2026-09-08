@@ -61,7 +61,7 @@ Hand off to **@documentation-analyst**:
    Extract architectural patterns and distill concepts before consolidating episodic memory:
    ```bash
    icm extract-patterns -t "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN" -m "{WORKSPACE}-architecture"
-   icm memoir distill -t "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN" -m "{WORKSPACE}-architecture"
+   icm memoir distill --from-topic "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN" --into "{WORKSPACE}-architecture"
    ```
 
 2. **Consolidate Episodic Memories for this task**:
@@ -159,7 +159,7 @@ Write `.tasks/{feature-name}/TASK-YYYY-NNN/archive-report.md`:
 1. Update `.tasks/registry.md`: status → `📦 Archivado`, set Closed date
 2. Register closure fact in deterministic store:
    ```bash
-   icm facts set "{WORKSPACE}.task.TASK-YYYY-NNN.status" "archived"
+   icm facts set "{WORKSPACE}" "task.TASK-YYYY-NNN.status" "archived"
    ```
 3. Persist final summary in ICM:
    ```

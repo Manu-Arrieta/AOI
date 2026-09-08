@@ -93,9 +93,9 @@ icm_memory_store(
 **Register Exact Facts for Discovered/Created Components**:
 When a new service, route, endpoint, or environment variable is added or modified:
 ```bash
-icm facts set "{WORKSPACE}.service.{name}" "{service_path}"
-icm facts set "{WORKSPACE}.endpoint.{operationId}" "{METHOD} {/path}"
-icm facts set "{WORKSPACE}.config.{key}" "{value}"
+icm facts set "{WORKSPACE}" "service.{name}" "{service_path}"
+icm facts set "{WORKSPACE}" "endpoint.{operationId}" "{METHOD} {/path}"
+icm facts set "{WORKSPACE}" "config.{key}" "{value}"
 ```
 
 On errors/discoveries, store immediately in ICM with `importance: "high"`.

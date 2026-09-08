@@ -71,7 +71,7 @@ Not every issue requires a new BIC or a new `/sdd-new` task. Classify into 3 ope
 | -------- | --------- | ------ | ---------------- |
 | **1. Technical Bug** | Code violates an existing invariant or contract (crashes, regressions, wrong math). | Invoke `@triage-specialist`: root cause diagnosis ➔ failing test (RED). The GREEN fix is routed to a developer agent. | **0 New SDD Tasks**. Handled in place within the affected component. |
 | **2. Invariant Gap / Business Rule** | Code did what was asked, but business uncovers an unhandled domain rule or edge case. | Invoke `/sdd-frame`. Socratic dialogue in natural language to calibrate the new invariant & oracle. | **Intent Evolution**. Updates existing BIC or creates a new calibrated BIC for `/sdd-new`. |
-| **3. Minor Tweak / Config** | Cosmetic adjustment, label change, timeout tweak, env variable update. | **Direct Fix with Test** or ICM Fact update (`icm facts set "{WS}.config.key" "val"`). | **0 Ceremony**. Strict KISS/YAGNI to prevent token waste. |
+| **3. Minor Tweak / Config** | Cosmetic adjustment, label change, timeout tweak, env variable update. | **Direct Fix with Test** or ICM Fact update (`icm facts set "{WS}" "config.key" "val"`). | **0 Ceremony**. Strict KISS/YAGNI to prevent token waste. |
 
 ### Decision Rule
 - *Broken behavior against existing rules?* ➔ `@triage-specialist` (diagnosis & TDD fix).

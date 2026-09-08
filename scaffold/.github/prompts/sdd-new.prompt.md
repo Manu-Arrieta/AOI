@@ -59,8 +59,8 @@ Record every user message and agent response during this phase. Transcripts capt
 Before exploring the requirement, check exact facts and search for existing services:
 
 ```bash
-icm facts list "{WORKSPACE}.service"
-icm facts list "{WORKSPACE}.endpoint"
+icm facts list "{WORKSPACE}" -p "service."
+icm facts list "{WORKSPACE}" -p "endpoint."
 ```
 
 ```
@@ -70,8 +70,8 @@ icm_memory_recall(query: "services composables endpoints", topic: "{WORKSPACE}-s
 Also scan the codebase for existing services, composables, utils, API endpoints that may be relevant. Persist any discoveries as exact facts and in the services catalog:
 
 ```bash
-icm facts set "{WORKSPACE}.service.{name}" "{path/to/service}"
-icm facts set "{WORKSPACE}.endpoint.{operationId}" "{METHOD} {/path}"
+icm facts set "{WORKSPACE}" "service.{name}" "{path/to/service}"
+icm facts set "{WORKSPACE}" "endpoint.{operationId}" "{METHOD} {/path}"
 ```
 
 ```
