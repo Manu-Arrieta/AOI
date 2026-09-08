@@ -174,9 +174,13 @@ flowchart LR
    pnpm --filter agentic-ops-dashboard test test/server/fiber-health-evaluator.test.ts
    ```
 
-4. Espejar el nuevo archivo en `scaffold/`:
+4. Espejar en `scaffold/` **ambos** archivos nuevos. `aoi_apps/agentic-ops-dashboard/server`
+   y `.../test` están los dos gobernados por el Invariante 7, así que espejar solo la
+   implementación deja el test huérfano y la paridad falla en el Paso 1.4:
    ```bash
    cp aoi_apps/agentic-ops-dashboard/server/utils/fiber-health-evaluator.ts scaffold/aoi_apps/agentic-ops-dashboard/server/utils/fiber-health-evaluator.ts
+   cp aoi_apps/agentic-ops-dashboard/test/server/fiber-health-evaluator.test.ts scaffold/aoi_apps/agentic-ops-dashboard/test/server/fiber-health-evaluator.test.ts
+   node scripts/scaffold/validate-scaffold-parity.mjs   # debe volver a OK antes de seguir
    ```
 
 ---
@@ -303,6 +307,30 @@ EOF
 | 4 | `/sdd-verify` | 2.134 | 39 | 2.095 | **98,2%** | = |
 | 5 | `/sdd-archive` | 1.400 | 120 | 1.280 | **91,4%** | = |
 | **TOTAL** | **ciclo SDD completo** | **13.181** | **2.121** | **11.060** | **83,9%** | **= (sin regresión)** |
+
+### Ciclo REAL ejecutado en AOI TESTS — TASK-2026-101 (token-budget)
+
+> [!NOTE]
+> Medido ejecutando el ciclo SDD completo de verdad sobre una feature real, no con los
+> fixtures sintéticos de `sdd-stress-suite.mjs`. Los ratios coinciden, pero **los
+> volúmenes absolutos reales son mayores**: la suite subestima el ahorro neto en tokens.
+
+| Fase | Mecanismo medido | Real: crudo → AOI | Real | Sintético |
+| :--- | :--- | ---: | ---: | ---: |
+| 0 `/sdd-frame` | sonda O(1) vs recall semántico | 5.110 → 197 | **96,1%** | 96,1% |
+| 1 `/sdd-new` | ventana calibrada (30 ítems → 8) | 2.770 → 744 | **73,1%** | 74,0% |
+| 2 `/sdd-ff` | TOON vs Markdown sobre `tasks.md` real | 332 → 251 | **24,2%** | 25,9% |
+
+Las fases 3 a 5 se ejecutaron funcionalmente (TDD RED→GREEN real, Invariant Gate,
+fusión mecánica, archivado) pero esta feature no ejercita AST-Lens ni tombstoning, así
+que no arrojan un delta de tokens comparable.
+
+**Verificado en el ciclo real, no por inspección:**
+- Zero-Task Footprint: `/sdd-frame` no creó ninguna entrada en `.tasks/`.
+- El contrato BIC persiste como 3 hechos $O(1)$ y `/sdd-ff` los leyó para sembrar tests.
+- Invariant Gate: 3/3 reglas trazadas al archivo de test real; al quitar una etiqueta
+  bloquea con exit 1 nombrando la regla huérfana; restaurada, exit 0.
+- El contrato **sigue vigente después de archivar** la tarea.
 
 ### Costo de tokens de los prompts (NO cubierto por la stress suite)
 
