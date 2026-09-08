@@ -29,44 +29,15 @@ applyTo: ".github/{agents,prompts}/**,**/*.agent.md,**/*.prompt.md"
 
 ## 3. Agent Assignment & `runSubagent` Model Values
 
-### Domain Agents
+> **Fuente única de verdad: el Agent Registry de `agent-delegation.instructions.md`.**
+> Ahí vive el mapeo completo de los 27 agentes a su parámetro de modelo, su fallback
+> de NVIDIA NIM, su skill path y su categoría.
+>
+> Esta tabla estaba duplicada aquí carácter por carácter. Ambos archivos se inyectan
+> juntos en el contexto de cualquier `.prompt.md`, así que la copia se pagaba en las
+> seis fases del ciclo sin agregar una sola capacidad. Las reglas de selección de la
+> sección 2 siguen siendo de este archivo; los valores concretos, no.
 
-| Agent | Model Name for `runSubagent` | Primary Provider | Fallback (NVIDIA NIM) | Category |
-| :--- | :--- | :--- | :--- | :--- |
-| `@supervisor` | `Deepseek v4 pro - Provider - Deepseek` | DeepSeek (`deepseek-v4-pro`) | `deepseek-ai/deepseek-v4-pro` | Reasoning |
-| `@functional-analyst` | `Deepseek v4 pro - Provider - Deepseek` | DeepSeek (`deepseek-v4-pro`) | `deepseek-ai/deepseek-v4-pro` | Reasoning |
-| `@solution-architect` | `Qwen 3.7 plus - Provider - Alibaba` | Alibaba (`qwen3.7-plus`) | DeepSeek (`deepseek-v4-pro`) | Reasoning |
-| `@frontend-developer` | `Glm5.2 - Provider - Zai` | Zai (`glm-5.2`) | `z-ai/glm-5.2` | Implementation |
-| `@backend-developer` | `Glm5.2 - Provider - Zai` | Zai (`glm-5.2`) | `z-ai/glm-5.2` | Implementation |
-| `@devops-engineer` | `Glm5.2 - Provider - Zai` | Zai (`glm-5.2`) | `z-ai/glm-5.2` | Implementation |
-| `@ux-designer` | `Minimax M3 - Provider - Minimax` | MiniMax (`MiniMax-M3`) | `minimaxai/minimax-m3` | Reasoning / Visual |
-| `@integration-specialist` | `Deepseek v4 pro - Provider - Deepseek` | DeepSeek (`deepseek-v4-pro`) | `deepseek-ai/deepseek-v4-pro` | Reasoning |
-| `@documentation-analyst` | `Deepseek v4 pro - Provider - Deepseek` | DeepSeek (`deepseek-v4-pro`) | `deepseek-ai/deepseek-v4-pro` | Reasoning |
-| `@triage-specialist` | `Qwen 3.7 plus - Provider - Alibaba` | Alibaba (`qwen3.7-plus`) | DeepSeek (`deepseek-v4-pro`) | Reasoning |
-| `@resource-analyst` | `Deepseek v4 pro - Provider - Deepseek` | DeepSeek (`deepseek-v4-pro`) | `deepseek-ai/deepseek-v4-pro` | Reasoning |
-| `@project-analyzer` | `Deepseek v4 pro - Provider - Deepseek` | DeepSeek (`deepseek-v4-pro`) | `deepseek-ai/deepseek-v4-pro` | Reasoning |
-| `@project-expert` | `Deepseek v4 pro - Provider - Deepseek` | DeepSeek (`deepseek-v4-pro`) | `deepseek-ai/deepseek-v4-pro` | Reasoning |
-
-### Spec-Kit Agents
-
-| Agent | Model Name for `runSubagent` | Primary Provider | Fallback (NVIDIA NIM) |
-| :--- | :--- | :--- | :--- |
-| `speckit.constitution` | `Deepseek v4 pro - Provider - Deepseek` | DeepSeek (`deepseek-v4-pro`) | `deepseek-ai/deepseek-v4-pro` |
-| `speckit.specify` | `Deepseek v4 pro - Provider - Deepseek` | DeepSeek (`deepseek-v4-pro`) | `deepseek-ai/deepseek-v4-pro` |
-| `speckit.clarify` | `Deepseek v4 pro - Provider - Deepseek` | DeepSeek (`deepseek-v4-pro`) | `deepseek-ai/deepseek-v4-pro` |
-| `speckit.plan` | `Deepseek v4 pro - Provider - Deepseek` | DeepSeek (`deepseek-v4-pro`) | `deepseek-ai/deepseek-v4-pro` |
-| `speckit.tasks` | `Deepseek v4 pro - Provider - Deepseek` | DeepSeek (`deepseek-v4-pro`) | `deepseek-ai/deepseek-v4-pro` |
-| `speckit.analyze` | `Deepseek v4 pro - Provider - Deepseek` | DeepSeek (`deepseek-v4-pro`) | `deepseek-ai/deepseek-v4-pro` |
-| `speckit.checklist` | `Deepseek v4 pro - Provider - Deepseek` | DeepSeek (`deepseek-v4-pro`) | `deepseek-ai/deepseek-v4-pro` |
-| `speckit.taskstoissues` | `Deepseek v4 pro - Provider - Deepseek` | DeepSeek (`deepseek-v4-pro`) | `deepseek-ai/deepseek-v4-pro` |
-| `speckit.implement` | `Glm5.2 - Provider - Zai` | Zai (`glm-5.2`) | `z-ai/glm-5.2` |
-| `speckit.git.initialize` | `Glm5.2 - Provider - Zai` | Zai (`glm-5.2`) | `z-ai/glm-5.2` |
-| `speckit.git.feature` | `Glm5.2 - Provider - Zai` | Zai (`glm-5.2`) | `z-ai/glm-5.2` |
-| `speckit.git.commit` | `Glm5.2 - Provider - Zai` | Zai (`glm-5.2`) | `z-ai/glm-5.2` |
-| `speckit.git.remote` | `Glm5.2 - Provider - Zai` | Zai (`glm-5.2`) | `z-ai/glm-5.2` |
-| `speckit.git.validate` | `Glm5.2 - Provider - Zai` | Zai (`glm-5.2`) | `z-ai/glm-5.2` |
-
----
 
 ## 4. Multi-Provider & Tooling Context
 

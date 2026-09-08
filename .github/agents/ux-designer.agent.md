@@ -8,13 +8,9 @@ You are the **UX Designer**, responsible for user experience and visual design.
 
 ## Model Requirement
 
-> **Primary**: `MiniMax-M3` — MiniMax ID: `MiniMax-M3`
-> **Fallback**: `minimaxai/minimax-m3` — NVIDIA ID: `minimaxai/minimax-m3`
->
-> ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
->
-> **Justificación**: MiniMax M3 — visión multimodal nativa insuperable para diseño UI/UX. Provider directo MiniMax con fallback NVIDIA.
-
+> **Model**: `Minimax M3 - Provider - Minimax` · **Fallback**: minimaxai/minimax-m3
+> ⚠️ Selecciónalo en el picker de Copilot antes de invocar al agente.
+> Registro completo: `.github/instructions/agent-delegation.instructions.md`
 
 ## Session Start — MANDATORY
 

@@ -67,40 +67,40 @@ After the subagent returns, verify:
 
 ### Domain Agents
 
-| Agent | `runSubagent` Model Parameter | Skill Path | Category |
-| :--- | :--- | :--- | :--- |
-| `supervisor` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/supervisor.agent.md` | Razonamiento |
-| `solution-architect` | `Qwen 3.7 plus - Provider - Alibaba` | `.github/agents/solution-architect.agent.md` | Razonamiento |
-| `functional-analyst` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/functional-analyst.agent.md` | Razonamiento |
-| `triage-specialist` | `Qwen 3.7 plus - Provider - Alibaba` | `.github/agents/triage-specialist.agent.md` | Razonamiento |
-| `integration-specialist` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/integration-specialist.agent.md` | Razonamiento |
-| `documentation-analyst` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/documentation-analyst.agent.md` | Razonamiento |
-| `project-analyzer` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/project-analyzer.agent.md` | Razonamiento |
-| `project-expert` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/project-expert.agent.md` | Razonamiento |
-| `resource-analyst` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/resource-analyst.agent.md` | Razonamiento |
-| `ux-designer` | `Minimax M3 - Provider - Minimax` | `.github/agents/ux-designer.agent.md` | Razonamiento |
-| `frontend-developer` | `Glm5.2 - Provider - Zai` | `.github/agents/frontend-developer.agent.md` | Implementación |
-| `backend-developer` | `Glm5.2 - Provider - Zai` | `.github/agents/backend-developer.agent.md` | Implementación |
-| `devops-engineer` | `Glm5.2 - Provider - Zai` | `.github/agents/devops-engineer.agent.md` | Implementación |
+| Agent | `runSubagent` Model Parameter | Fallback (NVIDIA NIM) | Skill Path | Category |
+| :--- | :--- | :--- | :--- | :--- |
+| `supervisor` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | `.github/agents/supervisor.agent.md` | Razonamiento |
+| `solution-architect` | `Qwen 3.7 plus - Provider - Alibaba` | DeepSeek (`deepseek-v4-pro`) | `.github/agents/solution-architect.agent.md` | Razonamiento |
+| `functional-analyst` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | `.github/agents/functional-analyst.agent.md` | Razonamiento |
+| `triage-specialist` | `Qwen 3.7 plus - Provider - Alibaba` | DeepSeek (`deepseek-v4-pro`) | `.github/agents/triage-specialist.agent.md` | Razonamiento |
+| `integration-specialist` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | `.github/agents/integration-specialist.agent.md` | Razonamiento |
+| `documentation-analyst` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | `.github/agents/documentation-analyst.agent.md` | Razonamiento |
+| `project-analyzer` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | `.github/agents/project-analyzer.agent.md` | Razonamiento |
+| `project-expert` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | `.github/agents/project-expert.agent.md` | Razonamiento |
+| `resource-analyst` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | `.github/agents/resource-analyst.agent.md` | Razonamiento |
+| `ux-designer` | `Minimax M3 - Provider - Minimax` | `minimaxai/minimax-m3` | `.github/agents/ux-designer.agent.md` | Razonamiento |
+| `frontend-developer` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | `.github/agents/frontend-developer.agent.md` | Implementación |
+| `backend-developer` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | `.github/agents/backend-developer.agent.md` | Implementación |
+| `devops-engineer` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | `.github/agents/devops-engineer.agent.md` | Implementación |
 
 ### Spec-Kit Agents
 
-| Agent | `runSubagent` Model Parameter | Skill Path | Category |
-| :--- | :--- | :--- | :--- |
-| `speckit.constitution` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.constitution.agent.md` | Razonamiento |
-| `speckit.specify` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.specify.agent.md` | Razonamiento |
-| `speckit.clarify` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.clarify.agent.md` | Razonamiento |
-| `speckit.plan` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.plan.agent.md` | Razonamiento |
-| `speckit.tasks` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.tasks.agent.md` | Razonamiento |
-| `speckit.analyze` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.analyze.agent.md` | Razonamiento |
-| `speckit.checklist` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.checklist.agent.md` | Razonamiento |
-| `speckit.taskstoissues` | `Deepseek v4 pro - Provider - Deepseek` | `.github/agents/speckit.taskstoissues.agent.md` | Razonamiento |
-| `speckit.implement` | `Glm5.2 - Provider - Zai` | `.github/agents/speckit.implement.agent.md` | Implementación |
-| `speckit.git.initialize` | `Glm5.2 - Provider - Zai` | `.github/agents/speckit.git.initialize.agent.md` | Implementación |
-| `speckit.git.feature` | `Glm5.2 - Provider - Zai` | `.github/agents/speckit.git.feature.agent.md` | Implementación |
-| `speckit.git.commit` | `Glm5.2 - Provider - Zai` | `.github/agents/speckit.git.commit.agent.md` | Implementación |
-| `speckit.git.remote` | `Glm5.2 - Provider - Zai` | `.github/agents/speckit.git.remote.agent.md` | Implementación |
-| `speckit.git.validate` | `Glm5.2 - Provider - Zai` | `.github/agents/speckit.git.validate.agent.md` | Implementación |
+| Agent | `runSubagent` Model Parameter | Fallback (NVIDIA NIM) | Skill Path | Category |
+| :--- | :--- | :--- | :--- | :--- |
+| `speckit.constitution` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | `.github/agents/speckit.constitution.agent.md` | Razonamiento |
+| `speckit.specify` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | `.github/agents/speckit.specify.agent.md` | Razonamiento |
+| `speckit.clarify` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | `.github/agents/speckit.clarify.agent.md` | Razonamiento |
+| `speckit.plan` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | `.github/agents/speckit.plan.agent.md` | Razonamiento |
+| `speckit.tasks` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | `.github/agents/speckit.tasks.agent.md` | Razonamiento |
+| `speckit.analyze` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | `.github/agents/speckit.analyze.agent.md` | Razonamiento |
+| `speckit.checklist` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | `.github/agents/speckit.checklist.agent.md` | Razonamiento |
+| `speckit.taskstoissues` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | `.github/agents/speckit.taskstoissues.agent.md` | Razonamiento |
+| `speckit.implement` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | `.github/agents/speckit.implement.agent.md` | Implementación |
+| `speckit.git.initialize` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | `.github/agents/speckit.git.initialize.agent.md` | Implementación |
+| `speckit.git.feature` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | `.github/agents/speckit.git.feature.agent.md` | Implementación |
+| `speckit.git.commit` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | `.github/agents/speckit.git.commit.agent.md` | Implementación |
+| `speckit.git.remote` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | `.github/agents/speckit.git.remote.agent.md` | Implementación |
+| `speckit.git.validate` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | `.github/agents/speckit.git.validate.agent.md` | Implementación |
 
 ---
 

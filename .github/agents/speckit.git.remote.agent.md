@@ -4,19 +4,9 @@ description: Detect Git remote URL for GitHub integration
 
 ## Model Requirement
 
-> **Primary**: `glm-5.2` — Zai ID: `glm-5.2`
-> **Fallback**: `z-ai/glm-5.2` — NVIDIA ID: `z-ai/glm-5.2`
->
-> ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
->
-> **Justificación**: GLM 5.2 — Terminal-Bench 81.0 + SWE-Bench Pro 62.1%. Provider directo Zai con fallback NVIDIA cross-provider.
-
-<!-- Extension: git -->
-<!-- Config: .specify/extensions/git/ -->
-
-# Detect Git Remote URL
-
-Detect the Git remote URL for integration with GitHub services (e.g., issue creation).
+> **Model**: `Glm5.2 - Provider - Zai` · **Fallback**: z-ai/glm-5.2
+> ⚠️ Selecciónalo en el picker de Copilot antes de invocar al agente.
+> Registro completo: `.github/instructions/agent-delegation.instructions.md`
 
 ## Prerequisites
 
