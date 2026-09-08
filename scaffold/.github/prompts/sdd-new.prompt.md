@@ -34,6 +34,8 @@ WORKSPACE=$(basename "$(git remote get-url origin 2>/dev/null | sed 's/.git$//')
 
 Present the recalled context to the user briefly.
 
+> **Service Discovery — cómo buscar.** Usá recall de ICM y comandos `find` de terminal. **Nunca** la búsqueda de workspace de VS Code ni selectores de archivos: no son reproducibles, no dejan rastro en el transcript y su salida no se puede acotar.
+
 ### Step 2: Start Transcript (Verbatim)
 
 ```

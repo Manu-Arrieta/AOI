@@ -404,6 +404,39 @@ Ninguna fase perdió porcentaje más allá del ruido de muestreo (±0,3 pp).
 > **15.164 medidos** por ciclo. Un ciclo real mueve mucho más contexto del que asumían
 > los fixtures, así que AOI ahorra más tokens de los que decía, sobre una base mayor.
 
+### Reducción por hallazgo — medido en AOI TESTS
+
+Cada fila es una corrida real de `pnpm aoi:stress-sdd` sobre la instalación, antes y
+después del cambio. El payload se mantuvo en 4.811 en toda la serie: la señal de que
+estos cambios tocaron prosa fija y no los mecanismos de compresión.
+
+| Hallazgo | Piso antes | Piso después | Delta |
+| :--- | ---: | ---: | ---: |
+| F1 · La skill de ICM omitía el sistema Facts | 98.254 | 98.650 | **+396** |
+| F3 · El supervisor arrastraba las 7 fases a cada fase | 98.650 | **96.246** | **−2.404** |
+| | | **neto** | **−2.008** |
+
+**F1 subió el consumo a propósito.** Dos superficies siempre inyectadas enseñaban ICM y se
+contradecían: el protocolo declara cinco sistemas de memoria, la skill declaraba cuatro y
+no nombraba Facts en ningún lado — ni en la tabla, ni en los disparadores, ni en su propia
+descripción, que es el disparador con el que el harness decide cargarla. Facts es el lookup
+exacto O(1) del que depende el Invariant Gate. Un agente barato que no sabe que Facts
+existe no persiste el contrato BIC, y la compuerta se queda sin nada que verificar.
+
+**No se dedujo deduplicando, y ahí estuvo el riesgo.** La salida obvia era apuntar la skill
+al protocolo y ahorrar 700 tokens, pero `compile-rules.mjs` mapea el harness *antigravity*
+a `.agents/` y **no** a `.github/instructions/`: para ese harness la skill es la única
+doctrina ICM que existe. Los dos archivos deben existir, luego los dos deben concordar, y
+eso solo lo sostiene un test.
+
+**F3 quitó duplicación pura.** `supervisor.agent.md` se carga en las seis fases y dedicaba
+682 tokens a describir los pasos de los siete comandos, que el prompt de la fase ya
+especifica en detalle y que el harness acaba de cargar. Quedó la cadena de compuertas del
+Owner, que es lo que el Supervisor sí posee y no vive en ningún otro lado. La regla de
+Service Discovery que **solo** existía ahí —usar recall de ICM y `find`, nunca la búsqueda
+de workspace de VS Code— se movió al prompt de `/sdd-new` antes de comprimir: comprimir un
+archivo es exactamente donde muere el contenido único.
+
 ### Piso y Techo — rama `perf/conditional-phase-cost` (aislada)
 
 Un paso condicional no se paga siempre. Contarlo como fijo sobreestima el ciclo y, peor,

@@ -172,3 +172,38 @@ describe('per-agent model blocks stay compressed', () => {
     }
   })
 })
+
+describe('the supervisor routes phases without re-specifying them', () => {
+  const supervisor = read('.github/agents/supervisor.agent.md')
+
+  it('does not carry a step list for each command', () => {
+    // supervisor.agent.md is loaded in all six phases, so a block describing
+    // what to do in all seven commands made every phase pay for the other six
+    // — and the steps were already in the prompt the harness had just loaded.
+    const perCommandSections = supervisor.split('\n').filter((l) => /^### `\/(sdd|sandbox)-/.test(l))
+    assert.deepEqual(perCommandSections, [], 'per-command step lists came back into the supervisor')
+  })
+
+  it('still owns the gate chain, which is its actual job', () => {
+    // Routing and gates are the supervisor's responsibility and live nowhere
+    // else in one place. Compressing must not take those with it.
+    for (const gate of ['Intent Gate', 'Flexible Archive Gate', 'proposal.md', 'implementation-plan.md']) {
+      assert.ok(supervisor.includes(gate), `the supervisor lost the ${gate} handoff`)
+    }
+  })
+
+  it('stays within a budget, since it is the priciest file in the system', () => {
+    const tokens = Math.round(supervisor.length / 4)
+    assert.ok(tokens <= 2800, `supervisor.agent.md grew to ${tokens} tokens, and it loads in all six phases`)
+  })
+
+  it('keeps the search rule that used to live only in the supervisor', () => {
+    // Compressing a file is where unique content dies. This rule existed in no
+    // prompt at all, so dropping the block would have deleted it outright.
+    assert.match(
+      read('.github/prompts/sdd-new.prompt.md'),
+      /VS Code/,
+      'the Service Discovery search rule was lost in the compression'
+    )
+  })
+})

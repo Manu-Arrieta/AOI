@@ -100,69 +100,23 @@ Load agent roster from `.github/agents/` to discover available agents and their 
 5. If topic has 7+ entries → `icm_memory_consolidate(topic)` immediately
 6. Ask the Owner for approval before advancing (gate)
 
-## Workflow Commands → SDD Phases
+## Workflow Commands → Owner Gates
 
-### `/sdd-frame` (Pre-Flight Intent Framing)
+Los pasos de cada fase viven en su propio prompt (`.github/prompts/<comando>.prompt.md`),
+que el harness carga al invocar el comando. Repetirlos aquí hacía que cada fase pagara la
+descripción de las otras seis. Lo que el Supervisor sí posee es la cadena de compuertas:
 
-1. Recall context in 0ms (`icm wake-up`, `icm facts list`)
-2. Ingest natural language intent with **Zero-Task Footprint** (no TASK-ID, no disk folders)
-3. Audit existing capabilities in O(1) (`icm facts list "{WORKSPACE}" -p "service."`)
-4. Socratic dialogue to extract State Delta ($\Delta S$), Invariants, and Business Oracle
-5. Present Mirror Confirmation to Owner
-6. **Gate (Intent Gate)**: Owner approves to proceed to `/sdd-new`
-7. On approval, persist the minimal contract as O(1) facts — `icm facts set "{WORKSPACE}" "bic.{BIC-ID}.never.{N}" "<rule>"` and `"bic.{BIC-ID}.oracle"`. The narrative canvas stays ephemeral; these tags are what `/sdd-verify` enforces.
+| Comando | Compuerta al cerrar | Sigue |
+| :--- | :--- | :--- |
+| `/sdd-frame` | **Intent Gate** — el Owner aprueba la intención; recién ahí se persiste el BIC como facts O(1) | `/sdd-new` |
+| `/sdd-new` | El Owner aprueba `proposal.md` | `/sdd-ff` |
+| `/sdd-ff` | El Owner aprueba `implementation-plan.md` | `/sdd-apply` |
+| `/sdd-apply` | Todas las tareas completas; progreso reportado cada 3-5 sub-tareas | `/sdd-verify` |
+| `/sdd-verify` | **Flexible Archive Gate** — el Owner elige Archive / Continue / Fix / Cancel | `/sdd-archive` |
+| `/sdd-archive` | Registro actualizado a `📦 Archivado` | — |
+| `/sandbox-new` | Opcional y fuera del ciclo | — |
 
-### `/sdd-new` (Explore + Propose)
-
-1. Recall all context + start **Transcript** session
-2. Service Discovery Gate (MANDATORY) — **use ICM recall + terminal `find` commands, NEVER VS Code workspace search or file pickers**
-3. Route to @functional-analyst for requirements exploration
-4. Write proposal → `.tasks/{feature}/TASK-YYYY-NNN/proposal.md`
-5. **Gate**: Owner approves to proceed to `/sdd-ff`
-
-### `/sdd-ff` (Specify → Plan → Tasks)
-
-1. Recall spec context
-2. @functional-analyst runs `/speckit.specify` → `spec.md`
-3. @solution-architect runs `/speckit.plan` → `design.md`
-4. @solution-architect runs `/speckit.tasks` → `tasks.md`
-5. Produce `implementation-plan.md`
-6. **Gate**: Owner approves to proceed to `/sdd-apply`
-
-### `/sdd-apply` (Implement)
-
-1. Recall tasks + plan
-2. Assign to appropriate agents based on `implementation-plan.md`
-3. Each agent runs `/speckit.implement`
-4. Progress tracking every 3-5 sub-tasks
-5. **Gate**: All tasks complete → suggest `/sdd-verify`
-
-### `/sdd-verify` (Verification)
-
-1. Recall implementation context
-2. @integration-specialist validates spec compliance
-3. Service Discovery Gate check (auto-FAIL if missing)
-4. Invariant Gate check — `invariant-gate.mjs --exit-code` (auto-FAIL if a BIC Never Rule has no test)
-5. `icm_memory_health()` audit
-6. Produce `verify-report.md`
-7. **Flexible Archive Gate**: Owner chooses Archive / Continue / Fix / Cancel
-
-### `/sdd-archive` (Formal Closure)
-
-1. Start **Transcript** session (captures closure rationale)
-2. @documentation-analyst produces `functional-docs.md`
-3. Consolidate all task memories
-4. Export memoir
-5. Review feedback stats
-6. Produce `archive-report.md`
-7. Update registry → `📦 Archivado`
-
-### `/sandbox-new` (Create Sandbox — Optional)
-
-1. Gather Owner intent (name, purpose, scope, constraints)
-2. Create `.sandboxes/{name}/` structure
-3. Register in `.sandboxes/registry.md`
-4. Persist in ICM under `sandbox-{WORKSPACE}-{name}`
+Ninguna compuerta se salta ni se decide por el Owner: se le presenta el estado y se espera.
 
 ## Rules
 
