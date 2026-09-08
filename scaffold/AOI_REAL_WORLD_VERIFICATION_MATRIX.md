@@ -54,6 +54,45 @@ pnpm test
 ```
 *Si los 3 comandos finalizan con código `0`, el entorno AOI está 100% instalado y operativo.*
 
+### Paso 0.3: Verificación del Reinstall Inteligente
+
+> [!WARNING]
+> Una instalación limpia **no ejercita el reinstall**. El smart-merge solo corre sobre una
+> instalación existente, así que este paso debe hacerse con AOI ya instalado — nunca sobre
+> una carpeta vacía. Dos defectos reales vivieron meses acá sin que ninguna suite los viera.
+
+```bash
+# 1. Qué PIENSA hacer el instalador (productor)
+bash "$AOI_REPO_ROOT/scripts/conf/compare-install.sh" \
+  "$AOI_REPO_ROOT/scaffold" \
+  "/Users/equinox/Desktop/AOI TESTS/.conf/checksums.json" \
+  "/Users/equinox/Desktop/AOI TESTS"
+
+# 2. Reinstalar sobre la instalación existente
+bash "$AOI_REPO_ROOT/setup.sh" --yes "/Users/equinox/Desktop/AOI TESTS"
+
+# 3. Qué HIZO realmente (consumidor)
+tail -2 "/Users/equinox/Desktop/AOI TESTS/.conf/history.jsonl"
+```
+
+**Criterios de aceptación:**
+
+| Señal | Veredicto |
+| :--- | :--- |
+| `files_updated:0, files_kept:0` | ❌ El comparador no escaneó nada — smart-merge caído |
+| Conteos de `history.jsonl` ≠ los del paso 1 | ❌ El consumidor perdió entradas |
+| `SMART MERGE DISABLED` o `ignore-existing` en la salida | ❌ Degradó a copia que nunca actualiza |
+| `not applied: <archivo>` | ❌ Se reportó como aplicado pero no coincide con el scaffold |
+| Cada archivo de `auto_update` idéntico al scaffold tras reinstalar | ✅ |
+
+> [!CAUTION]
+> **`aoi_apps/` se reemplaza por completo en cada reinstall** (`rm -rf` + `cp -R` desde el
+> scaffold). Cualquier código implementado ahí por un ciclo SDD se pierde sin aviso, sin
+> respaldo y sin entrada en `.conf/conflicts/`. El espejo `scaffold/aoi_apps/` es hoy la
+> única copia que sobrevive, y por eso el Invariante 7 debe estar en verde **antes** de
+> reinstalar. Verificar la paridad después del reinstall: un `EXTRA_IN_SCAFFOLD` sobre
+> `aoi_apps/` significa que el reinstall borró trabajo real de la raíz.
+
 ---
 
 ## 2. Fundamentos de AOI: Qué estás probando y sus 8 Invariantes
@@ -291,7 +330,7 @@ EOF
 
 ---
 
-## 5.b Línea Base de Benchmark — Ciclo 2026-09-07 (BIC Invariant Gate)
+## 5.b Línea Base de Benchmark — Ciclo 2026-09-07 (ejecutado en AOI TESTS)
 
 > [!IMPORTANT]
 > **Esta tabla es la línea base contra la cual se compara el PRÓXIMO ciclo.** Cada ejecución del
@@ -301,12 +340,18 @@ EOF
 | Fase | Comando | Origen | Tokens Base | Tokens AOI | % Reducción |
 | :--- | :--- | :--- | ---: | ---: | ---: |
 | 0 | `/sdd-frame` | ● real | 2.497 | 165 | **93,4%** |
-| 1 | `/sdd-new` | ● real | 10.599 | 2.836 | **73,2%** |
+| 1 | `/sdd-new` | ● real | 10.709 | 2.836 | **73,5%** |
 | 2 | `/sdd-ff` | ● real | 332 | 251 | **24,4%** |
-| 3 | `/sdd-apply` | ● real | 5.431 | 1.045 | **80,8%** |
-| 4 | `/sdd-verify` | ● real | 720 | 455 | **36,8%** |
+| 3 | `/sdd-apply` | ● real | 5.430 | 1.045 | **80,8%** |
+| 4 | `/sdd-verify` | ● real | 719 | 455 | **36,7%** |
 | 5 | `/sdd-archive` | ● real | 261 | 32 | **87,7%** |
-| **TOTAL** | **ciclo completo** | **6 real / 0 fixture** | **19.840** | **4.784** | **75,9%** |
+| **TOTAL** | **ciclo completo** | **6 real / 0 fixture** | **19.948** | **4.784** | **76,0%** |
+
+**Delta contra el ciclo anterior (medido en el repo de desarrollo):** sin regresión. La base
+subió de 19.840 a 19.948 tokens (+108) porque el corpus de descubrimiento de la Fase 1 se
+muestrea del árbol de fuentes vivo y una instalación real contiene archivos que el repo no.
+El consumo de AOI quedó idéntico en 4.784 tokens, y el ahorro absoluto subió a **15.164**.
+Ninguna fase perdió porcentaje más allá del ruido de muestreo (±0,3 pp).
 
 > [!CAUTION]
 > **Reemplaza a la línea base de 83,9%, que estaba inflada por constantes fabricadas.**
@@ -315,7 +360,7 @@ EOF
 > para el fusor LLM). Medida de verdad, la fusión cuesta 297 tokens y no 2.000.
 >
 > **El porcentaje bajó pero el ahorro absoluto subió**: de 11.060 tokens declarados a
-> **15.056 medidos** por ciclo. Un ciclo real mueve mucho más contexto del que asumían
+> **15.164 medidos** por ciclo. Un ciclo real mueve mucho más contexto del que asumían
 > los fixtures, así que AOI ahorra más tokens de los que decía, sobre una base mayor.
 
 **Cómo leer la columna Origen:** `● real` mide artefactos reales — requiere el binario
