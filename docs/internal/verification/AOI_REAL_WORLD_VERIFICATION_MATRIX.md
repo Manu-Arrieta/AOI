@@ -29,7 +29,8 @@ cd "/Users/equinox/Desktop/AOI TESTS"
 find . -mindepth 1 ! -name 'AOI_REAL_WORLD_VERIFICATION_MATRIX.md' -exec rm -rf {} + 2>/dev/null || true
 
 # 2. Ejecutar el instalador oficial de AOI (setup.sh) desde el proyecto base
-bash /Users/equinox/Desktop/Proyectos/AOI/setup.sh "/Users/equinox/Desktop/AOI TESTS"
+#    AOI_REPO_ROOT debe apuntar al clon local del repositorio AOI.
+bash "${AOI_REPO_ROOT:?define AOI_REPO_ROOT con la ruta del repo AOI}/setup.sh" "/Users/equinox/Desktop/AOI TESTS"
 
 # 3. Entrar a la carpeta de pruebas e instalar dependencias del workspace
 cd "/Users/equinox/Desktop/AOI TESTS"
@@ -45,14 +46,17 @@ node scripts/scaffold/validate-scaffold-parity.mjs
 # 2. Auditar firmas del Gateway MCP Compressor
 node scripts/mcp-gateway/setup-mcp-gateway.mjs --signatures
 
-# 3. Ejecutar la suite de tests completa (debe aprobar 127/127 tests base, 129/129 tras TDD)
+# 3. Preparar tipos de Nuxt (requisito de la suite del dashboard: genera .nuxt/tsconfig.json)
+pnpm --filter agentic-ops-dashboard exec nuxt prepare
+
+# 4. Ejecutar la suite de tests completa
 pnpm test
 ```
 *Si los 3 comandos finalizan con código `0`, el entorno AOI está 100% instalado y operativo.*
 
 ---
 
-## 2. Fundamentos de AOI: Qué estás probando y sus 7 Invariantes
+## 2. Fundamentos de AOI: Qué estás probando y sus 8 Invariantes
 
 ```mermaid
 flowchart LR
@@ -70,6 +74,7 @@ flowchart LR
 5. **Invariante 5 — Principio de Responsabilidad Única (SRP <300 LOC)**: Ningún archivo puede superar las 300 líneas.
 6. **Invariante 6 — Fusión Mecánica & Reversión en 0 Tokens**: `/sdd-verify` consolida defectos con `mechanical-verify-union.mjs` y ejecuta rollback exacto en 0ms y 0 tokens LLM ante cualquier fallo.
 7. **Invariante 7 — Gobernanza Espejo de Scaffold**: 100% de paridad byte-a-byte entre la raíz y `scaffold/`.
+8. **Invariante 8 — Contrato Conductual Exigible (Invariant Gate)**: Toda regla "NUNCA" y todo oráculo calibrados en `/sdd-frame` se persisten como hechos $O(1)$ y `invariant-gate.mjs` los cruza contra la suite de tests en `/sdd-verify`. Una invariante declarada sin test que la afirme produce FAIL automático, con 0 tokens de inferencia.
 
 ---
 
@@ -195,6 +200,33 @@ flowchart LR
 
 ---
 
+### Paso 1.6: Invariante 8 — Invariant Gate (Contrato Conductual Exigible)
+
+Verifica que una regla "NUNCA" declarada no pueda pasar sin un test que la afirme:
+
+```bash
+# 1. Tests unitarios de la compuerta
+node --test scripts/sdd-lifecycle/invariant-gate.test.mjs      # 10/10
+
+# 2. Ciclo real: contrato sin test debe FALLAR
+TMP=$(mktemp -d)
+icm facts set "AOI TESTS" "bic.BIC-2026-010.never.1" "NUNCA archivar con verify FAIL"
+node scripts/sdd-lifecycle/invariant-gate.mjs --entity "AOI TESTS" --tests-dir "$TMP" --exit-code
+echo "exit esperado: 1 (FAILED)"
+
+# 3. Con el test etiquetado debe PASAR
+printf 'it("BIC-2026-010:never.1 ok", () => {})\n' > "$TMP/g.test.mjs"
+node scripts/sdd-lifecycle/invariant-gate.mjs --entity "AOI TESTS" --tests-dir "$TMP" --exit-code
+echo "exit esperado: 0 (PASSED)"
+
+# 4. Toolchain roto NO debe pasar en silencio
+icm facts forget "AOI TESTS" "bic.BIC-2026-010.never.1"; rm -rf "$TMP"
+```
+
+Exit codes: `0` PASSED/SKIPPED · `1` FAILED (invariante sin test) · `2` BLOCKED (contrato ilegible).
+
+---
+
 ## 4. Fase 2: Pruebas de Estrés del Motor Spatiotemporal
 
 Ejecuta estas 5 comprobaciones de misión crítica:
@@ -237,8 +269,9 @@ cat <<'EOF' > VERIFICATION_AUDIT_REPORT.md
 - **Fusión en /sdd-verify:** 0 tokens LLM consumidos vía Mechanical Set Union.
 
 ## 2. Pruebas Automatizadas
-- Suite de Tests: 126 tests ejecutados, 100% aprobados en ~1.5s.
-- Paridad de Scaffold: 155/155 archivos verificados byte-a-byte.
+- Suite de Tests: 164 tests de `node --test` + 35 del dashboard, 100% aprobados.
+- Paridad de Scaffold: 240/240 archivos verificados byte-a-byte.
+- Invariant Gate: 10/10 tests, ciclo real FAIL(1) -> PASS(0) verificado.
 
 ## 3. Checklist de Invariantes Cumplidos
 - [x] Invariante 1: Zero-Disabled-Tools
@@ -248,8 +281,44 @@ cat <<'EOF' > VERIFICATION_AUDIT_REPORT.md
 - [x] Invariante 5: Principio de Responsabilidad Única (SRP <300 LOC)
 - [x] Invariante 6: Fusión Mecánica & Reversión en 0 Tokens en /sdd-verify
 - [x] Invariante 7: Paridad de Scaffold 100%
+- [x] Invariante 8: Contrato Conductual Exigible (Invariant Gate, 0 tokens)
 EOF
 ```
+
+---
+
+## 5.b Línea Base de Benchmark — Ciclo 2026-09-07 (BIC Invariant Gate)
+
+> [!IMPORTANT]
+> **Esta tabla es la línea base contra la cual se compara el PRÓXIMO ciclo.** Cada ejecución del
+> protocolo debe regenerarla con `pnpm aoi:stress-sdd` en `/Users/equinox/Desktop/AOI TESTS` y
+> reportar el delta por fase. Una caída en cualquier `% Reducción` es una regresión y bloquea el ciclo.
+
+| Fase | Comando | Tokens Base | Tokens AOI | Ahorro | % Reducción | Δ vs ciclo previo |
+| :--- | :--- | ---: | ---: | ---: | ---: | :--- |
+| 0 | `/sdd-frame` | 2.200 | 85 | 2.115 | **96,1%** | = |
+| 1 | `/sdd-new` | 2.400 | 625 | 1.775 | **74,0%** | = |
+| 2 | `/sdd-ff` | 321 | 238 | 83 | **25,9%** | = |
+| 3 | `/sdd-apply` | 4.726 | 1.014 | 3.712 | **78,5%** | = |
+| 4 | `/sdd-verify` | 2.134 | 39 | 2.095 | **98,2%** | = |
+| 5 | `/sdd-archive` | 1.400 | 120 | 1.280 | **91,4%** | = |
+| **TOTAL** | **ciclo SDD completo** | **13.181** | **2.121** | **11.060** | **83,9%** | **= (sin regresión)** |
+
+### Costo de tokens de los prompts (NO cubierto por la stress suite)
+
+> [!WARNING]
+> `sdd-stress-suite.mjs` mide la maquinaria de optimización con fixtures sintéticos y **no lee los
+> archivos de prompt**. Por lo tanto NO detecta el costo de agregar prosa a prompts, agentes o
+> instructions. Ese costo debe medirse aparte, por superficie de carga, en cada ciclo.
+
+| Superficie | Cuándo se paga | Δ del ciclo |
+| :--- | :--- | ---: |
+| `CLAUDE.md` | siempre en contexto | +33 tok |
+| `.github/instructions/` | cada delegación a subagente | **−3 tok** |
+| `.github/agents/*` (peor caso, 1 por invocación) | por agente invocado | +439 tok |
+| `.github/prompts/*` (peor caso, 1 por comando) | por comando ejecutado | +398 tok |
+| `.specify/memory/constitution.md` | en `/sdd-frame` y planificación | +302 tok |
+| `docs/`, `wiki/`, matriz | nunca se auto-cargan | 0 tok en runtime |
 
 ---
 
