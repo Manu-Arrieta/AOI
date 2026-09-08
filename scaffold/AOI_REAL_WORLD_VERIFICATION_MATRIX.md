@@ -84,14 +84,22 @@ tail -2 "/Users/equinox/Desktop/AOI TESTS/.conf/history.jsonl"
 | `SMART MERGE DISABLED` o `ignore-existing` en la salida | ❌ Degradó a copia que nunca actualiza |
 | `not applied: <archivo>` | ❌ Se reportó como aplicado pero no coincide con el scaffold |
 | Cada archivo de `auto_update` idéntico al scaffold tras reinstalar | ✅ |
+| Un archivo propio bajo `aoi_apps/` desaparece o cambia de hash | ❌ El reinstall volvió a arrasar el árbol |
 
-> [!CAUTION]
-> **`aoi_apps/` se reemplaza por completo en cada reinstall** (`rm -rf` + `cp -R` desde el
-> scaffold). Cualquier código implementado ahí por un ciclo SDD se pierde sin aviso, sin
-> respaldo y sin entrada en `.conf/conflicts/`. El espejo `scaffold/aoi_apps/` es hoy la
-> única copia que sobrevive, y por eso el Invariante 7 debe estar en verde **antes** de
-> reinstalar. Verificar la paridad después del reinstall: un `EXTRA_IN_SCAFFOLD` sobre
-> `aoi_apps/` significa que el reinstall borró trabajo real de la raíz.
+> [!NOTE]
+> **`aoi_apps/` pasa por el mismo merge de tres vías que el resto.** Antes se reemplazaba
+> entero (`rm -rf` + `cp -R`) bajo la premisa de que las apps nativas siempre usan la
+> última versión. Esa premisa contradecía al ciclo SDD, que implementa features dentro de
+> `aoi_apps/` y las espeja bajo el Invariante 7: el reinstall destruía trabajo real sin
+> aviso, sin respaldo y sin entrada en `.conf/conflicts/`.
+>
+> La regla que lo hace seguro es simple: **el comparador recorre el scaffold, no el
+> proyecto.** Un archivo que el usuario creó no está en el scaffold, así que nunca se
+> visita y no puede tocarse. Un archivo de AOI que el usuario no modificó se actualiza
+> solo. Uno que ambos cambiaron se reporta como conflicto.
+>
+> Verificación en cada ciclo: dejar un archivo propio bajo `aoi_apps/` que no exista en el
+> scaffold del repo, reinstalar, y confirmar que sobrevive con el mismo hash.
 
 ---
 

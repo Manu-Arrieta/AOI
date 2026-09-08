@@ -853,7 +853,7 @@ if [ -f "$PROJECT_PATH/.conf/manifest.json" ]; then
     ok "Cleaned up $STALE_COUNT stale/corrupted file(s) from previous install"
   fi
 
-  # ── 3b: Smart merge for non-aoi_apps files ──────────────────────────────
+  # ── 3b: Smart merge for every governed file, aoi_apps/ included ─────────
   if [ -f "$CONF_SCRIPTS_DIR/compare-install.sh" ]; then
     COMPARE_STDERR="$(mktemp)"
     COMPARE_OUTPUT="$(bash "$CONF_SCRIPTS_DIR/compare-install.sh" \
@@ -917,7 +917,7 @@ print(f'COMPARE_TMPDIR={td}')
       if [ -z "$COMPARE_TMPDIR" ]; then
         warn "python3 smart merge produced no temp dir — falling back to rsync --ignore-existing"
         if command -v rsync &>/dev/null; then
-          rsync -a --ignore-existing --exclude='aoi_apps/' "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
+          rsync -a --ignore-existing "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
         fi
       else
         # Copy new files (exist in scaffold but not in previous install)
@@ -974,34 +974,31 @@ print(f'COMPARE_TMPDIR={td}')
     else
       warn "python3 not available for smart merge — falling back to rsync --ignore-existing"
       if command -v rsync &>/dev/null; then
-        rsync -a --ignore-existing --exclude='aoi_apps/' "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
+        rsync -a --ignore-existing "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
       fi
     fi
   else
     warn "compare-install.sh not found — falling back to rsync --ignore-existing"
     if command -v rsync &>/dev/null; then
-      rsync -a --ignore-existing --exclude='aoi_apps/' "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
+      rsync -a --ignore-existing "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
     fi
   fi
 
-  # ── 3b: Full replace aoi_apps/ (native AOI apps always use latest) ─────
-  if [ -d "$SCAFFOLD_DIR/aoi_apps" ]; then
-    info "Replacing aoi_apps/ with latest scaffold version..."
-    # Preserve node_modules to avoid full reinstall if deps unchanged
-    AOI_APPS_NM=""
-    if [ -d "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/node_modules" ]; then
-      AOI_APPS_NM="$(mktemp -d)"
-      mv "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/node_modules" "$AOI_APPS_NM/"
-    fi
-    rm -rf "$PROJECT_PATH/aoi_apps"
-    cp -R "$SCAFFOLD_DIR/aoi_apps" "$PROJECT_PATH/aoi_apps"
-    # Restore node_modules if we preserved them
-    if [ -n "$AOI_APPS_NM" ] && [ -d "$AOI_APPS_NM/node_modules" ]; then
-      mv "$AOI_APPS_NM/node_modules" "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/"
-      rm -rf "$AOI_APPS_NM"
-    fi
-    ok "aoi_apps/ replaced with latest scaffold version"
-  fi
+  # ── 3b bis: aoi_apps/ ──────────────────────────────────────────────────
+  # Nothing to do here. aoi_apps/ goes through the same three-way merge as
+  # every other governed tree, above.
+  #
+  # It used to be wholesale replaced (rm -rf + cp -R) on the premise that
+  # "native AOI apps always use latest". That premise contradicted the SDD
+  # lifecycle, which lands user features inside aoi_apps and mirrors them into
+  # scaffold/ under Invariant 7 — so a reinstall silently destroyed real work,
+  # with no warning, no backup and no entry in .conf/conflicts/. The two
+  # premises cannot both hold, and the destructive one was winning.
+  #
+  # The merge is strictly safer: a file the user owns is absent from the
+  # scaffold, so it is never visited; an AOI file the user did not touch is
+  # auto-updated; one that both sides changed becomes a reported conflict.
+  # node_modules/ no longer needs rescuing because nothing is removed.
 
   # Ensure AOI governed agents, scripts, and instructions override generic specify init outputs
   if command -v rsync &>/dev/null; then
