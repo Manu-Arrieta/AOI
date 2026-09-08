@@ -23,6 +23,7 @@ import { arrangeContext } from './context-arranger.mjs'
 import { buildSubagentPayload } from '../subagent-context/sanitize-subagent-payload.mjs'
 import { createSubagentSandbox } from '../subagent-context/subagent-fiber-runner.mjs'
 import { auditPromptsDirectory } from '../multi-harness/cache-guard.mjs'
+import { auditContextBudget, formatBudgetSummary, toBudgetRows } from './context-budget.mjs'
 import { formatUnifiedVerificationReport } from './mechanical-verify-union.mjs'
 import {
   createLedger, estimateTokens, findRealTaskDir, formatTotals, readIfPresent,
@@ -284,4 +285,9 @@ console.log('                  RESUMEN EJECUTIVO DE TELEMETRÍA END-TO-END      
 console.log('═══════════════════════════════════════════════════════════════════════════════')
 console.table(toTableRows(ledger))
 console.log(formatTotals(ledger))
+
+console.log('\n───────────────────────────────────────────────────────────────────────────────')
+const budget = auditContextBudget(process.cwd())
+console.table(toBudgetRows(budget))
+console.log(formatBudgetSummary(budget, ledger.totals.optimizedTokens))
 console.log('═══════════════════════════════════════════════════════════════════════════════\n')
