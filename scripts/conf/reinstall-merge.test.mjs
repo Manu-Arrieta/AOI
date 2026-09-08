@@ -127,6 +127,34 @@ describe('reinstall smart merge — bucket consumption', () => {
     assert.doesNotMatch(src, /--exclude='aoi_apps\/'/, 'aoi_apps/ is excluded from the merge again')
   })
 
+  it('leaves the three-way merge as the only authority over governed files', () => {
+    const src = readSetup()
+
+    // A blanket re-copy after the merge silently overwrote files classified
+    // SKIP — 53% of the governed tree — so the merge's promise to preserve a
+    // user's file was false for most of the workspace.
+    assert.doesNotMatch(src, /rsync -a "\$SCAFFOLD_DIR\/\.github\/"/, '.github/ is being re-copied wholesale after the merge')
+    assert.doesNotMatch(src, /rsync -a "\$SCAFFOLD_DIR\/scripts\/"/, 'scripts/ is being re-copied wholesale after the merge')
+  })
+
+  it('does not let spec-kit flatten the workspace before the merge reads it', () => {
+    const src = readSetup()
+
+    // `specify init --force` overwrites .github/ and .specify/. Running it on
+    // a reinstall destroys the distinction between an AOI update and a user
+    // edit, which is the only input the three-way merge has.
+    const detection = src.indexOf('IS_REINSTALL=0')
+    const specKit = src.indexOf('specify init . --ai copilot --force')
+    assert.ok(detection !== -1 && specKit !== -1, 'expected both the reinstall flag and the spec-kit call')
+    assert.ok(detection < specKit, 'reinstall is detected after spec-kit already ran — too late to skip it')
+
+    assert.match(
+      src,
+      /if \[ "\$IS_REINSTALL" -eq 1 \]; then\n\s*#[\s\S]{0,900}?info "Reinstall detected — skipping 'specify init --force'/,
+      'spec-kit init is not guarded by the reinstall flag'
+    )
+  })
+
   it('the shipped loop header copies the final entry of a file with no trailing newline', () => {
     const header = extractLoopHeaders(readSetup())[0]
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-merge-'))
