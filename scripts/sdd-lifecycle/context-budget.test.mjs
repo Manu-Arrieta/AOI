@@ -169,6 +169,41 @@ describe('instructionsFor', () => {
   })
 })
 
+describe('one-of candidate sets', () => {
+  it('charges the cheapest candidate to the floor and the rest to the margin', () => {
+    // /sdd-apply names three implementation agents and picks whichever the task
+    // needs. Charging all three says every cycle runs all three; marking them
+    // merely conditional says a cycle may run none, and a floor with no
+    // developer at all is a number no real cycle can reach.
+    const root = workspace({
+      '.github/prompts/p.prompt.md': '**[one-of]** Delegate to `@frontend-developer`, `@backend-developer` or `@devops-engineer`.',
+      '.github/agents/frontend-developer.agent.md': 'f'.repeat(1600),
+      '.github/agents/backend-developer.agent.md': 'b'.repeat(1200),
+      '.github/agents/devops-engineer.agent.md': 'd'.repeat(800),
+    })
+
+    const cost = phaseContextCost(root, '.github/prompts/p.prompt.md')
+    assert.equal(cost.agents, 200, 'the floor takes the cheapest candidate, 800 chars')
+    assert.equal(cost.conditional, 700, 'the other two stay in the conditional margin')
+    assert.deepEqual(cost.detail.oneOf, [['backend-developer', 'devops-engineer', 'frontend-developer']])
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+
+  it('does not treat a lone marked reference as a candidate set', () => {
+    // One name behind [one-of] is just a conditional step; there is nothing to
+    // choose between, so nothing may be pulled into the floor.
+    const root = workspace({
+      '.github/prompts/p.prompt.md': '**[one-of]** Delegate to `@backend-developer`.',
+      '.github/agents/backend-developer.agent.md': 'b'.repeat(1200),
+    })
+
+    const cost = phaseContextCost(root, '.github/prompts/p.prompt.md')
+    assert.equal(cost.agents, 0)
+    assert.equal(cost.conditional, 300)
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+})
+
 describe('floor versus ceiling', () => {
   it('keeps a conditional command out of the floor but inside the ceiling', () => {
     const root = workspace({

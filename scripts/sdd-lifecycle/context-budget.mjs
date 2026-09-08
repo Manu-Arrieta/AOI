@@ -22,94 +22,14 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { estimateTokens } from './token-accounting.mjs'
+import { fileTokens, instructionsFor, read } from './instruction-scope.mjs'
+
+export { fileTokens, instructionsFor, expandBraces, matchesApplyTo } from './instruction-scope.mjs'
 
 const AGENT_REF = /(?:^|[^\w.@])@([a-z][a-z0-9.-]*[a-z0-9])/g
 // Segments are matched one at a time so a sentence-ending period is not
 // swallowed into the command name: `/speckit.plan.` must yield `speckit.plan`.
 const SPECKIT_REF = /\/(speckit\.[a-z0-9]+(?:\.[a-z0-9]+)*)/g
-const APPLY_TO = /^applyTo:\s*["']?(.+?)["']?\s*$/m
-
-/** Reads a file, returning '' when absent. */
-function read(file) {
-  try {
-    return fs.readFileSync(file, 'utf8')
-  } catch {
-    return ''
-  }
-}
-
-/** Token cost of a file, 0 when it does not exist. */
-export function fileTokens(file) {
-  return estimateTokens(read(file))
-}
-
-/** Expands `{a,b}` alternations into separate patterns. */
-export function expandBraces(pattern) {
-  const m = /\{([^{}]*)\}/.exec(pattern)
-  if (!m) return [pattern]
-  return m[1]
-    .split(',')
-    .flatMap((alt) => expandBraces(pattern.slice(0, m.index) + alt + pattern.slice(m.index + m[0].length)))
-}
-
-/** Converts one brace-free glob into an anchored regex. */
-function globToRegex(glob) {
-  let out = ''
-  for (let i = 0; i < glob.length; i++) {
-    const c = glob[i]
-    if (c === '*') {
-      if (glob[i + 1] === '*') {
-        // `**/` may match zero directories, so the slash is optional.
-        out += glob[i + 2] === '/' ? '(?:.*/)?' : '.*'
-        i += glob[i + 2] === '/' ? 2 : 1
-      } else {
-        out += '[^/]*'
-      }
-    } else if (c === '?') out += '[^/]'
-    else out += c.replace(/[.+^${}()|[\]\\]/g, '\\$&')
-  }
-  return new RegExp(`^${out}$`)
-}
-
-/**
- * True when a path matches any comma-separated glob in an applyTo value.
- *
- * Braces are expanded BEFORE splitting on commas. An applyTo like
- * `**\/*.{ts,js,vue}` separates its alternatives with the same character that
- * separates patterns, so splitting first shreds it into `**\/*.{ts`, `js` and
- * `vue}` and the whole rule silently stops matching.
- */
-export function matchesApplyTo(applyTo, filePath) {
-  for (const expanded of expandBraces(String(applyTo))) {
-    for (const raw of expanded.split(',')) {
-      const trimmed = raw.trim()
-      if (trimmed && globToRegex(trimmed).test(filePath)) return true
-    }
-  }
-  return false
-}
-
-/**
- * Lists the instruction files the harness injects for a given file in context,
- * with the cost of each.
- *
- * @returns {Array<{ file: string, tokens: number, applyTo: string }>}
- */
-export function instructionsFor(root, contextPath, dir = '.github/instructions') {
-  const full = path.join(root, dir)
-  if (!fs.existsSync(full)) return []
-
-  const matched = []
-  for (const name of fs.readdirSync(full).sort()) {
-    if (!name.endsWith('.md')) continue
-    const text = read(path.join(full, name))
-    const applyTo = APPLY_TO.exec(text)?.[1] ?? ''
-    if (applyTo && matchesApplyTo(applyTo, contextPath)) {
-      matched.push({ file: path.join(dir, name), tokens: estimateTokens(text), applyTo })
-    }
-  }
-  return matched
-}
 
 /**
  * Collects references line by line, flagging each by whether its invocation is
@@ -122,27 +42,38 @@ export function instructionsFor(root, contextPath, dir = '.github/instructions')
  */
 function collectRefs(text, pattern, keep = () => true) {
   const seen = new Map()
+  const groups = []
   for (const line of text.split('\n')) {
     // Blockquotes are callouts explaining a step, never a step themselves. A
     // note that merely names a command was being scored as an invocation, and
     // because notes carry no marker it silently forced the command back into
     // the floor — inflating the very number this module exists to report.
     if (/^\s*>/.test(line)) continue
-    const conditional = line.includes(CONDITIONAL_MARKER)
+    const oneOf = line.includes(ONE_OF_MARKER)
+    const conditional = line.includes(CONDITIONAL_MARKER) || oneOf
+    const onThisLine = []
     for (const m of line.matchAll(pattern)) {
       if (!keep(m[1])) continue
+      onThisLine.push(m[1])
       // Invoked plainly anywhere means paid on every run, whatever other lines say.
       if (!seen.has(m[1]) || !conditional) seen.set(m[1], conditional)
     }
+    if (oneOf && onThisLine.length > 1) groups.push(onThisLine)
   }
-  return [...seen.entries()]
+  const refs = [...seen.entries()]
     .map(([name, conditional]) => ({ name, conditional }))
     .sort((a, b) => a.name.localeCompare(b.name))
+  return { refs, groups }
 }
 
 /** Distinct agents a prompt delegates to, excluding spec-kit command names. */
 export function agentsIn(text) {
-  return collectRefs(text, AGENT_REF, (n) => !n.startsWith('speckit.'))
+  return collectRefs(text, AGENT_REF, (n) => !n.startsWith('speckit.')).refs
+}
+
+/** Candidate sets of agents, of which exactly one is chosen per run. */
+export function agentGroupsIn(text) {
+  return collectRefs(text, AGENT_REF, (n) => !n.startsWith('speckit.')).groups
 }
 
 /**
@@ -160,13 +91,27 @@ export function agentsIn(text) {
 export const CONDITIONAL_MARKER = '[conditional]'
 
 /**
+ * Declares a line as enumerating candidates of which exactly one will be
+ * chosen — `/sdd-apply` names three implementation agents and delegates to
+ * whichever the task needs.
+ *
+ * Neither existing category describes this. Charging all of them says every
+ * cycle runs a frontend, a backend AND a devops agent; marking them merely
+ * conditional says a cycle may run none, and a floor that assumes no developer
+ * at all is a number no real cycle can reach. A floor must be a lower bound
+ * that is actually achievable, so the cheapest candidate is charged to it and
+ * the rest to the conditional margin.
+ */
+export const ONE_OF_MARKER = '[one-of]'
+
+/**
  * Distinct spec-kit commands a prompt invokes, each flagged by whether its
  * invocation line makes it conditional.
  *
  * @returns {Array<{ command: string, conditional: boolean }>}
  */
 export function speckitIn(text) {
-  return collectRefs(text, SPECKIT_REF).map(({ name, conditional }) => ({ command: name, conditional }))
+  return collectRefs(text, SPECKIT_REF).refs.map(({ name, conditional }) => ({ command: name, conditional }))
 }
 
 /**
@@ -193,6 +138,15 @@ export function phaseContextCost(root, promptRel) {
   for (const { name, conditional: isCond } of agentList) {
     if (isCond) conditional += costOf(name)
     else agents += costOf(name)
+  }
+
+  // Exactly one candidate of each one-of set always runs, so the cheapest is a
+  // genuine lower bound and belongs in the floor rather than the margin.
+  const oneOfGroups = agentGroupsIn(text)
+  for (const group of oneOfGroups) {
+    const cheapest = Math.min(...group.map(costOf))
+    agents += cheapest
+    conditional -= cheapest
   }
 
   const speckitList = speckitIn(text)
@@ -222,6 +176,9 @@ export function phaseContextCost(root, promptRel) {
         ...agentList.filter((a) => a.conditional).map((a) => a.name),
         ...speckitList.filter((s) => s.conditional).map((s) => s.command),
       ].sort(),
+      // Reported apart so the table does not read as if none of them runs: one
+      // of each group always does, and its cheapest member sits in the floor.
+      oneOf: oneOfGroups.map((g) => [...g].sort()),
       instructions: instrList.map((i) => i.file),
     },
   }

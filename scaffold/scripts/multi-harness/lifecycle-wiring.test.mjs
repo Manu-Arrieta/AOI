@@ -97,6 +97,21 @@ describe('the [conditional] marker cannot be used to invent savings', () => {
     assert.deepEqual(unjustified, [], 'a [conditional] marker with no stated condition is an unearned discount')
   })
 
+  it('every [one-of] line actually enumerates a choice', () => {
+    // [one-of] pulls the cheapest candidate into the floor, so unlike
+    // [conditional] it cannot be used to claim a saving. It can still mislead:
+    // a single name behind it describes a choice that does not exist.
+    const CHARGED_G = /(?:^|[^\w.@])@(?!speckit\.)[a-z][a-z0-9.-]*[a-z0-9]|\/speckit\.[a-z]/g
+    const bogus = []
+    for (const { file, lines } of prompts) {
+      lines.forEach((l, i) => {
+        if (!l.includes('[one-of]')) return
+        if ([...l.matchAll(CHARGED_G)].length < 2) bogus.push(`${file}:${i + 1}`)
+      })
+    }
+    assert.deepEqual(bogus, [], 'a [one-of] marker naming fewer than two candidates describes no choice')
+  })
+
   it('a step whose line opens with a condition carries the marker', () => {
     // The safe direction: forgetting the marker overstates the floor rather
     // than understating it. Still worth catching — an unmarked branch makes

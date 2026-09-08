@@ -416,9 +416,9 @@ invocación condicional de una línea que menciona una condición por otro motiv
 
 | Métrica | `main` | Rama | Delta |
 | :--- | ---: | ---: | ---: |
-| Piso declarado | 91.161 | **79.248** | −11.913 |
-| Techo | 91.161 | 91.329 | +168 |
-| Payload | 4.811 | 4.810 | −1 |
+| Piso declarado | 91.161 | **76.682** | −14.479 |
+| Techo | 91.161 | 91.333 | +172 |
+| Payload | 4.811 | 4.811 | 0 |
 
 **El delta se descompone así, y la distinción no es cosmética:**
 
@@ -430,8 +430,9 @@ invocación condicional de una línea que menciona una condición por otro motiv
 | `/speckit.clarify` ya era condicional | 3.667 | No — corrección de medición |
 | `@triage-specialist` ya era condicional | 2.225 | No — corrección de medición |
 | `@functional-analyst` en `/sdd-new` ya era condicional | 1.184 | No — corrección de medición |
+| Los tres desarrolladores son un `[one-of]`, no tres delegaciones | 2.566 | No — corrección de medición |
 
-**7.076 de los 11.913 son corrección de medición, no ahorro.** `main` cobraba al piso tres
+**9.642 de los 14.479 son corrección de medición, no ahorro.** `main` cobraba al piso tres
 ramas que nunca corrían en un ciclo normal. Reportar los 11.913 como ganancia sería inflar
 el resultado exactamente como lo hacía la línea base fabricada del 83,9%.
 
@@ -449,7 +450,14 @@ BIC declara más de una Never Rule. Ambas señales existen sin costo de inferenc
    `/sdd-frame` es una tabla de decisión donde cada fila es una rama, pero la condición vive
    en la segunda celda y la línea empieza con `|`, así que ni llevaba marcador ni el guardián
    la veía.
-3. **Nada impedía usar el marcador para inventar un ahorro.** Ponerlo en un paso que siempre
+3. **Un conjunto de candidatos no es ni fijo ni condicional.** `/sdd-apply` nombra tres
+   agentes de implementación y delega en el que la tarea necesite. Cobrar los tres dice que
+   cada ciclo corre un frontend, un backend **y** un devops; marcarlos condicionales dice
+   que un ciclo puede no correr ninguno, y **un piso sin ningún desarrollador es un número
+   que ningún ciclo real alcanza**. Se agregó el marcador `[one-of]`: el candidato más
+   barato entra al piso, que así vuelve a ser una cota inferior alcanzable, y el resto al
+   margen condicional.
+4. **Nada impedía usar el marcador para inventar un ahorro.** Ponerlo en un paso que siempre
    corre lo saca del piso y reporta una reducción inexistente. Es la dirección peligrosa de
    esta convención, porque el número se mueve y nada más lo hace. Ahora un marcador sin
    condición declarada falla el gate, verificado inyectando exactamente ese abuso.
