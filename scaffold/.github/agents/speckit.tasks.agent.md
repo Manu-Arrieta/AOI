@@ -13,12 +13,9 @@ handoffs:
 
 ## Model Requirement
 
-> **Primary**: `deepseek-v4-pro` — DeepSeek ID: `deepseek-v4-pro`
-> **Fallback**: `deepseek-ai/deepseek-v4-pro` — NVIDIA ID: `deepseek-ai/deepseek-v4-pro`
->
-> ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
->
-> **Justificación**: DeepSeek V4 Pro — 1M contexto + 49B activos + SWE-Bench Verified 80.6%.
+> **Model**: `Deepseek v4 pro - Provider - Deepseek` · **Fallback**: deepseek-ai/deepseek-v4-pro
+> ⚠️ Selecciónalo en el picker de Copilot antes de invocar al agente.
+> Registro completo: `.github/instructions/agent-delegation.instructions.md`
 
 ## User Input
 

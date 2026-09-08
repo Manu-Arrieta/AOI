@@ -69,9 +69,8 @@ Hand off to **@integration-specialist** with isolated task context (via `node sc
    - **Observability**: Read `design.md` Observability section — verify that logs/metrics/traces specified in design were actually implemented. New endpoints/controllers without logging? → WARNING
    - **Contract-First**: Read `spec.md` for API contracts defined — verify that interfaces/types/endpoints match the spec. Breaking changes from spec? → WARNING
    Include findings in verify-report under `## Principles Compliance`.
-6. Run `/speckit.checklist` for formal verification
-7. **Mechanical Set Union Consolidation**: When consolidating multiple verification reports (test failures, lint violations, type errors, LOC limits, and TDD coverage pairs), use deterministic Set Union aggregation (via `node scripts/sdd-lifecycle/mechanical-verify-union.mjs`) instead of paying for an LLM fuser/evaluator step.
-8. **Spatiotemporal Rollback on Failure (0-Token Reversibility)**: If verification emits `FAIL` or critical defect count > 0, the active Fiber Sandbox executes `recover_Γ` (`sandbox.rollback()`), restoring the workspace state in 0ms and 0 LLM tokens, eliminating context pollution from broken attempts.
+6. **Mechanical Set Union Consolidation**: When consolidating multiple verification reports (test failures, lint violations, type errors, LOC limits, and TDD coverage pairs), use deterministic Set Union aggregation (via `node scripts/sdd-lifecycle/mechanical-verify-union.mjs`) instead of paying for an LLM fuser/evaluator step.
+7. **Spatiotemporal Rollback on Failure (0-Token Reversibility)**: If verification emits `FAIL` or critical defect count > 0, the active Fiber Sandbox executes `recover_Γ` (`sandbox.rollback()`), restoring the workspace state in 0ms and 0 LLM tokens, eliminating context pollution from broken attempts.
 
 ### Step 4: Service Discovery Gate Check
 

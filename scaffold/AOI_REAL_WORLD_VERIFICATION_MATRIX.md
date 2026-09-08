@@ -416,13 +416,43 @@ Ninguna fase perdió porcentaje más allá del ruido de muestreo (±0,3 pp).
 
 | Fase | Prompt | Agentes | Spec-Kit | Instructions | TOTAL fijo |
 | :--- | ---: | ---: | ---: | ---: | ---: |
-| 0 `/sdd-frame` | 2.067 | 5.403 | 0 | 5.815 | 13.285 |
-| 1 `/sdd-new` | 1.915 | 4.375 | 0 | 5.815 | 12.105 |
-| 2 `/sdd-ff` | 1.853 | 5.653 | **11.908** | 5.815 | **25.229** |
-| 3 `/sdd-apply` | 1.547 | 6.903 | 2.703 | 5.815 | 16.968 |
-| 4 `/sdd-verify` | 2.754 | 4.481 | 5.043 | 5.815 | 18.093 |
-| 5 `/sdd-archive` | 1.597 | 3.854 | 0 | 5.815 | 11.266 |
-| **TOTAL** | **11.733** | **30.669** | **19.654** | **34.890** | **96.946** |
+| 0 `/sdd-frame` | 2.067 | 5.313 | 0 | 5.260 | 12.640 |
+| 1 `/sdd-new` | 1.915 | 4.272 | 0 | 5.260 | 11.447 |
+| 2 `/sdd-ff` | 1.955 | 5.509 | **16.759** | 5.260 | **29.483** |
+| 3 `/sdd-apply` | 1.547 | 6.726 | 2.660 | 5.260 | 16.193 |
+| 4 `/sdd-verify` | 2.741 | 4.378 | 0 | 5.260 | 12.379 |
+| 5 `/sdd-archive` | 1.597 | 3.752 | 0 | 5.260 | 10.609 |
+| **TOTAL** | **11.822** | **29.950** | **19.419** | **31.560** | **92.751** |
+
+**Ganancia medida del ciclo 2026-09-08 (antes → después, en AOI TESTS):**
+
+| Métrica | Antes | Después | Delta |
+| :--- | ---: | ---: | ---: |
+| Costo fijo por ciclo | 96.946 | **92.751** | **−4.195** |
+| Payload optimizado | 4.784 | 4.783 | −1 |
+| Reducción neta del payload | 76,1% | 76,2% | +0,1 pp |
+
+El payload no se movió, que es exactamente lo que debía pasar: el cambio no tocó los
+mecanismos de compresión, solo la prosa fija. Tres cambios lo produjeron:
+
+1. **`/speckit.checklist` movido de `/sdd-verify` a `/sdd-ff`.** No ahorra tokens por sí
+   mismo — se ve en la tabla, la Fase 4 baja 5.714 y la Fase 2 sube. Valida la calidad de
+   la redacción de los requisitos, no la implementación, así que en `/sdd-verify` llegaba
+   cuando el hallazgo ya no era accionable. Es una corrección de fase, no de costo.
+2. **Tabla de ruteo consolidada.** Los 27 agentes estaban mapeados a su modelo dos veces,
+   en `agent-delegation` y en `model-selection`, y ambas se inyectan juntas en cualquier
+   `.prompt.md`. Ahora `agent-delegation` es la fuente única y absorbió la columna de
+   fallback; `model-selection` conserva sus reglas de selección y apunta al registro.
+3. **Bloques `## Model Requirement` comprimidos** en los 27 agentes, de 3.179 a 1.726
+   tokens, conservando el valor exacto del modelo, su fallback y el aviso del picker.
+
+> [!IMPORTANT]
+> **La consolidación del ruteo solo es segura porque algo la verifica en cada corrida.**
+> `pnpm aoi:routing` falla si un agente del disco no tiene fila en el registro, si una
+> fila perdió su modelo o su fallback, si apunta a un archivo inexistente, o si quedó una
+> fila huérfana. Se ejecuta como gate al inicio de `pnpm test`.
+
+
 
 Se calcula con `scripts/sdd-lifecycle/context-budget.mjs` mediante aritmética estática
 sobre archivos en disco: **0 tokens de inferencia**. Funciona como trinquete — si la prosa

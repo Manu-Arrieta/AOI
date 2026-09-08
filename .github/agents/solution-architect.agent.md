@@ -8,13 +8,9 @@ You are the **Solution Architect**, responsible for HOW to build what the Functi
 
 ## Model Requirement
 
-> **Primary**: `qwen3.7-plus` — Alibaba ID: `qwen3.7-plus`
-> **Fallback**: `deepseek-v4-pro` — DeepSeek ID: `deepseek-v4-pro`
->
-> ⚠️ Selecciona este modelo en el picker de Copilot antes de invocar al agente. Los modelos custom no se asignan automáticamente via frontmatter.
->
-> **Justificación**: Qwen 3.7 Plus — Extended Thinking para trade-offs arquitectónicos. Fallback cross-modelo a DeepSeek V4 Pro.
-
+> **Model**: `Qwen 3.7 plus - Provider - Alibaba` · **Fallback**: DeepSeek (`deepseek-v4-pro`)
+> ⚠️ Selecciónalo en el picker de Copilot antes de invocar al agente.
+> Registro completo: `.github/instructions/agent-delegation.instructions.md`
 
 ## Session Start — MANDATORY
 

@@ -72,7 +72,8 @@ Hand off to the **@functional-analyst** to formalize the specification:
 2. Runs `/speckit.specify` to generate the formal spec
 3. Output → `.tasks/{feature-name}/TASK-YYYY-NNN/spec.md`
 4. @functional-analyst runs `/speckit.clarify` if ambiguities are detected
-5. Persist in ICM: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", importance: "high", content: "Spec produced: {summary}")`
+5. @functional-analyst runs `/speckit.checklist` to validate the QUALITY OF THE SPEC ITSELF — unit tests for the requirements prose: are they unambiguous, complete, testable? This is the only phase where the answer is actionable: fixing an ambiguous requirement here costs one line, after `/sdd-apply` it costs a rewrite. It does NOT verify implementation; the deterministic gates in `/sdd-verify` do that.
+6. Persist in ICM: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", importance: "high", content: "Spec produced: {summary}")`
 
 ### Step 4: Plan (via @solution-architect + /speckit.plan)
 
