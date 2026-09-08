@@ -298,15 +298,28 @@ EOF
 > protocolo debe regenerarla con `pnpm aoi:stress-sdd` en `/Users/equinox/Desktop/AOI TESTS` y
 > reportar el delta por fase. Una caída en cualquier `% Reducción` es una regresión y bloquea el ciclo.
 
-| Fase | Comando | Tokens Base | Tokens AOI | Ahorro | % Reducción | Δ vs ciclo previo |
-| :--- | :--- | ---: | ---: | ---: | ---: | :--- |
-| 0 | `/sdd-frame` | 2.200 | 85 | 2.115 | **96,1%** | = |
-| 1 | `/sdd-new` | 2.400 | 625 | 1.775 | **74,0%** | = |
-| 2 | `/sdd-ff` | 321 | 238 | 83 | **25,9%** | = |
-| 3 | `/sdd-apply` | 4.726 | 1.014 | 3.712 | **78,5%** | = |
-| 4 | `/sdd-verify` | 2.134 | 39 | 2.095 | **98,2%** | = |
-| 5 | `/sdd-archive` | 1.400 | 120 | 1.280 | **91,4%** | = |
-| **TOTAL** | **ciclo SDD completo** | **13.181** | **2.121** | **11.060** | **83,9%** | **= (sin regresión)** |
+| Fase | Comando | Origen | Tokens Base | Tokens AOI | % Reducción |
+| :--- | :--- | :--- | ---: | ---: | ---: |
+| 0 | `/sdd-frame` | ● real | 2.497 | 165 | **93,4%** |
+| 1 | `/sdd-new` | ○ fixture | 2.400 | 625 | **74,0%** |
+| 2 | `/sdd-ff` | ● real | 332 | 251 | **24,4%** |
+| 3 | `/sdd-apply` | ○ fixture | 4.509 | 1.014 | **77,5%** |
+| 4 | `/sdd-verify` | ○ fixture | 297 | 127 | **57,2%** |
+| 5 | `/sdd-archive` | ● real | 261 | 32 | **87,7%** |
+| **TOTAL** | **ciclo completo** | 3 real / 3 fixture | **10.296** | **2.214** | **78,5%** |
+
+> [!CAUTION]
+> **Esta línea base reemplaza a la anterior de 83,9%, que estaba inflada.** El benchmark
+> previo fabricaba seis números: las fases 0 y 5 eran constantes inventadas de punta a
+> punta, y las fases 3 y 4 usaban baselines ficticios (`320` para el scaffolding y `2000`
+> para el fusor LLM). Al medir la fusión de verdad resultó costar 297 tokens, no 2.134, y
+> la Fase 4 cayó de un 98,2% declarado a un 57,2% real. Las cifras de abajo son medidas o
+> están marcadas como fixture; ninguna es inventada.
+
+**Cómo leer la columna Origen:** `● real` mide artefactos reales del workspace (requiere
+el binario `icm` y una tarea completa en `.tasks/`). `○ fixture` ejercita el mecanismo
+real con entrada sintética: el porcentaje es representativo, el volumen absoluto no.
+`– skipped` significa que no se pudo medir y **no aporta un baseline inventado** al total.
 
 ### Ciclo REAL ejecutado en AOI TESTS — TASK-2026-101 (token-budget)
 
