@@ -404,6 +404,36 @@ Ninguna fase perdió porcentaje más allá del ruido de muestreo (±0,3 pp).
 > **15.164 medidos** por ciclo. Un ciclo real mueve mucho más contexto del que asumían
 > los fixtures, así que AOI ahorra más tokens de los que decía, sobre una base mayor.
 
+### Línea Base de Costo Fijo de Infraestructura — Ciclo 2026-09-08
+
+> [!IMPORTANT]
+> **El payload optimizado es el 4,7% del costo real de un ciclo.** El benchmark de arriba
+> mide lo que AOI comprime; esta tabla mide lo que un ciclo cuesta solo por existir, antes
+> de comprimir nada: el prompt de cada fase, los agentes a los que delega, los comandos
+> spec-kit que invoca, y las instructions que el harness inyecta porque su `applyTo`
+> matchea. Reportar uno sin el otro fue lo que permitió que un 76% de reducción describiera
+> una veinteava parte de la factura.
+
+| Fase | Prompt | Agentes | Spec-Kit | Instructions | TOTAL fijo |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| 0 `/sdd-frame` | 2.067 | 5.403 | 0 | 5.815 | 13.285 |
+| 1 `/sdd-new` | 1.915 | 4.375 | 0 | 5.815 | 12.105 |
+| 2 `/sdd-ff` | 1.853 | 5.653 | **11.908** | 5.815 | **25.229** |
+| 3 `/sdd-apply` | 1.547 | 6.903 | 2.703 | 5.815 | 16.968 |
+| 4 `/sdd-verify` | 2.754 | 4.481 | 5.043 | 5.815 | 18.093 |
+| 5 `/sdd-archive` | 1.597 | 3.854 | 0 | 5.815 | 11.266 |
+| **TOTAL** | **11.733** | **30.669** | **19.654** | **34.890** | **96.946** |
+
+Se calcula con `scripts/sdd-lifecycle/context-budget.mjs` mediante aritmética estática
+sobre archivos en disco: **0 tokens de inferencia**. Funciona como trinquete — si la prosa
+de un prompt o un agente crece, la siguiente corrida de `pnpm aoi:stress-sdd` lo muestra.
+
+**Cómo leer estas columnas.** `Instructions` es idéntico en las seis fases porque cuatro
+archivos matchean el contexto de cualquier `.prompt.md`: `icm-protocol` y `rtk` con
+`applyTo: "**"`, más `agent-delegation` y `model-selection`, que no son prosa explicativa
+sino **la tabla de ruteo** que mapea cada agente a su parámetro de modelo. `Spec-Kit` se
+concentra en la Fase 2 porque `/sdd-ff` encadena specify, clarify, plan y tasks.
+
 **Cómo leer la columna Origen:** `● real` mide artefactos reales — requiere el binario
 `icm`, un árbol de fuentes legible y una tarea completa en `.tasks/`. `○ fixture`
 ejercita el mecanismo real con entrada sintética: el porcentaje es representativo, el
