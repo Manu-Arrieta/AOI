@@ -404,6 +404,33 @@ Ninguna fase perdió porcentaje más allá del ruido de muestreo (±0,3 pp).
 > **15.164 medidos** por ciclo. Un ciclo real mueve mucho más contexto del que asumían
 > los fixtures, así que AOI ahorra más tokens de los que decía, sobre una base mayor.
 
+### Evidencia Comparativa Acumulada — Auditoría de Cierre 2026-09-08
+
+Ejecutado en `/Users/equinox/Desktop/AOI TESTS`, instalación real, 6 fases medidas sobre
+artefactos reales. Cada fila es una corrida efectiva, no un cálculo.
+
+| Reporte | Costo fijo | Payload | Reducción payload | Fidelidad |
+| :--- | ---: | ---: | ---: | :--- |
+| Declarado v2.1.0 (fabricado) | no medido | 2.121 | 83,9% | 6 constantes inventadas |
+| Primera medición real (repo) | no medido | 4.784 | 75,9% | 4 real · 1 fixture · 1 omitida |
+| Línea base en AOI TESTS | no medido | 4.784 | 76,0% | **6 real** |
+| Tras instrumentar el costo fijo | **96.946** | 4.781 | 76,0% | 6 real |
+| Tras consolidar ruteo + fase del checklist | **92.751** | 4.783 | 76,2% | 6 real |
+| **Tras comprimir el protocolo ICM** | **91.161** | 4.811 | **76,0%** | **6 real** |
+
+**Ahorro de infraestructura acumulado: 5.785 tokens por ciclo, −6,0%.** El payload se
+mantuvo entre 4.781 y 4.811 durante toda la serie, con una variación del 0,6% que es ruido
+de muestreo del corpus vivo. Esa estabilidad es la evidencia de que los recortes tocaron
+prosa fija y no los mecanismos de compresión.
+
+> [!NOTE]
+> **Sobre la precisión del instrumento.** Un recálculo independiente del costo de
+> `/sdd-verify`, hecho con `awk` en vez del estimador del ledger, dio 12.198 contra 12.114:
+> una diferencia del 0,7% atribuible a la convención de redondeo, no a un error de lógica.
+> Los absolutos cargan esa varianza; los deltas no, porque toda la serie usa el mismo
+> estimador. Por eso las comparaciones de esta tabla son válidas aunque los absolutos
+> tengan un margen.
+
 ### Línea Base de Costo Fijo de Infraestructura — Ciclo 2026-09-08
 
 > [!IMPORTANT]
