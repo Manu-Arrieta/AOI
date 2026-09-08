@@ -844,6 +844,8 @@ REINSTALL_STATS_UPDATED=0
 REINSTALL_STATS_CONFLICTS=0
 REINSTALL_STATS_NEW=0
 REINSTALL_STATS_SKIPPED=0
+REINSTALL_STATS_ORPHANS=0
+REINSTALL_STATS_ORPHANS_KEPT=0
 
 # IS_REINSTALL was resolved before Phase 2 — see the note there.
 if [ "$IS_REINSTALL" -eq 1 ]; then
@@ -895,6 +897,8 @@ if [ "$IS_REINSTALL" -eq 1 ]; then
     REINSTALL_STATS_CONFLICTS=0
     REINSTALL_STATS_NEW=0
     REINSTALL_STATS_SKIPPED=0
+    REINSTALL_STATS_ORPHANS=0
+    REINSTALL_STATS_ORPHANS_KEPT=0
     if command -v python3 &>/dev/null; then
       eval "$(python3 -c "
 import json, sys, shlex
@@ -903,14 +907,18 @@ auto = data.get('auto_update', [])
 conflicts = data.get('conflict', [])
 new = data.get('new', [])
 skip = data.get('skip', [])
+orphans = data.get('orphan', [])
+orphans_kept = data.get('orphan_modified', [])
 print(f'REINSTALL_STATS_UPDATED={len(auto)}')
 print(f'REINSTALL_STATS_CONFLICTS={len(conflicts)}')
 print(f'REINSTALL_STATS_NEW={len(new)}')
 print(f'REINSTALL_STATS_SKIPPED={len(skip)}')
+print(f'REINSTALL_STATS_ORPHANS={len(orphans)}')
+print(f'REINSTALL_STATS_ORPHANS_KEPT={len(orphans_kept)}')
 # Emit file lists as newline-separated temp files
 import tempfile, os
 td = tempfile.mkdtemp()
-for name, lst in [('auto_update', auto), ('conflict', conflicts), ('new', new)]:
+for name, lst in [('auto_update', auto), ('conflict', conflicts), ('new', new), ('orphan', orphans), ('orphan_modified', orphans_kept)]:
     with open(os.path.join(td, name), 'w') as f:
         # Trailing newline is mandatory: a file whose last line is unterminated
         # makes the bash read loop return false on that line, silently dropping
@@ -945,8 +953,31 @@ print(f'COMPARE_TMPDIR={td}')
           ok "Installed $REINSTALL_STATS_NEW new file(s)"
         fi
 
-        # Report conflicts (both scaffold and user modified)
+        # Remove files AOI no longer ships, but only the ones the owner never
+        # touched — compare-install.sh already withheld anything edited or
+        # living under .tasks/, .sandboxes/, .resources/ or .conf/. Left in
+        # place, an obsolete prompt or agent stays invocable and reads as
+        # current to both humans and models.
+        if [ -f "$COMPARE_TMPDIR/orphan" ] && [ -s "$COMPARE_TMPDIR/orphan" ]; then
+          while IFS= read -r rel_file || [ -n "$rel_file" ]; do
+            [ -z "$rel_file" ] && continue
+            rm -f "$PROJECT_PATH/$rel_file"
+          done < "$COMPARE_TMPDIR/orphan"
+          ok "Removed $REINSTALL_STATS_ORPHANS obsolete file(s) AOI no longer ships"
+        fi
+        if [ -f "$COMPARE_TMPDIR/orphan_modified" ] && [ -s "$COMPARE_TMPDIR/orphan_modified" ]; then
+          warn "$REINSTALL_STATS_ORPHANS_KEPT obsolete file(s) kept because you modified them:"
+          while IFS= read -r rel_file || [ -n "$rel_file" ]; do
+            [ -z "$rel_file" ] && continue
+            warn "  kept: $rel_file"
+          done < "$COMPARE_TMPDIR/orphan_modified"
+        fi
+
+        # Report conflicts (both scaffold and user modified). The directory is
+        # cleared first: a conflict from three reinstalls ago is indistinguishable
+        # from one raised just now, and stale entries make the folder unreadable.
         if [ -f "$COMPARE_TMPDIR/conflict" ] && [ -s "$COMPARE_TMPDIR/conflict" ]; then
+          rm -rf "$PROJECT_PATH/.conf/conflicts"
           mkdir -p "$PROJECT_PATH/.conf/conflicts"
           while IFS= read -r rel_file || [ -n "$rel_file" ]; do
             [ -z "$rel_file" ] && continue
@@ -1382,7 +1413,7 @@ with open('$PROJECT_PATH/.conf/manifest.json', 'w') as f:
 " 2>/dev/null && ok "Manifest updated_at refreshed"
     fi
     # Append detailed reinstall stats
-    echo "{\"action\":\"reinstall\",\"at\":\"$NOW_TS\",\"aoi_version\":\"0.1.x\",\"files_updated\":$REINSTALL_STATS_UPDATED,\"files_kept\":$REINSTALL_STATS_SKIPPED,\"conflicts\":$REINSTALL_STATS_CONFLICTS,\"new_files\":$REINSTALL_STATS_NEW}" \
+    echo "{\"action\":\"reinstall\",\"at\":\"$NOW_TS\",\"aoi_version\":\"0.1.x\",\"files_updated\":$REINSTALL_STATS_UPDATED,\"files_kept\":$REINSTALL_STATS_SKIPPED,\"conflicts\":$REINSTALL_STATS_CONFLICTS,\"new_files\":$REINSTALL_STATS_NEW,\"orphans_removed\":$REINSTALL_STATS_ORPHANS,\"orphans_kept\":$REINSTALL_STATS_ORPHANS_KEPT}" \
       >> "$PROJECT_PATH/.conf/history.jsonl"
     ok "Reinstall stats recorded in .conf/history.jsonl"
   fi

@@ -54,6 +54,24 @@ pnpm test
 ```
 *Si los 3 comandos finalizan con código `0`, el entorno AOI está 100% instalado y operativo.*
 
+### Paso 0.2b: Guardianes Estructurales (0 tokens de inferencia)
+
+`pnpm test` arranca ahora con dos comprobaciones que corren **antes** que cualquier suite,
+porque las dos protegen contra la misma patología: una suite que reporta verde sin haber
+comprobado nada.
+
+```bash
+pnpm aoi:test-globs   # todo glob declarado debe resolver a >= 1 archivo
+pnpm aoi:srp          # Invariante 5, en modo trinquete
+pnpm aoi:invariant-gate -- --entity "AOI TESTS" --tests-dir . --exit-code
+```
+
+| Guardián | Qué impide |
+| :--- | :--- |
+| `aoi:test-globs` | `node --test` sale 0 cuando el glob no matchea nada. Un directorio de tests vaciado, o nunca instalado, dejaba la cadena en verde sobre cero aserciones. En el repo exige que **todo** glob resuelva; en un workspace instalado tolera lo que legítimamente no se instala, pero sigue fallando si un directorio existe y quedó sin tests. |
+| `aoi:srp` | El límite de 300 LOC solo se miraba por tarea y como WARNING, así que tres archivos se pasaron sin que nadie lo notara. El trinquete falla ante un archivo nuevo por encima del límite, ante deuda vieja que **crece**, y ante una entrada del presupuesto que ya no viola — la lista no puede pudrirse. Solo se mueve hacia abajo. |
+| `aoi:invariant-gate` | Ya existía, pero solo se invocaba desde prosa. Ahora es un comando determinista, ejecutable sin LLM de por medio. |
+
 ### Paso 0.3: Verificación del Reinstall Inteligente
 
 > [!WARNING]
@@ -98,6 +116,8 @@ tail -2 "/Users/equinox/Desktop/AOI TESTS/.conf/history.jsonl"
 | Un archivo propio bajo `aoi_apps/` desaparece o cambia de hash | ❌ El reinstall volvió a arrasar el árbol |
 | Un archivo clasificado `skip` cambia de hash tras reinstalar | ❌ Algo sobrescribió al merge después de que decidiera |
 | Aparece `Spec-kit → Copilot` en un reinstall | ❌ `specify init --force` volvió a correr y aplastó el workspace |
+| `orphans_removed` > 0 sobre un archivo que el operador escribió | ❌ Se borró algo que no era de AOI |
+| Un archivo obsoleto que el operador editó desaparece | ❌ Debe conservarse y reportarse como `kept:` |
 
 > [!NOTE]
 > **`aoi_apps/` pasa por el mismo merge de tres vías que el resto.** Antes se reemplazaba

@@ -42,7 +42,13 @@ export const PROSE_DIRS = [
   '.github/prompts',
   '.github/agents',
   '.github/instructions',
+  '.github/skills',
   '.agents/skills',
+  '.agents/rules',
+  // The constitution names commands and scripts and governs the whole
+  // lifecycle, so a broken reference there is the most expensive kind.
+  '.specify/memory',
+  '.github/copilot-instructions.md',
 ]
 
 /**
@@ -65,6 +71,12 @@ export function collectProseFiles(root, dirs = PROSE_DIRS) {
   for (const dir of dirs) {
     const full = path.join(root, dir)
     if (!fs.existsSync(full)) continue
+    // An entry may name a single file (copilot-instructions.md) rather than a
+    // directory; readdirSync would throw ENOTDIR on it.
+    if (!fs.statSync(full).isDirectory()) {
+      if (full.endsWith('.md')) files.push(path.relative(root, full))
+      continue
+    }
     const walk = (current) => {
       for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
         const p = path.join(current, entry.name)

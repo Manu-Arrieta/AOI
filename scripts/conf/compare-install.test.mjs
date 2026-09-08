@@ -47,6 +47,13 @@ function runComparison() {
   write(project, 'aoi_apps/dashboard/server/utils/aoi-owned.ts', 'v1\n')
   write(project, 'aoi_apps/dashboard/server/utils/user-feature.ts', 'implemented by an SDD cycle\n')
 
+  // Orphans: recorded in the previous install, absent from the scaffold now.
+  // Only the untouched one may be removed; the edited one is the owner's, and
+  // anything under a state directory is off limits whatever its hash says.
+  write(project, 'retired.md', 'shipped by an older AOI\n')
+  write(project, 'retired-edited.md', 'owner rewrote this\n')
+  write(project, '.tasks/registry.md', 'the owner task registry\n')
+
   const checksums = {
     $schema: 'aoi-conf-checksums-v1',
     generated_at: new Date().toISOString(),
@@ -55,6 +62,9 @@ function runComparison() {
       'upgraded.md': sha256('v1\n'),
       'clashing.md': sha256('scaffold-v1\n'),
       'aoi_apps/dashboard/server/utils/aoi-owned.ts': sha256('v1\n'),
+      'retired.md': sha256('shipped by an older AOI\n'),
+      'retired-edited.md': sha256('what AOI originally shipped\n'),
+      '.tasks/registry.md': sha256('the owner task registry\n'),
     },
   }
   const checksumsPath = path.join(root, 'checksums.json')
@@ -112,6 +122,32 @@ describe('compare-install.sh', () => {
     assert.ok(
       !everything.some((f) => f.endsWith('user-feature.ts')),
       'a project-only file leaked into a bucket and could be overwritten'
+    )
+  })
+
+  it('marks a file AOI no longer ships as an orphan when the owner never touched it', () => {
+    const parsed = JSON.parse(runComparison())
+
+    // Without this, an obsolete prompt or agent lingers forever in installed
+    // workspaces and stays invocable, reading as current to humans and models.
+    assert.deepEqual(parsed.orphan, ['retired.md'])
+  })
+
+  it('never removes an obsolete file the owner edited, and never touches state dirs', () => {
+    const parsed = JSON.parse(runComparison())
+
+    assert.deepEqual(parsed.orphan_modified, ['retired-edited.md'])
+
+    // .tasks/ is the owner's accumulated work. It must not appear in ANY
+    // bucket, not even as a reported orphan — there is no scenario where the
+    // installer decides something about it.
+    const everything = [
+      ...parsed.skip, ...parsed.auto_update, ...parsed.conflict,
+      ...parsed.new, ...parsed.orphan, ...parsed.orphan_modified,
+    ]
+    assert.ok(
+      !everything.some((f) => f.startsWith('.tasks/')),
+      'a state directory leaked into the installer decision set'
     )
   })
 
