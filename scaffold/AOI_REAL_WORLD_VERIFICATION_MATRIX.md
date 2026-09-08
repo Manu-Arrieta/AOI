@@ -416,7 +416,21 @@ estos cambios tocaron prosa fija y no los mecanismos de compresión.
 | F3 · El supervisor arrastraba las 7 fases a cada fase | 98.650 | **96.246** | **−2.404** |
 | Guardianes de ruteo (solo tests) | 96.246 | 96.246 | 0 |
 | F2 · La skill de RTK omitía dos mapeos | 96.246 | 96.384 | **+138** |
-| | | **neto** | **−1.870** |
+| F4 · Columna derivable en el registro de agentes | 96.384 | **94.896** | **−1.488** |
+| | | **neto** | **−3.358** |
+
+**F4 se recortó a lo demostrable.** La hipótesis era mover el registro de 27 filas a hechos
+O(1) de ICM, unos 6.030 por ciclo. No se hizo: el registro es la fuente única que
+`pnpm aoi:routing` verifica **desde el repositorio**, y llevarlo a una base de datos
+cambiaría una garantía comprobable offline por una que depende de que ICM esté sembrado.
+Una instalación nueva se quedaría sin ruteo hasta el `/init`.
+
+Lo que sí se demostró es que la columna `Skill Path` era derivable: `.github/agents/<agente>.agent.md`
+en los 27 casos, sin una sola excepción. Solo repetía el nombre con envoltorio, y se pagaba
+en cada inyección. El gate ahora la deriva y sigue verificando que el archivo exista, así
+que la garantía es idéntica — comprobado reponiendo un agente sin fila y viendo que lo
+detecta igual. La columna `Category` se conservó: no la consume ningún script, pero tampoco
+se probó que sea inútil, y esta rama no corta lo que no demuestra.
 
 **F2 no dio ahorro, y conviene decirlo con todas las letras.** La hipótesis era deduplicar
 `rtk`, que existe como instruction y como skill, unos 4.392 tokens por ciclo. No es

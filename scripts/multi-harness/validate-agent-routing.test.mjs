@@ -6,10 +6,10 @@ import { describe, it } from 'node:test'
 import { auditAgentRouting, listAgents, parseRegistry, REGISTRY } from './validate-agent-routing.mjs'
 
 const HEADER =
-  '| Agent | `runSubagent` Model Parameter | Fallback (NVIDIA NIM) | Skill Path | Category |\n| :--- | :--- | :--- | :--- | :--- |\n'
+  '| Agent | `runSubagent` Model Parameter | Fallback (NVIDIA NIM) | Category |\n| :--- | :--- | :--- | :--- |\n'
 
-const row = (a, model = 'Model X', fb = 'vendor/model-x') =>
-  `| \`${a}\` | \`${model}\` | \`${fb}\` | \`.github/agents/${a}.agent.md\` | Razonamiento |\n`
+const row = (a, model = 'Provider Model X', fb = 'vendor/model-x') =>
+  `| \`${a}\` | \`${model}\` | \`${fb}\` | Razonamiento |\n`
 
 /** Builds a workspace with a registry and a set of agent files. */
 function workspace({ registryRows = '', agents = [] }) {
@@ -24,21 +24,23 @@ function workspace({ registryRows = '', agents = [] }) {
 
 describe('parseRegistry', () => {
   it('reads model, fallback and skill path from a row', () => {
-    const rows = parseRegistry(HEADER + row('supervisor', 'Deepseek v4 pro', 'deepseek-ai/v4'))
+    const rows = parseRegistry(HEADER + row('supervisor', 'Deepseek v4 pro - Provider - Deepseek', 'deepseek-ai/v4'))
     assert.deepEqual(rows.get('supervisor'), {
-      model: 'Deepseek v4 pro',
+      model: 'Deepseek v4 pro - Provider - Deepseek',
       fallback: 'deepseek-ai/v4',
       skill: '.github/agents/supervisor.agent.md',
     })
   })
 
   it('ignores table rows that are not agent registrations', () => {
-    const rows = parseRegistry(HEADER + '| `some-key` | `a` | `b` | `c` | d |\n')
+    // Without the path column the parser leans on the model naming its
+    // provider, so a prose table with the same shape is not mistaken for one.
+    const rows = parseRegistry(HEADER + '| `some-key` | `a` | `b` | d |\n')
     assert.equal(rows.size, 0)
   })
 
   it('accepts a fallback written with its own inline code, as some providers are', () => {
-    const rows = parseRegistry(HEADER + '| `x` | `M` | DeepSeek (`deepseek-v4-pro`) | `.github/agents/x.agent.md` | R |\n')
+    const rows = parseRegistry(HEADER + '| `x` | `M - Provider - Z` | DeepSeek (`deepseek-v4-pro`) | R |\n')
     assert.match(rows.get('x').fallback, /deepseek-v4-pro/)
   })
 })
@@ -67,7 +69,7 @@ describe('auditAgentRouting', () => {
 
   it('catches a registered agent whose fallback was lost in a merge', () => {
     const root = workspace({
-      registryRows: `| \`supervisor\` | \`Model X\` |  | \`.github/agents/supervisor.agent.md\` | R |\n`,
+      registryRows: `| \`supervisor\` | \`Provider Model X\` |  | R |\n`,
       agents: ['supervisor'],
     })
 

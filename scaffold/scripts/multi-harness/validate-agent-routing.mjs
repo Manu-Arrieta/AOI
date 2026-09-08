@@ -38,14 +38,19 @@ export function parseRegistry(text) {
   for (const line of text.split('\n')) {
     if (!line.startsWith('| `')) continue
     const cells = line.replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim())
-    if (cells.length < 5) continue
+    if (cells.length < 4) continue
     const agent = cells[0].replace(/`/g, '').replace(/^@/, '')
-    // Header separator rows and prose tables never carry an .agent.md path.
-    if (!cells[3].includes('.agent.md')) continue
+    // The definition file is not listed: it is `.github/agents/<agent>.agent.md`
+    // for all 27, so the column only repeated the name and was paid on every
+    // injection. Deriving it here keeps the same guarantee — the existence of
+    // the file is still checked — without carrying the path in the prose.
+    if (!/^[a-z][a-z0-9.-]*$/.test(agent)) continue
+    const model = cells[1].replace(/`/g, '')
+    if (!model.includes('Provider')) continue
     rows.set(agent, {
-      model: cells[1].replace(/`/g, ''),
+      model,
       fallback: cells[2].replace(/`/g, ''),
-      skill: cells[3].replace(/`/g, ''),
+      skill: `${AGENTS_DIR}/${agent}.agent.md`,
     })
   }
   return rows
