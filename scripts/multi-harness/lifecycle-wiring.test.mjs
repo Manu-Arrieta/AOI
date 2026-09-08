@@ -207,3 +207,46 @@ describe('the supervisor routes phases without re-specifying them', () => {
     )
   })
 })
+
+describe('the supervisor can still route every phase to its agent', () => {
+  const supervisor = read('.github/agents/supervisor.agent.md')
+
+  // Compressing the supervisor removed a block that also restated routing. It
+  // survived because three other sections carry it, but nothing verified that
+  // — the risk was real and invisible.
+  const ROUTING = [
+    ['Explore', 'functional-analyst'],
+    ['Specify', 'functional-analyst'],
+    ['Plan', 'solution-architect'],
+    ['Tasks', 'solution-architect'],
+    ['Implement', 'frontend-developer'],
+    ['Verify', 'integration-specialist'],
+    ['Archive', 'documentation-analyst'],
+  ]
+
+  it('names the responsible agent for every phase of the lifecycle', () => {
+    const table = supervisor.slice(
+      supervisor.indexOf('## SDD Lifecycle — Phase Routing'),
+      supervisor.indexOf('## Hub-and-Spoke')
+    )
+    for (const [phase, agent] of ROUTING) {
+      const row = table.split('\n').find((l) => l.includes(`**${phase}**`))
+      assert.ok(row, `the routing table lost the ${phase} phase`)
+      assert.ok(row.includes(agent), `${phase} no longer routes to @${agent}`)
+    }
+  })
+
+  it('keeps the roster that maps every role to its handle', () => {
+    for (const [, agent] of ROUTING) {
+      assert.match(supervisor, new RegExp(`\`@${agent}\``), `the roster lost @${agent}`)
+    }
+  })
+
+  it('keeps the hub-and-spoke mechanics, which live nowhere else', () => {
+    // What to recall before delegating and what to persist after are the
+    // supervisor's own protocol — no phase prompt restates them.
+    for (const step of ['Before routing to ANY agent', 'After receiving deliverable', 'sanitize-subagent-payload', 'Project Standards']) {
+      assert.ok(supervisor.includes(step), `the supervisor lost its hub-and-spoke step: ${step}`)
+    }
+  })
+})
