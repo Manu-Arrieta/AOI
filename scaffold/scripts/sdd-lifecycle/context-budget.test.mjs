@@ -67,11 +67,54 @@ describe('reference extraction', () => {
     const text = 'Hand off to @solution-architect, then @supervisor runs /speckit.plan and /speckit.tasks.'
 
     assert.deepEqual(agentsIn(text), ['solution-architect', 'supervisor'])
-    assert.deepEqual(speckitIn(text), ['speckit.plan', 'speckit.tasks'])
+    assert.deepEqual(speckitIn(text).map((s) => s.command), ['speckit.plan', 'speckit.tasks'])
+  })
+
+  it('flags a command whose invocation line makes it conditional', () => {
+    // Charging a conditional step to every run overstates the phase and, worse,
+    // makes "turn this step conditional" show up as zero improvement.
+    const text = [
+      '2. Runs `/speckit.specify` to generate the formal spec',
+      '4. **[conditional]** Runs `/speckit.clarify` if ambiguities are detected',
+    ].join('\n')
+
+    assert.deepEqual(speckitIn(text), [
+      { command: 'speckit.clarify', conditional: true },
+      { command: 'speckit.specify', conditional: false },
+    ])
+  })
+
+  it('treats a command as unconditional when any line invokes it outright', () => {
+    // Mentioned once under a condition and once plainly: it is paid every run.
+    const text = 'Runs `/speckit.plan` **[conditional]** here.\nAlways runs `/speckit.plan` afterwards.'
+
+    assert.deepEqual(speckitIn(text), [{ command: 'speckit.plan', conditional: false }])
   })
 
   it('never counts a spec-kit agent twice as a plain agent', () => {
     assert.deepEqual(agentsIn('@speckit.checklist runs here'), [])
+  })
+
+  it('ignores commands named inside an explanatory blockquote', () => {
+    // A note is not a step. Counting it as one dragged the command back into
+    // the floor, because notes carry no marker — the exact bug that made a
+    // conditional /speckit.clarify read as unconditional.
+    const text = [
+      '4. **[conditional]** Runs `/speckit.clarify` if ambiguities are detected',
+      '   > **Why conditional.** It only pays when `/speckit.clarify` already fired.',
+    ].join('\n')
+
+    assert.deepEqual(speckitIn(text), [{ command: 'speckit.clarify', conditional: true }])
+  })
+
+  it('does not infer conditionality from English prose, only from the marker', () => {
+    // An earlier version guessed from words like "if". It could not tell an
+    // invocation that is itself conditional from a line that happens to
+    // mention a condition, so a line reading "runs X always, if Y already
+    // ran" was silently scored as conditional and the floor came out too low.
+    const text = 'Runs `/speckit.plan` always, even if the spec is trivial.'
+
+    assert.deepEqual(speckitIn(text), [{ command: 'speckit.plan', conditional: false }])
   })
 })
 
@@ -89,6 +132,8 @@ describe('phaseContextCost', () => {
 
     assert.equal(cost.agents, fileTokens(path.join(root, '.github/agents/supervisor.agent.md')))
     assert.equal(cost.speckit, fileTokens(path.join(root, '.github/agents/speckit.plan.agent.md')))
+    assert.equal(cost.conditional, 0)
+    assert.equal(cost.floor, cost.total)
     // The code-only instruction must NOT be charged to a prompt.
     assert.deepEqual(cost.detail.instructions, ['.github/instructions/always.instructions.md'])
     assert.equal(cost.total, cost.prompt + cost.agents + cost.speckit + cost.instructions)
@@ -109,6 +154,44 @@ describe('instructionsFor', () => {
 
     assert.deepEqual(instructionsFor(root, 'anything.md'), [])
     fs.rmSync(root, { recursive: true, force: true })
+  })
+})
+
+describe('floor versus ceiling', () => {
+  it('keeps a conditional command out of the floor but inside the ceiling', () => {
+    const root = workspace({
+      '.github/prompts/p.prompt.md': 'Runs `/speckit.plan`.\n**[conditional]** Runs `/speckit.clarify` if ambiguities.',
+      '.github/agents/speckit.plan.agent.md': 'p'.repeat(400),
+      '.github/agents/speckit.clarify.agent.md': 'c'.repeat(800),
+    })
+
+    const cost = phaseContextCost(root, '.github/prompts/p.prompt.md')
+    assert.equal(cost.speckit, 100)
+    assert.equal(cost.conditional, 200)
+    assert.equal(cost.total - cost.floor, 200, 'the ceiling must exceed the floor by exactly the conditional cost')
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+
+  it('makes turning a step conditional visible as a drop in the floor', () => {
+    // The regression this whole change exists to prevent: an optimisation that
+    // the measuring instrument cannot see is an optimisation nobody can prove.
+    const files = {
+      '.github/agents/speckit.checklist.agent.md': 'x'.repeat(2000),
+    }
+    const before = workspace({ ...files, '.github/prompts/p.prompt.md': 'Runs `/speckit.checklist` to validate.' })
+    const after = workspace({ ...files, '.github/prompts/p.prompt.md': '**[conditional]** Runs `/speckit.checklist`.' })
+
+    const b = phaseContextCost(before, '.github/prompts/p.prompt.md')
+    const a = phaseContextCost(after, '.github/prompts/p.prompt.md')
+
+    assert.ok(a.floor < b.floor, 'making a step conditional must lower the floor')
+    // Compared on the spec-kit split rather than the raw floor: the two prompts
+    // differ in wording, so their own length moves the floor by a few tokens.
+    assert.deepEqual([b.speckit, b.conditional], [500, 0], 'before: charged to every run')
+    assert.deepEqual([a.speckit, a.conditional], [0, 500], 'after: charged only when it fires')
+    assert.equal(a.total - a.floor, 500)
+    fs.rmSync(before, { recursive: true, force: true })
+    fs.rmSync(after, { recursive: true, force: true })
   })
 })
 

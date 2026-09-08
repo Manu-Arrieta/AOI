@@ -404,6 +404,41 @@ Ninguna fase perdió porcentaje más allá del ruido de muestreo (±0,3 pp).
 > **15.164 medidos** por ciclo. Un ciclo real mueve mucho más contexto del que asumían
 > los fixtures, así que AOI ahorra más tokens de los que decía, sobre una base mayor.
 
+### Piso y Techo — rama `perf/conditional-phase-cost` (aislada)
+
+Un paso condicional no se paga siempre. Contarlo como fijo sobreestima el ciclo y, peor,
+**haría invisible cualquier mejora que consista precisamente en volver condicional un
+paso**: el instrumento tenía que aprender a verlo antes de que lo usáramos para optimizar.
+
+La conditionalidad se **declara** con el marcador `**[conditional]**`, nunca se infiere de
+la prosa. Una versión anterior adivinaba por palabras como "if" y no distinguía una
+invocación condicional de una línea que menciona una condición por otro motivo.
+
+| Métrica | `main` | Rama | Delta |
+| :--- | ---: | ---: | ---: |
+| Piso declarado | 91.161¹ | **82.643** | — |
+| Piso real | 87.494 | **82.643** | **−4.851** |
+| Techo | 91.161 | 91.315 | +154² |
+| Payload | 4.811 | 4.810 | −1 |
+
+¹ `main` reportaba el techo: no sabía que `/speckit.clarify` ya era condicional, así que
+sobreestimaba el piso en 3.667 tokens. Parte de la diferencia es corrección de medición,
+no ahorro; por eso la fila "piso real" separa ambas cosas.
+² El techo sube porque el prompt ganó el marcador y una nota que explica el criterio.
+Se gastaron 154 tokens de prosa para ahorrar 4.851 en el caso común.
+
+**Fase 2, la más cara del ciclo: piso de 25.551 a 20.700.** `/speckit.checklist` (5.005)
+pasa a dispararse solo si el contrato es no trivial — si `/speckit.clarify` corrió, o si el
+BIC declara más de una Never Rule. Ambas señales existen sin costo de inferencia.
+
+> [!NOTE]
+> **Dos defectos del propio instrumento se encontraron midiendo, no razonando.** El primero:
+> clasificaba por prosa inglesa y no podía sostener un guardián, porque la línea del
+> checklist contiene la palabra "if" por otro motivo. El segundo, más sutil: contaba como
+> invocación el nombre de un comando citado dentro de una nota `>`, lo que devolvía
+> `/speckit.clarify` al piso en silencio. Los dos habrían producido cifras plausibles y
+> falsas.
+
 ### Evidencia Comparativa Acumulada — Auditoría de Cierre 2026-09-08
 
 Ejecutado en `/Users/equinox/Desktop/AOI TESTS`, instalación real, 6 fases medidas sobre

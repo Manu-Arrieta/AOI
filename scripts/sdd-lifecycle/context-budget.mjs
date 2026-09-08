@@ -120,9 +120,44 @@ export function agentsIn(text) {
   return [...found].sort()
 }
 
-/** Distinct spec-kit commands a prompt invokes. */
+/**
+ * A conditional invocation is not free — it is paid whenever it fires — but
+ * charging it to every run overstates the phase and, worse, makes
+ * conditionality invisible: turning a step conditional would show zero
+ * improvement in this very report.
+ *
+ * Conditionality is DECLARED with this marker, never inferred from prose. An
+ * earlier version guessed from English words like "if", which cannot tell an
+ * invocation that is itself conditional from a line that merely mentions a
+ * condition for some other reason — and a guard built on a detector that
+ * cannot make that distinction guards nothing.
+ */
+export const CONDITIONAL_MARKER = '[conditional]'
+
+/**
+ * Distinct spec-kit commands a prompt invokes, each flagged by whether its
+ * invocation line makes it conditional.
+ *
+ * @returns {Array<{ command: string, conditional: boolean }>}
+ */
 export function speckitIn(text) {
-  return [...new Set([...text.matchAll(SPECKIT_REF)].map((m) => m[1]))].sort()
+  const seen = new Map()
+  for (const line of text.split('\n')) {
+    // Blockquotes are callouts explaining a step, never a step themselves. A
+    // note that merely names a command was being scored as an invocation, and
+    // because notes carry no marker it silently forced the command back into
+    // the floor — inflating the very number this module exists to report.
+    if (/^\s*>/.test(line)) continue
+    for (const m of line.matchAll(SPECKIT_REF)) {
+      const conditional = line.includes(CONDITIONAL_MARKER)
+      // A command invoked unconditionally anywhere is paid on every run, even
+      // if some other line also mentions it under a condition.
+      if (!seen.has(m[1]) || !conditional) seen.set(m[1], conditional)
+    }
+  }
+  return [...seen.entries()]
+    .map(([command, conditional]) => ({ command, conditional }))
+    .sort((a, b) => a.command.localeCompare(b.command))
 }
 
 /**
@@ -141,21 +176,37 @@ export function phaseContextCost(root, promptRel) {
   const agents = agentList.reduce((n, a) => n + fileTokens(path.join(root, `.github/agents/${a}.agent.md`)), 0)
 
   const speckitList = speckitIn(text)
-  const speckit = speckitList.reduce(
-    (n, c) => n + fileTokens(path.join(root, `.github/agents/${c}.agent.md`)) + fileTokens(path.join(root, `.github/prompts/${c}.prompt.md`)),
-    0
-  )
+  const costOf = (c) =>
+    fileTokens(path.join(root, `.github/agents/${c}.agent.md`)) +
+    fileTokens(path.join(root, `.github/prompts/${c}.prompt.md`))
+
+  let speckit = 0
+  let conditional = 0
+  for (const { command, conditional: isCond } of speckitList) {
+    if (isCond) conditional += costOf(command)
+    else speckit += costOf(command)
+  }
 
   const instrList = instructionsFor(root, promptRel)
   const instructions = instrList.reduce((n, i) => n + i.tokens, 0)
 
+  // `floor` is what every run of this phase costs. `total` adds what it costs
+  // when every conditional branch also fires — the worst case, not the norm.
+  const floor = prompt + agents + speckit + instructions
   return {
     prompt,
     agents,
     speckit,
+    conditional,
     instructions,
-    total: prompt + agents + speckit + instructions,
-    detail: { agents: agentList, speckit: speckitList, instructions: instrList.map((i) => i.file) },
+    floor,
+    total: floor + conditional,
+    detail: {
+      agents: agentList,
+      speckit: speckitList.filter((s) => !s.conditional).map((s) => s.command),
+      conditional: speckitList.filter((s) => s.conditional).map((s) => s.command),
+      instructions: instrList.map((i) => i.file),
+    },
   }
 }
 
@@ -173,13 +224,15 @@ export const SDD_PHASES = [
 export function auditContextBudget(root, phases = SDD_PHASES) {
   const rows = []
   let total = 0
+  let floor = 0
   for (const [key, rel] of phases) {
     if (!fs.existsSync(path.join(root, rel))) continue
     const cost = phaseContextCost(root, rel)
     rows.push({ phase: key, ...cost })
     total += cost.total
+    floor += cost.floor
   }
-  return { rows, total }
+  return { rows, total, floor }
 }
 
 /**
@@ -188,20 +241,25 @@ export function auditContextBudget(root, phases = SDD_PHASES) {
  * what let a 76% reduction describe a twentieth of the real bill.
  */
 export function formatBudgetSummary(budget, payloadTokens) {
-  const { total } = budget
-  const combined = total + payloadTokens
+  const { total, floor } = budget
+  const combined = floor + payloadTokens
   const share = combined > 0 ? ((payloadTokens / combined) * 100).toFixed(1) : '0.0'
-  const heaviest = [...budget.rows].sort((a, b) => b.total - a.total)[0]
+  const heaviest = [...budget.rows].sort((a, b) => b.floor - a.floor)[0]
+  const swing = total - floor
 
   return [
     'COSTO FIJO DE INFRAESTRUCTURA (prosa cargada antes de trabajar):',
-    `- Prompts + agentes + spec-kit + instructions: ${total.toLocaleString()} tokens`,
+    `- PISO, se paga en todo ciclo:                 ${floor.toLocaleString()} tokens`,
+    `- TECHO, si además dispara todo lo condicional: ${total.toLocaleString()} tokens`,
+    `- Margen condicional:                          ${swing.toLocaleString()} tokens`,
     `- Payload optimizado del ciclo:                ${payloadTokens.toLocaleString()} tokens`,
-    `- El payload es el ${share}% del costo total del ciclo.`,
-    heaviest ? `- Fase más cara: ${heaviest.phase} con ${heaviest.total.toLocaleString()} tokens fijos.` : '',
+    `- El payload es el ${share}% del costo de piso del ciclo.`,
+    heaviest ? `- Fase más cara: ${heaviest.phase} con ${heaviest.floor.toLocaleString()} tokens de piso.` : '',
     '',
-    'Este bloque es aritmética estática sobre archivos en disco: 0 tokens de inferencia.',
-    'Sirve de trinquete — si la prosa crece, el próximo benchmark lo muestra.',
+    'Piso y techo se reportan por separado porque un paso condicional no se paga',
+    'siempre; contarlo como fijo sobreestima el ciclo y, peor, haría invisible',
+    'cualquier mejora que consista precisamente en volver condicional un paso.',
+    'Todo esto es aritmética estática sobre archivos en disco: 0 tokens de inferencia.',
   ]
     .filter(Boolean)
     .join('\n')
@@ -214,7 +272,9 @@ export function toBudgetRows({ rows }) {
     Prompt: r.prompt,
     Agentes: r.agents,
     'Spec-Kit': r.speckit,
+    'Si aplica': r.conditional,
     Instructions: r.instructions,
-    'TOTAL fijo': r.total,
+    PISO: r.floor,
+    TECHO: r.total,
   }))
 }

@@ -17,6 +17,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
+import { speckitIn } from '../sdd-lifecycle/context-budget.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8')
@@ -38,6 +39,26 @@ describe('spec checklist runs where its findings are still actionable', () => {
       /\/speckit\.checklist/,
       'the spec checklist moved back into the implementation-verification phase'
     )
+  })
+
+  it('fires only when the contract is non-trivial, on signals that cost no inference', () => {
+    // It is the single most expensive artifact in the cycle. A one-invariant
+    // contract that came out unambiguous has no prose worth auditing, so
+    // running it there spends without finding anything. Both gating signals
+    // already exist for free: whether /speckit.clarify fired, and the O(1)
+    // count of Never Rules in ICM.
+    // Asserted through the classifier the budget itself uses, not by grepping
+    // for "if": the line legitimately contains other conditionals, and a guard
+    // that disagrees with the measuring instrument guards nothing.
+    const entry = speckitIn(read('.github/prompts/sdd-ff.prompt.md')).find((s) => s.command === 'speckit.checklist')
+
+    assert.ok(entry, 'the spec checklist is not invoked at all')
+    assert.equal(entry.conditional, true, 'the spec checklist became unconditional again — it is the priciest step in the cycle')
+
+    const line = read('.github/prompts/sdd-ff.prompt.md')
+      .split('\n')
+      .find((l) => l.includes('/speckit.checklist'))
+    assert.match(line, /clarify|Never Rule/, 'it is gated on something other than the two free signals')
   })
 
   it('is still reachable somewhere, so the requirements axis is not left uncovered', () => {

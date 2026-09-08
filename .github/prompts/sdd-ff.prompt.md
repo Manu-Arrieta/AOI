@@ -71,8 +71,9 @@ Hand off to the **@functional-analyst** to formalize the specification:
 1. @functional-analyst reads `proposal.md` and any `requirement.md`
 2. Runs `/speckit.specify` to generate the formal spec
 3. Output → `.tasks/{feature-name}/TASK-YYYY-NNN/spec.md`
-4. @functional-analyst runs `/speckit.clarify` if ambiguities are detected
-5. @functional-analyst runs `/speckit.checklist` to validate the QUALITY OF THE SPEC ITSELF — unit tests for the requirements prose: are they unambiguous, complete, testable? This is the only phase where the answer is actionable: fixing an ambiguous requirement here costs one line, after `/sdd-apply` it costs a rewrite. It does NOT verify implementation; the deterministic gates in `/sdd-verify` do that.
+4. **[conditional]** @functional-analyst runs `/speckit.clarify` if ambiguities are detected
+5. **[conditional]** @functional-analyst runs `/speckit.checklist` if the contract is non-trivial — that is, if `/speckit.clarify` fired, or the BIC declares more than one Never Rule (`icm facts list "{WORKSPACE}" -p "bic." --read-only`). It validates the QUALITY OF THE SPEC ITSELF — unit tests for the requirements prose: are they unambiguous, complete, testable? This is the only phase where the answer is actionable: fixing an ambiguous requirement here costs one line, after `/sdd-apply` it costs a rewrite. It does NOT verify implementation; the deterministic gates in `/sdd-verify` do that.
+   > **Por qué condicional.** Es el artefacto más caro del ciclo. Un contrato de una sola invariante que salió sin ambigüedades no tiene prosa que auditar, y correrlo ahí gasta sin encontrar nada. Un contrato que necesitó aclaración ya demostró que su redacción no era clara, y ahí sí paga. Ambas señales existen sin costo de inferencia: si `/speckit.clarify` corrió, y el conteo O(1) de Never Rules en ICM.
 6. Persist in ICM: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", importance: "high", content: "Spec produced: {summary}")`
 
 ### Step 4: Plan (via @solution-architect + /speckit.plan)
