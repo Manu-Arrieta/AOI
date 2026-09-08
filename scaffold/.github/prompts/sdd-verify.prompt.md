@@ -85,6 +85,20 @@ If NO evidence of service discovery → **automatic FAIL** with note:
 
 > "Service Discovery Gate was not completed during /sdd-new. This is a mandatory step."
 
+### Step 4b: Invariant Gate — BIC Contract Enforcement (0 Tokens)
+
+Verify that every business invariant ("Never Rule") and the Business Oracle calibrated during `/sdd-frame` is actually asserted by a test. The check is a mechanical tag match against ICM facts — it consumes **zero LLM inference tokens**:
+
+```bash
+node scripts/sdd-lifecycle/invariant-gate.mjs --entity "{WORKSPACE}" --tests-dir . --exit-code
+```
+
+- **Exit 0 → continue.** Status `SKIPPED` means the task never passed through `/sdd-frame` (no BIC facts exist) and is not a failure.
+- **Exit 1 → automatic FAIL gate.** A declared invariant with no test enforcing it is an unguarded contract. Capture the reported `Unenforced Contract Rules` verbatim into the Verify Report. Same severity as the Service Discovery and Resource Workflow Semantics gates.
+- **Exit 2 → BLOCKED, also a FAIL.** The contract could not be read (broken ICM toolchain). Absence of evidence is never evidence of compliance: repair the toolchain and re-run. Do NOT interpret an unreadable contract as a clean pass.
+
+Add `--bic {BIC-ID}` to narrow the audit to the contract under verification.
+
 ### Step 5: Sandbox Manifest Gate (active sandbox only)
 
 If the task under verification has an **active sandbox** — a `.sandboxes/{name}/`
@@ -155,6 +169,7 @@ Write `.tasks/{feature-name}/TASK-YYYY-NNN/verify-report.md`:
 ## Quality Gates
 
 - [ ] Service Discovery completed (mandatory)
+- [ ] Invariant Gate — `invariant-gate.mjs` exit 0 (every BIC Never Rule & Oracle has a test)
 - [ ] Sandbox manifest valid — `validate-manifest.mjs` exit 0 (if active sandbox)
 - [ ] ICM Memory Health OK
 - [ ] No orphan tasks in `tasks.md`

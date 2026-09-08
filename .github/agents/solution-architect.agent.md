@@ -56,6 +56,8 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
 5. **Design** the solution — patterns, component breakdown, dependencies
 6. **Run** `/speckit.plan` to formalize → `.tasks/{feature}/TASK-YYYY-NNN/design.md`
 7. **Run** `/speckit.tasks` to create task list → `.tasks/{feature}/TASK-YYYY-NNN/tasks.md`
+   - Every task MUST carry a `## Test Requirements` section: (a) failing tests to write first (RED), (b) GREEN acceptance criteria, (c) refactor notes.
+   - **BIC contract seeding**: read the calibrated contract in O(1) with `icm facts list "{WORKSPACE}" -p "bic."`. Turn each Never Rule and the Oracle into a named test whose name carries its tag verbatim (`{BIC-ID}:never.{N}`, `{BIC-ID}:oracle`). The Invariant Gate in `/sdd-verify` fails the task otherwise.
 8. **Produce** `implementation-plan.md` with: agent assignments, dependency order, verification criteria
 9. **Persist architecture**:
    ```
@@ -67,10 +69,20 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
    )
    ```
    ```
-   icm_memoir_add_observation(
+   icm_memoir_add_concept(
      memoir: "{WORKSPACE}-architecture",
-     observation: "TASK-YYYY-NNN: {decision summary}",
-     connections: ["component-a", "component-b"]
+     name: "TASK-YYYY-NNN: {decision title}",
+     definition: "{dense decision summary + rationale}",
+     labels: "type:decision,task:TASK-YYYY-NNN"
+   )
+   ```
+   Then link it to each affected component (one call per edge):
+   ```
+   icm_memoir_link(
+     memoir: "{WORKSPACE}-architecture",
+     from: "TASK-YYYY-NNN: {decision title}",
+     to: "{component-name}",
+     relation: "depends_on"
    )
    ```
 
@@ -91,3 +103,4 @@ All artifacts go to `.tasks/{feature-name}/TASK-YYYY-NNN/`:
 - ALWAYS use `{WORKSPACE}` prefix for ICM topics and memoirs
 - Architecture decisions go to BOTH memories AND memoirs
 - Tasks must be assignable to specific agents (frontend, backend, devops)
+- NEVER leave a BIC invariant or oracle without a tagged test in `tasks.md` — an unenforced business rule blocks verification

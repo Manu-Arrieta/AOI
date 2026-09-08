@@ -83,10 +83,20 @@ Hand off to the **@solution-architect**:
 3. Output → `.tasks/{feature-name}/TASK-YYYY-NNN/design.md`
 4. Architecture decisions persisted to Memoirs:
    ```
-   icm_memoir_add_observation(
+   icm_memoir_add_concept(
      memoir: "{WORKSPACE}-architecture",
-     observation: "TASK-YYYY-NNN: {decision summary}",
-     connections: ["component-a", "component-b"]
+     name: "TASK-YYYY-NNN: {decision title}",
+     definition: "{dense decision summary + rationale}",
+     labels: "type:decision,task:TASK-YYYY-NNN"
+   )
+   ```
+   Then link it to each affected component (one call per edge):
+   ```
+   icm_memoir_link(
+     memoir: "{WORKSPACE}-architecture",
+     from: "TASK-YYYY-NNN: {decision title}",
+     to: "{component-name}",
+     relation: "depends_on"
    )
    ```
 5. **Architecture Principles Gate** — `design.md` MUST address:
@@ -105,8 +115,9 @@ Continue with @solution-architect:
 2. Output → `.tasks/{feature-name}/TASK-YYYY-NNN/tasks.md`
 3. Produces `implementation-plan.md` with: agent assignment, dependency order, verification criteria
 4. **TDD Gate**: Every task in `tasks.md` MUST include a `## Test Requirements` section specifying: (a) what tests to write first (RED), (b) acceptance criteria for GREEN, and (c) any refactor notes. Implementation agents enforce RED → GREEN → REFACTOR per task during `/sdd-apply`.
-5. Persist in ICM: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", importance: "high", content: "Tasks generated: N tasks across K waves")`
-6. Update `.tasks/registry.md`: status → `🏗️ Planificado`
+5. **BIC Contract Seeding (if the task came from `/sdd-frame`)**: Read the calibrated contract in O(1) with `icm facts list "{WORKSPACE}" -p "bic."`. Each Never Rule and the Oracle MUST become a named test in `## Test Requirements`, and the test name MUST carry its tag verbatim (`{BIC-ID}:never.{N}`, `{BIC-ID}:oracle`). `/sdd-verify` fails the task otherwise.
+6. Persist in ICM: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", importance: "high", content: "Tasks generated: N tasks across K waves")`
+7. Update `.tasks/registry.md`: status → `🏗️ Planificado`
 
 ### Step 6: Gate — Owner Approval
 

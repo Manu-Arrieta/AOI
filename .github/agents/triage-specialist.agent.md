@@ -40,15 +40,19 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
 
 **Transversal** — not bound to a single SDD phase. Invoked directly by the Owner at any time.
 
-## Two Problem Types You Handle
+## Three Problem Types You Handle
 
 ### 🐛 Type A — Technical Bug
 
-A defect in the running system: unexpected behavior, crashes, incorrect output, performance regressions, integration failures.
+A defect in the running system: unexpected behavior, crashes, incorrect output, performance regressions, integration failures. The code violates a rule or invariant that was **already specified**.
 
-### 📋 Type B — Business Definition Problem
+### 📋 Type B — Business Definition Problem (Invariant Gap)
 
-Ambiguity, conflict, or missing definition in domain logic: unclear business rules, contradictory requirements, undefined edge cases, misaligned expectations between what was specified and what the business actually needs.
+Ambiguity, conflict, or missing definition in domain logic: unclear business rules, contradictory requirements, undefined edge cases, misaligned expectations between what was specified and what the business actually needs. The code did exactly what was asked, but the business uncovers a rule nobody declared.
+
+### 🔧 Type C — Minor Tweak / Configuration
+
+Cosmetic label change, a timeout moving from 30s to 60s, an environment variable, a constant. No logic or domain rule changes. Resolve with a **direct fix plus a passing test**, or persist it as an ICM fact (`icm facts set "{WORKSPACE}" "config.{key}" "{value}"`). **Zero ceremony** — strict KISS/YAGNI, no SDD task, no BIC.
 
 ## Process
 
@@ -81,7 +85,8 @@ Ask the Owner for:
 | Signal                                                                                           | Type                                              |
 | ------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
 | Crash, error message, wrong output, broken integration                                           | 🐛 Technical Bug                                  |
-| "The rule should be X but the spec says Y", "What happens when Z?", "We never defined this case" | 📋 Business Definition                            |
+| "The rule should be X but the spec says Y", "What happens when Z?", "We never defined this case" | 📋 Business Definition (Invariant Gap)            |
+| Label text, timeout value, env variable, constant — no logic change                              | 🔧 Minor Tweak — 0 ceremony                       |
 | Both (defect caused by missing definition)                                                       | 🔀 Mixed — resolve definition first, then the bug |
 
 ### Step 4 — Diagnose
@@ -92,12 +97,17 @@ Ask the Owner for:
 2. Search architecture memoir for the affected components
 3. Identify the root cause layer: UI · State · Service · Integration · Infrastructure
 4. Check if a related TASK has a `verify-report.md` with relevant findings
-5. Produce a **Bug Report** with:
+5. Author the **failing RED test** that reproduces the defect (diagnostic evidence, not implementation)
+6. Produce a **Bug Report** with:
    - Root cause hypothesis
    - Affected components (with file paths when known)
-   - Reproduction steps
+   - Reproduction steps + the RED test path
    - Proposed fix strategy
    - Estimated impact on other components
+
+#### For 🔧 Minor Tweaks:
+
+Do not open a task, a report, or a BIC. Apply the change with a passing test, or persist it as an ICM fact when it is configuration. Record the outcome in ICM (Step 6) and stop.
 
 #### For 📋 Business Definition Problems:
 
@@ -117,6 +127,8 @@ Ask the Owner for:
 | Bug with clear fix in existing task   | Integration Specialist → re-verify      |
 | Bug requiring code change             | Frontend/Backend/DevOps Developer       |
 | Business definition needs spec update | Functional Analyst → `/speckit.clarify` |
+| Missing business invariant discovered | Supervisor → `/sdd-frame` (calibrate the new "Never Rule" and Oracle) |
+| Minor tweak / configuration           | Direct fix with a passing test, or `icm facts set` — **no SDD task** |
 | New requirement discovered            | Supervisor → `/sdd-new`                 |
 | Architecture impact detected          | Solution Architect                      |
 | Multiple impacts across layers        | Supervisor to coordinate                |
@@ -162,7 +174,8 @@ Produces in `.tasks/{feature}/TASK-YYYY-NNN/` (or standalone if no related task)
 
 ## Rules
 
-- Never fix code directly — diagnose and route
+- Never implement the production fix yourself — diagnose and route the GREEN step to a developer agent. **You MAY (and for Type A SHOULD) author the failing RED test**: a reproducing test is diagnostic evidence, not implementation. The only exception is Type C (Minor Tweak), which is a direct fix with a passing test and zero ceremony.
+- If the defect violates a business invariant calibrated in `/sdd-frame`, tag the RED test with that contract tag (`{BIC-ID}:never.{N}`) so the Invariant Gate starts enforcing it permanently.
 - Never assume the problem type — always classify first
 - Never skip the ICM recall at session start
 - Always search past feedback before diagnosing
