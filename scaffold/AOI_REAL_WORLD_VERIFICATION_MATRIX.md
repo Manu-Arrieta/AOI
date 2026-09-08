@@ -404,6 +404,43 @@ Ninguna fase perdió porcentaje más allá del ruido de muestreo (±0,3 pp).
 > **15.164 medidos** por ciclo. Un ciclo real mueve mucho más contexto del que asumían
 > los fixtures, así que AOI ahorra más tokens de los que decía, sobre una base mayor.
 
+### Benchmark v2.2.0 — `main` contra la rama, con el MISMO instrumento
+
+Las dos ramas se midieron con el medidor de v2.2.0 sobre un worktree de `main`, porque el
+número que `main` publica hoy (91.161) se obtuvo con un instrumento ciego a las skills y a
+la condicionalidad. Compararlo contra el nuevo mezclaría ahorro con corrección de medición.
+
+| Componente | `main` | v2.2.0 | Delta |
+| :--- | ---: | ---: | ---: |
+| Prompts | 11.822 | 12.056 | +234 |
+| Agentes | 29.950 | 21.505 | −8.445 |
+| Spec-Kit | 19.419 | 10.747 | −8.672 |
+| Instructions | 29.970 | 28.482 | −1.488 |
+| Skills | 21.572 | 22.106 | +534 |
+| **PISO** | **112.733** | **94.896** | **−17.837 (−15,8%)** |
+| **TECHO** | **114.887** | **111.701** | **−3.186** |
+
+> [!IMPORTANT]
+> **De esos 17.837, el ahorro real es de 3.192 a 8.197 por ciclo.** El resto es contabilidad
+> corregida, y decirlo importa tanto como el número.
+>
+> | Concepto | Tokens | ¿Se gastaba antes? |
+> | :--- | ---: | :--- |
+> | Prosa que ya no existe en ningún archivo | **−3.192** | Sí — ahorro en todo ciclo |
+> | `/speckit.checklist` vuelto condicional | **−5.005** | Sí — ahorro cuando el contrato es trivial |
+> | Ramas que `main` cobraba y nunca corrían | 9.640 | **No** — medición, no gasto |
+>
+> `@ux-designer` solo se cargaba ante un componente de UI, `@triage-specialist` solo ante un
+> defecto, y de los tres desarrolladores nunca corrían los tres. `main` los contaba igual.
+> Reportar los 17.837 como ahorro sería un número real describiendo algo que no es, que es
+> exactamente la forma del 83,9% fabricado que esta misma sesión corrigió.
+
+**Lo que más vale de v2.2.0 no son los 8.200 tokens.** Es que el piso pasó de una cifra
+imaginaria a una medida: la próxima optimización se compara contra 94.896 reales y cada
+token que se mueva se ve donde corresponde. El costo grande sigue intacto y ya está
+localizado — Instructions 28.482 y Skills 22.106, ambos pagados en las seis fases sin
+condicionalidad que reclasificar.
+
 ### Reducción por hallazgo — medido en AOI TESTS
 
 Cada fila es una corrida real de `pnpm aoi:stress-sdd` sobre la instalación, antes y
