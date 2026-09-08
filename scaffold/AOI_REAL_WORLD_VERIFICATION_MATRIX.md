@@ -404,6 +404,35 @@ Ninguna fase perdió porcentaje más allá del ruido de muestreo (±0,3 pp).
 > **15.164 medidos** por ciclo. Un ciclo real mueve mucho más contexto del que asumían
 > los fixtures, así que AOI ahorra más tokens de los que decía, sobre una base mayor.
 
+### Rama `perf/always-injected-surfaces` — sobre v2.2.0
+
+Ataca los dos bloques que v2.2.0 dejó intactos: Instructions y Skills, que se pagan en las
+seis fases **sin condicionalidad que reclasificar**. Todo lo que baje acá es prosa realmente
+eliminada, no contabilidad corregida.
+
+| Cambio | Piso antes | Piso después | Delta |
+| :--- | ---: | ---: | ---: |
+| Defaults por categoría inalcanzables + nota histórica | 94.896 | 93.930 | −966 |
+| Enumeración de 26 herramientas MCP en el protocolo | 93.930 | 93.468 | −462 |
+| Guía de entrada movida a su propia skill | 93.468 | **92.154** | −1.314 |
+| | | **total** | **−2.742** |
+
+**Los defaults por categoría eran inalcanzables.** La regla 2.1 de `model-selection` dice que
+el bloque `## Model Requirement` del propio agente supera al default, los 27 lo tienen, y
+`pnpm aoi:routing` rechaza a cualquier agente sin fila explícita en el registro. Un default
+no podía llegar a aplicarse nunca. Quedó una línea de guía para quien cree un agente nuevo.
+La sección 3 era peor: 150 tokens explicando un refactor pasado, inyectados seis veces.
+
+**Las 26 herramientas MCP ya viajan en el esquema** que el modelo recibe del servidor;
+enumerarlas en prosa duplicaba esa lista. Se nombra un miembro de cada familia y el resto se
+describe. El linter de integridad referencial rechazó el primer intento, que usaba
+`icm_memory_*`: ese comodín no es una herramienta real y la compuerta hizo bien en frenarlo.
+
+**La guía de entrada aplicaba a dos fases y se cobraba en seis.** Elegir entre `/sdd-frame`
+y `/sdd-new` es una decisión del momento de entrar; en `/sdd-apply` ya se tomó hace dos
+pasos. Se movió a la skill `sdd-entry`, cuyo disparador nombra ambos comandos, y en la skill
+general quedó la regla comprimida más el puntero.
+
 ### Benchmark v2.2.0 — `main` contra la rama, con el MISMO instrumento
 
 Las dos ramas se midieron con el medidor de v2.2.0 sobre un worktree de `main`, porque el

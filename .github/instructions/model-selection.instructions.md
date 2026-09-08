@@ -10,14 +10,12 @@ applyTo: ".github/{agents,prompts}/**,**/*.agent.md,**/*.prompt.md"
 
 ---
 
-## 1. Category Defaults
+## 1. Categorías (solo para autoría de agentes nuevos)
 
-* **Abstract Reasoning / Architecture / Planning / Analysis**: `DeepSeek V4 Pro`
-  *(supervisor, solution-architect, functional-analyst, triage-specialist, resource-analyst, integration-specialist, documentation-analyst, project-analyzer, project-expert, ux-designer, speckit reasoning agents)*
-* **Implementation / Code / Terminal / IaC**: `GLM-5.2`
-  *(frontend-developer, backend-developer, devops-engineer, speckit.implement, speckit.git.initialize, speckit.git.feature, speckit.git.commit, speckit.git.remote, speckit.git.validate)*
-
----
+Razonamiento y arquitectura → `DeepSeek V4 Pro`. Implementación y terminal → `GLM-5.2`.
+Es una guía para elegir al crear un agente, no una regla de runtime: la regla 2.1 hace que
+el bloque del propio agente siempre gane, y `pnpm aoi:routing` rechaza a cualquier agente
+sin fila explícita en el registro, así que un default nunca llega a aplicarse.
 
 ## 2. Preeminence & Selection Rules (CRITICAL)
 
@@ -27,17 +25,9 @@ applyTo: ".github/{agents,prompts}/**,**/*.agent.md,**/*.prompt.md"
 
 ---
 
-## 3. Agent Assignment & `runSubagent` Model Values
+## 3. Valores concretos de `runSubagent`
 
-> **Fuente única de verdad: el Agent Registry de `agent-delegation.instructions.md`.**
-> Ahí vive el mapeo completo de los 27 agentes a su parámetro de modelo, su fallback
-> de NVIDIA NIM, su skill path y su categoría.
->
-> Esta tabla estaba duplicada aquí carácter por carácter. Ambos archivos se inyectan
-> juntos en el contexto de cualquier `.prompt.md`, así que la copia se pagaba en las
-> seis fases del ciclo sin agregar una sola capacidad. Las reglas de selección de la
-> sección 2 siguen siendo de este archivo; los valores concretos, no.
-
+> Fuente única: el **Agent Registry** de `agent-delegation.instructions.md`.
 
 ## 4. Multi-Provider & Tooling Context
 

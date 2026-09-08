@@ -113,6 +113,9 @@ export function instructionsFor(root, contextPath, dir = '.github/instructions')
 export const SKILL_SCOPE = {
   // "Use when running any /sdd-* command"
   'sdd-lifecycle': () => true,
+  // "Use when starting new work, deciding between /sdd-frame and /sdd-new" —
+  // la decisión de entrada ya está tomada en las cuatro fases posteriores.
+  'sdd-entry': (phase) => /_Frame$|_New$/.test(phase),
   // "Use when the task involves remembering context, decisions, errors, or
   //  project knowledge across sessions" — every phase opens by recalling ICM.
   icm: () => true,
