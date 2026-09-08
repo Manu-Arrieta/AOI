@@ -897,13 +897,16 @@ import tempfile, os
 td = tempfile.mkdtemp()
 for name, lst in [('auto_update', auto), ('conflict', conflicts), ('new', new)]:
     with open(os.path.join(td, name), 'w') as f:
-        f.write('\n'.join(lst))
+        # Trailing newline is mandatory: a file whose last line is unterminated
+        # makes the bash read loop return false on that line, silently dropping
+        # the final entry of every list.
+        f.write(''.join(f'{item}\n' for item in lst))
 print(f'COMPARE_TMPDIR={td}')
 " 2>/dev/null)" || true
 
       # Apply auto-updates (scaffold changed, user did NOT modify)
       if [ -n "$COMPARE_TMPDIR" ] && [ -f "$COMPARE_TMPDIR/auto_update" ] && [ -s "$COMPARE_TMPDIR/auto_update" ]; then
-        while IFS= read -r rel_file; do
+        while IFS= read -r rel_file || [ -n "$rel_file" ]; do
           [ -z "$rel_file" ] && continue
           mkdir -p "$(dirname "$PROJECT_PATH/$rel_file")"
           cp "$SCAFFOLD_DIR/$rel_file" "$PROJECT_PATH/$rel_file"
@@ -919,7 +922,7 @@ print(f'COMPARE_TMPDIR={td}')
       else
         # Copy new files (exist in scaffold but not in previous install)
         if [ -f "$COMPARE_TMPDIR/new" ] && [ -s "$COMPARE_TMPDIR/new" ]; then
-          while IFS= read -r rel_file; do
+          while IFS= read -r rel_file || [ -n "$rel_file" ]; do
             [ -z "$rel_file" ] && continue
             mkdir -p "$(dirname "$PROJECT_PATH/$rel_file")"
             cp "$SCAFFOLD_DIR/$rel_file" "$PROJECT_PATH/$rel_file"
@@ -930,7 +933,7 @@ print(f'COMPARE_TMPDIR={td}')
         # Report conflicts (both scaffold and user modified)
         if [ -f "$COMPARE_TMPDIR/conflict" ] && [ -s "$COMPARE_TMPDIR/conflict" ]; then
           mkdir -p "$PROJECT_PATH/.conf/conflicts"
-          while IFS= read -r rel_file; do
+          while IFS= read -r rel_file || [ -n "$rel_file" ]; do
             [ -z "$rel_file" ] && continue
             mkdir -p "$(dirname "$PROJECT_PATH/.conf/conflicts/$rel_file")"
             cp "$SCAFFOLD_DIR/$rel_file" "$PROJECT_PATH/.conf/conflicts/$rel_file"
@@ -941,6 +944,29 @@ print(f'COMPARE_TMPDIR={td}')
 
         if [ "$REINSTALL_STATS_SKIPPED" -gt 0 ]; then
           ok "Skipped $REINSTALL_STATS_SKIPPED unchanged file(s)"
+        fi
+
+        # ── Post-merge integrity check ────────────────────────────────────
+        # Anything we just claimed to apply must now match the scaffold. This
+        # matters because the snapshot below rewrites the checksum baseline
+        # from the SCAFFOLD, not from what actually landed. A copy that fails
+        # is therefore recorded as applied, and every later reinstall sees
+        # "scaffold unchanged -> skip". The drift becomes permanent AND
+        # invisible. Detecting it costs one cmp per touched file.
+        MERGE_DRIFT=0
+        for bucket in auto_update new; do
+          [ -f "$COMPARE_TMPDIR/$bucket" ] || continue
+          while IFS= read -r rel_file || [ -n "$rel_file" ]; do
+            [ -z "$rel_file" ] && continue
+            if ! cmp -s "$SCAFFOLD_DIR/$rel_file" "$PROJECT_PATH/$rel_file" 2>/dev/null; then
+              MERGE_DRIFT=$((MERGE_DRIFT + 1))
+              warn "  not applied: $rel_file"
+            fi
+          done < "$COMPARE_TMPDIR/$bucket"
+        done
+        if [ "$MERGE_DRIFT" -gt 0 ]; then
+          warn "$MERGE_DRIFT file(s) were reported as merged but do NOT match the scaffold."
+          warn "Re-run the installer after resolving; otherwise this drift is baked into .conf/checksums.json."
         fi
 
         rm -rf "$COMPARE_TMPDIR"
