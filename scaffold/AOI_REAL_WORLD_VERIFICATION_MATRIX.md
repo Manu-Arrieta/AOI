@@ -414,8 +414,20 @@ eliminada, no contabilidad corregida.
 | :--- | ---: | ---: | ---: |
 | Defaults por categoría inalcanzables + nota histórica | 94.896 | 93.930 | −966 |
 | Enumeración de 26 herramientas MCP en el protocolo | 93.930 | 93.468 | −462 |
-| Guía de entrada movida a su propia skill | 93.468 | **92.154** | −1.314 |
-| | | **total** | **−2.742** |
+| Guía de entrada movida a su propia skill | 93.468 | 92.154 | −1.314 |
+| Tabla de triaje duplicada con `@triage-specialist` | 92.154 | **90.894** | −1.260 |
+| | | **total** | **−4.002** |
+
+**La tabla de triaje estaba en dos lados con audiencias distintas — y esta vez sí se pudo
+cortar.** La skill general describía los tres escenarios de defecto en las seis fases;
+`@triage-specialist` describe los mismos tres con el diagnóstico completo, y carga
+exactamente cuando se le delega. En la skill quedó solo la regla de enrutamiento, que es lo
+único que un agente necesita saber sin ser el de triaje: comportamiento roto va a triaje,
+regla de negocio nueva va a `/sdd-frame`, ajuste trivial se arregla directo.
+
+**Verificado antes de cortar que los 14 agentes spec-kit están referenciados**, ninguno
+muerto, así que sus filas del registro se quedan. La hipótesis de que 8 de 14 eran peso
+muerto era falsa.
 
 **Los defaults por categoría eran inalcanzables.** La regla 2.1 de `model-selection` dice que
 el bloque `## Model Requirement` del propio agente supera al default, los 27 lo tienen, y

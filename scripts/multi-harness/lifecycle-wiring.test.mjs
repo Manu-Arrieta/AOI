@@ -276,3 +276,24 @@ describe('entry guidance loads where the entry decision is made', () => {
     assert.match(description, /sdd-new/, 'the trigger omits /sdd-new')
   })
 })
+
+describe('triage detail lives with the triage agent, not in every phase', () => {
+  const skill = read('.github/skills/sdd-lifecycle/SKILL.md')
+  const triage = read('.github/agents/triage-specialist.agent.md')
+
+  it('the always-loaded skill keeps only the routing rule', () => {
+    // The three-scenario table was duplicated: the skill carried it in all six
+    // phases while @triage-specialist carries the diagnosis it actually needs,
+    // loaded exactly when the agent is delegated to.
+    assert.match(skill, /triage-specialist/, 'the skill no longer says where to route a defect')
+    assert.match(skill, /sdd-frame/, 'the skill no longer says where an invariant gap goes')
+    assert.doesNotMatch(skill, /\| \*\*1\. Technical Bug\*\*/, 'the scenario table came back into the always-loaded skill')
+  })
+
+  it('the triage agent still carries the full diagnosis', () => {
+    // Cutting the skill is only safe while this remains true.
+    for (const marker of ['Type A', 'Type B', 'Type C']) {
+      assert.ok(triage.includes(marker), `the triage agent lost its ${marker} classification`)
+    }
+  })
+})
