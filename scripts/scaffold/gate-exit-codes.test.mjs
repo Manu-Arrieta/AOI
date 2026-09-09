@@ -153,10 +153,14 @@ describe('the seven gates exit non-zero on the violation they claim to catch', (
   })
 
   it('test-globs catches a glob that matches nothing', () => {
+    // The glob must point at a directory that EXISTS and holds no match. A
+    // missing directory is tolerated in an installed workspace by design —
+    // some test trees only exist to exercise the installer — so pointing at
+    // one would make this case pass for the wrong reason there.
     const code = withViolation(
       'package.json',
       (full, original) =>
-        fs.writeFileSync(full, original.replace('scripts/conf/*.test.mjs', 'scripts/inexistente/*.test.mjs')),
+        fs.writeFileSync(full, original.replace('scripts/conf/*.test.mjs', 'scripts/*.jamas-existe.test.mjs')),
       'scripts/scaffold/validate-test-globs.mjs'
     )
     assert.notEqual(code, 0)

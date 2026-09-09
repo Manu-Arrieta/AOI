@@ -59,6 +59,8 @@ Hand off to **@integration-specialist** with isolated task context (via `node sc
    - Read each task's `## Test Requirements` section from `tasks.md`
    - Detect test runner from project stack: `npm test`, `pnpm test`, `pytest`, `go test ./...`, `dotnet test`, etc.
    - Run the test suite and capture output. If tests fail → include failures in verify-report as FAIL reason
+   - **Un conteo de 0 tests es un FAIL, nunca un pase.** `rtk` comprime la salida del runner a un resumen, y cuando no se colectó ningún archivo ese resumen es `PASS (0) FAIL (0)`: la línea `No test files found` que lo explicaría se pierde en la compresión y el texto se lee verde. El exit code sí dice la verdad. Ante cualquier `(0)`, reejecutá con `rtk proxy` y mirá la salida cruda.
+   - **Un test que existe pero ningún runner colecta no cuenta.** `pnpm aoi:test-globs` lo detecta; el Invariant Gate ya descarta esos archivos al cruzar tags.
    - If no test files exist for a task that specified test requirements → mark as TDD FAIL
 5. **Software Principles Gate** — review all new/modified files and report violations:
    - **SRP**: Any file >300 LOC? → WARNING (justify or recommend split)

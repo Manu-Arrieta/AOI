@@ -71,6 +71,115 @@ export function collectTestGlobs(scripts) {
   return globs
 }
 
+/** Directories no runner is expected to reach. */
+// '.conf' holds the installer's snapshot of a previous install and 'scaffold'
+// is a byte-for-byte mirror: both contain copies of test files that are not
+// meant to run, and counting them as orphans buries the real finding under 43
+// false positives — which is exactly what happened the first time this ran in
+// an installed workspace rather than in the repository.
+const SKIP_DIRS = new Set(['node_modules', '.git', '.nuxt', 'dist', '.output', 'scaffold', '.venv', '.conf', '.sandboxes'])
+
+/** Every test file on disk, whatever the runner. */
+export function collectTestFiles(root, dir = '.') {
+  const out = []
+  const walk = (rel) => {
+    const full = path.join(root, rel)
+    let entries = []
+    try {
+      entries = fs.readdirSync(full, { withFileTypes: true })
+    } catch {
+      return
+    }
+    for (const e of entries) {
+      if (SKIP_DIRS.has(e.name)) continue
+      const childRel = path.join(rel, e.name)
+      if (e.isDirectory()) walk(childRel)
+      else if (/\.(test|spec)\.(mjs|ts|js)$/.test(e.name)) out.push(path.normalize(childRel))
+    }
+  }
+  walk(dir)
+  return out.sort()
+}
+
+/** The `include` globs a vitest config declares, if there is one. */
+export function collectVitestIncludes(root) {
+  const out = []
+  for (const cfg of collectTestFiles.CONFIGS ?? ['vitest.config.ts', 'vitest.config.mjs', 'vite.config.ts']) {
+    const full = path.join(root, cfg)
+    if (!fs.existsSync(full)) continue
+    const m = /include\s*:\s*\[([^\]]*)\]/.exec(fs.readFileSync(full, 'utf8'))
+    if (!m) continue
+    for (const raw of m[1].split(',')) {
+      const g = raw.trim().replace(/^['"`]|['"`]$/g, '')
+      if (g) out.push({ config: cfg, glob: g })
+    }
+  }
+  return out
+}
+collectTestFiles.CONFIGS = ['vitest.config.ts', 'vitest.config.mjs', 'vite.config.ts']
+
+/** True when a `**`-capable glob covers a repo-relative path. */
+function globCovers(glob, rel) {
+  const re = glob
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*\*\//g, '(?:.*/)?')
+    .replace(/\*\*/g, '.*')
+    .replace(/\*/g, '[^/]*')
+  return new RegExp(`^${re}$`).test(rel)
+}
+
+/**
+ * Finds test files that exist and that no runner will ever collect.
+ *
+ * The glob audit above answers "does this declared glob match a file?". This
+ * answers the inverse, and the inverse is the one that bit us: a real cycle
+ * wrote `app/utils/token-budget.test.ts`, the Invariant Gate matched its BIC
+ * tags and reported the contract enforced — while `vitest.config.ts` pinned
+ * `include` to `test/**`, so that file was never collected and never ran.
+ *
+ * Both halves of the chain were green. The test existed, the tags were there,
+ * the suite passed. Nothing in the repository could see that the assertions
+ * had never executed.
+ *
+ * @param {string} root
+ * @param {string[]} [searchDirs] limits the walk; defaults to the whole repo
+ * @returns {Array<{file: string, reason: string}>}
+ */
+export function findOrphanTests(root, searchDirs) {
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
+  const nodeGlobs = collectTestGlobs(pkg.scripts).map((g) => g.glob)
+
+  const orphans = []
+  const dirs = searchDirs ?? ['.']
+  for (const dir of dirs) {
+    for (const file of collectTestFiles(root, dir)) {
+      if (nodeGlobs.some((g) => globCovers(g, file))) continue
+
+      // A file under a workspace package is collected by that package's own
+      // runner, so the question moves to its config rather than the root's.
+      const pkgDir = findOwningPackage(root, file)
+      const includes = collectVitestIncludes(path.join(root, pkgDir))
+      const relToPkg = path.relative(pkgDir === '.' ? '.' : pkgDir, file)
+      if (includes.length === 0) {
+        orphans.push({ file, reason: 'ningún glob de node --test lo cubre y no hay config de vitest que lo reclame' })
+      } else if (!includes.some((i) => globCovers(i.glob, relToPkg))) {
+        orphans.push({ file, reason: `fuera del include de ${pkgDir}/${includes[0].config} (${includes.map((i) => i.glob).join(', ')})` })
+      }
+    }
+  }
+  return orphans
+}
+
+/** The nearest ancestor directory holding a package.json. */
+function findOwningPackage(root, file) {
+  let dir = path.dirname(file)
+  while (dir !== '.' && dir !== path.sep) {
+    if (fs.existsSync(path.join(root, dir, 'package.json'))) return dir
+    dir = path.dirname(dir)
+  }
+  return '.'
+}
+
 /**
  * Audits every declared test glob.
  * @returns {{ strict: boolean, checked: number, empty: Array, absent: Array }}
@@ -113,7 +222,17 @@ function main() {
     process.exit(1)
   }
 
+  // The inverse direction: a test that exists and that nothing will run.
+  const orphans = findOrphanTests(root)
+  if (orphans.length > 0) {
+    console.error(`\n❌ ${orphans.length} archivo(s) de test que ningún runner colecta:`)
+    for (const { file, reason } of orphans) console.error(`   - ${file}\n     ${reason}`)
+    console.error('\nUn test que no corre satisface igual al Invariant Gate: el tag está en el archivo.')
+    process.exit(1)
+  }
+
   console.log('✅ Every declared test glob resolves to at least one file.')
+  console.log('✅ Ningún test queda fuera de todos los runners.')
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {

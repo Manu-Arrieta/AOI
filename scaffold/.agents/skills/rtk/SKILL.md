@@ -26,6 +26,9 @@ cat file.json              rtk json file.json
 diff a.txt b.txt           rtk diff a.txt b.txt
 ```
 
+`PASS (0)` nunca es un pase: 0 tests colectados se comprime a algo que se lee verde.
+Reejecutá con `rtk proxy` antes de concluir.
+
 ## When NOT to use RTK
 
 - Installing packages (`brew install`, `pip install`, `npm install`)

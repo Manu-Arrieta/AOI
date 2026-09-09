@@ -15,15 +15,16 @@ import path from 'node:path'
 import process from 'node:process'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { collectTestSources, dropUnreachableTests } from './test-reachability.mjs'
+
+// Re-exported: collecting test sources moved to test-reachability.mjs when this
+// file crossed 300 LOC, but it is part of this module's public surface and
+// callers should not have to know where the split landed.
+export { collectTestSources } from './test-reachability.mjs'
 
 /** Fact key shapes written by /sdd-frame on Intent Gate approval. */
 export const NEVER_KEY_PATTERN = /^bic\.([A-Za-z0-9_-]+)\.never\.(\d+)$/
 export const ORACLE_KEY_PATTERN = /^bic\.([A-Za-z0-9_-]+)\.oracle$/
-
-const TEST_EXTENSIONS = new Set(['.mjs', '.js', '.ts', '.tsx', '.jsx', '.vue', '.py', '.go', '.rs'])
-// `scaffold` is a byte-for-byte mirror, not an authoritative test tree: counting
-// it would let a mirrored copy satisfy a contract on its own.
-const SKIP_DIRS = new Set(['node_modules', '.git', '.nuxt', '.output', 'dist', 'build', 'coverage', 'scaffold'])
 
 /**
  * Parses the two-column table emitted by `icm facts list <entity>`.
@@ -84,56 +85,6 @@ export function extractContractRules(facts = [], bicFilter = '') {
 
   const filtered = bicFilter ? rules.filter((r) => r.bicId === bicFilter) : rules
   return filtered.sort((a, b) => a.tag.localeCompare(b.tag))
-}
-
-/**
- * Recursively collects test file contents under a directory.
- * @param {string} dir
- * @returns {Array<{ file: string, content: string }>}
- */
-export function collectTestSources(dir) {
-  if (!dir || !fs.existsSync(dir)) return []
-
-  const stat = fs.statSync(dir)
-  if (stat.isFile()) {
-    try {
-      return [{ file: dir, content: fs.readFileSync(dir, 'utf8') }]
-    } catch {
-      return []
-    }
-  }
-
-  const sources = []
-  const walk = (current) => {
-    let entries = []
-    try {
-      entries = fs.readdirSync(current, { withFileTypes: true })
-    } catch {
-      return
-    }
-
-    for (const entry of entries) {
-      if (SKIP_DIRS.has(entry.name)) continue
-      const full = path.join(current, entry.name)
-
-      if (entry.isDirectory()) {
-        walk(full)
-        continue
-      }
-
-      const isTest = entry.name.includes('.test.') || entry.name.includes('.spec.')
-      if (!isTest || !TEST_EXTENSIONS.has(path.extname(entry.name))) continue
-
-      try {
-        sources.push({ file: full, content: fs.readFileSync(full, 'utf8') })
-      } catch {
-        // Ignore unreadable files
-      }
-    }
-  }
-
-  walk(dir)
-  return sources
 }
 
 /**
@@ -277,7 +228,15 @@ export async function main() {
   }
 
   const rules = extractContractRules(parseFactTable(factTable), bicFilter)
-  const audit = auditInvariantCoverage(rules, collectTestSources(testsDir))
+  const { kept, dropped } = dropUnreachableTests(testsDir, collectTestSources(testsDir))
+  if (dropped.length > 0) {
+    // Named out loud: a contract that goes uncovered because its test is
+    // unreachable looks identical to one nobody wrote, and the difference is
+    // the whole fix.
+    process.stderr.write(`⚠️  ${dropped.length} test(s) ignorado(s) porque ningún runner los colecta:\n`)
+    for (const f of dropped) process.stderr.write(`     ${path.relative(testsDir, f)}\n`)
+  }
+  const audit = auditInvariantCoverage(rules, kept)
 
   if (asJson) {
     process.stdout.write(JSON.stringify(audit, null, 2) + '\n')

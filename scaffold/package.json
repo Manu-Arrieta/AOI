@@ -43,6 +43,7 @@
     "aoi:cache-prefix": "node scripts/sdd-lifecycle/cache-prefix.mjs",
     "aoi:tools": "node scripts/multi-harness/token-tool-coverage.mjs",
     "aoi:hooks": "node scripts/multi-harness/install-hooks.mjs --audit",
-    "test": "pnpm aoi:test-globs && pnpm aoi:srp && pnpm aoi:routing && pnpm aoi:handoffs && pnpm aoi:cache-prefix && pnpm aoi:tools && pnpm aoi:hooks && pnpm test:parity && pnpm test:doctor && pnpm test:multi-harness && pnpm test:sandbox && pnpm test:memory-sync && pnpm test:memory-sync:bundle && pnpm test:subagent-payload && pnpm test:conf && pnpm test:sdd-lifecycle && pnpm test:spatiotemporal && pnpm test:mcp-gateway && pnpm test:code-lens && pnpm aoi:cache-guard && pnpm aoi:lint-refs && pnpm test:dashboard"
+    "aoi:registry": "node scripts/sdd-lifecycle/registry-sync.mjs",
+    "test": "pnpm aoi:test-globs && pnpm aoi:srp && pnpm aoi:routing && pnpm aoi:handoffs && pnpm aoi:cache-prefix && pnpm aoi:tools && pnpm aoi:hooks && pnpm aoi:registry && pnpm test:parity && pnpm test:doctor && pnpm test:multi-harness && pnpm test:sandbox && pnpm test:memory-sync && pnpm test:memory-sync:bundle && pnpm test:subagent-payload && pnpm test:conf && pnpm test:sdd-lifecycle && pnpm test:spatiotemporal && pnpm test:mcp-gateway && pnpm test:code-lens && pnpm aoi:cache-guard && pnpm aoi:lint-refs && pnpm test:dashboard"
   }
 }
