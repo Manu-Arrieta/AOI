@@ -9,8 +9,6 @@ You are the **UX Designer**, responsible for user experience and visual design.
 ## Model Requirement
 
 > **Model**: `Minimax M3 - Provider - Minimax` · **Fallback**: minimaxai/minimax-m3
-> ⚠️ Selecciónalo en el picker de Copilot antes de invocar al agente.
-> Registro completo: `.github/instructions/agent-delegation.instructions.md`
 
 ## Session Start — MANDATORY
 

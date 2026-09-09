@@ -3,50 +3,36 @@ name: rtk
 description: RTK CLI proxy for token-optimized command output. Prefix all shell commands with `rtk` to save 60-90% tokens. Use when running terminal commands — builds, tests, git operations, file searches.
 ---
 
-# RTK — Token-Optimized CLI
+<!-- Derivado de .github/instructions/rtk.instructions.md por aoi:sync-rules. No editar a mano. -->
 
-RTK is a CLI proxy that filters and compresses command outputs before they reach the LLM context, saving 60-90% tokens. Its use is NOT optional — it must be used for ALL applicable shell commands.
+# RTK — Token-Optimized CLI (MANDATORY)
 
-## Usage
+**rtk** is a CLI proxy that filters and compresses command outputs before they reach the LLM context, saving 60–90% tokens. Its use is **NOT optional** — it must be used for ALL applicable shell commands.
 
-Always prefix shell commands with `rtk`:
+---
 
-```bash
-# Instead of:              Use:
-git status                 rtk git status
-git log -10                rtk git log -10
-ls -la                     rtk ls
-find . -name "*.py"        rtk find . -name "*.py"
-grep -r "pattern" .         rtk grep -r "pattern" .
-docker ps                  rtk docker ps
-docker logs <ctr>          rtk docker logs <ctr>
-npm test                   rtk test npm test
-pytest                     rtk test pytest
-cat file.json              rtk json file.json
-diff a.txt b.txt           rtk diff a.txt b.txt
-```
+## Rule: Always Prefix Shell Commands with `rtk`
 
-`PASS (0)` nunca es un pase: 0 tests colectados se comprime a algo que se lee verde.
-Reejecutá con `rtk proxy` antes de concluir.
+| Direct Command | Token-Optimized `rtk` Command |
+| :--- | :--- |
+| `git status` | `rtk git status` |
+| `git log -10` | `rtk git log -10` |
+| `ls` / `ls -la` | `rtk ls` |
+| `find . -name "*.py"` | `rtk find . -name "*.py"` |
+| `grep -r "pattern" .` | `rtk grep -r "pattern" .` |
+| `docker ps` | `rtk docker ps` |
+| `docker logs <container>` | `rtk docker logs <container>` |
+| `pnpm test` / `npm test` | `rtk test pnpm test` |
+| `pytest` | `rtk test pytest` |
+| `cat file.json` | `rtk json file.json` |
+| `diff a.txt b.txt` | `rtk diff a.txt b.txt` |
 
-## When NOT to use RTK
+---
 
-- Installing packages (`brew install`, `pip install`, `npm install`)
-- Interactive TTY commands
-- `rtk` meta commands themselves
-- ICM commands (`icm store`, `icm recall`, etc.)
-- `specify` commands
+## Exceptions (When NOT to use `rtk`)
 
-## Commands that bypass RTK
-
-A `PreToolUse` hook enforces RTK prefixing when the harness has loaded it — `setup.sh` wires `.github/hooks/rtk-rewrite.json` into `.claude/settings.json`, and `pnpm aoi:hooks` reports whether it took. Do not rely on it: prefix commands yourself. Some are whitelisted and pass through unchanged:
-
-- `icm`, `specify`, `rtk`, `cd`, `corepack`, `pnpm`, `chmod`, `mkdir`, `echo`, `true`
-
-## Token Savings Dashboard
-
-```bash
-rtk gain              # Show token savings
-rtk gain --history    # Per-command savings history
-rtk discover          # Find missed RTK opportunities
-```
+* **Package installations**: `pnpm install`, `brew install`, `pip install`, `winget install`.
+* **Interactive commands**: Commands requiring an interactive TTY.
+* **ICM commands**: `icm` is a separate binary, NEVER prefix it (`icm store`, `icm recall`, `icm memoir`).
+* **Specify commands**: `specify init`, `specify run`, etc.
+* **Meta commands**: Use directly (`rtk gain`, `rtk discover`, `rtk gain --history`).

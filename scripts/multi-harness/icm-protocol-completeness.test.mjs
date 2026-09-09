@@ -130,28 +130,47 @@ describe('the ICM doctrine agrees across every surface that teaches it', () => {
   })
 })
 
-describe('the RTK doctrine agrees across both surfaces', () => {
-  // Same shape as the ICM case and the same reason it cannot be deduplicated:
-  // `.github/instructions/` is injected into every SUBAGENT as "Project
-  // Standards", while `.github/skills/` is loaded by the ORCHESTRATING harness
-  // and mirrored to `.agents/` for antigravity. Different audiences, so both
-  // must exist — and neither may be a strict subset of the other.
+describe('the RTK doctrine reaches every audience', () => {
+  // The guarantee has not changed: no harness may lose the mappings. Where it
+  // is checked has.
+  //
+  // `.github/instructions/` reaches the orchestrator (its `applyTo` is `**`)
+  // and every subagent as "Project Standards". Antigravity reads neither, and
+  // for a long time that was solved by hand-writing the whole doctrine a
+  // second time into `.github/skills/rtk/SKILL.md` and mirroring it — which
+  // made the ORCHESTRATOR pay for two full copies of a rule it already had,
+  // 502 tokens in all six phases.
+  //
+  // Now `aoi:sync-rules` DERIVES the antigravity copy from the instruction, so
+  // the skill can shrink to its trigger. This test therefore holds the
+  // instruction against the derived copy, which is the file antigravity
+  // actually loads, instead of against a duplicate that no longer needs to be
+  // one.
   const instructions = fs.readFileSync(path.join(ROOT, '.github/instructions/rtk.instructions.md'), 'utf8')
-  const skill = fs.readFileSync(path.join(ROOT, '.github/skills/rtk/SKILL.md'), 'utf8')
+  const derived = fs.readFileSync(path.join(ROOT, '.agents/skills/rtk/SKILL.md'), 'utf8')
 
-  it('both teach the same command mappings', () => {
-    // The skill was missing `docker logs` and `pytest`, so an agent on a
-    // harness that only reads skills never learned to compress either.
+  it('the derived antigravity copy teaches every command mapping', () => {
+    // The skill was once missing `docker logs` and `pytest`, so an agent on a
+    // harness that only reads skills never learned to compress either. Deriving
+    // makes that class of drift impossible rather than merely detected.
     for (const cmd of ['git status', 'git log', 'find', 'grep', 'docker ps', 'docker logs', 'pytest', 'diff']) {
       assert.ok(instructions.includes(cmd), `the RTK instructions lost the ${cmd} mapping`)
-      assert.ok(skill.includes(cmd), `the RTK skill omits the ${cmd} mapping`)
+      assert.ok(derived.includes(cmd), `the derived antigravity skill omits the ${cmd} mapping`)
     }
+  })
+
+  it('the slim skill still carries the rule itself, not only a pointer', () => {
+    // Shrinking it is fine; emptying it is not. A harness that loads skills
+    // and somehow misses the instruction must still be told to prefix.
+    const skill = fs.readFileSync(path.join(ROOT, '.github/skills/rtk/SKILL.md'), 'utf8')
+    assert.match(skill, /rtk/i)
+    assert.match(skill, /\.github\/instructions\/rtk\.instructions\.md/, 'la skill no dice dónde vive la regla completa')
   })
 
   it('both list the same exceptions, since prefixing those breaks the command', () => {
     for (const exception of ['icm', 'specify', 'nteractive']) {
       assert.ok(instructions.toLowerCase().includes(exception.toLowerCase()), `instructions lost the ${exception} exception`)
-      assert.ok(skill.toLowerCase().includes(exception.toLowerCase()), `the skill lost the ${exception} exception`)
+      assert.ok(derived.toLowerCase().includes(exception.toLowerCase()), `the derived skill lost the ${exception} exception`)
     }
   })
 })

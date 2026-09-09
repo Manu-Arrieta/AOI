@@ -25,6 +25,56 @@ import path from 'node:path'
 export const ICM_PROTOCOL = '.github/instructions/icm-protocol.instructions.md'
 
 /**
+ * Skills whose canonical text is an instruction file, not the skill itself.
+ *
+ * `.github/instructions/` reaches the orchestrator (via `applyTo`) and every
+ * subagent (as Project Standards), but never antigravity. So a rule needed by
+ * all three used to be written twice, and the orchestrator paid for both
+ * copies in all six phases. Listing the pair here lets the skill shrink to its
+ * trigger while antigravity still receives the full text, derived.
+ */
+export const SKILL_FROM_INSTRUCTION = {
+  rtk: 'rtk.instructions.md',
+}
+
+/**
+ * Builds the antigravity copy of a skill out of its canonical instruction.
+ *
+ * @returns {string|null} null when the skill has no canonical instruction
+ */
+export function deriveSkillFromInstruction(repoRoot, skillName, dir = '.github/instructions') {
+  const source = SKILL_FROM_INSTRUCTION[skillName]
+  if (!source) return null
+
+  let text
+  try {
+    text = fs.readFileSync(path.join(repoRoot, dir, source), 'utf8')
+  } catch {
+    return null
+  }
+
+  // The instruction's front matter carries `applyTo`, which means nothing to a
+  // skill loader; the skill's own front matter carries the trigger that does.
+  const body = text.replace(/^---\n[\s\S]*?\n---\n/, '').trim()
+  const trigger = SKILL_TRIGGERS[skillName] ?? `Use when working with ${skillName}.`
+
+  return `---
+name: ${skillName}
+description: ${trigger}
+---
+
+<!-- Derivado de ${dir}/${source} por aoi:sync-rules. No editar a mano. -->
+
+${body}
+`
+}
+
+/** The `description` line each derived skill announces itself with. */
+export const SKILL_TRIGGERS = {
+  rtk: 'RTK CLI proxy for token-optimized command output. Prefix all shell commands with `rtk` to save 60-90% tokens. Use when running terminal commands — builds, tests, git operations, file searches.',
+}
+
+/**
  * The importance level each store trigger must use, read from the protocol.
  *
  * Parsing is deliberately narrow: only the `* level → cases` bullets under

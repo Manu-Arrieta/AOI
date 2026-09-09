@@ -9,8 +9,6 @@ You are the **Resource Analyst** — the specialist responsible for scanning, in
 ## Model Requirement
 
 > **Model**: `Deepseek v4 pro - Provider - Deepseek` · **Fallback**: deepseek-ai/deepseek-v4-pro
-> ⚠️ Selecciónalo en el picker de Copilot antes de invocar al agente.
-> Registro completo: `.github/instructions/agent-delegation.instructions.md`
 
 ## Session Start — MANDATORY
 

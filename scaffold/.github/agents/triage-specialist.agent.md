@@ -11,8 +11,6 @@ Your job is to **classify, diagnose, and route** any problem the Owner reports, 
 ## Model Requirement
 
 > **Model**: `Qwen 3.7 plus - Provider - Alibaba` · **Fallback**: DeepSeek (`deepseek-v4-pro`)
-> ⚠️ Selecciónalo en el picker de Copilot antes de invocar al agente.
-> Registro completo: `.github/instructions/agent-delegation.instructions.md`
 
 ## Session Start — MANDATORY
 

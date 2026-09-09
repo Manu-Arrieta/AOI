@@ -12,7 +12,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { readStoreTriggers, renderStoreTriggers } from './protocol-source.mjs'
+import { deriveSkillFromInstruction, readStoreTriggers, renderStoreTriggers } from './protocol-source.mjs'
 
 export const SUPPORTED_HARNESSES = ['copilot', 'claude', 'cursor', 'antigravity', 'cline', 'all']
 
@@ -217,8 +217,19 @@ export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = '
         if (s.isDirectory()) {
           const skillFilePath = path.join(githubSkillsDir, s.name, 'SKILL.md')
           if (fs.existsSync(skillFilePath)) {
-            const skillContent = fs.readFileSync(skillFilePath, 'utf8')
-            writeTargetFile(path.join('.agents', 'skills', s.name, 'SKILL.md'), skillContent)
+            // A skill whose canonical text lives in .github/instructions/ is
+            // DERIVED here rather than mirrored. Antigravity cannot read that
+            // directory, which is the whole reason the duplicate existed: the
+            // orchestrator was paying for a second full copy of a rule it
+            // already receives — 502 tokens in all six phases — purely so a
+            // harness that reads neither could get it from somewhere.
+            // Deriving lets the skill shrink to its trigger without leaving
+            // antigravity behind.
+            const derived = deriveSkillFromInstruction(repoRoot, s.name)
+            writeTargetFile(
+              path.join('.agents', 'skills', s.name, 'SKILL.md'),
+              derived ?? fs.readFileSync(skillFilePath, 'utf8')
+            )
           }
         }
       }
