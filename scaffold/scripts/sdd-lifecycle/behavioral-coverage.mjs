@@ -50,6 +50,13 @@ export const COVERAGE = [
   { phase: 'Phase_5_Archive', decision: 'archive-agent', why: 'Quién produce la documentación final' },
   { phase: 'Phase_5_Archive', decision: 'registry-closure', why: 'El registro pasa a estado Archivado' },
 
+  // ── Traspaso entre fases ─────────────────────────────────────────────────
+  // Lo que una compuerta estructural no puede ver: si el agente sabe qué hacer
+  // cuando el artefacto que necesita de la fase anterior no está.
+  { phase: 'Phase_3_Apply', decision: 'missing-upstream-artifact', why: 'Falta un artefacto de la fase previa' },
+  { phase: 'Phase_4_Verify', decision: 'upstream-contract-source', why: 'De dónde viene el contrato que se verifica' },
+  { phase: 'Phase_5_Archive', decision: 'archive-precondition', why: 'Qué debe existir antes de archivar' },
+
   // ── Transversales ────────────────────────────────────────────────────────
   { phase: 'Phase_1_New', decision: 'rtk-prefix', why: 'Los comandos de terminal se prefijan con rtk' },
   { phase: 'Phase_3_Apply', decision: 'icm-importance', why: 'Una decisión de arquitectura se guarda como critical' },

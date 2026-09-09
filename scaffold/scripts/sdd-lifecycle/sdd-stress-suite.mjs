@@ -24,6 +24,7 @@ import { buildSubagentPayload } from '../subagent-context/sanitize-subagent-payl
 import { createSubagentSandbox } from '../subagent-context/subagent-fiber-runner.mjs'
 import { auditPromptsDirectory } from '../multi-harness/cache-guard.mjs'
 import { auditContextBudget, formatBudgetSummary, toBudgetRows } from './context-budget.mjs'
+import { formatHandoffChain } from './phase-handoffs.mjs'
 import { formatUnifiedVerificationReport } from './mechanical-verify-union.mjs'
 import {
   createLedger, estimateTokens, findRealTaskDir, formatTotals, readIfPresent,
@@ -290,4 +291,7 @@ console.log('\n─────────────────────�
 const budget = auditContextBudget(process.cwd())
 console.table(toBudgetRows(budget))
 console.log(formatBudgetSummary(budget, ledger.totals.optimizedTokens))
+
+console.log('\nCADENA DE TRASPASO ENTRE FASES (verificada por pnpm aoi:handoffs):')
+console.log(formatHandoffChain())
 console.log('═══════════════════════════════════════════════════════════════════════════════\n')

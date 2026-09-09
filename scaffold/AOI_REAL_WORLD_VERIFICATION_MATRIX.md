@@ -426,7 +426,7 @@ fases, así que el eval corre sobre lo que realmente se inyecta y no sobre una a
 | `facts-vs-memory` | F1, la skill omitía Facts | `icm facts set` | ✅ |
 | `verify-delegation` | bloques por comando fuera del supervisor | `@integration-specialist` | ✅ |
 
-**22 de 22.** El set creció de 7 a 22 al derivarse de un inventario: `behavioral-coverage.mjs`
+**25 de 25.** El set creció de 7 a 25 al derivarse de un inventario: `behavioral-coverage.mjs`
 declara toda decisión que una fase sostiene —sus compuertas, sus pasos obligatorios, sus
 delegaciones y sus artefactos— y un test falla si alguna no tiene sonda. Las primeras siete
 defendían los cortes de una rama, que es el mismo error que auditar un diff: solo encuentra
@@ -458,11 +458,43 @@ contrastadas contra su expresión regular esperada y contra la prohibida, no eva
 > evidencia también estaba, solo que en una superficie en vez de dos. Un control negativo
 > tiene que quitar la evidencia, no cambiar de rama.
 
-**Límite declarado.** El eval cubre las 22 decisiones que el inventario declara, una por
-compuerta y por delegación de cada fase. No cubre las interacciones entre fases —que un
-artefacto producido en la 2 sea consumible en la 3— ni el comportamiento con entradas
-adversarias. Sigue siendo una condición necesaria verificada sobre todo el ciclo, no una
-garantía total, y conviene decirlo así.
+### Traspaso entre fases — `pnpm aoi:handoffs`
+
+La capa que faltaba, y se automatizó sin correr un ciclo. La pregunta "¿lo que produce una
+fase sirve en la siguiente?" no necesita seis fases de inferencia para responderse: necesita
+que cada artefacto exigido tenga un productor anterior, que el productor declarado
+efectivamente diga que lo escribe, y que el consumidor efectivamente diga que lo lee.
+
+```
+Phase_0_Frame     ← —                                → bic-facts
+Phase_1_New       ← —                                → proposal.md, registry.md
+Phase_2_FF        ← proposal.md                      → spec.md, design.md, tasks.md, implementation-plan.md
+Phase_3_Apply     ← spec.md, design.md, tasks.md,
+                    implementation-plan.md           → —
+Phase_4_Verify    ← spec.md, design.md, tasks.md,
+                    bic-facts                        → verify-report.md
+Phase_5_Archive   ← verify-report.md                 → archive-report.md, functional-docs.md
+```
+
+Corre dentro de `pnpm test` y se imprime en el benchmark. Detecta tres roturas distintas,
+las tres verificadas en rojo: una fase que exige algo que nadie produce, un productor que
+renombró el archivo y ya no lo escribe con ese nombre, y un consumidor que dejó de leerlo.
+**Esa rotura es silenciosa porque cada prompt se lee perfecto por separado**, y solo aparece
+a mitad del ciclo con el trabajo previo ya gastado.
+
+`bic-facts` es la arista que no viaja por disco: `/sdd-frame` persiste el contrato como
+facts O(1) y el Invariant Gate de `/sdd-verify` lo lee de ahí. Si esa arista se corta, la
+compuerta se queda sin nada que verificar y nada más lo notaría.
+
+Tres sondas conductuales acompañan al chequeo estructural, porque saber que el artefacto
+existe no es lo mismo que saber qué hacer cuando falta: qué pasa si `design.md` no está al
+entrar a `/sdd-apply`, de dónde lee el contrato el Invariant Gate, y qué exige `/sdd-archive`
+de la fase anterior. **25 de 25.**
+
+**Límite declarado.** El eval cubre las 25 decisiones del inventario, dentro de cada fase y
+en los traspasos entre ellas. No cubre entradas adversarias ni un ciclo real de punta a
+punta con agentes produciendo artefactos de verdad. Sigue siendo una condición necesaria
+verificada sobre todo el ciclo, no una garantía total, y conviene decirlo así.
 
 ### Rama `perf/always-injected-surfaces` — sobre v2.2.0
 
