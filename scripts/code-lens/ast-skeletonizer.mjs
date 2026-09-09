@@ -69,10 +69,27 @@ export function foldBlockBodies(code) {
       let j = i + 1
       let bodyLines = 0
 
+      // Braces inside a string are text, not structure. The outer pass already
+      // knows this and skips strings; this inner counter did not, so a body
+      // holding an unbalanced brace — `"}"`, a regex, a JSON fragment, a
+      // template literal — closed at the wrong place and swallowed every
+      // function that followed. Balanced ones cancelled out and hid the bug.
+      //
+      // AST-Lens is the largest saving the benchmark measures, and a skeleton
+      // that silently drops declarations is worse than no compression: the
+      // agent reads a plausible file that is not the file.
+      let inString = null
       while (j < len && depth > 0) {
-        if (code[j] === '\n') bodyLines++
-        if (code[j] === '{') depth++
-        else if (code[j] === '}') depth--
+        const c = code[j]
+        if (c === '\n') bodyLines++
+
+        if (inString) {
+          if (c === '\\') j++
+          else if (c === inString) inString = null
+        } else if (c === '"' || c === "'" || c === '`') {
+          inString = c
+        } else if (c === '{') depth++
+        else if (c === '}') depth--
         j++
       }
 

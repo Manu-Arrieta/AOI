@@ -29,6 +29,11 @@ export function createFiberRuntime(coeffectRegistry) {
    */
   function isReliedUpon(providerUid) {
     const providerFiber = fibers.get(providerUid);
+    // Defensive, and unreachable through the public API: `instantiate` sets
+    // `provides: component.provide || []`, so the second half is never true,
+    // and the first only fires for a uid that is not in the map — which
+    // `deactivate` cannot produce. A mutation here therefore survives every
+    // possible test, and that is an equivalent mutant, not a coverage gap.
     if (!providerFiber || !providerFiber.provides) return false;
 
     const providedKeys = new Set(providerFiber.provides);
@@ -126,9 +131,17 @@ export function createFiberRuntime(coeffectRegistry) {
 
       fiber.state = 'UNLOADING';
 
-      // Guarded Unload: Wait until dependents are no longer relying on our provided keys
+      // Guarded Unload. The deferral this branch describes is NOT implemented:
+      // a provider still tears down while a consumer relies on it. What is
+      // implemented is the detection, and until now its answer went nowhere —
+      // the branch body was a comment, so every mutation to `isReliedUpon`
+      // survived: nothing could observe whether it answered correctly.
+      //
+      // Recording it makes the computed answer load-bearing and testable, and
+      // leaves the ordering decision where it belongs — with the Owner, not
+      // with an audit changing teardown semantics on its own.
       if (isReliedUpon(fiber.uid)) {
-        // In a real reactive loop, this deferral waits for dependent fibers to finish teardown
+        fiber.metadata.unloadedWhileRelied = (fiber.metadata.unloadedWhileRelied || 0) + 1
       }
 
       // Revert all tracked effects in LIFO order (Theorem 16 / 68)
