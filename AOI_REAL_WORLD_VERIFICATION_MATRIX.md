@@ -61,8 +61,9 @@ porque las dos protegen contra la misma patología: una suite que reporta verde 
 comprobado nada.
 
 ```bash
-pnpm aoi:test-globs   # todo glob declarado debe resolver a >= 1 archivo
-pnpm aoi:srp          # Invariante 5, en modo trinquete
+pnpm aoi:test-globs    # todo glob declarado debe resolver a >= 1 archivo
+pnpm aoi:srp           # Invariante 5, en modo trinquete
+pnpm aoi:cache-prefix  # la masa que se recarga en las 6 fases no muta ni es volátil
 pnpm aoi:invariant-gate -- --entity "AOI TESTS" --tests-dir . --exit-code
 ```
 
@@ -70,6 +71,7 @@ pnpm aoi:invariant-gate -- --entity "AOI TESTS" --tests-dir . --exit-code
 | :--- | :--- |
 | `aoi:test-globs` | `node --test` sale 0 cuando el glob no matchea nada. Un directorio de tests vaciado, o nunca instalado, dejaba la cadena en verde sobre cero aserciones. En el repo exige que **todo** glob resuelva; en un workspace instalado tolera lo que legítimamente no se instala, pero sigue fallando si un directorio existe y quedó sin tests. |
 | `aoi:srp` | El límite de 300 LOC solo se miraba por tarea y como WARNING, así que tres archivos se pasaron sin que nadie lo notara. El trinquete falla ante un archivo nuevo por encima del límite, ante deuda vieja que **crece**, y ante una entrada del presupuesto que ya no viola — la lista no puede pudrirse. Solo se mueve hacia abajo. |
+| `aoi:cache-prefix` | Ocho archivos se recargan en las seis fases. Si uno adquiere contenido volátil, o si una fase reescribe una superficie que otra vuelve a leer, no hay cache de prefijo que sobreviva y el costo se paga seis veces sin que nada falle. `aoi:cache-guard` no lo veía: lee los primeros 1.500 caracteres de cada prompt, y por eso el `$(date +%Y)` del offset 7.223 de `sdd-frame.prompt.md` le pasa limpio. |
 | `aoi:invariant-gate` | Ya existía, pero solo se invocaba desde prosa. Ahora es un comando determinista, ejecutable sin LLM de por medio. |
 
 ### Paso 0.3: Verificación del Reinstall Inteligente
@@ -371,7 +373,7 @@ EOF
 
 ---
 
-## 5.b Línea Base de Benchmark — Ciclo 2026-09-07 (ejecutado en AOI TESTS)
+## 5.b Línea Base de Benchmark — Ciclo 2026-09-09 (ejecutado en AOI TESTS)
 
 > [!IMPORTANT]
 > **Esta tabla es la línea base contra la cual se compara el PRÓXIMO ciclo.** Cada ejecución del
@@ -380,19 +382,28 @@ EOF
 
 | Fase | Comando | Origen | Tokens Base | Tokens AOI | % Reducción |
 | :--- | :--- | :--- | ---: | ---: | ---: |
-| 0 | `/sdd-frame` | ● real | 2.497 | 165 | **93,4%** |
-| 1 | `/sdd-new` | ● real | 10.709 | 2.836 | **73,5%** |
+| 0 | `/sdd-frame` | ● real | 2.410 | 165 | **93,2%** |
+| 1 | `/sdd-new` | ● real | 11.412 | 2.836 | **75,1%** |
 | 2 | `/sdd-ff` | ● real | 332 | 251 | **24,4%** |
-| 3 | `/sdd-apply` | ● real | 5.430 | 1.045 | **80,8%** |
-| 4 | `/sdd-verify` | ● real | 719 | 455 | **36,7%** |
+| 3 | `/sdd-apply` | ● real | 5.432 | 1.045 | **80,8%** |
+| 4 | `/sdd-verify` | ● real | 720 | 455 | **36,8%** |
 | 5 | `/sdd-archive` | ● real | 261 | 32 | **87,7%** |
-| **TOTAL** | **ciclo completo** | **6 real / 0 fixture** | **19.948** | **4.784** | **76,0%** |
+| **TOTAL** | **ciclo completo** | **6 real / 0 fixture** | **20.567** | **4.784** | **76,7%** |
 
-**Delta contra el ciclo anterior (medido en el repo de desarrollo):** sin regresión. La base
-subió de 19.840 a 19.948 tokens (+108) porque el corpus de descubrimiento de la Fase 1 se
-muestrea del árbol de fuentes vivo y una instalación real contiene archivos que el repo no.
-El consumo de AOI quedó idéntico en 4.784 tokens, y el ahorro absoluto subió a **15.164**.
-Ninguna fase perdió porcentaje más allá del ruido de muestreo (±0,3 pp).
+**Delta contra el ciclo 2026-09-08:** sin regresión. El consumo de AOI quedó **idéntico en
+4.784** y el ahorro absoluto subió de 15.164 a **15.783**. La base subió 619 tokens y la
+causa es conocida y sana: el corpus de descubrimiento de la Fase 1 se muestrea del árbol de
+fuentes vivo filtrando por la palabra `token`, y esta rama agregó tres archivos que hablan
+precisamente de tokens. **Más base con el mismo consumo optimizado es el comprimor
+funcionando sobre más entrada, no una mejora del compresor** — conviene no leerlo como
+ganancia.
+
+> [!IMPORTANT]
+> **Lo que esta rama NO movió, y era el punto:** el PISO quedó clavado en **90.894** y el
+> TECHO en **107.699**, idénticos al ciclo anterior. Los instrumentos nuevos viven en
+> `scripts/`, que no se inyecta en ningún contexto: cuestan 0 tokens de runtime. Una rama
+> que agrega medición sin mover el piso es exactamente lo que debe pasar, y se verifica en
+> vez de suponerse.
 
 > [!CAUTION]
 > **Reemplaza a la línea base de 83,9%, que estaba inflada por constantes fabricadas.**
@@ -495,6 +506,78 @@ de la fase anterior. **25 de 25.**
 en los traspasos entre ellas. No cubre entradas adversarias ni un ciclo real de punta a
 punta con agentes produciendo artefactos de verdad. Sigue siendo una condición necesaria
 verificada sobre todo el ciclo, no una garantía total, y conviene decirlo así.
+
+### Economía del prefijo de cache — `pnpm aoi:cache-prefix`
+
+El presupuesto dice qué cuesta un ciclo. No podía decir cuánto de ese costo son **los
+mismos bytes, pagados de nuevo**. Esta es la medición que faltaba, y cambia la prioridad de
+todo lo que sigue.
+
+| Banda | Archivos | Por fase | Por ciclo |
+| :--- | ---: | ---: | ---: |
+| Universal (las 6 fases) | 8 | 9.790 | **58.740** |
+| Repetida en algunas | 2 | — | 3.908 |
+| Cargada una sola vez | 19 | — | 28.246 |
+| **PISO** | | | **90.894** |
+
+**El 64,6% del piso es masa repetida.** El piso reconcilia al token con
+`pnpm aoi:context` y con el presupuesto: son tres instrumentos independientes describiendo
+la misma superficie, y si dejaran de coincidir uno estaría midiendo una ficción.
+
+**Techo de lo recuperable.** A la tarifa de lectura de cache de Anthropic (0,1× del token de
+entrada), la primera fase paga completo y las otras cinco pagan la décima parte: de 58.740
+se pasaría a 14.685, o sea **44.055 tokens por ciclo**. Es un techo y hay que decirlo así:
+**AOI no arma el request ni coloca los puntos de corte del cache**, así que el reuso lo
+decide el harness. Lo que no es condicional es el multiplicador.
+
+**Lo que sí cambia hoy: la prioridad.** Un token recortado en la banda universal vale seis;
+uno recortado en un prompt de fase vale uno. El presupuesto ordenaba los archivos por
+tamaño y por lo tanto los ordenaba mal — todos los recortes anteriores a esta medición se
+eligieron sin conocer su multiplicador. El orden real:
+
+| Multiplicador | c/u | Por ciclo | Archivo |
+| ---: | ---: | ---: | :--- |
+| ×6 | 2.677 | **16.062** | `agents/supervisor.agent.md` |
+| ×6 | 2.033 | **12.198** | `instructions/icm-protocol.instructions.md` |
+| ×6 | 1.737 | **10.422** | `instructions/agent-delegation.instructions.md` |
+| ×6 | 1.402 | 8.412 | `skills/sdd-lifecycle/SKILL.md` |
+| ×6 | 776 | 4.656 | `skills/icm/SKILL.md` |
+| ×1 | 4.101 | 4.101 | `agents/speckit.specify.agent.md` |
+
+`speckit.specify.agent.md` es el archivo más grande de todo el ciclo y está sexto. Ese es
+exactamente el error que el presupuesto solo no podía evitar.
+
+#### Lo que se buscó cortar y por qué NO se cortó
+
+Con el instrumento en la mano se midió el solapamiento de fraseo dentro de la banda ×6
+(shingles de 8 palabras). El par más duplicado es real: `skills/rtk/SKILL.md` (421) y
+`instructions/rtk.instructions.md` (334) comparten el 29,4% del fraseo del menor y dicen
+sustancialmente lo mismo. Son 755 tokens por fase, 4.530 por ciclo, y el orquestador recibe
+los dos.
+
+**No se cortó, y la razón vale más que el ahorro.** Las tres audiencias de AOI tienen
+superficies de inyección disjuntas: `.github/instructions/` llega a los subagentes como
+*Project Standards*, `.github/skills/` se refleja a `.agents/skills/` para antigravity, y
+Copilot recibe `.github/copilot-instructions.md`. Antigravity **no lee**
+`.github/instructions/`, y su archivo de reglas generado no menciona rtk. Borrar el skill
+dejaría a ese harness sin la regla.
+
+> La duplicación no es desperdicio: es el precio del soporte multi-harness con superficies
+> disjuntas. Ahora tiene número. Bajarla exige o resignar un harness o aceptar un hueco de
+> comportamiento, y eso lo decide el Owner, no el que mide.
+
+#### Lo que sí quedó verificado por primera vez
+
+- **Cero contenido volátil en la banda ×6.** Verificado sobre el archivo completo, no sobre
+  los primeros 1.500 caracteres.
+- **Ninguna fase reescribe una superficie siempre inyectada.** Cierto hoy y sin guardián
+  hasta ahora; gratis es justo cuando conviene instalar uno.
+- **Huella `sha256` de la masa repetida.** Se toma antes y después de un ciclo real: si
+  cambia, algo la reescribió y no hay cache que sobreviva a eso.
+
+Las cuatro comprobaciones tienen control negativo — cada portón se probó en rojo contra una
+violación construida, incluido el caso exacto que `aoi:cache-guard` deja pasar por su
+ventana de 1.500 caracteres.
 
 ### Rama `perf/always-injected-surfaces` — sobre v2.2.0
 
