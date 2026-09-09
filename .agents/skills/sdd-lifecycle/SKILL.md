@@ -40,38 +40,16 @@ Every task gets a unique ID: `TASK-{year}-{sequential}`
 
 > **Note on Design Gate**: The Design Gate (Specify→Plan, Owner approval) is satisfied jointly with the Implementation Gate at the end of `/sdd-ff`. The Supervisor's `/sdd-ff` command bundles Specify → Plan → Tasks into a single workflow with one Owner approval checkpoint, which serves as both the Design Gate and Implementation Gate. This is a deliberate optimization, not a violation.
 
-## Pre-Flight (/sdd-frame) vs. Explore (/sdd-new) — When to Use Which
+## Entrada al ciclo
 
-`/sdd-frame` and `/sdd-new` serve distinct purposes in the lifecycle and are fully decoupled. Entering `/sdd-frame` is **optional**:
-
-| Dimension | `/sdd-frame` (Pre-Flight) | `/sdd-new` (Explore & Propose) |
-| --------- | ------------------------- | ------------------------------ |
-| **Space** | **Problem Space**: Understands the pain, outcomes, and invariants. | **Solution Space**: Explores code, architecture, and technical feasibility. |
-| **Disk Footprint** | **Zero-Task Footprint**: No task ID, no `.tasks/` folders, no registry pollution. | **Materialized**: Allocates `TASK-YYYY-NNN`, creates task directory, registers in `.tasks/registry.md`. |
-| **Input Format** | Natural language (voice, conversational text, raw business notes). | Structured requirement or calibrated BIC from `/sdd-frame`. |
-| **Output** | Behavioral Intent Contract (BIC) / ephemeral intent canvas. | `proposal.md` with technical architecture & acceptance criteria. |
-| **Gate** | **Intent Gate**: Owner approves mental model and "Never" rules. | **Proposal Gate**: Owner approves technical approach to enter `/sdd-ff`. |
-
-### Decision Guide: Which Command to Start With?
-
-- **Use `/sdd-frame` first when:**
-  - The requirement is expressed in informal natural language or open business ideas.
-  - You want to verify in O(1) against ICM facts if the capability already exists before committing a task ID.
-  - You need socratic probing to surface hidden boundaries, "Never" rules (invariants), and measurable success oracles.
-- **Go directly to `/sdd-new` when:**
-  - The requirement is already mature, crisp, and technically bounded in your mind.
-  - It is a concrete technical improvement, refactor, or feature with well-known boundaries.
-  - You want to immediately mint `TASK-YYYY-NNN`, run the mandatory Service Discovery Gate, and generate `proposal.md`.
+`/sdd-frame` cuando la intención llega en lenguaje natural y hay que destilar invariantes;
+`/sdd-new` cuando el requerimiento ya está acotado. Detalle en la skill `sdd-entry`.
 
 ## Handling Bugs, Adjustments & Definition Gaps
 
-Not every issue requires a new BIC or a new `/sdd-new` task. Classify into 3 operational scenarios:
-
-| Scenario | Diagnosis | Action | Lifecycle Impact |
-| -------- | --------- | ------ | ---------------- |
-| **1. Technical Bug** | Code violates an existing invariant or contract (crashes, regressions, wrong math). | Invoke `@triage-specialist`: root cause diagnosis ➔ failing test (RED). The GREEN fix is routed to a developer agent. | **0 New SDD Tasks**. Handled in place within the affected component. |
-| **2. Invariant Gap / Business Rule** | Code did what was asked, but business uncovers an unhandled domain rule or edge case. | Invoke `/sdd-frame`. Socratic dialogue in natural language to calibrate the new invariant & oracle. | **Intent Evolution**. Updates existing BIC or creates a new calibrated BIC for `/sdd-new`. |
-| **3. Minor Tweak / Config** | Cosmetic adjustment, label change, timeout tweak, env variable update. | **Direct Fix with Test** or ICM Fact update (`icm facts set "{WS}" "config.key" "val"`). | **0 Ceremony**. Strict KISS/YAGNI to prevent token waste. |
+No todo problema requiere un BIC nuevo ni una tarea `/sdd-new`. El diagnóstico detallado de
+los tres escenarios vive en `@triage-specialist`, que carga exactamente cuando hace falta.
+Lo que se necesita en cualquier fase es saber a dónde enrutar:
 
 ### Decision Rule
 - *Broken behavior against existing rules?* ➔ `@triage-specialist` (diagnosis & TDD fix).

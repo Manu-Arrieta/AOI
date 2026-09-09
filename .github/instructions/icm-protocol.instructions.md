@@ -48,11 +48,11 @@ If an ICM or Codebase MCP tool is reported as disabled or missing during executi
 
 | Method | System Type | Purpose & Lifecycle | Primary MCP / CLI Tools | CLI Fallback |
 | :--- | :--- | :--- | :--- | :--- |
-| **1. Memories** | Episodic | Temporal facts with decay & auto-dedup (>85%) | `icm_memory_store`, `icm_memory_recall`, `icm_memory_update`, `icm_memory_forget`, `icm_memory_consolidate`, `icm_memory_list_topics`, `icm_memory_stats`, `icm_memory_health` | `icm store -t "{TOPIC}" -c "..." -i high` / `icm recall` |
-| **2. Memoirs** | Knowledge Graph | Permanent structured concepts & typed relation graph | `icm_memoir_create`, `icm_memoir_list`, `icm_memoir_show`, `icm_memoir_add_concept`, `icm_memoir_refine`, `icm_memoir_search`, `icm_memoir_search_all`, `icm_memoir_link`, `icm_memoir_inspect`, `icm_memoir_export` | `icm memoir add-concept -m "{WORKSPACE}-architecture"` |
+| **1. Memories** | Episodic | Temporal facts with decay & auto-dedup (>85%) | `icm_memory_store` y familia: recall, update, forget, consolidate, list_topics, stats, health | `icm store -t "{TOPIC}" -c "..." -i high` / `icm recall` |
+| **2. Memoirs** | Knowledge Graph | Permanent structured concepts & typed relation graph | `icm_memoir_add_concept` y familia: create, link, refine, search, show, inspect, export | `icm memoir add-concept -m "{WORKSPACE}-architecture"` |
 | **3. Facts** | Structured Exact | Deterministic (entity, key, value) triples with supersession history | `icm facts set`, `icm facts get`, `icm facts list`, `icm facts history` | `icm facts set "{WORKSPACE}" "service.name" "endpoint"` |
-| **4. Feedback** | Self-Correction | Past mistake corrections & assumptions | `icm_feedback_record`, `icm_feedback_search`, `icm_feedback_stats` | `icm feedback record -t "{WORKSPACE}-{category}"` |
-| **5. Transcripts** | Verbatim Logs | Raw prompt & response session capture & replay | `icm_transcript_start_session`, `icm_transcript_record`, `icm_transcript_search`, `icm_transcript_show`, `icm_transcript_stats` | `icm transcript record` |
+| **4. Feedback** | Self-Correction | Past mistake corrections & assumptions | `icm_feedback_record` y familia: search, stats | `icm feedback record -t "{WORKSPACE}-{category}"` |
+| **5. Transcripts** | Verbatim Logs | Raw prompt & response session capture & replay | `icm_transcript_record` y familia: start_session, search, show, stats | `icm transcript record` |
 
 ---
 

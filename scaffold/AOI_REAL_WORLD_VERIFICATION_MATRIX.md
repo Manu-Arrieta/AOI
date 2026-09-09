@@ -404,6 +404,139 @@ Ninguna fase perdió porcentaje más allá del ruido de muestreo (±0,3 pp).
 > **15.164 medidos** por ciclo. Un ciclo real mueve mucho más contexto del que asumían
 > los fixtures, así que AOI ahorra más tokens de los que decía, sobre una base mayor.
 
+### Evaluación Conductual — la capa que faltaba
+
+Todas las compuertas de AOI son estructurales: prueban que un archivo existe, que una
+referencia resuelve, que una tabla conserva su fila. Ninguna puede responder la única
+pregunta que importa después de recortar prosa: **¿el agente sigue decidiendo bien con lo
+que quedó?**
+
+`pnpm aoi:context` materializa el contexto exacto que una fase carga, y `pnpm aoi:probes`
+genera una sonda por cada corte, cada una con un escenario de respuesta única. La suma de
+las partes ensambladas **iguala exactamente el piso** que reporta el presupuesto en las seis
+fases, así que el eval corre sobre lo que realmente se inyecta y no sobre una aproximación.
+
+| Sonda | Corte que defiende | Esperado | Resultado |
+| :--- | :--- | :--- | :--- |
+| `triage-routing` | tabla de 3 escenarios fuera de la skill | `@triage-specialist` | ✅ |
+| `invariant-gap-routing` | misma tabla, rama a `/sdd-frame` | `/sdd-frame` | ✅ |
+| `entry-command` | guía de entrada movida a `sdd-entry` | `/sdd-frame` | ✅ |
+| `model-parameter` | defaults por categoría eliminados | `Qwen 3.7 plus` | ✅ |
+| `service-discovery-method` | regla movida del supervisor al prompt | ICM + `find`, nunca VS Code | ✅ |
+| `facts-vs-memory` | F1, la skill omitía Facts | `icm facts set` | ✅ |
+| `verify-delegation` | bloques por comando fuera del supervisor | `@integration-specialist` | ✅ |
+
+**25 de 25.** El set creció de 7 a 25 al derivarse de un inventario: `behavioral-coverage.mjs`
+declara toda decisión que una fase sostiene —sus compuertas, sus pasos obligatorios, sus
+delegaciones y sus artefactos— y un test falla si alguna no tiene sonda. Las primeras siete
+defendían los cortes de una rama, que es el mismo error que auditar un diff: solo encuentra
+lo que alguien ya tocó.
+
+Cobertura por fase, sobre el contexto que cada una ensambla de verdad:
+
+| Fase | Decisiones verificadas |
+| :--- | :--- |
+| 0 `/sdd-frame` | comando de entrada · zero-task footprint · persistencia del BIC como facts |
+| 1 `/sdd-new` | método de Service Discovery · su obligatoriedad · facts contra memoria · prefijo `rtk` |
+| 2 `/sdd-ff` | parámetro de modelo y fallback · quién especifica · quién planifica · tag del BIC en el test |
+| 3 `/sdd-apply` | TDD RED primero · sanitización de payload · límite de 300 LOC · importancia `critical` |
+| 4 `/sdd-verify` | delegación · invariante sin test es FAIL · unión mecánica · enrutamiento a triaje y a frame |
+| 5 `/sdd-archive` | agente de documentación · cierre del registro en `📦 Archivado` |
+
+Verificado además de forma determinista que la evidencia de cada respuesta estaba dentro del
+contexto ensamblado: ninguna se derivó de conocimiento externo. Las respuestas quedaron
+contrastadas contra su expresión regular esperada y contra la prohibida, no evaluadas a ojo.
+
+> [!IMPORTANT]
+> **El eval se validó a sí mismo con un control negativo.** Un eval que no distingue un
+> contexto sano de uno roto no prueba nada. Se tomó la sonda de triaje, se eliminaron del
+> contexto las tres menciones al agente de triaje, y se volvió a preguntar: el agente
+> respondió `NO PUEDO DETERMINARLO CON ESTE CONTEXTO` en vez de inventar la respuesta. Las
+> sondas miden lo que el contexto sostiene, no lo que el modelo ya sabía.
+>
+> El primer intento de control **no controlaba**: se usó el contexto de `main`, pero ahí la
+> evidencia también estaba, solo que en una superficie en vez de dos. Un control negativo
+> tiene que quitar la evidencia, no cambiar de rama.
+
+### Traspaso entre fases — `pnpm aoi:handoffs`
+
+La capa que faltaba, y se automatizó sin correr un ciclo. La pregunta "¿lo que produce una
+fase sirve en la siguiente?" no necesita seis fases de inferencia para responderse: necesita
+que cada artefacto exigido tenga un productor anterior, que el productor declarado
+efectivamente diga que lo escribe, y que el consumidor efectivamente diga que lo lee.
+
+```
+Phase_0_Frame     ← —                                → bic-facts
+Phase_1_New       ← —                                → proposal.md, registry.md
+Phase_2_FF        ← proposal.md                      → spec.md, design.md, tasks.md, implementation-plan.md
+Phase_3_Apply     ← spec.md, design.md, tasks.md,
+                    implementation-plan.md           → —
+Phase_4_Verify    ← spec.md, design.md, tasks.md,
+                    bic-facts                        → verify-report.md
+Phase_5_Archive   ← verify-report.md                 → archive-report.md, functional-docs.md
+```
+
+Corre dentro de `pnpm test` y se imprime en el benchmark. Detecta tres roturas distintas,
+las tres verificadas en rojo: una fase que exige algo que nadie produce, un productor que
+renombró el archivo y ya no lo escribe con ese nombre, y un consumidor que dejó de leerlo.
+**Esa rotura es silenciosa porque cada prompt se lee perfecto por separado**, y solo aparece
+a mitad del ciclo con el trabajo previo ya gastado.
+
+`bic-facts` es la arista que no viaja por disco: `/sdd-frame` persiste el contrato como
+facts O(1) y el Invariant Gate de `/sdd-verify` lo lee de ahí. Si esa arista se corta, la
+compuerta se queda sin nada que verificar y nada más lo notaría.
+
+Tres sondas conductuales acompañan al chequeo estructural, porque saber que el artefacto
+existe no es lo mismo que saber qué hacer cuando falta: qué pasa si `design.md` no está al
+entrar a `/sdd-apply`, de dónde lee el contrato el Invariant Gate, y qué exige `/sdd-archive`
+de la fase anterior. **25 de 25.**
+
+**Límite declarado.** El eval cubre las 25 decisiones del inventario, dentro de cada fase y
+en los traspasos entre ellas. No cubre entradas adversarias ni un ciclo real de punta a
+punta con agentes produciendo artefactos de verdad. Sigue siendo una condición necesaria
+verificada sobre todo el ciclo, no una garantía total, y conviene decirlo así.
+
+### Rama `perf/always-injected-surfaces` — sobre v2.2.0
+
+Ataca los dos bloques que v2.2.0 dejó intactos: Instructions y Skills, que se pagan en las
+seis fases **sin condicionalidad que reclasificar**. Todo lo que baje acá es prosa realmente
+eliminada, no contabilidad corregida.
+
+| Cambio | Piso antes | Piso después | Delta |
+| :--- | ---: | ---: | ---: |
+| Defaults por categoría inalcanzables + nota histórica | 94.896 | 93.930 | −966 |
+| Enumeración de 26 herramientas MCP en el protocolo | 93.930 | 93.468 | −462 |
+| Guía de entrada movida a su propia skill | 93.468 | 92.154 | −1.314 |
+| Tabla de triaje duplicada con `@triage-specialist` | 92.154 | **90.894** | −1.260 |
+| | | **total** | **−4.002** |
+
+**La tabla de triaje estaba en dos lados con audiencias distintas — y esta vez sí se pudo
+cortar.** La skill general describía los tres escenarios de defecto en las seis fases;
+`@triage-specialist` describe los mismos tres con el diagnóstico completo, y carga
+exactamente cuando se le delega. En la skill quedó solo la regla de enrutamiento, que es lo
+único que un agente necesita saber sin ser el de triaje: comportamiento roto va a triaje,
+regla de negocio nueva va a `/sdd-frame`, ajuste trivial se arregla directo.
+
+**Verificado antes de cortar que los 14 agentes spec-kit están referenciados**, ninguno
+muerto, así que sus filas del registro se quedan. La hipótesis de que 8 de 14 eran peso
+muerto era falsa.
+
+**Los defaults por categoría eran inalcanzables.** La regla 2.1 de `model-selection` dice que
+el bloque `## Model Requirement` del propio agente supera al default, los 27 lo tienen, y
+`pnpm aoi:routing` rechaza a cualquier agente sin fila explícita en el registro. Un default
+no podía llegar a aplicarse nunca. Quedó una línea de guía para quien cree un agente nuevo.
+La sección 3 era peor: 150 tokens explicando un refactor pasado, inyectados seis veces.
+
+**Las 26 herramientas MCP ya viajan en el esquema** que el modelo recibe del servidor;
+enumerarlas en prosa duplicaba esa lista. Se nombra un miembro de cada familia y el resto se
+describe. El linter de integridad referencial rechazó el primer intento, que usaba
+`icm_memory_*`: ese comodín no es una herramienta real y la compuerta hizo bien en frenarlo.
+
+**La guía de entrada aplicaba a dos fases y se cobraba en seis.** Elegir entre `/sdd-frame`
+y `/sdd-new` es una decisión del momento de entrar; en `/sdd-apply` ya se tomó hace dos
+pasos. Se movió a la skill `sdd-entry`, cuyo disparador nombra ambos comandos, y en la skill
+general quedó la regla comprimida más el puntero.
+
 ### Benchmark v2.2.0 — `main` contra la rama, con el MISMO instrumento
 
 Las dos ramas se midieron con el medidor de v2.2.0 sobre un worktree de `main`, porque el
