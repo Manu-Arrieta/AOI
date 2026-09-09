@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
 import { PROBES, buildProbePrompt } from './behavioral-probes.mjs'
+import { COVERAGE, coverageFor } from './behavioral-coverage.mjs'
 import { assemblePhaseContext } from './assemble-phase-context.mjs'
 import { SDD_PHASES, phaseContextCost } from './context-budget.mjs'
 import { estimateTokens } from './token-accounting.mjs'
@@ -62,6 +63,26 @@ describe('behavioral probes are well formed', () => {
     // Without this the probe measures the model's prior knowledge of AOI
     // instead of what the trimmed context actually supports.
     assert.match(buildProbePrompt(ROOT, PROBES[0]), /NO PUEDO DETERMINARLO CON ESTE CONTEXTO/)
+  })
+
+  it('has a probe for every decision the inventory declares', () => {
+    // El inventario se deriva de lo que cada fase DECLARA — sus compuertas,
+    // sus pasos obligatorios, sus delegaciones. Agregar una compuerta a un
+    // prompt sin agregar su sonda es una falla de test, no un descuido que
+    // aparece meses despues.
+    const ids = new Set(PROBES.map((p) => p.id))
+    const sin = COVERAGE.filter((c) => !ids.has(c.decision))
+    assert.deepEqual(sin.map((c) => `${c.phase}/${c.decision}`), [], 'decisión declarada sin sonda que la verifique')
+  })
+
+  it('probes every phase of the lifecycle, not only the ones that were edited', () => {
+    // La primera version solo defendia los cortes de una rama, que es el mismo
+    // error que auditar un diff: solo encuentra lo que alguien ya toco.
+    const phases = new Set(PROBES.map((p) => p.phase))
+    for (const expected of ['Phase_0_Frame', 'Phase_1_New', 'Phase_2_FF', 'Phase_3_Apply', 'Phase_4_Verify', 'Phase_5_Archive']) {
+      assert.ok(phases.has(expected), `ninguna sonda cubre ${expected}`)
+      assert.ok(coverageFor(expected).length > 0, `el inventario no declara ninguna decisión para ${expected}`)
+    }
   })
 
   it('covers every cut this branch made', () => {

@@ -426,8 +426,26 @@ fases, así que el eval corre sobre lo que realmente se inyecta y no sobre una a
 | `facts-vs-memory` | F1, la skill omitía Facts | `icm facts set` | ✅ |
 | `verify-delegation` | bloques por comando fuera del supervisor | `@integration-specialist` | ✅ |
 
-**7 de 7.** Verificado además de forma determinista que la evidencia de cada respuesta
-estaba dentro del contexto ensamblado: ninguna se derivó de conocimiento externo.
+**22 de 22.** El set creció de 7 a 22 al derivarse de un inventario: `behavioral-coverage.mjs`
+declara toda decisión que una fase sostiene —sus compuertas, sus pasos obligatorios, sus
+delegaciones y sus artefactos— y un test falla si alguna no tiene sonda. Las primeras siete
+defendían los cortes de una rama, que es el mismo error que auditar un diff: solo encuentra
+lo que alguien ya tocó.
+
+Cobertura por fase, sobre el contexto que cada una ensambla de verdad:
+
+| Fase | Decisiones verificadas |
+| :--- | :--- |
+| 0 `/sdd-frame` | comando de entrada · zero-task footprint · persistencia del BIC como facts |
+| 1 `/sdd-new` | método de Service Discovery · su obligatoriedad · facts contra memoria · prefijo `rtk` |
+| 2 `/sdd-ff` | parámetro de modelo y fallback · quién especifica · quién planifica · tag del BIC en el test |
+| 3 `/sdd-apply` | TDD RED primero · sanitización de payload · límite de 300 LOC · importancia `critical` |
+| 4 `/sdd-verify` | delegación · invariante sin test es FAIL · unión mecánica · enrutamiento a triaje y a frame |
+| 5 `/sdd-archive` | agente de documentación · cierre del registro en `📦 Archivado` |
+
+Verificado además de forma determinista que la evidencia de cada respuesta estaba dentro del
+contexto ensamblado: ninguna se derivó de conocimiento externo. Las respuestas quedaron
+contrastadas contra su expresión regular esperada y contra la prohibida, no evaluadas a ojo.
 
 > [!IMPORTANT]
 > **El eval se validó a sí mismo con un control negativo.** Un eval que no distingue un
@@ -440,10 +458,11 @@ estaba dentro del contexto ensamblado: ninguna se derivó de conocimiento extern
 > evidencia también estaba, solo que en una superficie en vez de dos. Un control negativo
 > tiene que quitar la evidencia, no cambiar de rama.
 
-**Límite declarado.** Siete decisiones no son todas las decisiones. El eval cubre cada corte
-que esta rama hizo, con un escenario de respuesta inequívoca cada uno; no cubre el
-comportamiento del ciclo completo ni interacciones entre fases. Es una condición necesaria
-verificada, no una garantía total, y conviene decirlo así.
+**Límite declarado.** El eval cubre las 22 decisiones que el inventario declara, una por
+compuerta y por delegación de cada fase. No cubre las interacciones entre fases —que un
+artefacto producido en la 2 sea consumible en la 3— ni el comportamiento con entradas
+adversarias. Sigue siendo una condición necesaria verificada sobre todo el ciclo, no una
+garantía total, y conviene decirlo así.
 
 ### Rama `perf/always-injected-surfaces` — sobre v2.2.0
 
