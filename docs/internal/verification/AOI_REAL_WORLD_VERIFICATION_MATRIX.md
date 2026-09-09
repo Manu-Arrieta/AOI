@@ -404,6 +404,47 @@ Ninguna fase perdió porcentaje más allá del ruido de muestreo (±0,3 pp).
 > **15.164 medidos** por ciclo. Un ciclo real mueve mucho más contexto del que asumían
 > los fixtures, así que AOI ahorra más tokens de los que decía, sobre una base mayor.
 
+### Evaluación Conductual — la capa que faltaba
+
+Todas las compuertas de AOI son estructurales: prueban que un archivo existe, que una
+referencia resuelve, que una tabla conserva su fila. Ninguna puede responder la única
+pregunta que importa después de recortar prosa: **¿el agente sigue decidiendo bien con lo
+que quedó?**
+
+`pnpm aoi:context` materializa el contexto exacto que una fase carga, y `pnpm aoi:probes`
+genera una sonda por cada corte, cada una con un escenario de respuesta única. La suma de
+las partes ensambladas **iguala exactamente el piso** que reporta el presupuesto en las seis
+fases, así que el eval corre sobre lo que realmente se inyecta y no sobre una aproximación.
+
+| Sonda | Corte que defiende | Esperado | Resultado |
+| :--- | :--- | :--- | :--- |
+| `triage-routing` | tabla de 3 escenarios fuera de la skill | `@triage-specialist` | ✅ |
+| `invariant-gap-routing` | misma tabla, rama a `/sdd-frame` | `/sdd-frame` | ✅ |
+| `entry-command` | guía de entrada movida a `sdd-entry` | `/sdd-frame` | ✅ |
+| `model-parameter` | defaults por categoría eliminados | `Qwen 3.7 plus` | ✅ |
+| `service-discovery-method` | regla movida del supervisor al prompt | ICM + `find`, nunca VS Code | ✅ |
+| `facts-vs-memory` | F1, la skill omitía Facts | `icm facts set` | ✅ |
+| `verify-delegation` | bloques por comando fuera del supervisor | `@integration-specialist` | ✅ |
+
+**7 de 7.** Verificado además de forma determinista que la evidencia de cada respuesta
+estaba dentro del contexto ensamblado: ninguna se derivó de conocimiento externo.
+
+> [!IMPORTANT]
+> **El eval se validó a sí mismo con un control negativo.** Un eval que no distingue un
+> contexto sano de uno roto no prueba nada. Se tomó la sonda de triaje, se eliminaron del
+> contexto las tres menciones al agente de triaje, y se volvió a preguntar: el agente
+> respondió `NO PUEDO DETERMINARLO CON ESTE CONTEXTO` en vez de inventar la respuesta. Las
+> sondas miden lo que el contexto sostiene, no lo que el modelo ya sabía.
+>
+> El primer intento de control **no controlaba**: se usó el contexto de `main`, pero ahí la
+> evidencia también estaba, solo que en una superficie en vez de dos. Un control negativo
+> tiene que quitar la evidencia, no cambiar de rama.
+
+**Límite declarado.** Siete decisiones no son todas las decisiones. El eval cubre cada corte
+que esta rama hizo, con un escenario de respuesta inequívoca cada uno; no cubre el
+comportamiento del ciclo completo ni interacciones entre fases. Es una condición necesaria
+verificada, no una garantía total, y conviene decirlo así.
+
 ### Rama `perf/always-injected-surfaces` — sobre v2.2.0
 
 Ataca los dos bloques que v2.2.0 dejó intactos: Instructions y Skills, que se pagan en las

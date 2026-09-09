@@ -37,6 +37,8 @@
     "aoi:routing": "node scripts/multi-harness/validate-agent-routing.mjs",
     "aoi:invariant-gate": "node scripts/sdd-lifecycle/invariant-gate.mjs",
     "aoi:stress-sdd": "node scripts/sdd-lifecycle/sdd-stress-suite.mjs",
+    "aoi:context": "node scripts/sdd-lifecycle/assemble-phase-context.mjs",
+    "aoi:probes": "node scripts/sdd-lifecycle/behavioral-probes.mjs",
     "test": "pnpm aoi:test-globs && pnpm aoi:srp && pnpm aoi:routing && pnpm test:parity && pnpm test:doctor && pnpm test:multi-harness && pnpm test:sandbox && pnpm test:memory-sync && pnpm test:memory-sync:bundle && pnpm test:subagent-payload && pnpm test:conf && pnpm test:sdd-lifecycle && pnpm test:spatiotemporal && pnpm test:mcp-gateway && pnpm test:code-lens && pnpm aoi:cache-guard && pnpm aoi:lint-refs && pnpm test:dashboard"
   }
 }
