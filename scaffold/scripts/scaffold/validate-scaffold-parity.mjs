@@ -97,8 +97,38 @@ export function collectFilePaths(baseDir, relDir = '') {
  * @param {string[]} pathsToCheck
  * @returns {{ valid: boolean, errors: string[], checkedFilesCount: number }}
  */
+/**
+ * Things that must never live inside the scaffold.
+ *
+ * The scaffold is what gets installed into a workspace, so the installer has
+ * no business being in it, and neither has a nested copy of the scaffold.
+ */
+export const FORBIDDEN_IN_SCAFFOLD = ['setup.sh', 'scaffold', '.git', 'node_modules']
+
+/**
+ * Catches a file that has no business being in the scaffold at all.
+ *
+ * Parity compares the paths it is told to compare, so anything outside
+ * `DEFAULT_SYNC_PATHS` is invisible to it — it can prove that governed files
+ * match, never that an ungoverned one snuck in. A stray `cp setup.sh
+ * scaffold/` therefore passed parity twice while quietly installing the
+ * installer into every workspace, where its presence flips `validate-srp` and
+ * `validate-test-globs` into development-repository mode and turns the whole
+ * suite red for reasons that point nowhere near the cause.
+ *
+ * @returns {string[]} errors
+ */
+export function validateScaffoldContents(repoRoot, forbidden = FORBIDDEN_IN_SCAFFOLD) {
+  const scaffoldDir = path.join(repoRoot, 'scaffold')
+  if (!fs.existsSync(scaffoldDir)) return []
+
+  return forbidden
+    .filter((name) => fs.existsSync(path.join(scaffoldDir, name)))
+    .map((name) => `[FORBIDDEN_IN_SCAFFOLD] scaffold/${name} must not be shipped into a workspace`)
+}
+
 export function validateScaffoldParity(repoRoot, pathsToCheck = DEFAULT_SYNC_PATHS) {
-  const errors = []
+  const errors = validateScaffoldContents(repoRoot)
   let checkedFilesCount = 0
 
   for (const subpath of pathsToCheck) {

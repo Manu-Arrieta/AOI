@@ -36,7 +36,7 @@ diff a.txt b.txt           rtk diff a.txt b.txt
 
 ## Commands that bypass RTK
 
-The `PreToolUse` hook (`rtk-rewrite.json`) automatically enforces RTK prefixing. Some commands are whitelisted:
+A `PreToolUse` hook enforces RTK prefixing when the harness has loaded it — `setup.sh` wires `.github/hooks/rtk-rewrite.json` into `.claude/settings.json`, and `pnpm aoi:hooks` reports whether it took. Do not rely on it: prefix commands yourself. Some are whitelisted and pass through unchanged:
 
 - `icm`, `specify`, `rtk`, `cd`, `corepack`, `pnpm`, `chmod`, `mkdir`, `echo`, `true`
 

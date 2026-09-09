@@ -1,0 +1,76 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .github/scripts/icm-hook.sh start",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash .github/scripts/session-init-hook.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .github/scripts/icm-hook.sh pre",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash .github/scripts/rtk-hook.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .github/scripts/icm-hook.sh post",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash .github/scripts/post-tool-learning-hook.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .github/scripts/icm-hook.sh prompt",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .github/scripts/session-close-hook.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

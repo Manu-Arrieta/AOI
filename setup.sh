@@ -1473,6 +1473,16 @@ rm -f "$PROJECT_PATH/.windsurfrules" 2>/dev/null && warn "Removed .windsurfrules
 chmod +x "$PROJECT_PATH/.github/scripts/icm-serve.sh" 2>/dev/null || true
 chmod +x "$PROJECT_PATH/.github/scripts/icm-hook.sh" 2>/dev/null || true
 
+# Hook wiring. The declarations under .github/hooks/ used to sit there loaded
+# by nobody while a skill in the x6 band told agents the RTK rule enforced
+# itself. Translating them into the harness's own config is what makes that
+# sentence true.
+if [ -f "$SCRIPT_DIR/scripts/multi-harness/install-hooks.mjs" ]; then
+  node "$SCRIPT_DIR/scripts/multi-harness/install-hooks.mjs" 2>/dev/null \
+    && ok "Hooks wired → .claude/settings.json" \
+    || warn "Hook wiring skipped — declarations in .github/hooks/ will not fire"
+fi
+
 # Multi-Harness Rules Compilation
 if [ -f "$SCRIPT_DIR/scripts/multi-harness/compile-rules.mjs" ]; then
   node "$SCRIPT_DIR/scripts/multi-harness/compile-rules.mjs" --harness "$SELECTED_HARNESS" --workspace "$PROJECT_NAME" --prune 2>/dev/null || true
