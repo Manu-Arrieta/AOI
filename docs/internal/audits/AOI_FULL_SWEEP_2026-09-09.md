@@ -211,7 +211,49 @@ seis fases vale seis; en un prompt de fase vale uno. `pnpm aoi:cache-prefix` pub
 orden real. El archivo más grande del ciclo (`speckit.specify.agent.md`, 4.101) es apenas
 el sexto en costo real.
 
-### 💰 A3 — El Invariante 1, si se implementara
+### 💰 A3 — Boilerplate idéntico en los 27 agentes: ~630 tokens por ciclo
+
+404 frases aparecen en 5 o más de los 27 agentes. El bloque `## Model Requirement`
+aparece en **los 27**, y de sus ~67 tokens hay **42 byte-idénticos en todos**:
+
+```
+## Model Requirement
+> ⚠️ Selecciónalo en el picker de Copilot antes de invocar al agente.
+> Registro completo: `.github/instructions/agent-delegation.instructions.md`
+```
+
+Contando solo los 10 agentes que el piso realmente carga, el bloque completo cuesta
+**988 tokens por ciclo** (el supervisor lo paga ×6). La parte genérica —el aviso del
+picker y el puntero al registro— son **630 de esos 988**.
+
+Lo que la vuelve recortable: el puntero apunta a `agent-delegation.instructions.md`, que
+**ya se inyecta en las seis fases**. Se está gastando en decir 27 veces "mirá aquel
+archivo" mientras aquel archivo está en el contexto.
+
+Lo que debe quedar por agente: el nombre del modelo y su fallback, que sí son
+específicos y sí son carga útil.
+
+*No implementado.* Exige prueba de equivalencia: una sonda conductual que confirme que un
+agente sigue eligiendo su modelo con el aviso enunciado una sola vez en el registro.
+
+### 💰 A4 — Derivar la copia de antigravity: hasta 2.526 por ciclo, y de paso arregla G4
+
+`skills/rtk/SKILL.md` (421) e `instructions/rtk.instructions.md` (334) comparten el 29,4%
+del fraseo y el orquestador recibe los dos: 4.530 por ciclo. En el ciclo anterior el
+corte se **descartó** porque antigravity no lee `.github/instructions/` y perdería la
+regla.
+
+Ese rechazo asumía que la copia de antigravity tiene que mantenerse a mano. No tiene por
+qué: `compile-rules.mjs` ya escribe `.agents/`, así que podría **generar** la copia de
+antigravity a partir del archivo canónico de instructions en vez de espejar un skill
+escrito aparte. Una sola fuente, dos superficies derivadas, sin hueco de comportamiento.
+
+El mismo cambio arregla **G4**: hoy `compile-rules.mjs` declara compilar desde
+`.github/instructions/` y nunca lo abre, que es exactamente por qué `CLAUDE.md` y
+`icm-protocol` se contradicen. Hacer verdadera esa declaración elimina la contradicción y
+habilita el ahorro con el mismo trabajo.
+
+### 💰 A5 — El Invariante 1, si se implementara
 
 La afirmación es 85% de reducción del overhead de esquemas MCP. Hoy es 0% porque el
 proxy no existe. **No está cuantificado en este informe**: medirlo exige instrumentar
@@ -233,6 +275,24 @@ porque la afirmación sigue publicada.
 - **Ninguna fase reescribe una superficie siempre inyectada.**
 
 ---
+
+## Ahorro total identificado
+
+| Idea | Tokens/ciclo | Estado |
+| :--- | ---: | :--- |
+| A1 · cablear `context-tombstone` en `/sdd-apply` | **1.085** | mecanismo listo y testeado, solo falta invocarlo |
+| A4 · derivar la copia de antigravity desde instructions | hasta **2.526** | arregla G4 con el mismo trabajo |
+| A3 · boilerplate genérico fuera de los 27 agentes | **630** | exige sonda de equivalencia |
+| **Total** | **~4.241** | |
+| A5 · Invariante 1 | sin cuantificar | el proxy no existe |
+
+Para dimensionarlo: **v2.3.0 completa recortó 4.002 tokens por ciclo**. Lo identificado
+acá la iguala, y A1 es plata en la mesa — un mecanismo que ya funciona y que nadie
+dispara.
+
+Ninguna está implementada. Las tres exigen prueba de equivalencia antes de tocarse, que
+es la regla de este proyecto: el ahorro nunca justifica una pérdida de capacidad no
+verificada.
 
 ## Pendiente
 
