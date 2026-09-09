@@ -58,6 +58,19 @@ describe('the registry is held against disk', () => {
     clean(root)
   })
 
+  it('counts only directories, not a stray file named like a task', () => {
+    // A mutation survived that turned `isDirectory() && matches` into an OR,
+    // which would count every file in a feature folder as a task and inflate
+    // the next id past every real one.
+    const root = workspace()
+    fs.mkdirSync(path.join(root, '.tasks/feat'), { recursive: true })
+    fs.writeFileSync(path.join(root, '.tasks/feat/TASK-2026-999'), 'no soy un directorio')
+    fs.mkdirSync(path.join(root, '.tasks/feat/no-es-una-tarea'), { recursive: true })
+
+    assert.deepEqual(tasksOnDisk(root), [])
+    clean(root)
+  })
+
   it('does not mistake the column header for a task', () => {
     // `| TASK-ID | Feature | ...` is the header; counting it as a task would
     // make an empty registry look populated.
