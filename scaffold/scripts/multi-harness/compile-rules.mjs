@@ -12,10 +12,14 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { readStoreTriggers, renderStoreTriggers } from './protocol-source.mjs'
 
 export const SUPPORTED_HARNESSES = ['copilot', 'claude', 'cursor', 'antigravity', 'cline', 'all']
 
-export function generateClaudeMd({ workspace = 'AOI' } = {}) {
+export function generateClaudeMd({ workspace = 'AOI', repoRoot = process.cwd() } = {}) {
+  // Derived, not copied. The hardcoded block this replaces said `-i high` for
+  // an architecture decision while the protocol said `critical`.
+  const derived = renderStoreTriggers(readStoreTriggers(repoRoot), workspace)
   return `<!-- AOI / CLAUDE.md — Auto-compiled by aoi:sync-rules -->
 # ${workspace} — Agentic Operational Infrastructure (AOI)
 
@@ -31,12 +35,12 @@ icm recall "query" -t "${workspace}-context"        # Filter by project topic
 icm facts list "${workspace}"             # O(1) exact project facts
 \`\`\`
 
-### Store Triggers (MANDATORY)
-1. **Error resolved** → \`icm store -t errors-resolved -c "description" -i high -k "keyword1,keyword2"\`
-2. **Architecture / Design decision** → \`icm store -t decisions-${workspace} -c "description" -i high\`
-3. **User preference discovered** → \`icm store -t preferences -c "description" -i critical\`
-4. **Task completed** → \`icm store -t context-${workspace} -c "summary" -i high\`
-5. **Exact configuration / endpoint / service** → \`icm facts set "${workspace}" "key" "value"\`
+${derived || `### Store Triggers (MANDATORY)
+1. **Error resolved** → \\\`icm store -t errors-resolved -c "description" -i high -k "keyword1,keyword2"\\\`
+2. **Architecture / Design decision** → \\\`icm store -t decisions-${workspace} -c "description" -i critical\\\`
+3. **User preference discovered** → \\\`icm store -t preferences -c "description" -i critical\\\`
+4. **Task completed** → \\\`icm store -t context-${workspace} -c "summary" -i high\\\`
+5. **Exact configuration / endpoint / service** → \\\`icm facts set "${workspace}" "key" "value"\\\``}
 
 ### Workspace Health Diagnostic (0 Tokens)
 \`\`\`bash
@@ -96,7 +100,10 @@ export function generateClineRules({ workspace = 'AOI' } = {}) {
 `
 }
 
-export function generateCopilotInstructions({ workspace = 'AOI' } = {}) {
+export function generateCopilotInstructions({ workspace = 'AOI', repoRoot = process.cwd() } = {}) {
+  // Same derivation as CLAUDE.md, and for the same reason: this surface also
+  // carried `-i high` for an architecture decision the protocol calls critical.
+  const derived = renderStoreTriggers(readStoreTriggers(repoRoot), workspace)
   return `<!-- AOI / .github/copilot-instructions.md — Auto-compiled by aoi:sync-rules -->
 <!-- icm:start -->
 ## Persistent memory (ICM) — MANDATORY
@@ -111,13 +118,13 @@ icm recall "query" -t "topic-name"        # filter by topic
 icm recall-context "query" --limit 5      # formatted for prompt injection
 \`\`\`
 
-### Store — MANDATORY triggers
-You MUST call \`icm store\` when ANY of the following happens:
-1. **Error resolved** → \`icm store -t errors-resolved -c "description" -i high -k "keyword1,keyword2"\`
-2. **Architecture/design decision** → \`icm store -t decisions-{project} -c "description" -i high\`
-3. **User preference discovered** → \`icm store -t preferences -c "description" -i critical\`
-4. **Significant task completed** → \`icm store -t context-{project} -c "summary of work done" -i high\`
-5. **Conversation exceeds ~20 tool calls without a store** → store a progress summary
+${derived || `### Store — MANDATORY triggers
+1. **Error resolved** → \\\`icm store -t errors-resolved -c "description" -i high\\\`
+2. **Architecture/design decision** → \\\`icm store -t decisions-${workspace} -c "description" -i critical\\\`
+3. **User preference discovered** → \\\`icm store -t preferences -c "description" -i critical\\\`
+4. **Significant task completed** → \\\`icm store -t context-${workspace} -c "summary" -i high\\\``}
+
+Además: si la conversación pasa ~20 llamadas a herramientas sin un store, guardá un resumen de progreso.
 
 Do this BEFORE responding to the user. Not after. Not later. Immediately.
 
