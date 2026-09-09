@@ -556,6 +556,41 @@ require_rtk() {
   exit 1
 }
 
+# The MCP compression proxy — the mechanism Invariant 1 names as the source of
+# its savings, and which until now existed only as a config file describing a
+# proxy nobody installed.
+#
+# Distribution matters here. The npm package `@atlassian/mcp-compressor` is a
+# thin wrapper that delegates to a Rust binary it does not ship: it prints
+# "binary was not found … build it with cargo" AND EXITS 0, so a naive check
+# would read that failure as success. There are no prebuilt binaries in the
+# GitHub releases either. The Python distribution carries the compiled binary,
+# and AOI already requires `uv`, so that is the route.
+install_mcp_compressor() {
+  if command -v mcp-compressor &>/dev/null && mcp-compressor --version &>/dev/null; then
+    ok "MCP compressor present ($(mcp-compressor --version 2>/dev/null))"
+    return 0
+  fi
+
+  command -v uv &>/dev/null || return 1
+  uv tool install mcp-compressor >/dev/null 2>&1 || return 1
+  command -v mcp-compressor &>/dev/null || return 1
+  ok "MCP compressor installed ($(mcp-compressor --version 2>/dev/null))"
+}
+
+# Verified by running it, not by asking whether the command resolves: the npm
+# wrapper resolves fine and still cannot compress anything.
+require_mcp_compressor() {
+  if mcp-compressor --version &>/dev/null; then
+    return 0
+  fi
+
+  err "mcp-compressor is mandatory: it is the proxy Invariant 1 rests on."
+  err "Install it with 'uv tool install mcp-compressor' and rerun setup.sh."
+  err "Do NOT install the npm package: it ships no binary and exits 0 while failing."
+  exit 1
+}
+
 get_codebase_memory_path() {
   local resolved_path
 
@@ -688,6 +723,14 @@ require_rtk
 install_icm
 require_icm
 install_uv
+# After uv, because the compressor's working distribution is the Python one.
+if ! install_mcp_compressor; then
+  err "mcp-compressor install failed. It is the proxy that keeps MCP tool"
+  err "schemas out of the context — measured at -83% on this toolset."
+  err "Install it manually ('uv tool install mcp-compressor') and rerun setup.sh."
+  exit 1
+fi
+require_mcp_compressor
 install_specify || true
 
 # ── Phase 1.5: Optional NVIDIA customendpoint helper (non-blocking) ────────
@@ -1333,36 +1376,69 @@ fi
 
 VSCODE_MCP="$PROJECT_PATH/.vscode/mcp.json"
 CBM_BIN="$(get_codebase_memory_path || true)"
+
+# Invariant 1 in one line of config: every MCP server is registered BEHIND the
+# compressor instead of directly.
+#
+# Measured on this workspace, `tools/list` before and after:
+#   icm                  31 tools  3.538 -> 638 tokens
+#   codebase-memory-mcp  14 tools  2.888 -> 460 tokens
+#   total                          6.426 -> 1.098 tokens  (-83%)
+#
+# Those tokens are paid in the system prompt of every request that carries the
+# MCP surface, so the saving repeats all session long — it is not a per-cycle
+# figure. `high` rather than `max`: it exposes the same two frontend tools and
+# keeps a wider margin of behavioural safety for a few hundred tokens more.
+#
+# The compressed surface is not a black box. `server_get_tool_schema` carries
+# every backend signature inline — `<tool>icm_memory_recall(query, topic,
+# limit, keyword, project)</tool>` — so the prompts that name those calls still
+# have the signature in view; only the invocation is routed through
+# `server_invoke_tool`.
+MCP_COMPRESSION="${AOI_MCP_COMPRESSION:-high}"
+if command -v mcp-compressor &>/dev/null; then
+  ICM_CMD='"mcp-compressor"'
+  ICM_ARGS="\"-c\", \"$MCP_COMPRESSION\", \"--\", \"bash\", \"\${workspaceFolder}/.github/scripts/icm-serve.sh\""
+  CBM_CMD='"mcp-compressor"'
+  CBM_ARGS="\"-c\", \"$MCP_COMPRESSION\", \"--\", \"$CBM_BIN\""
+else
+  ICM_CMD='"bash"'
+  ICM_ARGS="\"\${workspaceFolder}/.github/scripts/icm-serve.sh\""
+  CBM_CMD="\"$CBM_BIN\""
+  CBM_ARGS=""
+fi
+
 if [[ -n "$CBM_BIN" ]]; then
   cat > "$VSCODE_MCP" <<EOF
 {
   "servers": {
     "icm": {
       "type": "stdio",
-      "command": "bash",
-      "args": ["\${workspaceFolder}/.github/scripts/icm-serve.sh"]
+      "command": $ICM_CMD,
+      "args": [$ICM_ARGS]
     },
     "codebase-memory-mcp": {
       "type": "stdio",
-      "command": "$CBM_BIN"
+      "command": $CBM_CMD,
+      "args": [$CBM_ARGS]
     }
   }
 }
 EOF
-  ok "Workspace MCP configured in .vscode/mcp.json (ICM + codebase-memory-mcp)"
+  ok "Workspace MCP configured in .vscode/mcp.json (ICM + codebase-memory-mcp, compression=$MCP_COMPRESSION)"
 else
-  cat > "$VSCODE_MCP" <<'EOF'
+  cat > "$VSCODE_MCP" <<EOF
 {
   "servers": {
     "icm": {
       "type": "stdio",
-      "command": "bash",
-      "args": ["${workspaceFolder}/.github/scripts/icm-serve.sh"]
+      "command": $ICM_CMD,
+      "args": [$ICM_ARGS]
     }
   }
 }
 EOF
-  ok "Workspace MCP configured in .vscode/mcp.json (ICM only)"
+  ok "Workspace MCP configured in .vscode/mcp.json (ICM only, compression=$MCP_COMPRESSION)"
 fi
 
 # ── Phase 4: Configure Tools ────────────────────────────────────────────

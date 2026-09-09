@@ -57,13 +57,10 @@ export const TOKEN_TOOLS = [
   { id: 'synthesize-stubs', mandatory: true, channel: 'process', needle: /synthesize-stubs/, requiredBy: null },
   { id: 'diagnostic-distiller', mandatory: true, channel: 'process', needle: /diagnostic-distiller|distillTestOutput/, requiredBy: null },
   { id: 'mechanical-verify-union', mandatory: true, channel: 'process', needle: /mechanical-verify-union/, requiredBy: null },
-  // Invariant 1 names this as THE mechanism behind its savings. It is not a
-  // dependency, setup.sh never installs it, no MCP config registers it — and
-  // `npm view` returns 404 for both `@atlassian-labs/mcp-compressor` and
-  // `mcp-compressor`, so it was never implementable as written. It stays in
-  // the inventory, and stays failing, because the claim is still published:
-  // hiding it here would reproduce exactly the silence that let it survive.
-  { id: 'mcp-compressor', mandatory: true, channel: 'communication', needle: /mcp-compressor/, requiredBy: /mcp-compressor/ },
+  // Transport-level, so its wiring lives in .vscode/mcp.json rather than in
+  // any prompt. Looking for it among the cycle surfaces was a category error:
+  // no prompt will ever name the proxy its own MCP calls travel through.
+  { id: 'mcp-compressor', mandatory: true, channel: 'communication', surface: 'transport', needle: /mcp-compressor/, requiredBy: /require_mcp_compressor/ },
   // The one declared exception. Its absence must never block a run.
   { id: 'headroom', mandatory: false, channel: 'process', needle: /headroom/i, requiredBy: null },
 ]
@@ -103,10 +100,20 @@ function cycleFiles(root) {
 export function wiringMap(root, tools = TOKEN_TOOLS) {
   const files = cycleFiles(root)
   const map = new Map(tools.map((t) => [t.id, []]))
-  for (const file of files) {
-    const text = read(file)
-    for (const tool of tools) {
-      if (tool.needle.test(text)) map.get(tool.id).push(path.relative(root, file))
+
+  // A transport tool is wired in the MCP config, not in prose. Searching for
+  // it among the prompts would report it missing forever, which is a gate
+  // that cries wolf rather than one that binds.
+  const mcpRel = '.vscode/mcp.json'
+  const mcpText = read(path.join(root, mcpRel))
+
+  for (const tool of tools) {
+    if (tool.surface === 'transport') {
+      if (mcpText && tool.needle.test(mcpText)) map.get(tool.id).push(mcpRel)
+      continue
+    }
+    for (const file of files) {
+      if (tool.needle.test(read(file))) map.get(tool.id).push(path.relative(root, file))
     }
   }
   return map
@@ -118,7 +125,16 @@ export function wiringMap(root, tools = TOKEN_TOOLS) {
  * @returns {{ notMandatory: string[], notWired: string[], rows: object[] }}
  */
 export function auditTokenTools(root, tools = TOKEN_TOOLS) {
-  const setup = read(path.join(root, 'setup.sh'))
+  const setupPath = path.join(root, 'setup.sh')
+  // The installer-policy half of this audit only has an answer in the
+  // development repository. An installed workspace has no `setup.sh` to read,
+  // and asking there produced a gate that failed on every tool the installer
+  // enforces — the loudest possible false alarm. The same strict/lenient split
+  // that validate-srp and validate-test-globs already use applies here: in a
+  // workspace the installer has already run, so wiring is what remains
+  // checkable.
+  const isDevRepo = fs.existsSync(setupPath)
+  const setup = isDevRepo ? read(setupPath) : ''
   const map = wiringMap(root, tools)
   const notMandatory = []
   const notWired = []
@@ -129,7 +145,7 @@ export function auditTokenTools(root, tools = TOKEN_TOOLS) {
     // A tool is enforced when the installer refuses to continue without it.
     // `requiredBy: null` means enforcement lives in the cycle rather than in
     // the installer, so wiring alone decides.
-    const enforced = tool.requiredBy ? tool.requiredBy.test(setup) : where.length > 0
+    const enforced = !isDevRepo || !tool.requiredBy ? where.length > 0 : tool.requiredBy.test(setup)
 
     if (tool.mandatory && !enforced) {
       notMandatory.push(`${tool.id}: el instalador permite continuar sin él`)
@@ -158,7 +174,9 @@ function main() {
   const root = process.cwd()
   const r = auditTokenTools(root)
 
+  const mode = fs.existsSync(path.join(root, 'setup.sh')) ? 'estricto (repo)' : 'laxo (workspace instalado)'
   console.log('=== AOI Token-Saving Tool Coverage ===\n')
+  console.log(`Modo: ${mode}\n`)
   console.log(formatToolTable(r.rows))
   console.log('\nTodas obligatorias salvo Headroom. "Invocada" cuenta prompts, agentes,')
   console.log('instructions y skills — nunca el benchmark, que mide pero no ejecuta el producto.')
