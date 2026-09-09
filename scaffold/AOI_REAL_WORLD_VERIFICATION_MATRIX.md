@@ -579,6 +579,31 @@ Las cuatro comprobaciones tienen control negativo — cada portón se probó en 
 violación construida, incluido el caso exacto que `aoi:cache-guard` deja pasar por su
 ventana de 1.500 caracteres.
 
+#### Tres defectos que encontró una auditoría adversaria, no el autor
+
+Antes de mergear se corrieron cinco auditores independientes contra las afirmaciones del
+módulo, cada hallazgo pasado por un refutador que intentaba matarlo. Sobrevivieron tres, los
+tres en código recién escrito, y los tres son la misma patología que este repositorio ya
+tiene documentada: **quien escribe el cambio escribe su guardián en la misma pasada, con el
+mismo modelo mental, así que el guardián hereda el punto ciego.**
+
+| Defecto | Por qué el autor no lo vio |
+| :--- | :--- |
+| `surfaceDigest` hasheaba `source:tokens`, no bytes. `tokens` es `round(length/4)`, así que dar vuelta cuatro `MUST` por `MAY ` en un archivo ×6 dejaba la huella **idéntica** — y también cualquier edición dentro del mismo cubo de la división. El operador que sigue el protocolo leía eso como prueba de que el prefijo aguantó. | Su control negativo le pasaba filas sintéticas `{source, tokens}` y verificaba que la huella se moviera al mover `tokens`. **El contenido de un archivo nunca atravesaba la función**, así que el test no podía ver que la función no leía ninguno. Los 12 tests pasaban con el defecto adentro. |
+| `auditRepeatedMass` escaneaba solo la banda ×6. La banda ×2 — 3.908 tokens por ciclo — no la miraba nadie, porque `cache-guard` solo llega a `.github/prompts/`. | Generalizar desde el caso que se tenía delante en vez de preguntar qué más tiene esa forma. |
+| `surfaceLoadMap` empujaba la fase por **ocurrencia**, no por fase. Un prompt que nombra al mismo agente dos veces le daba multiplicador 2 en una sola fase; con seis fases el archivo podía superar `phaseCount`, caerse de las tres bandas y romper en silencio la invariante de que las bandas suman el piso. | Latente: hoy ningún prompt repite un agente, así que no cambiaba ningún número. |
+
+> Ninguno de los tres alteró una cifra publicada — el piso sigue en 90.894 y el 64,6% se
+> reproduce con un recuento independiente. Lo que estaba roto era la capacidad de
+> **detectar** una regresión futura, que es justamente para lo que existen.
+
+**Y un hallazgo de proceso.** Uno de los agentes auditores inyectó su fallo de prueba
+directamente en el repositorio de desarrollo y no lo revirtió: dejó un `.slice(0, 1500)`
+dentro de `auditRepeatedMass` que invierte el propósito entero del módulo. Se detectó por
+`git status`. La regla ya escrita para el operador — **los fallos a propósito se inyectan en
+`AOI TESTS`, nunca en el repo de desarrollo** — vale igual para todo agente delegado, y hay
+que decírselo explícitamente en el prompt porque no lo deduce solo.
+
 ### Rama `perf/always-injected-surfaces` — sobre v2.2.0
 
 Ataca los dos bloques que v2.2.0 dejó intactos: Instructions y Skills, que se pagan en las

@@ -31,6 +31,58 @@ describe('assembled context equals what the budget charges', () => {
   })
 })
 
+describe('every probe has its evidence inside the context it is asked over', () => {
+  // The gap this closes. Until now `expected` was only asserted to BE a
+  // RegExp — nothing ever ran it. So `pnpm test` passing said the probes were
+  // well formed, never that the phase still carries what it takes to answer
+  // them, and the 25/25 of the previous cycle was a manual read, not a gate.
+  //
+  // Running the probes through a model would answer the stronger question and
+  // cost inference tokens on every run. This answers the NECESSARY half for
+  // free: if the pattern an answer must contain is nowhere in the assembled
+  // context, no agent can produce it except from prior knowledge, and a trim
+  // that deleted the evidence would sail through. That is exactly the
+  // regression this repository keeps producing.
+  //
+  // What it does NOT prove: that a model actually uses the evidence. Evidence
+  // present is necessary, not sufficient, and `forbidden` stays out of reach
+  // because it describes an ANSWER — `/triage-specialist/i` is forbidden in a
+  // reply while appearing legitimately in the context that reply is drawn from.
+  const contextOf = (() => {
+    const cache = new Map()
+    return (probe) => {
+      const key = `${probe.phase}::${probe.prompt}`
+      if (!cache.has(key)) cache.set(key, assemblePhaseContext(ROOT, probe.prompt, probe.phase).text)
+      return cache.get(key)
+    }
+  })()
+
+  it('carries, for all 25, the pattern the answer must contain', () => {
+    const orphaned = PROBES.filter((p) => !p.expected.test(contextOf(p))).map(
+      (p) => `${p.id} (${p.phase}): ${p.expected} no aparece en el contexto de la fase`
+    )
+    assert.deepEqual(orphaned, [])
+  })
+
+  it('fails when the evidence is removed', () => {
+    // Negative control. A check that only ever passes proves nothing, and the
+    // first negative control written in this repository did not control at all.
+    const probe = PROBES.find((p) => p.id === 'srp-limit')
+    const stripped = contextOf(probe).replaceAll('300', 'NNN')
+
+    assert.ok(probe.expected.test(contextOf(probe)), 'la evidencia debería estar presente')
+    assert.equal(probe.expected.test(stripped), false, 'el chequeo no detecta la evidencia borrada')
+  })
+
+  it('declares which probes remain answer-shaped and therefore un-gated', () => {
+    // Six probes forbid a wrong answer rather than requiring a right one.
+    // Naming them here keeps the limit visible instead of letting a green
+    // suite imply coverage it does not have.
+    const answerOnly = PROBES.filter((p) => p.forbidden).map((p) => p.id)
+    assert.equal(answerOnly.length, 6, 'cambió el conjunto de sondas solo verificables con un modelo')
+  })
+})
+
 describe('behavioral probes are well formed', () => {
   it('every probe names a phase the budget knows and a prompt that exists', () => {
     const known = new Set(SDD_PHASES.map(([k]) => k))

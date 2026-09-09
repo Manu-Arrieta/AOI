@@ -122,11 +122,59 @@ describe('the gates detect what they claim to detect', () => {
 })
 
 describe('the digest', () => {
-  it('is stable for the same surface and moves when a file changes size', () => {
-    // What AOI TESTS takes before and after a real cycle. A digest that did
-    // not move on a rewrite would be worse than no digest at all.
-    const rows = [{ source: 'a', tokens: 10 }, { source: 'b', tokens: 20 }]
-    assert.equal(surfaceDigest(REPO, rows), surfaceDigest(REPO, [...rows].reverse()))
-    assert.notEqual(surfaceDigest(REPO, rows), surfaceDigest(REPO, [{ source: 'a', tokens: 11 }, { source: 'b', tokens: 20 }]))
+  // What AOI TESTS takes before and after a real cycle. The first version of
+  // this suite fed surfaceDigest synthetic {source, tokens} rows and asserted
+  // it moved when `tokens` moved — file content never passed through the
+  // function, so the test could not see that the function never read any. A
+  // negative control has to exercise the real input, or it controls nothing.
+  const surface = () => [
+    { source: '.github/instructions/rtk.instructions.md', tokens: 334 },
+    { source: '.github/skills/rtk/SKILL.md', tokens: 421 },
+  ]
+
+  it('does not depend on the order the rows arrive in', () => {
+    assert.equal(surfaceDigest(REPO, surface()), surfaceDigest(REPO, surface().reverse()))
+  })
+
+  it('moves on a length-preserving rewrite, which is the case that fooled it', () => {
+    const root = workspace({
+      '.github/instructions/x.instructions.md': 'El agente MUST usar rtk en todo comando.',
+    })
+    const rows = [{ source: '.github/instructions/x.instructions.md', tokens: 10 }]
+    const before = surfaceDigest(root, rows)
+
+    // Same byte length, inverted meaning: the exact shape a token-count digest
+    // reported as "the mass held still".
+    fs.writeFileSync(
+      path.join(root, '.github/instructions/x.instructions.md'),
+      'El agente MAY  usar rtk en todo comando.'
+    )
+
+    assert.notEqual(surfaceDigest(root, rows), before)
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+
+  it('moves on a one-byte edit, which a token count rounds away', () => {
+    const root = workspace({ '.github/skills/x/SKILL.md': 'abcd' })
+    const rows = [{ source: '.github/skills/x/SKILL.md', tokens: 1 }]
+    const before = surfaceDigest(root, rows)
+
+    fs.writeFileSync(path.join(root, '.github/skills/x/SKILL.md'), 'abcde')
+
+    assert.notEqual(surfaceDigest(root, rows), before)
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+})
+
+describe('the load map counts phases, not occurrences', () => {
+  it('never gives a file a multiplier above the number of phases', () => {
+    // A prompt naming the same agent twice pushed its file twice. The file
+    // then matched no band — not universal, not repeated, not once — and the
+    // bands silently stopped adding up to the floor.
+    const map = surfaceLoadMap(REPO)
+    for (const [source, e] of map) {
+      assert.ok(e.phases.length <= SDD_PHASES.length, `${source}: multiplicador ${e.phases.length}`)
+      assert.equal(new Set(e.phases).size, e.phases.length, `${source}: fase repetida en el mapa`)
+    }
   })
 })

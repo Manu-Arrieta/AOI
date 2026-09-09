@@ -51,7 +51,11 @@ export function surfaceLoadMap(root, phases = SDD_PHASES) {
   for (const [key, rel] of phases) {
     for (const part of assemblePhaseContext(root, rel, key).parts) {
       const entry = map.get(part.source) ?? { tokens: part.tokens, phases: [] }
-      entry.phases.push(key)
+      // By PHASE, not by occurrence. A prompt that names the same agent twice
+      // pushes its file twice, and counting those as two phases would invent a
+      // multiplier the cycle never pays — and would break the band arithmetic,
+      // since a file could then exceed phaseCount and fall out of every band.
+      if (!entry.phases.includes(key)) entry.phases.push(key)
       map.set(part.source, entry)
     }
   }
@@ -109,11 +113,20 @@ export function cacheEconomics(perPhase, phaseCount = SDD_PHASES.length, rate = 
  * Nothing in the repository can prove that on its own, because a rewrite would
  * happen in an installed workspace during a cycle. So this emits a digest that
  * a real run can take before and after: same digest, the mass held still.
+ *
+ * It hashes CONTENT, and the first version of it did not — it hashed the token
+ * count, which is `round(length / 4)`. That version could not detect the very
+ * property this docstring claims: flipping four `MUST` to `MAY ` in an x6
+ * instruction file preserves the length exactly and left the digest identical,
+ * and so did any edit landing inside the same division bucket. An operator
+ * following the protocol would have read that as proof the warm prefix held.
  */
 export function surfaceDigest(root, rows) {
   const h = crypto.createHash('sha256')
   for (const r of [...rows].sort((a, b) => a.source.localeCompare(b.source))) {
-    h.update(`${r.source}:${r.tokens}\n`)
+    h.update(`${r.source}\n`)
+    h.update(read(path.join(root, r.source)))
+    h.update('\n')
   }
   return h.digest('hex').slice(0, 16)
 }
@@ -126,8 +139,12 @@ export function surfaceDigest(root, rows) {
  * window is not wrong so much as narrow, and simply widening it repository-wide
  * would fail on prose that merely QUOTES a shell command — text whose bytes
  * never move. So the widened scan is aimed only where a buster would actually
- * be expensive: the eight files every phase reloads. Small set, no false
- * positive today, and a real cost if one ever appears.
+ * be expensive: every file the cycle reloads more than once. Small set, no
+ * false positive today, and a real cost if one ever appears.
+ *
+ * Callers must pass the repeated bands TOGETHER. Scanning only the x6 band left
+ * the x2 files — 3.908 tokens a cycle — covered by nothing at all, since
+ * cache-guard reaches only `.github/prompts/`.
  */
 export function auditRepeatedMass(root, rows) {
   const violations = []
@@ -209,7 +226,8 @@ function main() {
   console.log('una superficie siempre inyectada y no hay cache que sobreviva a eso.')
 
   const all = [...part.universal, ...part.repeated, ...part.once]
-  const failures = [...auditRepeatedMass(root, part.universal), ...auditMidCycleRewrites(root, all)]
+  const reloaded = [...part.universal, ...part.repeated]
+  const failures = [...auditRepeatedMass(root, reloaded), ...auditMidCycleRewrites(root, all)]
   if (failures.length > 0) {
     console.error('')
     for (const f of failures) console.error(`❌ ${f}`)
