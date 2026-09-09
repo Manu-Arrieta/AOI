@@ -59,35 +59,90 @@ to_windows_path() {
   cygpath -w "$path_value"
 }
 
+# Files kept because the Owner had changed them; reported at the end of the run.
+HARNESS_KEPT=""
+
+# Removes one harness path, but ONLY the parts of it that AOI itself shipped.
+#
+# The three-way merge is safe because its comparator walks the SCAFFOLD, never
+# the project: a file the Owner created is never visited, so it cannot be
+# touched. This pruning used to bypass that entirely with `rm -f` / `rm -rf`,
+# which is the same shape as the `aoi_apps` incident — it deleted a customised
+# CLAUDE.md, an edited AGENTS.md and Owner-authored skills under `.agents/`
+# with no backup, no conflict entry and no mention in the run summary.
+#
+# So the rule here is the merge's rule: delete a file only when it is
+# byte-identical to what the scaffold shipped. Anything edited, and anything
+# AOI never shipped at all, stays and is reported.
+prune_path_if_pristine() {
+  local target="$1"
+  local reference="$2"
+
+  [ -e "$target" ] || return 0
+
+  if [ -f "$target" ]; then
+    if [ -f "$reference" ] && cmp -s "$target" "$reference"; then
+      rm -f "$target"
+    else
+      HARNESS_KEPT="$HARNESS_KEPT
+  $target"
+    fi
+    return 0
+  fi
+
+  # A directory is pruned file by file. Owner-authored files inside it have no
+  # counterpart in the scaffold and therefore survive, and the directory itself
+  # only disappears once nothing of the Owner's is left in it.
+  local file rel
+  while IFS= read -r file || [ -n "$file" ]; do
+    [ -n "$file" ] || continue
+    rel="${file#$target/}"
+    prune_path_if_pristine "$file" "$reference/$rel"
+  done <<EOF
+$(find "$target" -type f 2>/dev/null)
+EOF
+
+  find "$target" -type d -empty -delete 2>/dev/null || true
+}
+
 prune_unselected_harness_files() {
   local target_dir="$1"
   local selected_harness="$2"
+  local ref="${3:-$SCAFFOLD_DIR}"
 
   if [ -z "$selected_harness" ] || [ "$selected_harness" = "all" ]; then
     return 0
   fi
 
   if [ "$selected_harness" != "claude" ]; then
-    rm -f "$target_dir/CLAUDE.md"
+    prune_path_if_pristine "$target_dir/CLAUDE.md" "$ref/CLAUDE.md"
   fi
 
   if [ "$selected_harness" != "cursor" ]; then
-    rm -f "$target_dir/.cursorrules"
-    rm -rf "$target_dir/.cursor"
+    prune_path_if_pristine "$target_dir/.cursorrules" "$ref/.cursorrules"
+    prune_path_if_pristine "$target_dir/.cursor" "$ref/.cursor"
   fi
 
   if [ "$selected_harness" != "antigravity" ]; then
-    rm -f "$target_dir/AGENTS.md"
-    rm -rf "$target_dir/.agents"
+    prune_path_if_pristine "$target_dir/AGENTS.md" "$ref/AGENTS.md"
+    prune_path_if_pristine "$target_dir/.agents" "$ref/.agents"
   fi
 
   if [ "$selected_harness" != "cline" ]; then
-    rm -f "$target_dir/.clinerules"
+    prune_path_if_pristine "$target_dir/.clinerules" "$ref/.clinerules"
   fi
 
   if [ "$selected_harness" != "copilot" ]; then
-    rm -f "$target_dir/.github/copilot-instructions.md"
+    prune_path_if_pristine "$target_dir/.github/copilot-instructions.md" "$ref/.github/copilot-instructions.md"
   fi
+}
+
+# Prints what the pruning refused to delete. Silence here is a real signal:
+# it means every harness file removed was untouched AOI content.
+report_harness_kept() {
+  [ -n "$HARNESS_KEPT" ] || return 0
+  warn "Harness pruning kept these because you had changed them:$HARNESS_KEPT"
+  warn "They belong to a harness you did not select. Delete them yourself if you want them gone."
 }
 
 # Sanitize a PowerShell script before passing it to Windows PowerShell 5.1.
@@ -413,7 +468,7 @@ if [ ! -d "$SCAFFOLD_DIR" ]; then
   exit 1
 fi
 
-# ── Phase 1: Install Tools (RTK optional, ICM mandatory) ───────────────
+# ── Phase 1: Install Tools (RTK and ICM both mandatory) ────────────────
 header "Phase 1: Tools"
 
 install_rtk() {
@@ -486,6 +541,18 @@ require_icm() {
 
   err "ICM is mandatory. Installation cannot continue without a working icm command."
   err "Fix the ICM install prerequisites and rerun setup.sh."
+  exit 1
+}
+
+# RTK is mandatory for the same reason ICM is: it is not a convenience, it is
+# one of the mechanisms the product's savings claim rests on.
+require_rtk() {
+  if command -v rtk &>/dev/null; then
+    return 0
+  fi
+
+  err "RTK is mandatory. Installation cannot continue without a working rtk command."
+  err "Install it (brew install rtk-ai/tap/rtk) and rerun setup.sh."
   exit 1
 }
 
@@ -606,9 +673,18 @@ ensure_dashboard_runtime() {
 }
 
 # Install order: RTK → ICM → uv → Specify
+#
+# Every token-saving tool is mandatory. Headroom is the one exception, and it
+# stays optional in Phase 1.6. RTK used to be installed best-effort and the run
+# continued on failure with a warning, which meant an installation could end up
+# advertising 60-90% savings on shell output while running every command
+# unfiltered. A saving the product cannot guarantee is not a saving.
 if ! install_rtk; then
-  warn "RTK install failed — continuing without token optimization. Commands will run unfiltered until RTK is available."
+  err "RTK is mandatory: it is the proxy that keeps command output out of the context."
+  err "Install it manually (brew install rtk-ai/tap/rtk) and rerun setup.sh."
+  exit 1
 fi
+require_rtk
 install_icm
 require_icm
 install_uv
@@ -750,22 +826,21 @@ else
   info "    When ready, run: ln -sf ../../.githooks/pre-commit-aoi-guard.sh .git/hooks/pre-commit"
 fi
 
-# ── Phase 1.8: codebase-memory-mcp (OPTIONAL, workspace-local only) ─────────
-header "Phase 1.8: Codebase Memory MCP (opcional)"
+# ── Phase 1.8: codebase-memory-mcp (MANDATORY, workspace-local only) ───────
+header "Phase 1.8: Codebase Memory MCP (obligatorio)"
 
 if [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then
   info "codebase-memory-mcp indexa el repo en un knowledge graph local para reducir"
   info "exploración file-by-file. AOI lo instala con --skip-config para NO tocar"
   info "copilot-instructions.md del operador y registra el MCP sólo en el workspace actual."
-  if [ "$AUTO_YES" -eq 1 ] || ! [ -t 0 ]; then
-    CBM_CHOICE="n"
-  else
-    printf "${YELLOW}▸${NC} Instalar codebase-memory-mcp? [Y/n]: "
-    read -r CBM_CHOICE
-  fi
+  # Mandatory, like RTK and ICM: it is one of the mechanisms that keeps
+  # exploration out of the context. It used to default to "n" whenever stdin
+  # was not a TTY, which silently disabled it in every automated install —
+  # exactly the installs that never get a human to reconsider.
+  CBM_CHOICE="y"
   case "$CBM_CHOICE" in
     n|N|no|NO)
-      warn "codebase-memory-mcp omitido. AOI continúa con ICM/Headroom/RTK normales."
+      warn "codebase-memory-mcp omitido."
       ;;
     *)
       info "Variante UI incluye grafo 3D interactivo en http://localhost:9749"
@@ -850,6 +925,17 @@ REINSTALL_STATS_ORPHANS_KEPT=0
 # IS_REINSTALL was resolved before Phase 2 — see the note there.
 if [ "$IS_REINSTALL" -eq 1 ]; then
   info "Detected previous installation (.conf/manifest.json) — entering REINSTALL mode"
+
+  # A reinstall that switches harness prunes the files of the one being left
+  # behind. That used to happen in silence and with no memory of the earlier
+  # choice, because the manifest never recorded it. Now it does, so the change
+  # can at least be named out loud before anything is removed.
+  PREV_HARNESS="$(sed -n 's/.*"selected_harness"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+    "$PROJECT_PATH/.conf/manifest.json" 2>/dev/null | head -1)"
+  if [ -n "$PREV_HARNESS" ] && [ "$PREV_HARNESS" != "$SELECTED_HARNESS" ]; then
+    warn "Harness change: this workspace was installed as '$PREV_HARNESS', now installing as '$SELECTED_HARNESS'."
+    warn "Files belonging to '$PREV_HARNESS' will be pruned — but only the ones you never edited."
+  fi
 
   # ── 3a: Cleanup stale/corrupted files from previous installs ───────────
   # Removes files with doubled extensions (*.agent.agent.md, *.instructions.instructions.md, etc.)
@@ -1422,6 +1508,8 @@ else
 fi
 
 # ── Done ─────────────────────────────────────────────────────────────────
+report_harness_kept
+
 header "Installation Complete"
 
 echo "  Project: $PROJECT_PATH"

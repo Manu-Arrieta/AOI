@@ -154,6 +154,7 @@ cat > "$CONF_DIR/manifest.json" <<EOF
   "installer_host": "$INSTALLER_HOST",
   "project_name": "$PROJECT_NAME",
   "scaffold_file_count": $FILE_COUNT,
+  "selected_harness": $(quote_ver "${SELECTED_HARNESS:-all}"),
   "tools": {
     "rtk": $(quote_ver "$RTK_VER"),
     "icm": $(quote_ver "$ICM_VER"),
