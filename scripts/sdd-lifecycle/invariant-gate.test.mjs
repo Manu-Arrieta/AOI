@@ -125,3 +125,52 @@ describe('invariant-gate unit tests', () => {
     if (!result.ok) assert.ok(String(result.reason).length > 0)
   })
 })
+
+describe('un contrato contradictorio no se puede satisfacer fijando el punto en disputa', () => {
+  // Del ciclo real: el Owner escribió un BIC cuyo oráculo exigía `within`
+  // para un valor que sus propios criterios de aceptación ponían en la banda
+  // `tight`. Los dos no podían valer. El agente delegado lo notó, implementó
+  // la mitad internamente consistente, fijó el punto en disputa y dejó un
+  // comentario CONTRADICTION PENDING OWNER RESOLUTION en un test que igual
+  // citaba el tag verbatim.
+  //
+  // Esa conducta es la correcta y es lo que uno quiere del agente. Lo que no
+  // se quiere es que la compuerta lea ese test como cobertura: un contrato
+  // que nadie puede satisfacer se publicaría reportado como exigido.
+  const rule = { bicId: 'BIC-1', kind: 'oracle', tag: 'BIC-1:oracle', statement: '90894/100000 → within' }
+
+  it('cuenta como cubierta la regla que un test ASSERTA', () => {
+    const r = auditInvariantCoverage([rule], [{ file: 'a.test.ts', content: 'it("BIC-1:oracle", () => {})' }])
+    assert.equal(r.status, 'PASSED')
+  })
+
+  it('NO cuenta como cubierta la que solo aparece junto a una contradicción sin resolver', () => {
+    const r = auditInvariantCoverage(
+      [rule],
+      [{ file: 'a.test.ts', content: '// CONTRADICTION PENDING OWNER RESOLUTION\nit("BIC-1:oracle", () => {})' }]
+    )
+
+    assert.equal(r.status, 'FAILED')
+    assert.match(r.uncovered[0].statement, /contradicción sin resolver/)
+    assert.match(r.uncovered[0].statement, /a\.test\.ts/, 'no dice dónde está la disputa')
+  })
+
+  it('reconoce el marcador en español y la forma corta', () => {
+    for (const marker of ['// CONTRADICCIÓN PENDIENTE', '// @bic-unresolved', '// CONTRACT CONFLICT']) {
+      const r = auditInvariantCoverage([rule], [{ file: 'x.test.ts', content: `${marker}\nit("BIC-1:oracle", () => {})` }])
+      assert.equal(r.status, 'FAILED', `no reconoció el marcador ${marker}`)
+    }
+  })
+
+  it('vuelve a pasar en cuanto existe UN test que sí la asserta', () => {
+    // La disputa puede quedar registrada; lo que no puede es ser la única
+    // evidencia. Resolver el contrato y dejar el test viejo no debe bloquear.
+    const r = auditInvariantCoverage([rule], [
+      { file: 'disputa.test.ts', content: '// CONTRADICTION PENDING\nit("BIC-1:oracle", () => {})' },
+      { file: 'real.test.ts', content: 'it("BIC-1:oracle", () => {})' },
+    ])
+
+    assert.equal(r.status, 'PASSED')
+    assert.equal(r.covered[0].evidence, 'real.test.ts', 'tomó como evidencia el test en disputa')
+  })
+})

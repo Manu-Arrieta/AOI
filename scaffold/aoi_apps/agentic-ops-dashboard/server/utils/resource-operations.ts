@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
-import { basename, dirname, join, relative, resolve } from 'node:path'
+import { basename, dirname, join, relative, resolve, sep } from 'node:path'
 import { promisify } from 'node:util'
 
 import { z } from 'zod'
@@ -52,7 +52,17 @@ function resolveResourcePath(workspaceRoot: string, inputPath: string): { absolu
   const resourcesRoot = resolve(workspaceRoot, '.resources')
   const absolutePath = resolve(workspaceRoot, normalized)
 
-  if (!absolutePath.startsWith(resourcesRoot)) {
+  // A bare `startsWith` is a string test, not a containment test: every
+  // sibling whose name merely BEGINS with `.resources` slips through —
+  // `.resources-production-backup`, `.resources-archive`. An adversarial
+  // audit reproduced it end to end, POSTing `.resources-production-backup`
+  // to /api/resources/delete and watching `rm(..., { recursive: true })`
+  // destroy a tree that was never inside the sandbox.
+  //
+  // Containment needs the separator. The equality case keeps the root itself
+  // addressable, which listing depends on.
+  const insideSandbox = absolutePath === resourcesRoot || absolutePath.startsWith(resourcesRoot + sep)
+  if (!insideSandbox) {
     throw new ResourceOperationError('Resource operations must stay inside .resources.', 403)
   }
 

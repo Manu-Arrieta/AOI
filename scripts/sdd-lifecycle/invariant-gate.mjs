@@ -95,14 +95,51 @@ export function extractContractRules(facts = [], bicFilter = '') {
  *   covered: Array<{ tag: string, kind: string, evidence: string }>,
  *   uncovered: Array<{ tag: string, kind: string, statement: string }>, timestamp: string }}
  */
+/**
+ * Markers an agent leaves when it finds the contract itself is inconsistent.
+ *
+ * A live cycle produced exactly this. The Owner wrote a BIC whose oracle
+ * demanded `within` for a value the acceptance criteria placed in the `tight`
+ * band — both could not hold. The delegated agent noticed, implemented the
+ * internally consistent half, pinned the disputed point, and left a
+ * `CONTRADICTION PENDING OWNER RESOLUTION` comment in a test that still cited
+ * the tag verbatim.
+ *
+ * That is honest behaviour and exactly what one wants from the agent. What
+ * one does NOT want is the gate reading that test as coverage: a contract
+ * nobody can satisfy would ship reported as enforced. So a cited tag whose
+ * only evidence carries an unresolved marker counts as UNCOVERED, and says so.
+ */
+const CONTRADICTION_MARKERS = [
+  /CONTRADICTION\s+PENDING/i,
+  /CONTRADICCI[OÓ]N\s+PENDIENTE/i,
+  /CONTRACT\s+CONFLICT/i,
+  /@bic-unresolved/i,
+]
+
+/** True when this source pins a disputed point instead of asserting the rule. */
+function hasUnresolvedContradiction(content) {
+  return CONTRADICTION_MARKERS.some((re) => re.test(content))
+}
+
 export function auditInvariantCoverage(rules = [], testSources = []) {
   const covered = []
   const uncovered = []
 
   for (const rule of rules) {
-    const hit = testSources.find((src) => src.content.includes(rule.tag))
+    const hits = testSources.filter((src) => src.content.includes(rule.tag))
+    // A rule is covered by a test that ASSERTS it. One that only records a
+    // dispute about it is evidence of a broken contract, not of enforcement.
+    const hit = hits.find((src) => !hasUnresolvedContradiction(src.content))
+
     if (hit) {
       covered.push({ tag: rule.tag, kind: rule.kind, evidence: hit.file })
+    } else if (hits.length > 0) {
+      uncovered.push({
+        tag: rule.tag,
+        kind: rule.kind,
+        statement: `${rule.statement} — el único test que lo cita marca una contradicción sin resolver (${hits[0].file})`,
+      })
     } else {
       uncovered.push({ tag: rule.tag, kind: rule.kind, statement: rule.statement })
     }

@@ -136,9 +136,26 @@ export function validateScaffoldContents(repoRoot, forbidden = FORBIDDEN_IN_SCAF
   const scaffoldDir = path.join(repoRoot, 'scaffold')
   if (!fs.existsSync(scaffoldDir)) return []
 
-  return forbidden
+  const errors = forbidden
     .filter((name) => fs.existsSync(path.join(scaffoldDir, name)))
     .map((name) => `[FORBIDDEN_IN_SCAFFOLD] scaffold/${name} must not be shipped into a workspace`)
+
+  // The denylist above names things that DO exist at the repo root and still
+  // must not ship. This catches the general case it cannot: an entry at the
+  // scaffold root with no counterpart at the repo root got there by accident.
+  //
+  // It happened twice in one audit, both times from a careless `cp x
+  // scaffold/` that landed at the top instead of the mirrored subdirectory —
+  // and parity reported OK both times, because it only walks the paths it is
+  // told to walk. A file it was never told about is not a mismatch; it is
+  // invisible.
+  for (const entry of fs.readdirSync(scaffoldDir)) {
+    if (entry === '.DS_Store' || forbidden.includes(entry)) continue
+    if (fs.existsSync(path.join(repoRoot, entry))) continue
+    errors.push(`[STRAY_IN_SCAFFOLD] scaffold/${entry} no tiene contraparte en la raíz — llegó por accidente`)
+  }
+
+  return errors
 }
 
 export function validateScaffoldParity(repoRoot, pathsToCheck = DEFAULT_SYNC_PATHS) {

@@ -97,6 +97,7 @@ node scripts/sdd-lifecycle/invariant-gate.mjs --entity "{WORKSPACE}" --tests-dir
 
 - **Exit 0 → continue.** Status `SKIPPED` means the task never passed through `/sdd-frame` (no BIC facts exist) and is not a failure.
 - **Exit 1 → automatic FAIL gate.** A declared invariant with no test enforcing it is an unguarded contract. Capture the reported `Unenforced Contract Rules` verbatim into the Verify Report. Same severity as the Service Discovery and Resource Workflow Semantics gates.
+- **Si el contrato se contradice a sí mismo, decilo y no lo tapes.** Un ciclo real produjo un BIC cuyo oráculo exigía un estado que sus propios criterios de aceptación asignaban a otro; los dos no podían valer. Marcá el test con `CONTRADICTION PENDING OWNER RESOLUTION` y el gate lo tratará como **no cubierto** en vez de leerlo como enforcement — un contrato que nadie puede satisfacer no debe publicarse reportado como exigido. Se resuelve devolviendo a `/sdd-frame` para recalibrar, no eligiendo una mitad en silencio.
 - **Exit 2 → BLOCKED, also a FAIL.** The contract could not be read (broken ICM toolchain). Absence of evidence is never evidence of compliance: repair the toolchain and re-run. Do NOT interpret an unreadable contract as a clean pass.
 
 Add `--bic {BIC-ID}` to narrow the audit to the contract under verification.

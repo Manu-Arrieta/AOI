@@ -101,15 +101,98 @@ export function collectTestFiles(root, dir = '.') {
   return out.sort()
 }
 
-/** The `include` globs a vitest config declares, if there is one. */
+/**
+ * Blanks out `//` and block comments so a commented-out line cannot be read
+ * as configuration.
+ *
+ * Length is preserved so any offset computed against the result still lines
+ * up with the original text.
+ */
+function stripComments(text) {
+  // A regex pass is not enough, and getting that wrong is instructive: the
+  // first version blanked `/**/` inside the glob `test/**/*.test.ts` itself,
+  // turning the pristine config into `test    *.test.ts` and reporting every
+  // dashboard test as an orphan. Comment syntax and glob syntax overlap, so
+  // the scan has to know when it is inside a string.
+  let out = ''
+  let quote = null
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]
+
+    if (quote) {
+      out += c
+      if (c === '\\') {
+        out += text[++i] ?? ''
+      } else if (c === quote) {
+        quote = null
+      }
+      continue
+    }
+
+    if (c === '"' || c === "'" || c === '`') {
+      quote = c
+      out += c
+      continue
+    }
+
+    if (c === '/' && text[i + 1] === '/') {
+      while (i < text.length && text[i] !== '\n') {
+        out += ' '
+        i++
+      }
+      out += '\n'
+      continue
+    }
+
+    if (c === '/' && text[i + 1] === '*') {
+      const end = text.indexOf('*/', i + 2)
+      const stop = end === -1 ? text.length : end + 2
+      // Newlines are preserved so line numbers still line up.
+      for (; i < stop; i++) out += text[i] === '\n' ? '\n' : ' '
+      i--
+      continue
+    }
+
+    out += c
+  }
+  return out
+}
+
+/**
+ * The `include` globs a vitest config declares, if there is one.
+ *
+ * Comments are stripped first, and more than one surviving `include:` is a
+ * hard error rather than a silent first-match.
+ *
+ * An adversarial audit found why both matter. The old version ran a
+ * first-match regex over raw text, so the ordinary edit of commenting out the
+ * previous value and writing the new one below it made the gate read the
+ * COMMENTED glob. Measured on the real dashboard: narrowing `include` to one
+ * file drops vitest from 19 collected files to 1, the gate correctly failed
+ * with 18 orphans — and adding the commented old line above flipped it back
+ * to a green checkmark with the same 18 tests not running.
+ *
+ * That is verbatim the failure this module exists to prevent, and it also
+ * blinded `dropUnreachableTests`, so the Invariant Gate would have certified
+ * a contract as enforced by tests the runner never executes.
+ */
 export function collectVitestIncludes(root) {
   const out = []
   for (const cfg of collectTestFiles.CONFIGS ?? ['vitest.config.ts', 'vitest.config.mjs', 'vite.config.ts']) {
     const full = path.join(root, cfg)
     if (!fs.existsSync(full)) continue
-    const m = /include\s*:\s*\[([^\]]*)\]/.exec(fs.readFileSync(full, 'utf8'))
-    if (!m) continue
-    for (const raw of m[1].split(',')) {
+
+    const source = stripComments(fs.readFileSync(full, 'utf8'))
+    const matches = [...source.matchAll(/include\s*:\s*\[([^\]]*)\]/g)]
+    if (matches.length === 0) continue
+    if (matches.length > 1) {
+      // Ambiguous: this reader cannot know which one the runner resolves, and
+      // guessing is how the first-match bug happened. Say so instead.
+      out.push({ config: cfg, glob: '__AMBIGUOUS__', ambiguous: true })
+      continue
+    }
+
+    for (const raw of matches[0][1].split(',')) {
       const g = raw.trim().replace(/^['"`]|['"`]$/g, '')
       if (g) out.push({ config: cfg, glob: g })
     }
@@ -160,7 +243,14 @@ export function findOrphanTests(root, searchDirs) {
       const pkgDir = findOwningPackage(root, file)
       const includes = collectVitestIncludes(path.join(root, pkgDir))
       const relToPkg = path.relative(pkgDir === '.' ? '.' : pkgDir, file)
-      if (includes.length === 0) {
+      if (includes.some((i) => i.ambiguous)) {
+        // Unresolvable is reported, never assumed reachable. Assuming was the
+        // whole bug.
+        orphans.push({
+          file,
+          reason: `${pkgDir}/${includes[0].config} declara más de un \`include\` — no se puede saber cuál resuelve el runner`,
+        })
+      } else if (includes.length === 0) {
         orphans.push({ file, reason: 'ningún glob de node --test lo cubre y no hay config de vitest que lo reclame' })
       } else if (!includes.some((i) => globCovers(i.glob, relToPkg))) {
         orphans.push({ file, reason: `fuera del include de ${pkgDir}/${includes[0].config} (${includes.map((i) => i.glob).join(', ')})` })
