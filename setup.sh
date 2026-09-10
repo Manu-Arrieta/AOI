@@ -1048,10 +1048,24 @@ if [ "$IS_REINSTALL" -eq 1 ]; then
   # ── 3b: Smart merge for every governed file, aoi_apps/ included ─────────
   if [ -f "$CONF_SCRIPTS_DIR/compare-install.sh" ]; then
     COMPARE_STDERR="$(mktemp)"
+    # The exit status is captured on its own. `|| echo '{}'` used to swallow it,
+    # and `{}` is perfectly valid JSON: every list parsed empty, no file was
+    # copied, no warning was printed and the run ended with "Reinstall merge
+    # complete". A comparator that could not read checksums.json therefore
+    # reported a successful reinstall that updated nothing.
+    set +e
     COMPARE_OUTPUT="$(bash "$CONF_SCRIPTS_DIR/compare-install.sh" \
       "$SCAFFOLD_DIR" \
       "$PROJECT_PATH/.conf/checksums.json" \
-      "$PROJECT_PATH" 2>"$COMPARE_STDERR" || echo '{}')"
+      "$PROJECT_PATH" 2>"$COMPARE_STDERR")"
+    COMPARE_STATUS=$?
+    set -e
+    if [ "$COMPARE_STATUS" -ne 0 ]; then
+      warn "compare-install.sh falló (exit $COMPARE_STATUS) — SMART MERGE DESHABILITADO."
+      warn "Los archivos ya presentes NO se van a actualizar en este reinstall."
+      [ -s "$COMPARE_STDERR" ] && sed 's/^/    /' "$COMPARE_STDERR" >&2
+      COMPARE_OUTPUT='{}'
+    fi
 
     # Fail LOUDLY: a malformed comparison silently degrades the reinstall to
     # `rsync --ignore-existing`, which never updates an already-present file.
@@ -1723,9 +1737,23 @@ if [ -f "$CONF_SNAPSHOT_SCRIPT" ]; then
     CONF_ACTION="reinstall"
   fi
 
-  bash "$CONF_SNAPSHOT_SCRIPT" "$SCAFFOLD_DIR" "$PROJECT_PATH" "$CONF_ACTION" "0.1.x" && \
-    ok "Configuration snapshot persisted to .conf/" || \
-    warn "Configuration snapshot failed — smart reinstall may not work on next run"
+  # Fatal, not a warning. `.conf/` is the ONLY record of what AOI installed,
+  # and the whole three-way merge is subtraction against it. Without it the
+  # next run reads no manifest, concludes this is a first install, and lets
+  # `specify init --force` flatten .github/ and .specify/ — the exact
+  # destruction the reinstall path exists to prevent. An installation that
+  # cannot write its own baseline is not a finished installation, and saying
+  # so now costs one message instead of someone's work later.
+  if bash "$CONF_SNAPSHOT_SCRIPT" "$SCAFFOLD_DIR" "$PROJECT_PATH" "$CONF_ACTION" "0.1.x"; then
+    ok "Configuration snapshot persisted to .conf/"
+  else
+    err "No se pudo escribir .conf/ — la instalación queda sin línea base."
+    err "El próximo reinstall no podría distinguir una actualización de AOI de una edición tuya,"
+    err "y correría 'specify init --force' sobre .github/ y .specify/. Arreglá el acceso a"
+    err "  $PROJECT_PATH/.conf"
+    err "y volvé a correr el instalador."
+    exit 1
+  fi
 
   # On reinstall, update manifest.updated_at and append detailed stats to history
   if [ "$IS_REINSTALL" -eq 1 ] && [ -f "$PROJECT_PATH/.conf/manifest.json" ]; then
@@ -1747,7 +1775,9 @@ with open('$PROJECT_PATH/.conf/manifest.json', 'w') as f:
     ok "Reinstall stats recorded in .conf/history.jsonl"
   fi
 else
-  warn "snapshot-conf.sh not found — .conf/ will not be generated"
+  err "snapshot-conf.sh no está junto a setup.sh — .conf/ no se puede generar."
+  err "Sin esa línea base el próximo reinstall es destructivo. Instalación abortada."
+  exit 1
 fi
 
 # ── Done ─────────────────────────────────────────────────────────────────

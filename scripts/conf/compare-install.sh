@@ -41,6 +41,27 @@ if [ ! -f "$CHECKSUMS_JSON" ]; then
   exit 1
 fi
 
+# A checksums file that exists but does not parse is more dangerous than one
+# that is missing. `get_stored_checksum` would answer the empty string for
+# every path, every scaffold file would be classified NEW, and setup.sh copies
+# every NEW file unconditionally — so a corrupted baseline turns the reinstall
+# into a wholesale overwrite of every governed file the owner ever edited.
+# Refusing here is the difference between a failed run and lost work.
+if command -v python3 &>/dev/null; then
+  if ! python3 -c "
+import json, sys
+with open('$CHECKSUMS_JSON') as f:
+    data = json.load(f)
+if not isinstance(data.get('files'), dict) or not data['files']:
+    raise SystemExit('sin mapa de archivos')
+" 2>/dev/null; then
+    echo "Error: checksums file is unreadable or empty: $CHECKSUMS_JSON" >&2
+    echo "Sin línea base válida, cada archivo se clasificaría como NUEVO y el reinstall" >&2
+    echo "pisaría todo lo que hayas editado. Regenerála o restaurá .conf/ desde tu VCS." >&2
+    exit 1
+  fi
+fi
+
 if [ ! -d "$PROJECT_DIR" ]; then
   echo "Error: project directory not found: $PROJECT_DIR" >&2
   exit 1
