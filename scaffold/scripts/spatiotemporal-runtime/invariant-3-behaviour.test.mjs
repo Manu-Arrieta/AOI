@@ -33,12 +33,12 @@ describe('the runtime knows when a provider is still relied upon', () => {
   // Every predicate below had a surviving mutant, and all of them for the same
   // reason: the answer was computed into an empty branch.
 
-  it('records the unload of a provider a live consumer depends on', () => {
+  it('records the unload of a provider a live consumer depends on', async () => {
     const { rt } = runtime(['db'])
     const provider = rt.instantiate({ name: 'provider', inject: [], provide: ['db'], apply: () => () => {} })
     rt.instantiate({ name: 'consumer', inject: ['db'], provide: [], apply: () => () => {} })
 
-    provider.deactivate()
+    await provider.deactivate()
 
     assert.equal(
       provider.fiber.metadata.unloadedWhileRelied,
@@ -47,33 +47,33 @@ describe('the runtime knows when a provider is still relied upon', () => {
     )
   })
 
-  it('does not record anything when nobody depends on the provider', () => {
+  it('does not record anything when nobody depends on the provider', async () => {
     const { rt } = runtime(['db'])
     const provider = rt.instantiate({ name: 'provider', inject: [], provide: ['db'], apply: () => () => {} })
 
-    provider.deactivate()
+    await provider.deactivate()
 
     assert.equal(provider.fiber.metadata.unloadedWhileRelied, undefined)
   })
 
-  it('does not count a fiber as relying on itself', () => {
+  it('does not count a fiber as relying on itself', async () => {
     // `if (uid === providerUid) continue` — inverted, a fiber that both
     // provides and injects the same key would look relied upon by itself.
     const { rt } = runtime(['db'])
     const solo = rt.instantiate({ name: 'solo', inject: ['db'], provide: ['db'], apply: () => () => {} })
 
-    solo.deactivate()
+    await solo.deactivate()
 
     assert.equal(solo.fiber.metadata.unloadedWhileRelied, undefined, 'una fiber se contó a sí misma')
   })
 
-  it('stops counting a consumer once it is inactive', () => {
+  it('stops counting a consumer once it is inactive', async () => {
     const { rt } = runtime(['db'])
     const provider = rt.instantiate({ name: 'provider', inject: [], provide: ['db'], apply: () => () => {} })
     const consumer = rt.instantiate({ name: 'consumer', inject: ['db'], provide: [], apply: () => () => {} })
 
-    consumer.deactivate()
-    provider.deactivate()
+    await consumer.deactivate()
+    await provider.deactivate()
 
     assert.equal(
       provider.fiber.metadata.unloadedWhileRelied,
@@ -82,16 +82,32 @@ describe('the runtime knows when a provider is still relied upon', () => {
     )
   })
 
-  it('a provider that provides nothing is never relied upon', () => {
+  it('runs the inverse even when teardown arrives before activation finishes', async () => {
+    // The race this closes. A zero-dependency fiber is activated
+    // fire-and-forget, so a teardown in the same tick used to call `recover()`
+    // before `apply()` had registered its inverse: the effect then survived
+    // the rollback with nothing reporting a problem. You cannot undo what has
+    // not finished being done, so teardown waits for the activation it means
+    // to reverse.
+    const { rt } = runtime()
+    const order = []
+    const fiber = rt.instantiate({ name: 'carrera', inject: [], provide: [], apply: () => () => order.push('inverso') })
+
+    await fiber.deactivate() // sin dejar pasar un tick a propósito
+
+    assert.deepEqual(order, ['inverso'], 'el inverso se perdió porque el teardown ganó la carrera')
+  })
+
+  it('a provider that provides nothing is never relied upon', async () => {
     const { rt } = runtime()
     const plain = rt.instantiate({ name: 'plain', inject: [], provide: [], apply: () => () => {} })
 
-    plain.deactivate()
+    await plain.deactivate()
 
     assert.equal(plain.fiber.metadata.unloadedWhileRelied, undefined)
   })
 
-  it('a fiber that declares no provide list at all is never relied upon', () => {
+  it('a fiber that declares no provide list at all is never relied upon', async () => {
     // Distinct from the empty-array case above, and the distinction is the
     // point: `provide: []` is truthy, so it walks the whole map and finds
     // nothing, while a missing `provide` takes the early return. Only this
@@ -100,7 +116,7 @@ describe('the runtime knows when a provider is still relied upon', () => {
     const noDecl = rt.instantiate({ name: 'sin-provide', inject: [], apply: () => () => {} })
     rt.instantiate({ name: 'consumer', inject: ['db'], provide: [], apply: () => () => {} })
 
-    noDecl.deactivate()
+    await noDecl.deactivate()
 
     assert.equal(
       noDecl.fiber.metadata.unloadedWhileRelied,
@@ -109,7 +125,7 @@ describe('the runtime knows when a provider is still relied upon', () => {
     )
   })
 
-  it('only a fiber with dependencies subscribes to context changes', () => {
+  it('only a fiber with dependencies subscribes to context changes', async () => {
     // The subscribe guard is `inject && inject.length > 0`. Relaxing it to
     // `>= 0` makes every fiber subscribe to an empty spec — a listener that
     // can never fire, held for the life of the fiber, on every fiber in the
@@ -120,6 +136,67 @@ describe('the runtime knows when a provider is still relied upon', () => {
 
     assert.ok(withDeps.fiber.unsubs.length > 0, 'una fiber con dependencias no se suscribió')
     assert.equal(withNone.fiber.unsubs.length, 0, 'una fiber sin dependencias se suscribió igual')
+  })
+})
+
+describe('teardown happens in dependency order, which is what Guarded Unload promised', () => {
+  // For years this was a comment inside an empty `if`. A provider tore down
+  // while a consumer still relied on the keys it supplies, and the consumer's
+  // own inverses then ran against a context whose dependency had already
+  // vanished — the exact state reversibility exists to make impossible.
+
+  it('tears the dependent down before the provider it relies on', async () => {
+    const { rt } = runtime(['db'])
+    const order = []
+    const provider = rt.instantiate({
+      name: 'provider',
+      inject: [],
+      provide: ['db'],
+      apply: () => () => order.push('provider'),
+    })
+    rt.instantiate({ name: 'consumer', inject: ['db'], provide: [], apply: () => () => order.push('consumer') })
+
+    await provider.deactivate()
+
+    assert.deepEqual(order, ['consumer', 'provider'], 'el proveedor se desmontó antes que su consumidor')
+  })
+
+  it('unwinds a three-level chain from the leaf inwards', async () => {
+    const { rt } = runtime(['db', 'repo'])
+    const order = []
+    const base = rt.instantiate({ name: 'base', inject: [], provide: ['db'], apply: () => () => order.push('base') })
+    rt.instantiate({ name: 'repo', inject: ['db'], provide: ['repo'], apply: () => () => order.push('repo') })
+    rt.instantiate({ name: 'ui', inject: ['repo'], provide: [], apply: () => () => order.push('ui') })
+
+    await base.deactivate()
+
+    assert.deepEqual(order, ['ui', 'repo', 'base'], 'la cadena no se desarmó desde la hoja')
+  })
+
+  it('terminates on a dependency cycle instead of recursing forever', async () => {
+    // Two fibers providing keys to each other is a real possibility, and
+    // without the visited guard the first teardown blows the stack.
+    const { rt } = runtime(['a', 'b'])
+    const order = []
+    const first = rt.instantiate({ name: 'first', inject: ['b'], provide: ['a'], apply: () => () => order.push('first') })
+    rt.instantiate({ name: 'second', inject: ['a'], provide: ['b'], apply: () => () => order.push('second') })
+
+    await first.deactivate()
+
+    assert.ok(order.includes('first'), 'el ciclo impidió desmontar el que se pidió')
+    assert.ok(order.length <= 2, 'una fiber se desmontó más de una vez')
+  })
+
+  it('leaves an unrelated fiber alone', async () => {
+    // Ordered teardown must not become a cascade that takes the system down.
+    const { rt } = runtime(['db', 'otra'])
+    const order = []
+    const provider = rt.instantiate({ name: 'provider', inject: [], provide: ['db'], apply: () => () => order.push('provider') })
+    rt.instantiate({ name: 'ajena', inject: ['otra'], provide: [], apply: () => () => order.push('ajena') })
+
+    return provider.deactivate().then(() => {
+      assert.deepEqual(order, ['provider'], 'se desmontó una fiber que no dependía del proveedor')
+    })
   })
 })
 
