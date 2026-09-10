@@ -454,7 +454,17 @@ if [ -t 0 ] && [ "$AUTO_YES" -eq 0 ] && [ "$SELECTED_HARNESS" = "all" ] && [ -z 
   esac
 fi
 
-PROJECT_PATH="$(eval echo "$PROJECT_PATH")"
+# Tilde expansion without `eval`.
+#
+# `eval echo "$PROJECT_PATH"` expanded `~`, and also every other shell
+# construct in the string: a path typed or pasted as
+# `/tmp/$(rm -rf ~/algo)x` ran the command before the installer had even
+# checked the directory exists. Verified. Nothing here needs a shell; the
+# only expansion the operator expects is the leading tilde.
+case "$PROJECT_PATH" in
+  "~") PROJECT_PATH="$HOME" ;;
+  "~/"*) PROJECT_PATH="$HOME/${PROJECT_PATH#\~/}" ;;
+esac
 
 if [ ! -d "$PROJECT_PATH" ]; then
   err "Directory not found: $PROJECT_PATH"
@@ -889,6 +899,13 @@ if [[ -d "$PROJECT_PATH/.git" ]]; then
 
   if [[ -f "$PROJECT_GITHOOK" ]]; then
     if ! grep -q "pre-commit-aoi-guard.sh" "$PROJECT_GITHOOK"; then
+      # A previous chain may already have left a .aoi-bak. Overwriting it
+      # discards the ORIGINAL hook — the one AOI first displaced — in favour
+      # of whatever replaced it since. Nothing is thrown away here.
+      if [ -f "$PROJECT_GITHOOK.aoi-bak" ]; then
+        mv "$PROJECT_GITHOOK.aoi-bak" "$PROJECT_GITHOOK.aoi-bak.$(date -u +%Y%m%dT%H%M%SZ)"
+        warn "Ya había un $(basename "$PROJECT_GITHOOK").aoi-bak — se conservó con marca de tiempo"
+      fi
       cp "$PROJECT_GITHOOK" "$PROJECT_GITHOOK.aoi-bak"
       cat > "$PROJECT_GITHOOK" <<'EOF_COMMITMSG'
 #!/usr/bin/env bash
@@ -1637,9 +1654,22 @@ if [[ -n "$(get_codebase_memory_path || true)" ]]; then
 fi
 icm init --mode hook 2>/dev/null && ok "ICM → Hooks installed (auto-extraction)" || warn "ICM hooks skipped"
 icm init --mode skill 2>/dev/null && ok "ICM → Skills installed" || warn "ICM skills skipped"
+# `icm init --mode cli` writes rule files for every tool it knows, so it can
+# leave a .windsurfrules behind in a workspace that does not use Windsurf.
+# Cleaning that up is right; deleting one the OWNER wrote is not, and a bare
+# `rm -f` after the fact cannot tell them apart. So the answer is decided
+# before ICM runs: only a file that was not there a moment ago is ours to
+# remove.
+WINDSURFRULES_PREEXISTING=0
+[ -e "$PROJECT_PATH/.windsurfrules" ] && WINDSURFRULES_PREEXISTING=1
+
 icm init --mode cli 2>/dev/null && ok "ICM → CLI instructions" || warn "ICM CLI instructions skipped"
-# Remove tools we don't use (icm init --mode cli installs for all tools indiscriminately)
-rm -f "$PROJECT_PATH/.windsurfrules" 2>/dev/null && warn "Removed .windsurfrules (Windsurf not in use)" || true
+
+if [ "$WINDSURFRULES_PREEXISTING" -eq 0 ] && [ -e "$PROJECT_PATH/.windsurfrules" ]; then
+  rm -f "$PROJECT_PATH/.windsurfrules" && warn "Removed .windsurfrules (lo creó icm init; Windsurf no está en uso)"
+elif [ "$WINDSURFRULES_PREEXISTING" -eq 1 ]; then
+  info ".windsurfrules ya existía — es tuyo, no se toca"
+fi
 # Ensure icm-serve.sh is executable (needed for VS Code that inherits limited PATH)
 chmod +x "$PROJECT_PATH/.github/scripts/icm-serve.sh" 2>/dev/null || true
 chmod +x "$PROJECT_PATH/.github/scripts/icm-hook.sh" 2>/dev/null || true
