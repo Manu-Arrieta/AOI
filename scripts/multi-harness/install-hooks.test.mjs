@@ -30,6 +30,46 @@ describe('the shipped hooks reach a harness', () => {
     // An empty hooks directory would make the audit vacuously green.
     assert.ok(readDeclarations(REPO).length > 0, 'no hay declaraciones en .github/hooks/')
   })
+
+  it('every script a shipped hook invokes exists and is executable', () => {
+    assert.deepEqual(auditHookWiring(REPO).broken, [])
+  })
+})
+
+describe('a hook whose script cannot run is as bad as one nobody loads', () => {
+  // Different failure, same outcome: the rule looks enforced. A registered
+  // hook pointing at a missing or non-executable script fires on every single
+  // tool call and fails there, and nothing in the wiring audit saw it.
+
+  it('flags a hook pointing at a script that does not exist', () => {
+    const root = workspace({
+      '.github/hooks/h.json': decl('PreToolUse', 'bash .github/scripts/fantasma.sh'),
+      '.claude/settings.json': JSON.stringify({
+        hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [{ command: 'bash .github/scripts/fantasma.sh' }] }] },
+      }),
+    })
+
+    const r = auditHookWiring(root)
+
+    assert.deepEqual(r.orphaned, [], 'está cableado; el problema es otro')
+    assert.equal(r.broken.length, 1)
+    assert.match(r.broken[0], /no existe/)
+    clean(root)
+  })
+
+  it('flags a script that exists but is not executable', () => {
+    const root = workspace({
+      '.github/hooks/h.json': decl('PreToolUse', 'bash .github/scripts/inerte.sh'),
+      '.github/scripts/inerte.sh': '#!/usr/bin/env bash\nexit 0\n',
+      '.claude/settings.json': JSON.stringify({
+        hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [{ command: 'bash .github/scripts/inerte.sh' }] }] },
+      }),
+    })
+    fs.chmodSync(path.join(root, '.github/scripts/inerte.sh'), 0o644)
+
+    assert.match(auditHookWiring(root).broken[0], /no es ejecutable/)
+    clean(root)
+  })
 })
 
 describe('translation into the harness shape', () => {

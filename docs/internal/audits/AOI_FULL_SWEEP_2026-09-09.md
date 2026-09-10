@@ -4,6 +4,17 @@ Rama `audit/aoi-full-sweep`. Superficie auditada: **177 artefactos gobernados** 
 49 scripts, 46 suites de test, 30 prompts, 27 agentes, 6 skills, 6 instructions,
 5 hooks, 8 scripts de shell.
 
+
+> [!IMPORTANT]
+> **ESTADO AL 2026-09-10: los ocho GAPs de este informe están CERRADOS, y las
+> cinco oportunidades de ahorro implementadas o cuantificadas.** El documento se
+> conserva como está — describiendo cada hallazgo tal como se encontró — porque
+> el valor de una auditoría no es la lista de arreglos sino el registro de qué
+> pudo vivir meses sin que nada fallara, y por qué.
+>
+> El cierre, con lo que se midió y lo que se decidió, está en
+> [`AOI_FULL_SWEEP_CLOSEOUT.md`](AOI_FULL_SWEEP_CLOSEOUT.md).
+
 ## Método
 
 La auditoría **no parte del diff**. Auditar un diff solo encuentra lo que alguien ya

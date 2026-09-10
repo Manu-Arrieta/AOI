@@ -61,9 +61,12 @@ porque las dos protegen contra la misma patología: una suite que reporta verde 
 comprobado nada.
 
 ```bash
-pnpm aoi:test-globs    # todo glob declarado debe resolver a >= 1 archivo
+pnpm aoi:test-globs    # todo glob declarado resuelve, y ningún test queda fuera de todos los runners
 pnpm aoi:srp           # Invariante 5, en modo trinquete
 pnpm aoi:cache-prefix  # la masa que se recarga en las 6 fases no muta ni es volátil
+pnpm aoi:tools         # cada herramienta de ahorro obligatoria está exigida Y se invoca en el ciclo
+pnpm aoi:hooks         # cada hook declarado llega a un harness y su script existe y es ejecutable
+pnpm aoi:registry      # el registry y el disco declaran las mismas tareas
 pnpm aoi:invariant-gate -- --entity "AOI TESTS" --tests-dir . --exit-code
 ```
 
@@ -72,7 +75,10 @@ pnpm aoi:invariant-gate -- --entity "AOI TESTS" --tests-dir . --exit-code
 | `aoi:test-globs` | `node --test` sale 0 cuando el glob no matchea nada. Un directorio de tests vaciado, o nunca instalado, dejaba la cadena en verde sobre cero aserciones. En el repo exige que **todo** glob resuelva; en un workspace instalado tolera lo que legítimamente no se instala, pero sigue fallando si un directorio existe y quedó sin tests. |
 | `aoi:srp` | El límite de 300 LOC solo se miraba por tarea y como WARNING, así que tres archivos se pasaron sin que nadie lo notara. El trinquete falla ante un archivo nuevo por encima del límite, ante deuda vieja que **crece**, y ante una entrada del presupuesto que ya no viola — la lista no puede pudrirse. Solo se mueve hacia abajo. |
 | `aoi:cache-prefix` | Ocho archivos se recargan en las seis fases. Si uno adquiere contenido volátil, o si una fase reescribe una superficie que otra vuelve a leer, no hay cache de prefijo que sobreviva y el costo se paga seis veces sin que nada falle. `aoi:cache-guard` no lo veía: lee los primeros 1.500 caracteres de cada prompt, y por eso el `$(date +%Y)` del offset 7.223 de `sdd-frame.prompt.md` le pasa limpio. |
-| `aoi:invariant-gate` | Ya existía, pero solo se invocaba desde prosa. Ahora es un comando determinista, ejecutable sin LLM de por medio. |
+| `aoi:tools` | Una herramienta de ahorro puede estar instalada, tener tests verdes y no participar del flujo real. Pasó dos veces: `context-tombstone` funcionaba y solo el benchmark lo invocaba, y el proxy `mcp-compressor` que el Invariante 1 declara como SU mecanismo no era ni dependencia. Verifica las dos mitades — que el instalador la exija y que alguien la invoque en el ciclo real, nunca en el benchmark — y distingue lo que comprime la comunicación entre componentes de lo que optimiza una fase. Todas obligatorias salvo Headroom. |
+| `aoi:hooks` | Cinco declaraciones en `.github/hooks/` que ningún harness cargaba, mientras una skill de la banda ×6 le decía al agente que la regla se aplicaba sola. Una declaración cableada a medias se reporta huérfana: media cadena de hooks es una regla que dispara a veces, peor que una que no dispara nunca. También falla si el `.sh` que invoca no existe o no es ejecutable. |
+| `aoi:registry` | `/sdd-new` lee el registry para asignar el próximo TASK-ID. Un ciclo real lo encontró declarando **cero** tareas con dos en disco, así que habría entregado un id ya tomado y la colisión habría sido silenciosa. Compara ambos lados y calcula el próximo id sobre el máximo de los dos. |
+| `aoi:invariant-gate` | Ya existía, pero solo se invocaba desde prosa. Ahora es un comando determinista, ejecutable sin LLM de por medio — y descarta los tests que ningún runner colecta, porque un tag dentro de un archivo inalcanzable no enforcea nada. |
 
 ### Paso 0.3: Verificación del Reinstall Inteligente
 
@@ -506,6 +512,46 @@ de la fase anterior. **25 de 25.**
 en los traspasos entre ellas. No cubre entradas adversarias ni un ciclo real de punta a
 punta con agentes produciendo artefactos de verdad. Sigue siendo una condición necesaria
 verificada sobre todo el ciclo, no una garantía total, y conviene decirlo así.
+
+### Ciclo real punta a punta con delegación — ejecutado 2026-09-09
+
+El eval conductual cubre decisiones DENTRO de una fase y el contrato de traspaso cubre
+lo que cruza entre ellas, los dos sin gastar inferencia. Ninguno responde la pregunta
+que solo un ciclo real responde: **¿el sistema completo, con agentes produciendo
+artefactos de verdad, hace lo que dice?**
+
+Se corrió entero en `AOI TESTS` sobre una feature real del dashboard, con delegación a
+un subagente real, y **terminó en FAIL** — que es el resultado correcto: el ciclo
+detectó problemas reales en vez de aprobar trabajo roto.
+
+| Fase | Cargado | Producido | Ahorrado |
+| :--- | ---: | ---: | ---: |
+| 0 `/sdd-frame` | 12.484 | 60 | **4.077** |
+| 1 `/sdd-new` | 12.390 | 591 | **49.562** |
+| 2 `/sdd-ff` | 23.743 | 0 | 74 |
+| 3 `/sdd-apply` | 0 | 490 | 0 |
+| 4 `/sdd-verify` | 13.958 | 379 | 20 |
+| 5 `/sdd-archive` | 12.188 | 0 | 0 |
+| **TOTAL** | **74.763** | **1.520** | **53.733** |
+
+Los dos ahorros grandes, medidos en vivo: grounding O(1) contra recall semántico
+(195 vs 4.272 tokens) y contraste de relevancia sobre 48 archivos reales del dashboard
+(56.421 → 6.859).
+
+**Lo que encontró el subagente delegado.** Recibió únicamente el payload TOON, sin
+historial. Volvió con cuatro hallazgos, tres de ellos errores del operador que el
+operador no había visto — entre otros, un BIC cuyo oráculo contradecía su propio
+criterio de aceptación.
+
+> El Invariante 2 no es solo ahorro de tokens. **El aislamiento produce un revisor
+> independiente**, y ese es el antídoto contra la patología que este repositorio repite:
+> quien escribe el cambio escribe su guardián con el mismo punto ciego.
+
+**Cómo se corre sin dejar rastro.** El ciclo escribe artefactos reales, así que se toma
+un `tar` del workspace antes y se restaura al final. El primer intento de reverso falló
+en silencio —el borrado no ocurrió y `tar` solo superpuso— y se detectó **verificando en
+vez de asumir**: comprobar que la tarea, la implementación y los facts volvieron a su
+estado previo, uno por uno.
 
 ### Economía del prefijo de cache — `pnpm aoi:cache-prefix`
 

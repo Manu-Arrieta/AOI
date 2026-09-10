@@ -109,9 +109,22 @@ export function installClaudeHooks(root, declarations) {
 }
 
 /**
- * Reports declarations that reach no harness config.
+ * Reports declarations that reach no harness config, and scripts that cannot run.
  *
- * @returns {{ declared: string[], wired: string[], orphaned: string[] }}
+ * `.github/hooks/` is not AOI's invention: it is GitHub Copilot's own
+ * convention, verified by running `rtk init --copilot` in a clean directory —
+ * RTK writes its hook to exactly this path, with exactly this JSON shape. So
+ * a declaration sitting here is ALREADY loaded by Copilot, and the audit's job
+ * is the other harnesses plus the scripts themselves.
+ *
+ * Claude Code nests one level deeper and reads `.claude/settings.json`, which
+ * is why the translation above exists.
+ *
+ * The third failure mode has nothing to do with wiring: a hook whose script is
+ * missing or not executable is registered, fires, and fails on every single
+ * tool call.
+ *
+ * @returns {{ declared: string[], wired: string[], orphaned: string[], broken: string[] }}
  */
 export function auditHookWiring(root) {
   const declarations = readDeclarations(root)
@@ -122,18 +135,35 @@ export function auditHookWiring(root) {
 
   const wired = []
   const orphaned = []
+  const broken = []
   for (const d of declarations) {
     const commands = Object.values(d.hooks ?? {})
       .flat()
       .map((e) => e?.command)
       .filter(Boolean)
+
+    // Every `bash <path>` a declaration invokes must exist and be executable.
+    for (const cmd of commands) {
+      const m = /^bash\s+(\S+)/.exec(cmd)
+      if (!m) continue
+      const script = path.join(root, m[1])
+      if (!fs.existsSync(script)) broken.push(`${d.source} → ${m[1]} no existe`)
+      else {
+        try {
+          fs.accessSync(script, fs.constants.X_OK)
+        } catch {
+          broken.push(`${d.source} → ${m[1]} no es ejecutable`)
+        }
+      }
+    }
+
     // A declaration counts as wired when every command it declares appears in
     // a harness config. Partial wiring is orphaned: half a hook chain is a
     // rule that fires sometimes, which is worse than one that never fires.
     if (commands.length > 0 && commands.every((c) => settings.includes(c))) wired.push(d.source)
     else orphaned.push(d.source)
   }
-  return { declared, wired, orphaned }
+  return { declared, wired, orphaned, broken }
 }
 
 function main() {
@@ -147,9 +177,12 @@ function main() {
   if (process.argv.includes('--audit')) {
     const r = auditHookWiring(root)
     console.log('=== AOI Hook Wiring ===\n')
+    console.log('  .github/hooks/ es la convención de Copilot: una declaración acá ya la carga.')
+    console.log('  Lo que se audita es Claude Code y que los scripts existan y sean ejecutables.\n')
     for (const s of r.wired) console.log(`  ✅ ${s}`)
-    for (const s of r.orphaned) console.error(`  ❌ ${s} — declarado y no cargado por ningún harness`)
-    if (r.orphaned.length > 0) {
+    for (const s of r.orphaned) console.error(`  ❌ ${s} — no llega a Claude Code`)
+    for (const s of r.broken) console.error(`  ❌ ${s}`)
+    if (r.orphaned.length > 0 || r.broken.length > 0) {
       console.error('\nUn hook que nadie carga es una regla que el agente cree activa y no lo está.')
       process.exit(1)
     }
