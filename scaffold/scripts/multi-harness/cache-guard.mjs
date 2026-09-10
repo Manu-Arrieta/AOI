@@ -55,14 +55,37 @@ export function auditPromptsDirectory(promptsDir) {
     return { scanned: 0, passed: 0, failed: 0, details: {} }
   }
 
-  const files = fs.readdirSync(promptsDir).filter(f => f.endsWith('.prompt.md'))
+  // `withFileTypes` and an explicit `isFile()`, matching what every sibling
+  // walker in this repository already does. Without it, a DIRECTORY whose
+  // name ends in `.prompt.md` — a botched `mv`, an unzip, an editor
+  // scaffolding a folder — reaches `readFileSync` and throws EISDIR with a
+  // node:fs stack trace that names no path.
+  //
+  // It fails closed, so nothing ships. The cost is elsewhere: this same
+  // function is imported by `sdd-stress-suite.mjs`, which calls it AFTER all
+  // six SDD phases have run. The crash then discards the accumulated
+  // per-phase token report — the very number that becomes the next cycle's
+  // baseline. A whole benchmark thrown away by a missing type check.
+  const files = fs
+    .readdirSync(promptsDir, { withFileTypes: true })
+    .filter((e) => e.isFile() && e.name.endsWith('.prompt.md'))
+    .map((e) => e.name)
   let passed = 0
   let failed = 0
   const details = {}
 
   for (const file of files) {
     const fullPath = path.join(promptsDir, file)
-    const content = fs.readFileSync(fullPath, 'utf8')
+    let content
+    try {
+      content = fs.readFileSync(fullPath, 'utf8')
+    } catch (err) {
+      // An unreadable prompt is reported through the gate's own channel
+      // rather than as a stack trace, so the operator sees which file.
+      failed++
+      details[file] = [`No se pudo leer: ${err.code || err.message}`]
+      continue
+    }
     const result = validatePromptCacheAlignment(content)
 
     if (result.valid) {

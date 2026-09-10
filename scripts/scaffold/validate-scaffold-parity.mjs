@@ -56,6 +56,9 @@ export const DEFAULT_SYNC_PATHS = [
  * @param {string} [relDir='']
  * @returns {string[]}
  */
+/** Suffix that marks a collected entry as a symlink rather than a regular file. */
+export const SYMLINK_MARKER = ' [symlink]'
+
 export function collectFilePaths(baseDir, relDir = '') {
   const currentDir = path.join(baseDir, relDir)
   if (!fs.existsSync(currentDir)) return []
@@ -84,6 +87,17 @@ export function collectFilePaths(baseDir, relDir = '') {
       files = files.concat(collectFilePaths(baseDir, relativePath))
     } else if (entry.isFile()) {
       files.push(relativePath)
+    } else if (entry.isSymbolicLink()) {
+      // Neither a file nor a directory to `readdirSync`, so it used to be
+      // dropped in silence. On one side only that surfaces as an
+      // EXTRA_IN_SCAFFOLD, which is noisy but honest; on BOTH sides the two
+      // trees look identical because neither contains the path at all, and a
+      // governed file pointing anywhere on the filesystem ships to every
+      // workspace unremarked.
+      //
+      // A governed file is a regular file. Collecting the link under a
+      // reserved marker makes the comparison see it and report it.
+      files.push(`${relativePath}${SYMLINK_MARKER}`)
     }
   }
 
@@ -147,8 +161,22 @@ export function validateScaffoldParity(repoRoot, pathsToCheck = DEFAULT_SYNC_PAT
       continue
     }
 
-    const rootFiles = new Set(collectFilePaths(rootPath))
-    const scaffoldFiles = new Set(collectFilePaths(scaffoldPath))
+    // Symlinks are reported and then removed from the comparison. Leaving the
+    // marked entry in would send `<path> [symlink]` to readFileSync and crash
+    // the gate with an ENOENT trace instead of printing the violation — the
+    // exact failure shape this gate exists to catch elsewhere.
+    const collected = { root: collectFilePaths(rootPath), scaffold: collectFilePaths(scaffoldPath) }
+    for (const [side, list] of Object.entries(collected)) {
+      for (const link of list.filter((f) => f.endsWith(SYMLINK_MARKER))) {
+        const clean = link.slice(0, -SYMLINK_MARKER.length)
+        const where = side === 'root' ? subpath : path.join('scaffold', subpath)
+        errors.push(`[SYMLINK_IN_GOVERNED_PATH] ${path.join(where, clean)} — un archivo gobernado debe ser un archivo regular`)
+      }
+    }
+
+    const noLinks = (list) => list.filter((f) => !f.endsWith(SYMLINK_MARKER))
+    const rootFiles = new Set(noLinks(collected.root))
+    const scaffoldFiles = new Set(noLinks(collected.scaffold))
 
     // Check for files in root missing from scaffold
     for (const relFile of rootFiles) {
