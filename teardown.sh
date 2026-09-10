@@ -108,14 +108,22 @@ done
 # .githooks — AOI pre-commit guard
 remove_dir ".githooks"
 
-# Restore original pre-commit if AOI chained itself into it
-if [ -f "$PROJECT_PATH/.git/hooks/pre-commit.aoi-bak" ]; then
-  mv "$PROJECT_PATH/.git/hooks/pre-commit.aoi-bak" "$PROJECT_PATH/.git/hooks/pre-commit"
-  ok "Restored .git/hooks/pre-commit from backup"
-elif [ -f "$PROJECT_PATH/.git/hooks/pre-commit" ] && grep -q "pre-commit-aoi-guard.sh" "$PROJECT_PATH/.git/hooks/pre-commit"; then
-  rm -f "$PROJECT_PATH/.git/hooks/pre-commit"
-  ok "Removed AOI pre-commit hook"
-fi
+# Restore whatever hook AOI chained itself into.
+#
+# Both names are swept: the guard lives in `commit-msg` now, but an install
+# from before that move left it in `pre-commit`, and a teardown that only knows
+# the current name leaves the old hook pointing at a .githooks directory this
+# script just deleted — every commit in that repository then fails.
+for hook in commit-msg pre-commit; do
+  hook_path="$PROJECT_PATH/.git/hooks/$hook"
+  if [ -f "$hook_path.aoi-bak" ]; then
+    mv "$hook_path.aoi-bak" "$hook_path"
+    ok "Restored .git/hooks/$hook from backup"
+  elif [ -f "$hook_path" ] && grep -q "pre-commit-aoi-guard.sh" "$hook_path"; then
+    rm -f "$hook_path"
+    ok "Removed AOI $hook hook"
+  fi
+done
 
 # Phase 1.7 artifacts — aoi-headroom-wrap and aoi-copilot shim
 if [ -f "$PROJECT_PATH/scripts/aoi-headroom-wrap.sh" ]; then

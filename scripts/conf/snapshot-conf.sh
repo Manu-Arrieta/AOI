@@ -93,7 +93,59 @@ ok "Snapshots created in .conf/snapshots/"
 # ── Generate checksums ──────────────────────────────────────────────────────
 info "Generating checksums..."
 bash "$SCRIPT_DIR/generate-checksums.sh" "$SCAFFOLD_DIR" "$SCAFFOLD_DIR" > "$CONF_DIR/checksums.json"
-ok "Checksums written to .conf/checksums.json"
+
+# ── Re-baseline the files the installer materialises ────────────────────────
+#
+# checksums.json answers one question for the next reinstall: "what did AOI put
+# here?" The comparator subtracts that from what is on disk and calls the
+# remainder the owner's edit.
+#
+# A handful of files never arrive as a copy. `.vscode/settings.json` ships a
+# `__LOCAL_BIN__` placeholder that only $HOME can resolve; `.vscode/mcp.json`
+# is generated around the absolute path of the codebase-memory binary. Hashing
+# the scaffold for those recorded a version that was never installed, so the
+# very first reinstall read the installer's own substitution as a user edit and
+# classified the file a CONFLICT — permanently, since the mismatch is
+# reproduced on every run. AOI's updates to those two files could therefore
+# never be applied, and the operator was asked to resolve a conflict nobody
+# had caused.
+#
+# The list is deliberately short and explicit. Re-baselining anything else from
+# disk would be dangerous in the exact opposite direction: on a fresh install
+# `--ignore-existing` PRESERVES a file the owner already had, and recording
+# that file as AOI's baseline would make the next reinstall see no user edit
+# and quietly overwrite it.
+TEMPLATED_PATHS=".vscode/settings.json
+.vscode/mcp.json"
+
+if command -v python3 &>/dev/null; then
+  python3 - "$CONF_DIR/checksums.json" "$PROJECT_DIR" "$TEMPLATED_PATHS" <<'PYEOF' && ok "Checksums written to .conf/checksums.json" \
+    || warn "No se pudo re-basear los checksums de los archivos materializados"
+import hashlib, json, os, sys
+
+checksums_path, project_dir, templated = sys.argv[1:4]
+
+with open(checksums_path) as f:
+    data = json.load(f)
+
+files = data.setdefault("files", {})
+for rel in (p.strip() for p in templated.split("\n")):
+    if not rel or rel not in files:
+        continue
+    full = os.path.join(project_dir, rel)
+    if not os.path.isfile(full):
+        continue
+    with open(full, "rb") as f:
+        files[rel] = "sha256:" + hashlib.sha256(f.read()).hexdigest()
+
+with open(checksums_path, "w") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+PYEOF
+else
+  warn "python3 ausente — los archivos materializados quedarán como conflicto falso en el próximo reinstall"
+  ok "Checksums written to .conf/checksums.json"
+fi
 
 # ── Generate manifest ──────────────────────────────────────────────────────
 info "Generating manifest..."

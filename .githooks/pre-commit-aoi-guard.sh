@@ -7,15 +7,25 @@
 # instruction surface, or the bootstrap contracts drift in non-recoverable ways.
 #
 # Behavior:
-#   - Runs as pre-commit hook. Stage-must-clear before commit succeeds, so any
-#     unapproved diff touching these files aborts the commit.
+#   - Runs as the `commit-msg` hook, which receives the message file as $1.
+#     The index is already final there, so `git diff --cached` still answers,
+#     and a failing hook still aborts the commit.
 #   - Recognizes diffs by `git diff --cached --name-only`.
 #   - Allows changes ONLY when the commit subject contains `[aoi-managed-ok]`
 #     which the Owner appends manually after explicit visual review.
 #
+# Why not pre-commit, where this used to live: git writes COMMIT_EDITMSG only
+# AFTER pre-commit succeeds, so the hook read the PREVIOUS commit's message.
+# The override the error text told the operator to use could therefore never
+# work on the commit it was written for — and the `git log -1` fallback made it
+# worse, honouring a marker left in the commit before, authorising a diff
+# nobody had reviewed. Verified directly: in pre-commit the file holds the
+# prior subject, and is empty on the first commit.
+#
 # Invocations (manual):
-#   bash .githooks/pre-commit-aoi-guard.sh           # standalone check
-#   bash .githooks/pre-commit-aoi-guard.sh --force   # bypass on purpose (logs)
+#   bash .githooks/pre-commit-aoi-guard.sh                 # standalone check
+#   bash .githooks/pre-commit-aoi-guard.sh <msgfile>       # as commit-msg
+#   bash .githooks/pre-commit-aoi-guard.sh --force         # bypass on purpose
 
 set -euo pipefail
 
@@ -34,9 +44,13 @@ GIT_DIR=""
 if command -v git >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1; then
   GIT_DIR="$(git rev-parse --git-dir 2>/dev/null || echo .git)"
 fi
+# `commit-msg` passes the message file as the first positional argument.
+MSG_FILE=""
 for arg in "$@"; do
   case "$arg" in
     --force) force=1 ;;
+    -*) ;;
+    *) [ -z "$MSG_FILE" ] && [ -f "$arg" ] && MSG_FILE="$arg" ;;
   esac
 done
 
@@ -64,23 +78,17 @@ if [ "$force" -eq 1 ]; then
   exit 0
 fi
 
-# Honour the [aoi-managed-ok] marker when the Owner appends it to the commit
-# subject. Detection strategy: read the staged commit message — if the marker
-# is present in either the current invocation (pre-commit gets no argv for
-# subject, hence we read COMMIT_EDITMSG + log) or the latest staged subject,
-# the override applies.
+# Honour the [aoi-managed-ok] marker, read from the message being written and
+# from nowhere else.
+#
+# The two fallbacks that used to be here are gone because both answered about a
+# DIFFERENT commit: $GIT_DIR/COMMIT_EDITMSG is not written until after
+# pre-commit, and `git log -1` reads the subject already committed. Either one
+# could approve today's unreviewed diff on the strength of yesterday's marker,
+# which is the opposite of what an override is for.
 override_marker_present=0
-if [ -s "$GIT_DIR/COMMIT_EDITMSG" ]; then
-  if grep -qF "[aoi-managed-ok]" "$GIT_DIR/COMMIT_EDITMSG" 2>/dev/null; then
-    override_marker_present=1
-  fi
-fi
-if [ "$override_marker_present" -eq 0 ] && command -v git >/dev/null 2>&1 && [ -d "$GIT_DIR" ]; then
-  # Last-resort: check if there's a HEAD commit that was about to be added
-  # (rare). Otherwise the known marker has to be in COMMIT_EDITMSG.
-  if git log -1 --pretty=%s 2>/dev/null | grep -qF "[aoi-managed-ok]"; then
-    override_marker_present=1
-  fi
+if [ -n "$MSG_FILE" ] && grep -qF "[aoi-managed-ok]" "$MSG_FILE" 2>/dev/null; then
+  override_marker_present=1
 fi
 
 if [ "$override_marker_present" -eq 1 ]; then
@@ -99,6 +107,13 @@ printf "\n" >&2
 printf "If the Owner \033[1mreviewed and approved\033[0m the diff, append the marker\n" >&2
 printf "\033[1;36m[aoi-managed-ok]\033[0m to the commit subject and retry:\n" >&2
 printf "  git commit -m \"... [aoi-managed-ok]\"\n" >&2
+if [ -z "$MSG_FILE" ]; then
+  printf "\n" >&2
+  printf "\033[1;33mAtención:\033[0m esta corrida no recibió el mensaje del commit, así que el\n" >&2
+  printf "marcador no se puede leer. El guard tiene que estar cableado como hook\n" >&2
+  printf "\033[1mcommit-msg\033[0m — es el único que lo recibe. Reinstalá AOI o cableálo a mano:\n" >&2
+  printf "  ln -sf ../../.githooks/pre-commit-aoi-guard.sh .git/hooks/commit-msg\n" >&2
+fi
 printf "\n" >&2
 printf "Bypass (discouraged): bash .githooks/pre-commit-aoi-guard.sh --force\n" >&2
 exit 1

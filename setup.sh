@@ -841,37 +841,61 @@ EOF_SHIM
 chmod +x "$PROJECT_PATH/scripts/bin/aoi-copilot"
 ok "Installed aoi-copilot shim → PROJECT/scripts/bin/"
 
-# Wire up a project-local pre-commit hook chain to include the AOI guard unless
-# the project intentionally wants to opt out. We respect any pre-existing
-# pre-commit with a chain that calls our guard first.
-PROJECT_GITHOOK="$PROJECT_PATH/.git/hooks/pre-commit"
+# Wire the guard as `commit-msg`, chaining any hook the project already had.
+#
+# It used to be wired as `pre-commit`, and that is the one hook which cannot
+# do this job: git writes the message only after pre-commit succeeds, so the
+# guard read the PREVIOUS commit's subject. The `[aoi-managed-ok]` override its
+# own error message instructs the operator to use was therefore inoperative,
+# and its `git log -1` fallback approved today's diff whenever yesterday's
+# commit happened to carry the marker. `commit-msg` receives the message file
+# as $1, the index is already final there, and a non-zero exit still aborts.
+HOOKS_DIR="$PROJECT_PATH/.git/hooks"
+PROJECT_GITHOOK="$HOOKS_DIR/commit-msg"
 if [[ -d "$PROJECT_PATH/.git" ]]; then
+  mkdir -p "$HOOKS_DIR"
+
+  # Retire the pre-commit wiring a previous AOI left behind. Left in place it
+  # blocks first, before commit-msg ever runs, so the override would stay
+  # unreachable no matter how correct the new hook is. Only OUR hook is
+  # touched: one the operator wrote is left exactly as it is.
+  OLD_PRECOMMIT="$HOOKS_DIR/pre-commit"
+  if [[ -f "$OLD_PRECOMMIT" ]] && grep -q "pre-commit-aoi-guard.sh" "$OLD_PRECOMMIT"; then
+    if [[ -f "$HOOKS_DIR/pre-commit.aoi-bak" ]]; then
+      mv "$HOOKS_DIR/pre-commit.aoi-bak" "$OLD_PRECOMMIT"
+      ok "Restaurado el pre-commit propio del proyecto (el guard se movió a commit-msg)"
+    else
+      rm -f "$OLD_PRECOMMIT"
+      ok "Retirado el guard de pre-commit (se movió a commit-msg, donde el marcador funciona)"
+    fi
+  fi
+
   if [[ -f "$PROJECT_GITHOOK" ]]; then
     if ! grep -q "pre-commit-aoi-guard.sh" "$PROJECT_GITHOOK"; then
       cp "$PROJECT_GITHOOK" "$PROJECT_GITHOOK.aoi-bak"
-      cat > "$PROJECT_GITHOOK" <<'EOF_PRECOMMIT'
+      cat > "$PROJECT_GITHOOK" <<'EOF_COMMITMSG'
 #!/usr/bin/env bash
-# AOI bootstrap chain: run guard first, then delegate to project pre-commit.
+# AOI bootstrap chain: run guard first, then delegate to project commit-msg.
 SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
 bash "$SELF_DIR/../../.githooks/pre-commit-aoi-guard.sh" "$@" || exit $?
-if [ -f "$SELF_DIR/pre-commit.aoi-bak" ]; then
-  exec bash "$SELF_DIR/pre-commit.aoi-bak" "$@"
+if [ -f "$SELF_DIR/commit-msg.aoi-bak" ]; then
+  exec bash "$SELF_DIR/commit-msg.aoi-bak" "$@"
 fi
 exit 0
-EOF_PRECOMMIT
+EOF_COMMITMSG
       chmod +x "$PROJECT_GITHOOK"
-      ok "Chained AOI guard into existing pre-commit hook"
+      ok "Chained AOI guard into existing commit-msg hook"
     else
-      ok "AOI guard already chained into pre-commit (skipped)"
+      ok "AOI guard already chained into commit-msg (skipped)"
     fi
   else
     cp "$GUARD_SRC" "$PROJECT_GITHOOK"
     chmod +x "$PROJECT_GITHOOK"
-    ok "Installed AOI pre-commit guard → .git/hooks/pre-commit"
+    ok "Installed AOI guard → .git/hooks/commit-msg"
   fi
 else
   info "Target project is not a git repo — AOI guard will activate once 'git init' runs."
-  info "    When ready, run: ln -sf ../../.githooks/pre-commit-aoi-guard.sh .git/hooks/pre-commit"
+  info "    When ready, run: ln -sf ../../.githooks/pre-commit-aoi-guard.sh .git/hooks/commit-msg"
 fi
 
 # ── Phase 1.8: codebase-memory-mcp (MANDATORY, workspace-local only) ───────
@@ -1251,7 +1275,23 @@ EOF
   prune_unselected_harness_files "$PROJECT_PATH" "$SELECTED_HARNESS"
 fi
 
-# Replicate scaffold mirror inside target so validate-scaffold-parity passes in target workspace
+# ── Rebuild the scaffold mirror inside the target ───────────────────────────
+#
+# Invariant 7 asks the mirror to be byte-identical to the governed files, and
+# `validate-scaffold-parity` checks exactly that inside the installed
+# workspace. So the mirror has to be built from what the merge ACTUALLY left on
+# disk, not from what AOI wanted to install.
+#
+# It used to be built the other way: AOI's scaffold was copied over the mirror
+# wholesale and only `scripts/` was re-synced back from the project. Every
+# other governed path — .github/prompts, the dashboard, the constitution —
+# therefore carried AOI's version in the mirror while the project carried the
+# user's. That is precisely the state the merge produces whenever it preserves
+# a conflict, so the reward for resolving a conflict correctly was a parity
+# failure the operator had no way to read.
+#
+# Base layer first (non-governed scaffold content, which has no project
+# counterpart to copy from), then every governed path from the project on top.
 mkdir -p "$PROJECT_PATH/scaffold"
 if command -v rsync &>/dev/null; then
   rsync -a "$SCAFFOLD_DIR/" "$PROJECT_PATH/scaffold/"
@@ -1259,22 +1299,48 @@ else
   cp -R "$SCAFFOLD_DIR/"* "$PROJECT_PATH/scaffold/" 2>/dev/null || true
 fi
 prune_unselected_harness_files "$PROJECT_PATH/scaffold" "$SELECTED_HARNESS"
-if command -v rsync &>/dev/null; then
-  rsync -a "$PROJECT_PATH/scripts/" "$PROJECT_PATH/scaffold/scripts/"
-else
-  cp -R "$PROJECT_PATH/scripts/"* "$PROJECT_PATH/scaffold/scripts/" 2>/dev/null || true
-fi
-ok "Scaffold mirror preserved in target (scaffold/)"
 
-# Copy pnpm workspace and lock configs
-if [ -f "$SCRIPT_DIR/pnpm-workspace.yaml" ]; then
-  cp "$SCRIPT_DIR/pnpm-workspace.yaml" "$PROJECT_PATH/pnpm-workspace.yaml"
-  cp "$SCRIPT_DIR/pnpm-workspace.yaml" "$PROJECT_PATH/scaffold/pnpm-workspace.yaml" 2>/dev/null || true
+# The governed list is published by the gate itself rather than duplicated
+# here: a path added there and forgotten here would silently stop being
+# mirrored, and the mismatch only ever surfaces in someone else's workspace.
+GOVERNED_PATHS="$(node "$SCRIPT_DIR/scripts/scaffold/validate-scaffold-parity.mjs" --list-paths 2>/dev/null || true)"
+if [ -z "$GOVERNED_PATHS" ]; then
+  warn "No se pudo leer la lista de paths gobernados — el espejo queda con la versión de AOI"
+  warn "y validate-scaffold-parity puede fallar en este workspace. Revisá node y el scaffold."
+else
+  while IFS= read -r gp || [ -n "$gp" ]; do
+    [ -z "$gp" ] && continue
+    src="$PROJECT_PATH/$gp"
+    [ -e "$src" ] || continue
+    dst="$PROJECT_PATH/scaffold/$gp"
+    mkdir -p "$(dirname "$dst")"
+    if [ -d "$src" ]; then
+      if command -v rsync &>/dev/null; then
+        rsync -a --delete "$src/" "$dst/"
+      else
+        rm -rf "$dst" && cp -R "$src" "$dst"
+      fi
+    else
+      cp "$src" "$dst"
+    fi
+  done <<GOVERNED_EOF
+$GOVERNED_PATHS
+GOVERNED_EOF
 fi
-if [ -f "$SCRIPT_DIR/pnpm-lock.yaml" ]; then
-  cp "$SCRIPT_DIR/pnpm-lock.yaml" "$PROJECT_PATH/pnpm-lock.yaml"
-  cp "$SCRIPT_DIR/pnpm-lock.yaml" "$PROJECT_PATH/scaffold/pnpm-lock.yaml" 2>/dev/null || true
-fi
+ok "Scaffold mirror rebuilt from the installed tree (scaffold/)"
+
+# NOTE: pnpm-workspace.yaml and pnpm-lock.yaml used to be copied here with a
+# bare `cp`, unconditionally, in both the fresh and the reinstall path.
+#
+# Both files already travel inside the scaffold, so both already go through the
+# policy that protects the owner: `rsync --ignore-existing` on a fresh install,
+# the three-way merge on a reinstall. The copy ran afterwards and overrode
+# whichever of the two had just decided. Adding AOI to an existing pnpm
+# monorepo therefore replaced its `pnpm-workspace.yaml` — every package in it —
+# and its lockfile, with no warning, no backup and no conflict entry.
+#
+# It is gone rather than guarded: the two paths it duplicated are already
+# correct, and a second writer to the same file is what made them wrong.
 
 # Ensure required directories exist (rsync may skip empty dirs)
 mkdir -p "$PROJECT_PATH/.tasks"
@@ -1351,70 +1417,81 @@ if [ -f "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/package.json" ]; then
   fi
 fi
 
-# Patch .vscode/settings.json — replace __LOCAL_BIN__ placeholder with real user home
-# Also handles the case where the project already had a settings.json (rsync skipped ours)
-LOCAL_BIN="$HOME/.local/bin"
+# ── Materialise .vscode/settings.json ───────────────────────────────────────
+#
+# The file is machine-specific: the scaffold ships a `__LOCAL_BIN__`
+# placeholder because the real path depends on $HOME, and the terminal keys
+# depend on the platform. So it is materialised rather than copied.
+#
+# This was three grep-selected branches plus `sed -i ''`, and both halves were
+# broken outside macOS. `-i ''` is the BSD spelling: GNU sed takes the suffix
+# attached to the flag, reads the empty string as the SCRIPT and the real
+# expression as a filename, exits non-zero, and `set -euo pipefail` takes the
+# whole installer down with it. Meanwhile every branch wrote `.osx` keys, which
+# VS Code ignores anywhere else — so the branch that did not abort configured
+# nothing. One materialiser in python3, which this block already depended on,
+# replaces both: no sed dialect to get wrong, and one place where the platform
+# is decided.
 VSCODE_SETTINGS="$PROJECT_PATH/.vscode/settings.json"
+LOCAL_BIN="$HOME/.local/bin"
 HOMEBREW_PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:$LOCAL_BIN:/usr/bin:/bin:/usr/sbin:/sbin"
 
-if [ -f "$VSCODE_SETTINGS" ]; then
-  if grep -q "__LOCAL_BIN__" "$VSCODE_SETTINGS"; then
-    # Scaffold settings.json was copied — patch the placeholder
-    sed -i '' "s|__LOCAL_BIN__|$LOCAL_BIN|g" "$VSCODE_SETTINGS"
-    ok "PATH configured in .vscode/settings.json"
-  elif ! grep -q "terminal.integrated.env.osx" "$VSCODE_SETTINGS"; then
-    # Pre-existing settings.json without PATH config — inject both keys via Python merge
-    python3 - "$VSCODE_SETTINGS" "$HOMEBREW_PATH" <<'PYEOF'
-import sys, json
+case "$(uname -s 2>/dev/null || true)" in
+  Darwin) VSCODE_OS_KEY="osx"; VSCODE_SHELL="/bin/zsh" ;;
+  Linux)  VSCODE_OS_KEY="linux"; VSCODE_SHELL="$(command -v bash || echo /bin/bash)" ;;
+  *)      VSCODE_OS_KEY="windows"; VSCODE_SHELL="" ;;
+esac
 
-settings_path = sys.argv[1]
-path_value = sys.argv[2]
+mkdir -p "$PROJECT_PATH/.vscode"
+if python3 - "$VSCODE_SETTINGS" "$LOCAL_BIN" "$HOMEBREW_PATH" "$VSCODE_OS_KEY" "$VSCODE_SHELL" <<'PYEOF'
+import json, os, sys
 
-with open(settings_path, "r") as f:
-    settings = json.load(f)
+settings_path, local_bin, homebrew_path, os_key, shell = sys.argv[1:6]
 
-settings.setdefault("terminal.integrated.env.osx", {})["PATH"] = path_value
-settings["terminal.integrated.automationProfile.osx"] = {"path": "/bin/zsh", "args": ["-l"]}
+settings = {}
+if os.path.exists(settings_path):
+    try:
+        with open(settings_path) as f:
+            settings = json.load(f)
+    except (ValueError, OSError):
+        # A settings.json we cannot parse belongs to the owner and is not ours
+        # to rewrite. Say so and change nothing.
+        sys.exit(3)
+    if not isinstance(settings, dict):
+        sys.exit(3)
+
+# The placeholder is substituted wherever it survived the copy, so a scaffold
+# file and a hand-written one converge on the same result.
+def substitute(value):
+    if isinstance(value, str):
+        return value.replace("__LOCAL_BIN__", local_bin)
+    if isinstance(value, dict):
+        return {k: substitute(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [substitute(v) for v in value]
+    return value
+
+settings = substitute(settings)
+
+env_key = "terminal.integrated.env." + os_key
+profile_key = "terminal.integrated.automationProfile." + os_key
+
+# Only fill what is missing: a PATH the owner already configured is theirs.
+env = settings.setdefault(env_key, {})
+if isinstance(env, dict) and not env.get("PATH"):
+    env["PATH"] = homebrew_path
+
+if shell and profile_key not in settings:
+    settings[profile_key] = {"path": shell, "args": ["-l"]}
 
 with open(settings_path, "w") as f:
     json.dump(settings, f, indent=4)
     f.write("\n")
 PYEOF
-    ok "PATH + automationProfile injected into existing .vscode/settings.json"
-  elif ! grep -q "automationProfile" "$VSCODE_SETTINGS"; then
-    # Has env.osx but missing automationProfile — add it
-    python3 - "$VSCODE_SETTINGS" <<'PYEOF'
-import sys, json
-
-settings_path = sys.argv[1]
-
-with open(settings_path, "r") as f:
-    settings = json.load(f)
-
-settings["terminal.integrated.automationProfile.osx"] = {"path": "/bin/zsh", "args": ["-l"]}
-
-with open(settings_path, "w") as f:
-    json.dump(settings, f, indent=4)
-    f.write("\n")
-PYEOF
-    ok "automationProfile added to .vscode/settings.json"
-  else
-    ok "PATH already configured in .vscode/settings.json (skipped)"
-  fi
+then
+  ok "PATH + automationProfile configurados en .vscode/settings.json ($VSCODE_OS_KEY)"
 else
-  mkdir -p "$PROJECT_PATH/.vscode"
-  cat > "$VSCODE_SETTINGS" <<EOF
-{
-    "terminal.integrated.env.osx": {
-        "PATH": "$HOMEBREW_PATH"
-    },
-    "terminal.integrated.automationProfile.osx": {
-        "path": "/bin/zsh",
-        "args": ["-l"]
-    }
-}
-EOF
-  ok "Created .vscode/settings.json with PATH + automationProfile"
+  warn ".vscode/settings.json no es JSON válido — se dejó intacto, configuralo a mano"
 fi
 
 VSCODE_MCP="$PROJECT_PATH/.vscode/mcp.json"

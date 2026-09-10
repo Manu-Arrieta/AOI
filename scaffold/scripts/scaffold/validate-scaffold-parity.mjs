@@ -41,6 +41,10 @@ export const DEFAULT_SYNC_PATHS = [
   '.agents/skills',
   '.github/scripts',
   '.github/skills',
+  // The guard is copied into the target twice — by rsync from the scaffold
+  // and by an explicit `cp` from the repository root — so an ungoverned
+  // mirror lets the two drift and the winner is whichever ran last.
+  '.githooks',
   'scripts/aoi-headroom-wrap.sh',
   'scripts/aoi-headroom-wrap.ps1',
   'aoi_apps/agentic-ops-dashboard/app',
@@ -229,6 +233,17 @@ export function validateScaffoldParity(repoRoot, pathsToCheck = DEFAULT_SYNC_PAT
 // CLI Execution
 async function main() {
   const repoRoot = process.cwd()
+
+  // The installer has to rebuild this mirror inside the target workspace, and
+  // it must cover exactly the paths this gate judges. Hard-coding the list in
+  // setup.sh would let the two drift, and the drift is invisible: the mirror
+  // would simply stop matching for whatever path was added here and nowhere
+  // else. So the list is published instead of duplicated.
+  if (process.argv.includes('--list-paths')) {
+    process.stdout.write(DEFAULT_SYNC_PATHS.join('\n') + '\n')
+    return
+  }
+
   const result = validateScaffoldParity(repoRoot)
 
   if (!result.valid) {
