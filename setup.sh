@@ -820,13 +820,30 @@ fi
 mkdir -p "$PROJECT_PATH/scripts"
 mkdir -p "$PROJECT_PATH/.githooks"
 
-cp "$WRAP_SRC" "$PROJECT_PATH/scripts/aoi-headroom-wrap.sh"
-chmod +x "$PROJECT_PATH/scripts/aoi-headroom-wrap.sh"
-ok "Installed aoi-headroom-wrap.sh → PROJECT/scripts/"
+# Both files are governed and both travel inside the scaffold, so the merge
+# below already owns them. They are seeded here only because this phase wires
+# the hook and the wrapper, which run earlier than the merge and need the file
+# to exist.
+#
+# Seeded, not overwritten. A plain `cp` here wrote AOI's version over the
+# owner's BEFORE the comparator read the tree, so the comparator saw its own
+# installer's bytes, found them different from the recorded baseline, and
+# blamed the owner: a CONFLICT on a file nobody had touched. Reproduced on the
+# real installation — `.githooks/pre-commit-aoi-guard.sh` landed in
+# .conf/conflicts/ on a workspace whose owner had never opened it.
+install_governed_seed() {
+  local src="$1" dest="$2" label="$3"
+  if [ -f "$dest" ]; then
+    ok "$label ya presente — lo resuelve el merge (no se pisa)"
+  else
+    cp "$src" "$dest"
+    ok "Installed $label"
+  fi
+  chmod +x "$dest"
+}
 
-cp "$GUARD_SRC" "$PROJECT_PATH/.githooks/pre-commit-aoi-guard.sh"
-chmod +x "$PROJECT_PATH/.githooks/pre-commit-aoi-guard.sh"
-ok "Installed pre-commit-aoi-guard.sh → PROJECT/.githooks/"
+install_governed_seed "$WRAP_SRC" "$PROJECT_PATH/scripts/aoi-headroom-wrap.sh" "aoi-headroom-wrap.sh → PROJECT/scripts/"
+install_governed_seed "$GUARD_SRC" "$PROJECT_PATH/.githooks/pre-commit-aoi-guard.sh" "pre-commit-aoi-guard.sh → PROJECT/.githooks/"
 
 # Register an shim that forces any `aoi-copilot` invoker through the wrapper.
 # This is the seam SDD agents use instead of calling `copilot` directly.
@@ -1528,37 +1545,57 @@ else
   CBM_ARGS=""
 fi
 
-if [[ -n "$CBM_BIN" ]]; then
-  cat > "$VSCODE_MCP" <<EOF
-{
-  "servers": {
-    "icm": {
-      "type": "stdio",
-      "command": $ICM_CMD,
-      "args": [$ICM_ARGS]
-    },
-    "codebase-memory-mcp": {
-      "type": "stdio",
-      "command": $CBM_CMD,
-      "args": [$CBM_ARGS]
+# Merged by key, not regenerated. The file used to be rewritten wholesale on
+# every run, so an MCP server the owner had registered here — or one another
+# tool added — disappeared without a word. AOI owns exactly its own two
+# entries under "servers"; everything else in the object belongs to whoever
+# put it there.
+if python3 - "$VSCODE_MCP" "$ICM_CMD" "$ICM_ARGS" "$CBM_CMD" "$CBM_ARGS" "${CBM_BIN:-}" <<'PYEOF'
+import json, os, sys
+
+mcp_path, icm_cmd, icm_args, cbm_cmd, cbm_args, cbm_bin = sys.argv[1:7]
+
+def unquote_list(raw):
+    """The shell builds these as a JSON array body, e.g. '"-c", "high"'."""
+    raw = raw.strip()
+    if not raw:
+        return []
+    return json.loads("[" + raw + "]")
+
+config = {}
+if os.path.exists(mcp_path):
+    try:
+        with open(mcp_path) as f:
+            config = json.load(f)
+    except (ValueError, OSError):
+        sys.exit(3)
+    if not isinstance(config, dict):
+        sys.exit(3)
+
+servers = config.setdefault("servers", {})
+if not isinstance(servers, dict):
+    sys.exit(3)
+
+servers["icm"] = {"type": "stdio", "command": json.loads(icm_cmd), "args": unquote_list(icm_args)}
+if cbm_bin:
+    servers["codebase-memory-mcp"] = {
+        "type": "stdio",
+        "command": json.loads(cbm_cmd),
+        "args": unquote_list(cbm_args),
     }
-  }
-}
-EOF
-  ok "Workspace MCP configured in .vscode/mcp.json (ICM + codebase-memory-mcp, compression=$MCP_COMPRESSION)"
+
+with open(mcp_path, "w") as f:
+    json.dump(config, f, indent=2)
+    f.write("\n")
+PYEOF
+then
+  if [[ -n "$CBM_BIN" ]]; then
+    ok "Workspace MCP configured in .vscode/mcp.json (ICM + codebase-memory-mcp, compression=$MCP_COMPRESSION)"
+  else
+    ok "Workspace MCP configured in .vscode/mcp.json (ICM only, compression=$MCP_COMPRESSION)"
+  fi
 else
-  cat > "$VSCODE_MCP" <<EOF
-{
-  "servers": {
-    "icm": {
-      "type": "stdio",
-      "command": $ICM_CMD,
-      "args": [$ICM_ARGS]
-    }
-  }
-}
-EOF
-  ok "Workspace MCP configured in .vscode/mcp.json (ICM only, compression=$MCP_COMPRESSION)"
+  warn ".vscode/mcp.json no es JSON válido — se dejó intacto, configuralo a mano"
 fi
 
 # ── Phase 4: Configure Tools ────────────────────────────────────────────
