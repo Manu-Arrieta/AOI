@@ -25,6 +25,52 @@ import path from 'node:path'
 export const ICM_PROTOCOL = '.github/instructions/icm-protocol.instructions.md'
 
 /**
+ * Removes a path, but only the parts of it AOI itself shipped.
+ *
+ * The three-way merge is safe because its comparator walks the SCAFFOLD, not
+ * the project: a file the Owner created is never visited, so it cannot be
+ * touched. Harness pruning bypassed that rule in TWO places. The installer's
+ * own `prune_unselected_harness_files` was fixed first; this one — reached
+ * because setup.sh calls `compile-rules --prune` immediately afterwards —
+ * stayed open, and reproducing it destroyed a customised `CLAUDE.md` and an
+ * Owner-authored `.agents/skills/mia/SKILL.md`.
+ *
+ * A directory is walked file by file, so anything the Owner wrote inside it
+ * has no scaffold counterpart and survives; the directory disappears only
+ * once nothing of theirs is left.
+ *
+ * @param {string} target path to remove
+ * @param {string} reference the scaffold copy to compare against
+ * @param {string[]} kept mutated: paths preserved because they were changed
+ */
+export function prunePathIfPristine(target, reference, kept = []) {
+  if (!fs.existsSync(target)) return kept
+
+  const stat = fs.lstatSync(target)
+  if (stat.isSymbolicLink() || stat.isFile()) {
+    let pristine = false
+    try {
+      pristine = fs.existsSync(reference) && fs.readFileSync(target).equals(fs.readFileSync(reference))
+    } catch {
+      pristine = false
+    }
+    if (pristine) fs.rmSync(target, { force: true })
+    else kept.push(target)
+    return kept
+  }
+
+  for (const entry of fs.readdirSync(target)) {
+    prunePathIfPristine(path.join(target, entry), path.join(reference, entry), kept)
+  }
+  try {
+    if (fs.readdirSync(target).length === 0) fs.rmdirSync(target)
+  } catch {
+    // Non-empty because the Owner's files are still in it — which is the point.
+  }
+  return kept
+}
+
+/**
  * Skills whose canonical text is an instruction file, not the skill itself.
  *
  * `.github/instructions/` reaches the orchestrator (via `applyTo`) and every

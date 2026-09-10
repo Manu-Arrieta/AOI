@@ -12,7 +12,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { deriveSkillFromInstruction, readStoreTriggers, renderStoreTriggers } from './protocol-source.mjs'
+import { deriveSkillFromInstruction, prunePathIfPristine, readStoreTriggers, renderStoreTriggers } from './protocol-source.mjs'
 
 export const SUPPORTED_HARNESSES = ['copilot', 'claude', 'cursor', 'antigravity', 'cline', 'all']
 
@@ -151,6 +151,7 @@ export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = '
   const shouldCompile = (h) => targetAll || harnesses.includes(h)
   const compiledFiles = []
   const hasScaffold = fs.existsSync(path.join(repoRoot, 'scaffold'))
+  const keptByPrune = []
 
   if (prune && !targetAll) {
     const HARNESS_ITEMS = {
@@ -163,18 +164,31 @@ export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = '
     for (const [h, items] of Object.entries(HARNESS_ITEMS)) {
       if (!shouldCompile(h)) {
         for (const item of items) {
-          const rootTarget = path.join(repoRoot, item)
-          if (fs.existsSync(rootTarget)) {
-            fs.rmSync(rootTarget, { recursive: true, force: true })
-          }
+          // Only what AOI itself shipped. This used to be an unconditional
+          // `rmSync(recursive, force)` — the SECOND door into the same
+          // data-loss the installer's own pruning already had, and the one
+          // that stayed open after that fix, because setup.sh calls this
+          // with `--prune` right after. Reproduced: a customised CLAUDE.md
+          // and an Owner-authored `.agents/skills/mia/SKILL.md` both gone.
+          prunePathIfPristine(path.join(repoRoot, item), path.join(repoRoot, 'scaffold', item), keptByPrune)
           if (hasScaffold) {
+            // The scaffold copy is AOI's by definition, so it goes whole —
+            // but only if the root counterpart was AOI's too. Removing the
+            // reference while the Owner's edited copy stays would leave
+            // nothing to compare against next run.
             const scaffoldTarget = path.join(repoRoot, 'scaffold', item)
-            if (fs.existsSync(scaffoldTarget)) {
+            if (fs.existsSync(scaffoldTarget) && !fs.existsSync(path.join(repoRoot, item))) {
               fs.rmSync(scaffoldTarget, { recursive: true, force: true })
             }
           }
         }
       }
+    }
+    if (keptByPrune.length > 0) {
+      process.stderr.write(
+        `⚠️  Conservados por tener cambios tuyos:\n${keptByPrune.map((p) => `     ${p}`).join('\n')}\n` +
+          `     Pertenecen a un harness que no seleccionaste. Borralos vos si querés que se vayan.\n`
+      )
     }
   }
 

@@ -1190,21 +1190,59 @@ print(f'COMPARE_TMPDIR={td}')
   ok "Reinstall merge complete"
 
 else
-  # ── Fresh install: ensure scaffold overrides generic specify init templates ──
+  # ── Fresh install ─────────────────────────────────────────────────────────
+  #
+  # "Fresh" means AOI has never been installed here — NOT that the directory is
+  # empty. Adding AOI to a project that already exists is the primary use case,
+  # and a plain `rsync -a` overwrote every file the scaffold happens to carry.
+  # Reproduced: a project's own package.json went from "el-proyecto-del-owner"
+  # to "aoi-workspace", taking its name, version, dependencies and scripts with
+  # it, and its CLAUDE.md was replaced too.
+  #
+  # `--ignore-existing` inverts the default to the safe one: AOI adds what is
+  # missing and never replaces what is already there. On a genuinely empty
+  # directory it behaves identically, so nothing is lost for the simple case.
+  FRESH_KEPT=""
   if command -v rsync &>/dev/null; then
-    rsync -a "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
-    ok "Scaffold merged (rsync)"
+    FRESH_KEPT="$(rsync -a --ignore-existing --out-format='%n' "$SCAFFOLD_DIR/" "$PROJECT_PATH/" >/dev/null 2>&1; \
+      rsync -an --existing --out-format='%n' "$SCAFFOLD_DIR/" "$PROJECT_PATH/" 2>/dev/null | grep -v '/$' || true)"
+    ok "Scaffold merged (rsync, sin pisar lo existente)"
   else
-    # Fallback: cp with directory creation
     cd "$SCAFFOLD_DIR"
-    find . -type f | while read -r file; do
+    while IFS= read -r file || [ -n "$file" ]; do
       target="$PROJECT_PATH/$file"
+      if [ -e "$target" ]; then
+        FRESH_KEPT="$FRESH_KEPT
+${file#./}"
+        continue
+      fi
       mkdir -p "$(dirname "$target")"
       cp "$file" "$target"
-    done
+    done <<EOF
+$(find . -type f)
+EOF
     cd "$PROJECT_PATH"
-    ok "Scaffold merged (cp)"
+    ok "Scaffold merged (cp, sin pisar lo existente)"
   fi
+
+  # AOI needs its own npm scripts to exist, and a project that already has a
+  # package.json just had its copy protected above — so the scripts are merged
+  # in rather than the file being replaced.
+  if [ -f "$PROJECT_PATH/package.json" ] && [ -f "$SCAFFOLD_DIR/package.json" ]; then
+    node "$SCRIPT_DIR/scripts/multi-harness/merge-package-scripts.mjs" \
+      "$PROJECT_PATH/package.json" "$SCAFFOLD_DIR/package.json" \
+      && ok "AOI scripts merged into the existing package.json" \
+      || warn "No se pudieron fusionar los scripts de AOI en package.json — revisalo a mano"
+  fi
+
+  if [ -n "$FRESH_KEPT" ]; then
+    warn "Estos archivos ya existían y NO se tocaron:"
+    printf '%s\n' "$FRESH_KEPT" | while IFS= read -r kept; do
+      [ -n "$kept" ] && printf '     %s\n' "$kept"
+    done
+    warn "Si querés la versión de AOI de alguno, copiala vos desde el scaffold."
+  fi
+
   prune_unselected_harness_files "$PROJECT_PATH" "$SELECTED_HARNESS"
 fi
 
