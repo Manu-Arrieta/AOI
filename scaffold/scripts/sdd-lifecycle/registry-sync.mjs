@@ -81,9 +81,20 @@ export function auditRegistrySync(root) {
   const highest = all
     .map((id) => Number(id.slice(-3)))
     .reduce((max, n) => (Number.isFinite(n) && n > max ? n : max), 0)
-  const nextId = `TASK-${year}-${String(highest + 1).padStart(3, '0')}`
 
-  return { onDisk: diskIds, inRegistry: registryIds, unregistered, phantom, nextId }
+  // The id format is three digits, so 999 is the last one this allocator can
+  // hand out. Past it, `padStart(3)` simply stops padding and yields
+  // `TASK-2026-1000` — four digits, which the scanner's own
+  // `/^TASK-\d{4}-\d{3}$/` can never match. The directory created with that id
+  // becomes invisible to `tasksOnDisk`, so the next run computes the same
+  // 1000 again, forever, colliding in silence.
+  //
+  // Latent — it needs 999 tasks in one year — but an allocator that answers
+  // with an unrepresentable id must say so, not answer anyway.
+  const exhausted = highest >= 999
+  const nextId = exhausted ? null : `TASK-${year}-${String(highest + 1).padStart(3, '0')}`
+
+  return { onDisk: diskIds, inRegistry: registryIds, unregistered, phantom, nextId, exhausted, highest }
 }
 
 /** One line per discrepancy, for a report. */
@@ -91,7 +102,9 @@ export function formatRegistrySync(audit) {
   const lines = [
     `En disco:    ${audit.onDisk.length} tarea(s)`,
     `En registry: ${audit.inRegistry.length} tarea(s)`,
-    `Próximo id seguro: ${audit.nextId}`,
+    audit.exhausted
+      ? `⛔ Espacio de ids AGOTADO: ${audit.highest} usados y el formato sólo admite 3 dígitos`
+      : `Próximo id seguro: ${audit.nextId}`,
   ]
   for (const id of audit.unregistered) lines.push(`  ❌ ${id} existe en disco y el registry no lo declara`)
   for (const id of audit.phantom) lines.push(`  ❌ ${id} lo declara el registry y no existe en disco`)
@@ -104,6 +117,12 @@ function main() {
 
   console.log('=== AOI Task Registry Sync ===\n')
   console.log(formatRegistrySync(audit))
+
+  if (audit.exhausted) {
+    console.error('\nEl formato TASK-YYYY-NNN se quedó sin números este año. Widen it o abrí un año nuevo:')
+    console.error('un asignador que responde con un id irrepresentable es peor que uno que se planta.')
+    process.exit(1)
+  }
 
   if (audit.unregistered.length > 0 || audit.phantom.length > 0) {
     console.error('\nEl registry es la fuente que /sdd-new consulta para asignar el próximo id.')

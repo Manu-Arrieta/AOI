@@ -70,6 +70,25 @@ export function listSourceFiles(root, dir = 'scripts') {
     for (const entry of entries) {
       if (SKIP_DIRS.has(entry.name)) continue
       const full = path.join(current, entry.name)
+      // A symlink is neither `isDirectory()` nor `isFile()` to `readdirSync`,
+      // so a linked directory used to be skipped entirely — 900 LOC of
+      // governed source sat behind one and the ratchet reported clean. The
+      // rule is about the code AOI governs, and code does not stop being
+      // governed because the path to it goes through a link.
+      if (entry.isSymbolicLink()) {
+        let target
+        try {
+          target = fs.statSync(full)
+        } catch {
+          continue // Broken link: nothing to measure.
+        }
+        if (target.isDirectory()) walk(full)
+        else if (SOURCE_EXTENSIONS.has(path.extname(entry.name))) {
+          const rel = path.relative(root, full)
+          if (!governedOnly || fs.existsSync(path.join(root, 'scaffold', rel))) out.push(rel)
+        }
+        continue
+      }
       if (entry.isDirectory()) walk(full)
       else if (SOURCE_EXTENSIONS.has(path.extname(entry.name))) {
         const rel = path.relative(root, full)

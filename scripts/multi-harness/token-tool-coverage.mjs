@@ -74,6 +74,51 @@ function read(file) {
   }
 }
 
+/**
+ * True when a line does not merely NAME the tool but tells the agent to use it.
+ *
+ * The distinction is the whole point of this gate. A prompt saying "we removed
+ * context-tombstone" contains the string and invokes nothing; counting it made
+ * the gate certify a saving the product had dropped on purpose — the same
+ * class of false green it exists to prevent, aimed at itself.
+ *
+ * The first attempt at the distinction looked for an imperative verb anywhere
+ * on the line, and "do not **use** it" matched — a negation read as an order.
+ * Detecting intent in prose by regex was the wrong instrument. So the rule is
+ * positional instead: the tool name has to sit where a command sits — inside a
+ * code span, inside a fenced block, or at the head of a shell line. Prose
+ * about a tool, however emphatic, is not wiring.
+ */
+export function invokesTool(text, needle) {
+  let inFence = false
+
+  for (const line of String(text).split('\n')) {
+    if (/^\s*(?:```|~~~)/.test(line)) {
+      inFence = !inFence
+      continue
+    }
+
+    // Everything inside a fence is command text, except a shell comment.
+    if (inFence) {
+      if (!/^\s*#/.test(line) && needle.test(line)) return true
+      continue
+    }
+
+    if (!needle.test(line)) continue
+
+    // An inline code span is the markdown way of writing "this is a command".
+    for (const m of line.matchAll(/`([^`]+)`/g)) {
+      if (needle.test(m[1])) return true
+    }
+
+    // A bare shell line: a list bullet or a `$` prompt may precede the binary.
+    const bare = line.replace(/^\s*(?:[-*+]|\d+\.)\s*/, '').replace(/^\s*\$\s*/, '')
+    if (/^(?:node|pnpm|npm|npx|yarn|bash|sh|uv|uvx|rtk|icm)\b/.test(bare) && needle.test(bare)) return true
+  }
+
+  return false
+}
+
 /** Every file under the cycle surfaces, flattened. */
 function cycleFiles(root) {
   const out = []
@@ -113,7 +158,11 @@ export function wiringMap(root, tools = TOKEN_TOOLS) {
       continue
     }
     for (const file of files) {
-      if (tool.needle.test(read(file))) map.get(tool.id).push(path.relative(root, file))
+      // Mention is not invocation. A raw substring match counted a comment
+      // saying "we used to use context-tombstone but removed it" as proof the
+      // cycle invokes it — the gate would certify a saving the product had
+      // deliberately dropped. Only prose the agent is meant to ACT on counts.
+      if (invokesTool(read(file), tool.needle)) map.get(tool.id).push(path.relative(root, file))
     }
   }
   return map

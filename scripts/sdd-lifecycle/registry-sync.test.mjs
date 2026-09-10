@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { describe, it } from 'node:test'
-import { auditRegistrySync, tasksInRegistry, tasksOnDisk } from './registry-sync.mjs'
+import { auditRegistrySync, formatRegistrySync, tasksInRegistry, tasksOnDisk } from './registry-sync.mjs'
 
 /** A throwaway workspace with the given tasks on disk and in the registry. */
 function workspace({ onDisk = [], registered = [] } = {}) {
@@ -77,6 +77,38 @@ describe('the registry is held against disk', () => {
     const root = workspace()
     assert.deepEqual(tasksInRegistry(root), [])
     assert.deepEqual(tasksOnDisk(root), [])
+    clean(root)
+  })
+})
+
+describe('the id space has an end, and the allocator has to say so', () => {
+  // `padStart(3)` does not truncate: past 999 it simply stops padding and
+  // returns `TASK-2026-1000`, four digits that this module's own
+  // `/^TASK-\d{4}-\d{3}$/` can never match. The directory created under that
+  // name is invisible to `tasksOnDisk`, so the next run recomputes the same
+  // 1000 and the collision repeats in silence, forever.
+  it('refuses to hand out an id the format cannot represent', () => {
+    const root = workspace({ onDisk: ['TASK-2026-999'], registered: ['TASK-2026-999'] })
+    const audit = auditRegistrySync(root)
+    assert.equal(audit.exhausted, true)
+    assert.equal(audit.nextId, null, 'entregó un id de cuatro dígitos')
+    assert.match(formatRegistrySync(audit), /AGOTADO/)
+    clean(root)
+  })
+
+  it('still allocates the last representable id', () => {
+    // The negative control: 998 used means 999 is free, and the gate must not
+    // block a workspace that has one number left.
+    const root = workspace({ onDisk: ['TASK-2026-998'], registered: ['TASK-2026-998'] })
+    const audit = auditRegistrySync(root)
+    assert.equal(audit.exhausted, false)
+    assert.match(audit.nextId, /^TASK-\d{4}-999$/)
+    clean(root)
+  })
+
+  it('sees exhaustion from the registry side too, not just from disk', () => {
+    const root = workspace({ registered: ['TASK-2026-999'] })
+    assert.equal(auditRegistrySync(root).exhausted, true)
     clean(root)
   })
 })

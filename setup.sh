@@ -387,7 +387,12 @@ if is_windows_git_bash; then
 fi
 
 # ── Parse arguments ────────────────────────────────────────────────────────
-SELECTED_HARNESS="all"
+# Exportada: snapshot-conf.sh corre como subproceso y sin export leía siempre
+# el default. La persistencia del harness en .conf/manifest.json — que era la
+# mitad del arreglo de G0, la que permite avisar cuando un reinstall cambia de
+# harness — por lo tanto nunca funcionó: el manifest registraba "all" pasara lo
+# que pasara.
+export SELECTED_HARNESS="all"
 RAW_PROJECT_PATH=""
 AUTO_YES=0
 SKIP_DASHBOARD_DEPS=0

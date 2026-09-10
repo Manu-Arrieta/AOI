@@ -108,3 +108,55 @@ describe('the shipped budget', () => {
     }
   })
 })
+
+describe('a link is a path to code, not a way around the rule', () => {
+  /** A tree whose `scripts/linked` is a symlink to a directory living elsewhere. */
+  function treeWithLinkedDir(sizes) {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-srp-link-'))
+    const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-srp-out-'))
+    fs.writeFileSync(path.join(root, 'setup.sh'), '#!/usr/bin/env bash\n')
+    fs.mkdirSync(path.join(root, 'scripts'), { recursive: true })
+    for (const [name, lines] of Object.entries(sizes)) {
+      fs.writeFileSync(path.join(outside, name), 'x\n'.repeat(lines - 1))
+    }
+    fs.symlinkSync(outside, path.join(root, 'scripts/linked'))
+    return { root, outside }
+  }
+
+  // `readdirSync` reports a symlink as neither a file nor a directory, so the
+  // walk used to skip it in silence. 901 LOC of governed source sat behind one
+  // and the ratchet printed "no new SRP violations" — an invariant that
+  // anything can step out of is a preference again.
+  it('measures source behind a symlinked directory', () => {
+    const { root } = treeWithLinkedDir({ 'gordo.mjs': 901 })
+    const found = listSourceFiles(root)
+    assert.deepEqual(found, ['scripts/linked/gordo.mjs'])
+
+    const { added } = auditSrp(root, {}, MAX_LOC)
+    assert.equal(added.length, 1)
+    assert.equal(added[0].lines, 901)
+  })
+
+  it('measures a symlinked file too', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-srp-linkf-'))
+    const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-srp-outf-'))
+    fs.writeFileSync(path.join(root, 'setup.sh'), '#!/usr/bin/env bash\n')
+    fs.mkdirSync(path.join(root, 'scripts'), { recursive: true })
+    fs.writeFileSync(path.join(outside, 'gordo.mjs'), 'x\n'.repeat(400))
+    fs.symlinkSync(path.join(outside, 'gordo.mjs'), path.join(root, 'scripts/gordo.mjs'))
+
+    assert.deepEqual(listSourceFiles(root), ['scripts/gordo.mjs'])
+    assert.equal(auditSrp(root, {}, MAX_LOC).added.length, 1)
+  })
+
+  it('steps over a broken link instead of crashing on it', () => {
+    // A dangling link has nothing to measure, but `statSync` throws on it and
+    // an exception here would take the whole gate down.
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-srp-dead-'))
+    fs.writeFileSync(path.join(root, 'setup.sh'), '#!/usr/bin/env bash\n')
+    fs.mkdirSync(path.join(root, 'scripts'), { recursive: true })
+    fs.symlinkSync(path.join(root, 'no-existe'), path.join(root, 'scripts/roto.mjs'))
+
+    assert.deepEqual(listSourceFiles(root), [])
+  })
+})
