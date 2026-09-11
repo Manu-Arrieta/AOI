@@ -241,8 +241,8 @@ sí mismo mal reporta sobre sí mismo, no sobre el código.
 
 ## Qué queda declarado y sin cerrar
 
-- **249 mutantes sobreviven** entre las cuatro áreas, casi todos en superficies
-  de CLI que ningún test ejecuta. El piso quedó registrado en
+- **253 mutantes sobreviven** de 515 medidos entre las cuatro áreas (51% muertos),
+  casi todos en superficies de CLI que ningún test ejecuta. El piso quedó registrado en
   `MUTATION_FLOOR` y sólo puede subir; `pnpm aoi:mutation` lo verifica.
 - **11 de 29 fuentes del dashboard** no las carga ningún test. Diez son glue de
   Nitro o de ciclo de vida Vue de entre 8 y 24 líneas sobre utilidades que sí
