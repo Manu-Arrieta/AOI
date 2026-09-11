@@ -33,6 +33,7 @@
     "aoi:cache-guard": "node scripts/multi-harness/cache-guard.mjs",
     "aoi:lint-refs": "node scripts/multi-harness/reference-integrity.mjs",
     "aoi:test-globs": "node scripts/scaffold/validate-test-globs.mjs",
+    "aoi:mutation": "node scripts/scaffold/mutation-ratchet.mjs",
     "aoi:srp": "node scripts/scaffold/validate-srp.mjs",
     "aoi:routing": "node scripts/multi-harness/validate-agent-routing.mjs",
     "aoi:invariant-gate": "node scripts/sdd-lifecycle/invariant-gate.mjs",

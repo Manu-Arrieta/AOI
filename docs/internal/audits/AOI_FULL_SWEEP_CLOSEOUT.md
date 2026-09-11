@@ -129,3 +129,125 @@ de mirar desde afuera.
   código defensivo muerto.
 - **La línea base del benchmark** se regenera en cada corrida del protocolo; la de este
   cierre está en `AOI_REAL_WORLD_VERIFICATION_MATRIX.md`.
+
+---
+
+# Segunda pasada — 2026-09-10
+
+La primera pasada cerró G0–G7 y L1–L6 y dejó una lista de 32 hallazgos
+adversarios sin verificar. Esta pasada los recorrió todos. Diez eran majors,
+diez quedaron cerrados, y el recorrido destapó cinco defectos más que la lista
+no tenía.
+
+## El patrón que recorre casi todo lo encontrado
+
+Todos los hallazgos de esta pasada caen en dos formas, y las dos son la misma
+enfermedad vista desde lados distintos.
+
+**La primera es el veredicto afirmativo sobre cero entradas.**
+`validate-agent-routing` imprimía «Every agent resolves to a model» con el
+registro vacío. `reference-integrity` imprimía «Every reference resolves» con
+cero archivos escaneados. `validate-srp` imprimía «no new SRP violations»
+mientras 901 líneas de fuente gobernada vivían detrás de un símlink que su
+recorrido no seguía. `token-tool-coverage` contaba una frase que decía «sacamos
+context-tombstone» como prueba de que el ciclo lo invocaba. Ninguna de las
+cuatro estaba rota en el sentido de producir un error: todas producían un
+checkmark, que es peor, porque un error se investiga y un checkmark se cree.
+
+**La segunda es el segundo escritor.** El merge de tres vías del instalador es
+una resta: lo que hay en disco, menos lo que AOI registró haber instalado, es
+la edición del Owner. Cualquier otro proceso que escriba un archivo gobernado
+rompe esa resta, y rompe de dos maneras opuestas según cuándo corra. Antes de
+la comparación, reemplaza los bytes del Owner por los de AOI y el comparador
+lee su propia salida y culpa al Owner —así terminó el guard en
+`.conf/conflicts/` en un workspace donde nadie lo había abierto. Después de la
+comparación, simplemente pisa lo que el merge decidió —así se reemplazaba el
+`pnpm-workspace.yaml` de un monorepo existente, con todos sus paquetes adentro.
+
+Las dos formas comparten una raíz: **una afirmación que nadie puede
+contradecir**. La compuerta afirma sobre un conjunto vacío; el segundo escritor
+afirma sobre un archivo que otro ya decidió. En ambos casos el sistema queda
+sin nadie que pueda decir que no.
+
+## El caso que más enseña
+
+`.vscode/settings.json` fue clasificado mal en las dos direcciones posibles, y
+verlo fallar de los dos lados es lo que reveló que el modelo estaba mal de
+raíz.
+
+Los checksums se calculaban del scaffold, pero el instalador materializa ese
+archivo sustituyendo un placeholder por `$HOME`. El comparador leía la
+sustitución del propio instalador como edición del Owner y declaraba CONFLICTO
+—de forma permanente, porque el desajuste se reproduce en cada corrida. Re-basear
+los checksums desde el disco arregló eso… y produjo una regresión peor: el
+archivo pasó a clasificarse `auto_update`, y `auto_update` copia el archivo
+ENTERO. La siguiente reinstalación borró en silencio las claves de spec-kit
+`chat.promptFilesRecommendations` y `chat.tools.terminal.autoApprove`.
+
+La lección no es que el segundo arreglo estuviera mal. Es que **la pregunta
+«¿conflicto o actualización?» no tenía respuesta correcta**, porque el archivo
+no es de AOI ni del Owner: es un objeto JSON compartido donde AOI posee unas
+claves y spec-kit y el Owner poseen el resto. Ninguna decisión a granularidad
+de archivo puede ser correcta sobre eso. La solución fue sacarlo del merge por
+archivo y fusionarlo por clave. Lo mismo aplicó a `.vscode/mcp.json`, que se
+regeneraba entero y hacía desaparecer cualquier servidor MCP que el Owner
+hubiera registrado.
+
+## El override que no podía funcionar
+
+El guard que impide que `headroom learn --apply` reescriba la superficie de
+instrucciones gobernada por AOI estaba cableado como hook `pre-commit` — el
+único hook que no puede hacer ese trabajo. Git escribe el mensaje del commit
+recién después de que `pre-commit` termina bien, así que el marcador
+`[aoi-managed-ok]` que el propio texto de error le indicaba al Owner nunca
+podía aplicar al commit para el que se escribía. Comprobado con git de verdad:
+en `pre-commit` el archivo contiene el subject del commit ANTERIOR, y está
+vacío en el primero.
+
+Y el fallback era peor que inútil. Ante un `COMMIT_EDITMSG` sin marcador, el
+guard consultaba `git log -1`, o sea el subject ya commiteado: un marcador
+dejado ayer autorizaba el diff de hoy, sin que nadie lo hubiera revisado. Un
+override es una afirmación sobre un diff concreto; arrastrarlo hacia adelante
+lo convierte en su opuesto.
+
+## Lo que la cobertura por mutación agregó
+
+`pnpm test` responde si el código sigue haciendo lo que los tests dicen. La
+sonda de mutación responde la pregunta de abajo: **si los tests siguen diciendo
+algo**. Sobre cuatro áreas dio 62%, 57%, 46% y 49%, y los sobrevivientes
+tienen una forma común en todas: **la librería está probada y su `main()` no**,
+y la CLI es lo que el ciclo SDD invoca de verdad.
+
+El más caro fue una sola línea del verificador determinista:
+
+```js
+if (enforceExitCode && unified.status !== 'PASSED') process.exit(1)
+```
+
+Invirtiendo `!==` a `===`, la compuerta sale 1 sobre una verificación limpia y
+0 sobre una fallida, y la suite entera quedaba en verde. `/sdd-verify` lee ese
+exit code para decidir si una tarea puede cerrarse.
+
+La sonda también encontró un defecto escribiendo su propio test: `shrinkTurns`
+detectaba un no-array y después hacía `[...turns]` sobre él, o sea que
+`shrinkTurns(null)` tiraba «turns is not iterable» — una defensa que revienta
+con exactamente la entrada para la que se escribió.
+
+Y la sonda tenía el mismo tipo de defecto que buscaba: mutaba dentro de
+literales de cadena, de modo que un separador `'============'` generaba
+mutantes que cambiaban un banner, sobrevivían a todo, e inflaban el conteo con
+hallazgos que no eran sobre la lógica. Un instrumento de medición que se mide a
+sí mismo mal reporta sobre sí mismo, no sobre el código.
+
+## Qué queda declarado y sin cerrar
+
+- **249 mutantes sobreviven** entre las cuatro áreas, casi todos en superficies
+  de CLI que ningún test ejecuta. El piso quedó registrado en
+  `MUTATION_FLOOR` y sólo puede subir; `pnpm aoi:mutation` lo verifica.
+- **11 de 29 fuentes del dashboard** no las carga ningún test. Diez son glue de
+  Nitro o de ciclo de vida Vue de entre 8 y 24 líneas sobre utilidades que sí
+  están cubiertas; cada exención está declarada con su motivo en
+  `UNREACHED_BUDGET` y la lista sólo puede achicarse.
+- **El piso de tokens no se movió**: 90.059, idéntico al ciclo anterior. Esta
+  rama compró corrección, no reducción, y que el piso no se haya movido es la
+  comprobación de que no coló prosa en ninguna superficie inyectada.

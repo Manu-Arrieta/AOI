@@ -379,6 +379,80 @@ EOF
 
 ---
 
+## 5.a Línea Base de Benchmark — Ciclo 2026-09-10 (ejecutado en AOI TESTS)
+
+> [!IMPORTANT]
+> **Esta tabla es la línea base contra la cual se compara el PRÓXIMO ciclo.** Cada ejecución del
+> protocolo debe regenerarla con `pnpm aoi:stress-sdd` en `/Users/equinox/Desktop/AOI TESTS` y
+> reportar el delta por fase. Una caída en cualquier `% Reducción` es una regresión y bloquea el ciclo.
+
+| Fase | Comando | Origen | Tokens Base | Tokens AOI | % Reducción |
+| :--- | :--- | :--- | ---: | ---: | ---: |
+| 0 | `/sdd-frame` | ● real | 2.410 | 178 | **92,6%** |
+| 1 | `/sdd-new` | ● real | 11.842 | 2.886 | **75,6%** |
+| 2 | `/sdd-ff` | ● real | 332 | 251 | **24,4%** |
+| 3 | `/sdd-apply` | ● real | 5.840 | 1.051 | **82,0%** |
+| 4 | `/sdd-verify` | ● real | 719 | 455 | **36,7%** |
+| 5 | `/sdd-archive` | ● real | 261 | 32 | **87,7%** |
+| **TOTAL** | **ciclo completo** | **6 real / 0 fixture** | **21.404** | **4.853** | **77,3%** |
+
+**PISO 90.059 · TECHO 106.570 · 63,9% del piso es masa repetida · huella `1d4ee21c9603ca95`.**
+
+**Delta contra el ciclo 2026-09-09:** sin regresión y sin mejora, que es el resultado correcto
+para esta rama. El piso quedó **clavado en 90.059** y el ahorro por ciclo subió de 15.783 a
+**16.551** por el mismo motivo conocido de siempre: la base de la Fase 1 se muestrea del árbol
+vivo filtrando por la palabra `token`, y esta rama agregó archivos que hablan de tokens. **Más
+base con el mismo consumo optimizado es el compresor trabajando sobre más entrada, no un
+compresor mejor** — no leerlo como ganancia.
+
+> [!IMPORTANT]
+> **Lo que esta rama compró fue corrección, no reducción.** Todo lo que agregó vive en
+> `scripts/`, `test/` y `setup.sh`, que no se inyectan en ningún contexto: cuestan 0 tokens de
+> runtime. Una rama que arregla compuertas no tiene por qué mover el piso, y que no lo haya
+> movido es la comprobación de que no coló prosa en una superficie inyectada.
+
+### Verificación conductual del instalador (nuevo en este ciclo)
+
+Siete reinstalaciones reales sobre `AOI TESTS`, con inyección de fallos deliberada en el
+workspace real —nunca en el repositorio de desarrollo— y reversión verificada archivo por
+archivo:
+
+| Qué se inyectó | Qué debía pasar | Resultado |
+| :--- | :--- | :--- |
+| Edición del Owner en un archivo gobernado | conflicto reportado, edición preservada | ✅ |
+| Edición del Owner en el guard y el wrapper | preservadas; el instalador lo dice | ✅ |
+| `checksums.json` corrupto | aviso fuerte, merge deshabilitado explícitamente | ✅ |
+| Clave de spec-kit en `settings.json` | sobrevive al reinstall | ✅ |
+| Servidor MCP propio en `mcp.json` | sobrevive al reinstall | ✅ |
+| — | espejo `scaffold/` refleja lo instalado | ✅ 293 archivos byte a byte |
+| — | hook en `commit-msg`, `pre-commit` retirado | ✅ |
+
+### Cobertura por mutación (nueva dimensión de este ciclo)
+
+`pnpm test` responde si el código sigue haciendo lo que los tests dicen. Esto responde la
+pregunta de abajo: **si los tests siguen diciendo algo**. Se corre a propósito con
+`pnpm aoi:mutation`, no en la cadena por defecto, porque ejecuta la suite del área una vez por
+mutante.
+
+| Área | Mutantes | Muertos | Score | Piso registrado |
+| :--- | ---: | ---: | ---: | ---: |
+| `scripts/subagent-context` | 85 | 53 | **62%** | 62 |
+| `scripts/sandbox` | 58 | 33 | **57%** | 57 |
+| `scripts/memory-sync` | 170 | 78 | **46%** | 46 |
+| `scripts/sdd-lifecycle` | 202 | 98 | **49%** | 49 |
+
+La primera medición de `subagent-context` dio **44%** y la de `sdd-lifecycle` **46%**; los
+números de arriba ya incluyen los tests que se escribieron contra los sobrevivientes de esa
+primera pasada. El piso es el valor medido exacto: puede subir, nunca bajar.
+
+Los sobrevivientes tienen una forma común en las cuatro áreas: **la librería está probada y su
+`main()` no**, y la CLI es lo que el ciclo SDD invoca de verdad. El caso más caro que se
+encontró y se pagó fue una sola línea del verificador determinista —
+`if (enforceExitCode && unified.status !== 'PASSED')` — que invertida hace que la compuerta
+salga 1 sobre una verificación limpia y 0 sobre una fallida, con la suite entera en verde.
+
+---
+
 ## 5.b Línea Base de Benchmark — Ciclo 2026-09-09 (ejecutado en AOI TESTS)
 
 > [!IMPORTANT]
