@@ -36,10 +36,7 @@ const SKIP_DIRS = new Set(['node_modules', '.git', 'fixtures'])
  * A ratchet, not an aspiration: the list may only shrink. An entry here says
  * the absence is understood, not that it is fine.
  */
-export const UNREACHED_BUDGET = {
-  'scripts/scaffold/mutation-ratchet.mjs':
-    'orquesta la sonda de mutación, que tarda minutos; se ejercita corriendo pnpm aoi:mutation',
-}
+export const UNREACHED_BUDGET = {}
 
 function walk(dir, keep, out = []) {
   if (!fs.existsSync(dir)) return out

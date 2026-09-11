@@ -36,17 +36,27 @@ const EXTS = ['.ts', '.mjs', '.js']
  * written directly beneath it.
  */
 export const UNREACHED_BUDGET: Record<string, string> = {
-  'server/api/resources/create.post.ts': 'glue Nitro sobre resource-operations, que sí está cubierto',
-  'server/api/resources/delete.post.ts': 'glue Nitro sobre resource-operations, que sí está cubierto',
-  'server/api/resources/move.post.ts': 'glue Nitro sobre resource-operations, que sí está cubierto',
-  'server/api/tasks/[taskId].get.ts': 'glue Nitro sobre build-workspace-snapshot',
-  'server/api/token-observability/config.post.ts': 'glue Nitro sobre token-observability-config',
-  'server/api/token-observability/summary.get.ts': 'glue Nitro sobre collect-copilot-token-usage',
-  'server/api/workspace.get.ts': 'glue Nitro sobre build-workspace-snapshot y watch-workspace',
+  // Los siete handlers de Nitro son de tres a ocho líneas de
+  // parsear-delegar-mapear, y la lógica que envuelven SÍ está cubierta.
+  // Importarlos en vitest falla con "Cannot find package 'h3'": h3 llega
+  // transitivamente por Nuxt y no resuelve desde la raíz del dashboard.
+  // Agregarlo como dependencia le suma peso de instalación al workspace de
+  // cada Owner para verificar que `defineEventHandler(fn)` llama a `fn`.
+  // Comprobado, no supuesto.
+  'server/api/resources/create.post.ts': 'glue Nitro sobre resource-operations, que sí está cubierto; h3 no resuelve en vitest',
+  'server/api/resources/delete.post.ts': 'glue Nitro sobre resource-operations, que sí está cubierto; h3 no resuelve en vitest',
+  'server/api/resources/move.post.ts': 'glue Nitro sobre resource-operations, que sí está cubierto; h3 no resuelve en vitest',
+  'server/api/tasks/[taskId].get.ts': 'glue Nitro sobre build-workspace-snapshot; h3 no resuelve en vitest',
+  'server/api/token-observability/config.post.ts': 'glue Nitro sobre token-observability-config; h3 no resuelve en vitest',
+  'server/api/token-observability/summary.get.ts': 'glue Nitro sobre collect-copilot-token-usage; h3 no resuelve en vitest',
+  'server/api/workspace.get.ts': 'glue Nitro sobre build-workspace-snapshot y watch-workspace; h3 no resuelve en vitest',
+  // Los cuatro composables son ciclo de vida de Vue: montarlos exige
+  // @vue/test-utils, y su lógica pura ya se extrajo donde la había.
   'app/composables/useDoctor.ts': 'composable de ciclo de vida Vue; la lógica vive en /api/doctor',
   'app/composables/useMemoryExplorer.ts': 'composable de ciclo de vida Vue sobre /api/memory',
   'app/composables/useTokenObservability.ts': 'composable de ciclo de vida Vue sobre /api/token-observability',
-  'app/composables/useWorkspace.ts': 'ciclo de vida Vue y SSE; su única lógica pura se extrajo a app/utils/refresh-options.ts, que sí se prueba',
+  'app/composables/useWorkspace.ts':
+    'ciclo de vida Vue y SSE; su única lógica pura se extrajo a app/utils/refresh-options.ts, que sí se prueba',
 }
 
 function walk(dir: string, keep: (f: string) => boolean, out: string[] = []): string[] {
