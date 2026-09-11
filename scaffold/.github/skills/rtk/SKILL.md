@@ -3,6 +3,8 @@ name: rtk
 description: RTK CLI proxy for token-optimized command output. Prefix all shell commands with `rtk` to save 60-90% tokens. Use when running terminal commands — builds, tests, git operations, file searches.
 ---
 
+<!-- canonical-instruction: rtk.instructions.md -->
+
 # RTK — Token-Optimized CLI
 
 La regla completa —tabla de comandos, excepciones y lista blanca— vive en
