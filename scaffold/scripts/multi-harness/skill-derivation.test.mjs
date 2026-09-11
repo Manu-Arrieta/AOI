@@ -27,7 +27,9 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import os from 'node:os'
 import { describe, it } from 'node:test'
+import { compileHarnessRules } from './compile-rules.mjs'
 import { deriveSkillFromInstruction, SKILL_FROM_INSTRUCTION, SKILL_TRIGGERS } from './protocol-source.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
@@ -106,6 +108,77 @@ describe('deriveSkillFromInstruction', () => {
       assert.ok(
         derived.length > shrunk.length,
         `la copia derivada de ${name} es más chica que la recortada: antigravity perdió contenido`
+      )
+    })
+  }
+})
+
+describe('the copy antigravity loads IS the derivation, not one that drifted from it', () => {
+  // Everything above this line tests the FUNCTION. Nothing tested the FILE the
+  // harness actually opens, and that is a different claim: derivation runs only
+  // inside `pnpm aoi:sync-rules` and the installer, never inside `pnpm test`.
+  // So the committed `.agents/skills/<n>/SKILL.md` is a real artifact that a
+  // skipped or silently-failed compile leaves untouched, while scaffold parity
+  // compares two equally stale copies and stays green over both.
+  const registered = Object.keys(SKILL_FROM_INSTRUCTION)
+
+  it('finds registered skills, so the gate is not vacuous', () => {
+    assert.ok(registered.length >= 2, `sólo ${registered.length} skill(s) registradas`)
+  })
+
+  for (const name of registered) {
+    for (const tree of ['', 'scaffold/']) {
+      it(`${tree || 'repo/'}.agents/skills/${name}/SKILL.md is byte-identical to the derivation`, () => {
+        assert.equal(
+          read(`${tree}.agents/skills/${name}/SKILL.md`),
+          deriveSkillFromInstruction(ROOT, name),
+          `${tree}.agents/skills/${name}/SKILL.md quedó viejo: se editó la instruction sin correr \`pnpm aoi:sync-rules\``
+        )
+      })
+    }
+  }
+})
+
+describe('compile-rules DERIVES the antigravity copy instead of mirroring it', () => {
+  // The negative control. An adversarial pre-merge review killed the suite
+  // above by reverting the wiring in compile-rules.mjs to a plain
+  // `fs.readFileSync(skillFilePath)`: every test in the repo stayed green while
+  // the next sync would have overwritten antigravity's ICM protocol with the
+  // shrunk pointer stub. Asserting the function derives says nothing about
+  // whether the compiler calls it, so this runs the compiler and reads what it
+  // actually wrote.
+  const registered = Object.keys(SKILL_FROM_INSTRUCTION)
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-derive-gate-'))
+  const written = new Map()
+
+  try {
+    for (const rel of ['.github/instructions', '.github/skills']) {
+      fs.cpSync(path.join(ROOT, rel), path.join(tmp, rel), { recursive: true })
+    }
+    compileHarnessRules(tmp, ['antigravity'], 'AOI')
+    for (const name of registered) {
+      const out = path.join(tmp, '.agents', 'skills', name, 'SKILL.md')
+      written.set(name, fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : null)
+    }
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true })
+  }
+
+  for (const name of registered) {
+    it(`what the compiler writes for ${name} is the derived text`, () => {
+      assert.ok(written.get(name), `el compilador no escribió .agents/skills/${name}/SKILL.md`)
+      assert.match(
+        written.get(name),
+        /<!-- Derivado de .+ por aoi:sync-rules\. No editar a mano\. -->/,
+        `el compilador copió la skill de ${name} en vez de derivarla: antigravity recibe el stub recortado`
+      )
+    })
+
+    it(`what the compiler writes for ${name} carries the full instruction body`, () => {
+      const shrunk = read(`.github/skills/${name}/SKILL.md`)
+      assert.ok(
+        written.get(name).length > shrunk.length,
+        `la copia compilada de ${name} no es más grande que la skill recortada: el cableado de derivación se perdió`
       )
     })
   }
