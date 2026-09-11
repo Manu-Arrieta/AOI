@@ -145,3 +145,106 @@ describe('mechanical-verify-union answers with its exit code', () => {
     fs.rmSync(dir, { recursive: true, force: true })
   })
 })
+
+const ARRANGER = path.join(HERE, 'context-arranger.mjs')
+const CACHE_PREFIX = path.join(HERE, 'cache-prefix.mjs')
+const REPO = path.resolve(HERE, '../..')
+
+/**
+ * The Context Arranger decides what the agent sees and in what order, which
+ * is the saving in Phase 1. Its `main()` reads four flags and every one of
+ * them silently falls back to a default when it cannot be read: a typo in a
+ * path does not fail, it arranges an empty context. Twenty-two of the area's
+ * mutants lived here.
+ */
+function withItems(items, name = 'signals.json') {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-arrange-'))
+  const file = path.join(root, name)
+  fs.writeFileSync(file, JSON.stringify(items))
+  return { root, file }
+}
+
+const ITEMS = (prefix, n) =>
+  Array.from({ length: n }, (_, i) => ({ id: `${prefix}-${i}`, content: `${prefix} contenido ${i} `.repeat(10) }))
+
+describe('context-arranger', () => {
+  it('prints usage and exits 0 with no arguments', () => {
+    const r = run(ARRANGER, [])
+    assert.equal(r.code, 0)
+    assert.match(r.stdout, /Usage:/)
+  })
+
+  it('arranges the signals it was pointed at', () => {
+    const { root, file } = withItems(ITEMS('senal', 4))
+    const r = run(ARRANGER, ['--signals', file])
+    assert.equal(r.code, 0, `${r.stdout}${r.stderr}`)
+    assert.match(r.stdout, /senal/)
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+
+  it('keeps background material distinguishable from signal', () => {
+    // The whole mechanism is contrast: if background and signal were merged
+    // the arranger would be an expensive no-op.
+    const a = withItems(ITEMS('senal', 3))
+    const b = withItems(ITEMS('fondo', 3), 'bg.json')
+    const both = run(ARRANGER, ['--signals', a.file, '--background', b.file]).stdout
+    const only = run(ARRANGER, ['--signals', a.file]).stdout
+    assert.notEqual(both, only, 'el --background no cambió nada')
+    fs.rmSync(a.root, { recursive: true, force: true })
+    fs.rmSync(b.root, { recursive: true, force: true })
+  })
+
+  it('honours --ratio', () => {
+    const a = withItems(ITEMS('senal', 6))
+    const b = withItems(ITEMS('fondo', 6), 'bg.json')
+    const low = run(ARRANGER, ['--signals', a.file, '--background', b.file, '--ratio', '0.2']).stdout
+    const high = run(ARRANGER, ['--signals', a.file, '--background', b.file, '--ratio', '0.9']).stdout
+    assert.notEqual(low, high, 'el --ratio no cambió la mezcla')
+    fs.rmSync(a.root, { recursive: true, force: true })
+    fs.rmSync(b.root, { recursive: true, force: true })
+  })
+
+  it('falls back to the default ratio on a value that is not a number', () => {
+    // `parseFloat(x) || 0.5` — a typo must not arrange with NaN, which would
+    // silently drop everything.
+    const { root, file } = withItems(ITEMS('senal', 4))
+    const bad = run(ARRANGER, ['--signals', file, '--ratio', 'medio'])
+    const good = run(ARRANGER, ['--signals', file, '--ratio', '0.5'])
+    assert.equal(bad.code, 0)
+    assert.equal(bad.stdout, good.stdout)
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+
+  it('honours --pos', () => {
+    const a = withItems(ITEMS('senal', 4))
+    const b = withItems(ITEMS('fondo', 4), 'bg.json')
+    const end = run(ARRANGER, ['--signals', a.file, '--background', b.file, '--pos', 'end']).stdout
+    const start = run(ARRANGER, ['--signals', a.file, '--background', b.file, '--pos', 'start']).stdout
+    assert.notEqual(end, start, 'la posición no cambió el orden')
+    fs.rmSync(a.root, { recursive: true, force: true })
+    fs.rmSync(b.root, { recursive: true, force: true })
+  })
+
+  it('arranges nothing rather than crashing when the signals file is missing', () => {
+    // Documented, not endorsed: a mistyped path produces an empty context and
+    // exit 0. Pinned here so the silence is a decision and not a surprise.
+    const r = run(ARRANGER, ['--signals', '/no/existe/signals.json'])
+    assert.equal(r.code, 0)
+  })
+})
+
+describe('cache-prefix guards the always-injected surface', () => {
+  it('exits 0 on the real repository, where the repeated mass is stable', () => {
+    const r = run(CACHE_PREFIX, [], REPO)
+    assert.equal(r.code, 0, r.stdout.slice(-500))
+    assert.match(r.stdout, /La masa repetida no muta/)
+  })
+
+  it('reports the multiplier band, which is what makes a cut worth six', () => {
+    // A token cut in the universal band is paid in all six phases. Losing
+    // this table is how someone optimises the cheap half of the cycle.
+    const r = run(CACHE_PREFIX, [], REPO)
+    assert.match(r.stdout, /x6\s+\d+/)
+    assert.match(r.stdout, /PISO/)
+  })
+})

@@ -44,10 +44,39 @@ export const OPERATORS = [
   { name: 'false→true', find: /\bfalse\b/g, replace: 'true' },
 ]
 
+/**
+ * The same question asked of shell.
+ *
+ * The installer machinery is where the most destructive defects of this audit
+ * lived, and it is written in bash, so leaving it unmeasured left the worst
+ * code in the project outside the only check that asks whether its tests
+ * constrain anything. These are bash's spellings of the same decisions:
+ * string and numeric comparison, the two logical connectives, and the file
+ * and emptiness tests that every guard in `compare-install.sh` is built from.
+ */
+export const SHELL_OPERATORS = [
+  { name: 'sh:eq→ne', find: / == /g, replace: ' != ' },
+  { name: 'sh:ne→eq', find: / != /g, replace: ' == ' },
+  { name: 'sh:and→or', find: / && /g, replace: ' || ' },
+  { name: 'sh:or→and', find: / \|\| /g, replace: ' && ' },
+  { name: 'sh:-eq→-ne', find: / -eq /g, replace: ' -ne ' },
+  { name: 'sh:-ne→-eq', find: / -ne /g, replace: ' -eq ' },
+  { name: 'sh:-gt→-ge', find: / -gt /g, replace: ' -ge ' },
+  { name: 'sh:-z→-n', find: /\[ -z /g, replace: '[ -n ' },
+  { name: 'sh:-n→-z', find: /\[ -n /g, replace: '[ -z ' },
+  { name: 'sh:-f→!-f', find: /\[ -f /g, replace: '[ ! -f ' },
+  { name: 'sh:-d→!-d', find: /\[ -d /g, replace: '[ ! -d ' },
+]
+
+/** Which operator set applies to a file, by extension. */
+export function operatorsFor(file) {
+  return file.endsWith('.sh') ? SHELL_OPERATORS : OPERATORS
+}
+
 /** Lines that are comment noise rather than logic. */
 function isSkippable(line) {
   const t = line.trim()
-  return t === '' || t.startsWith('//') || t.startsWith('*') || t.startsWith('/*')
+  return t === '' || t.startsWith('//') || t.startsWith('#') || t.startsWith('*') || t.startsWith('/*')
 }
 
 /**
@@ -79,7 +108,7 @@ export function literalMask(line) {
       mask[i] = true
       continue
     }
-    if (c === '/' && line[i + 1] === '/') {
+    if ((c === '/' && line[i + 1] === '/') || c === '#') {
       for (let j = i; j < line.length; j++) mask[j] = true
       break
     }
@@ -91,13 +120,13 @@ export function literalMask(line) {
  * Every single-site mutation of a source file.
  * @returns {Array<{ line: number, operator: string, mutated: string, before: string }>}
  */
-export function mutationsFor(source) {
+export function mutationsFor(source, operators = OPERATORS) {
   const lines = source.split('\n')
   const out = []
   lines.forEach((line, i) => {
     if (isSkippable(line)) return
     const masked = literalMask(line)
-    for (const op of OPERATORS) {
+    for (const op of operators) {
       op.find.lastIndex = 0
       let m
       while ((m = op.find.exec(line)) !== null) {
@@ -121,7 +150,7 @@ export function areaSources(root, area) {
   if (!fs.existsSync(dir)) return []
   return fs
     .readdirSync(dir)
-    .filter((f) => f.endsWith('.mjs') && !f.endsWith('.test.mjs'))
+    .filter((f) => (f.endsWith('.mjs') || f.endsWith('.sh')) && !f.endsWith('.test.mjs'))
     .map((f) => path.join(area, f))
     .sort()
 }
@@ -163,11 +192,16 @@ function expand(cwd, glob) {
 
 export async function probe(root, area, testGlob, limit = Infinity, log = () => {}) {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-mutate-'))
-  // `scaffold` is anchored: the top-level mirror is a duplicate worth
-  // skipping, but `scripts/scaffold/` is real source that other areas import,
-  // and an unanchored pattern dropped it — the sdd-lifecycle suite then failed
-  // in the copy for a reason that had nothing to do with any mutation.
-  const EXCLUDED = /(?:^|\/)(?:node_modules|\.git|\.nuxt|\.output|coverage)(?:\/|$)|^scaffold(?:\/|$)/
+  // The mirror travels with the copy. Excluding it was a size optimisation
+  // and it broke a real test: `scripts/conf` asserts that the files the
+  // installer materialises are the ones the scaffold ships, so without the
+  // mirror that area's suite failed before a single mutant was planted — and
+  // a probe that cannot get a clean baseline reports nothing at all.
+  //
+  // The trade-off to remember: an area whose tests compare a file against its
+  // mirror byte for byte would kill every mutant spuriously, because only the
+  // original gets mutated. No measured area does that today.
+  const EXCLUDED = /(?:^|\/)(?:node_modules|\.git|\.nuxt|\.output|coverage)(?:\/|$)/
   fs.cpSync(root, work, {
     recursive: true,
     filter: (src) => {
@@ -191,7 +225,7 @@ export async function probe(root, area, testGlob, limit = Infinity, log = () => 
   for (const rel of areaSources(root, area)) {
     const target = path.join(work, rel)
     const original = fs.readFileSync(target, 'utf8')
-    const candidates = mutationsFor(original)
+    const candidates = mutationsFor(original, operatorsFor(rel))
     for (const mutation of candidates) {
       if (total >= limit) break
       total += 1
