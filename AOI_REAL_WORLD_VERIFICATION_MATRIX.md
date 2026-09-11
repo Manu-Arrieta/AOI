@@ -473,10 +473,18 @@ determinista cuya inversión aprueba toda tarea rota.
 El peor score del repositorio fue `aoi-doctor` con 15%: la frase «AOI Workspace is fully
 operational and healthy» se apoyaba en una sola línea que admitía las dos inversiones.
 
-**Fuera de alcance, declarado:** `setup.sh` (1.840 líneas) y `teardown.sh` no se mutan. Sus
-tests son aserciones estáticas y reinstalaciones reales, así que casi ningún mutante moriría
-y cada uno costaría una instalación completa. Su verificación es el protocolo de
-reinstalación de la sección anterior, no esta.
+**Fuera de alcance, declarado:** `setup.sh` (1.840 líneas), `teardown.sh` y los cinco
+helpers de shell de `scripts/` —`aoi-headroom-wrap.sh`, `headroom-vscode-setup.sh`,
+`install-headroom.sh`, `install-codebase-memory.sh`, `nvidia-vscode-setup.sh`— no se mutan.
+Sus tests son aserciones estáticas y reinstalaciones reales, así que casi ningún mutante
+moriría y cada uno costaría una instalación completa. Su verificación es el protocolo de
+reinstalación de la sección anterior, no ésta.
+
+> [!WARNING]
+> Mezclar dos sujetos con historias de testeo distintas en un solo número los esconde a los
+> dos. Extender la sonda a bash hizo que el área `scripts` empezara a mutar esos cinco
+> helpers, y el score del doctor se desplomó de **81%** a un **29%** que era casi todo bash
+> ajeno sin tests. La sonda ahora deja declarar qué extensiones mide cada área.
 
 Los sobrevivientes tienen una forma común en las cuatro áreas: **la librería está probada y su
 `main()` no**, y la CLI es lo que el ciclo SDD invoca de verdad. El caso más caro que se

@@ -34,28 +34,28 @@ import { probe } from './mutation-probe.mjs'
  */
 export const MUTATION_FLOOR = {
   'scripts/subagent-context': 68,
-  'scripts/sandbox': 78,
+  'scripts/sandbox': 86,
   'scripts/memory-sync': 52,
-  'scripts/sdd-lifecycle': 61,
+  'scripts/sdd-lifecycle': 67,
   // Shell. The installer machinery is where the most destructive defects of
   // the audit lived, so leaving it unmeasured left the worst code in the
   // project outside the only check that asks whether its tests bind.
   'scripts/conf': 62,
-  // Las seis que nunca se habían medido. `scripts` (la raíz) es aoi-doctor y
-  // salió 15%: el peor del repositorio, y el que le dice al Owner que su
-  // workspace está sano. Su veredicto ya quedó cubierto; el resto de su
-  // superficie no.
+  // `scripts` (la raíz) es aoi-doctor más doctor-checks. Midió 15% cuando su
+  // veredicto no tenía un solo test, y 81% una vez cubiertos el veredicto y
+  // los seis chequeos. Los cinco helpers de shell que viven en esa misma raíz
+  // quedan fuera por AREA_EXTENSIONS — ver el comentario allí.
   'scripts/multi-harness': 53,
-  'scripts/scaffold': 56,
+  'scripts/scaffold': 60,
   'scripts/spatiotemporal-runtime': 59,
   'scripts/code-lens': 51,
   'scripts/mcp-gateway': 57,
-  'scripts': 27,
+  'scripts': 81,
   // El dashboard, que no tenía ninguna medición porque corre bajo vitest y no
   // bajo `node --test`. La sonda acepta un runner distinto y enlaza
   // node_modules y .nuxt en la copia; sin .nuxt, tsconfig.json no resuelve y
   // los 23 archivos de test fallan antes de la primera aserción.
-  'aoi_apps/agentic-ops-dashboard/server/utils': 51,
+  'aoi_apps/agentic-ops-dashboard/server/utils': 54,
 }
 
 export const TEST_GLOB = (area) => `${area}/*.test.mjs`
@@ -67,6 +67,18 @@ export const TEST_GLOB = (area) => `${area}/*.test.mjs`
  * also needs `node_modules` and `.nuxt` linked, which `probe` does whenever a
  * runner is given.
  */
+/**
+ * Areas that mutate only some extensions.
+ *
+ * `scripts` (the root) holds the doctor and five installer shell helpers.
+ * The helpers belong with setup.sh: their verification is a real
+ * installation, not a unit suite, so mutating them buries the doctor's
+ * number under sixty-three survivors that say nothing about the doctor.
+ */
+export const AREA_EXTENSIONS = {
+  scripts: ['.mjs'],
+}
+
 export const RUNNERS = {
   'aoi_apps/agentic-ops-dashboard/server/utils': {
     command: 'npx',
@@ -96,7 +108,15 @@ async function main() {
   console.log('=== AOI Mutation Ratchet ===\n')
   for (const area of areas) {
     process.stdout.write(`${area} ... `)
-    const r = await probe(process.cwd(), area, TEST_GLOB(area), Infinity, () => {}, RUNNERS[area] ?? null)
+    const r = await probe(
+      process.cwd(),
+      area,
+      TEST_GLOB(area),
+      Infinity,
+      () => {},
+      RUNNERS[area] ?? null,
+      AREA_EXTENSIONS[area]
+    )
     const verdict = judge(area, r.killed, r.total, MUTATION_FLOOR)
     results.push({ ...verdict, total: r.total, survivors: r.survivors.length })
     console.log(`${verdict.score}% (piso ${verdict.expected ?? '—'}) · ${r.total} mutantes · ${r.survivors.length} sobreviven`)

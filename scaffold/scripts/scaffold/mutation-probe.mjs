@@ -145,14 +145,26 @@ export function mutationsFor(source, operators = OPERATORS) {
 }
 
 /** Sources of an area, excluding its tests. */
-export function areaSources(root, area) {
+export const DEFAULT_EXTENSIONS = ['.mjs', '.sh', '.ts']
+
+/**
+ * Sources of an area, excluding its tests.
+ *
+ * `extensions` narrows what gets mutated, and the reason is a measurement the
+ * probe itself distorted: extending it to shell made the `scripts` area start
+ * mutating five installer helpers that live in that root and have no tests,
+ * so the doctor's score collapsed from a clean 7 survivors to a reported 29%
+ * that was mostly someone else's untested bash. Mixing two subjects with
+ * different testing stories into one number hides both.
+ */
+export function areaSources(root, area, extensions = DEFAULT_EXTENSIONS) {
   const dir = path.join(root, area)
   if (!fs.existsSync(dir)) return []
   return fs
     .readdirSync(dir)
     .filter(
       (f) =>
-        (f.endsWith('.mjs') || f.endsWith('.sh') || f.endsWith('.ts')) &&
+        extensions.some((e) => f.endsWith(e)) &&
         !f.endsWith('.test.mjs') &&
         !f.endsWith('.test.ts') &&
         !f.endsWith('.d.ts')
@@ -230,7 +242,7 @@ function expand(cwd, glob) {
     .sort()
 }
 
-export async function probe(root, area, testGlob, limit = Infinity, log = () => {}, runner = null) {
+export async function probe(root, area, testGlob, limit = Infinity, log = () => {}, runner = null, extensions = DEFAULT_EXTENSIONS) {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-mutate-'))
   // The mirror travels with the copy. Excluding it was a size optimisation
   // and it broke a real test: `scripts/conf` asserts that the files the
@@ -264,7 +276,7 @@ export async function probe(root, area, testGlob, limit = Infinity, log = () => 
   let killed = 0
   let total = 0
 
-  for (const rel of areaSources(root, area)) {
+  for (const rel of areaSources(root, area, extensions)) {
     const target = path.join(work, rel)
     const original = fs.readFileSync(target, 'utf8')
     const candidates = mutationsFor(original, operatorsFor(rel))
@@ -293,6 +305,8 @@ async function main() {
   const limit = limitFlag > -1 ? Number(process.argv[limitFlag + 1]) : Infinity
   const runnerFlag = process.argv.indexOf('--runner')
   const runner = runnerFlag > -1 ? JSON.parse(process.argv[runnerFlag + 1]) : null
+  const extFlag = process.argv.indexOf('--ext')
+  const extensions = extFlag > -1 ? process.argv[extFlag + 1].split(',') : DEFAULT_EXTENSIONS
   if (!area || !testGlob) {
     process.stderr.write('Uso: mutation-probe.mjs <area-dir> <test-glob> [--limit N]\n')
     process.exit(2)
@@ -300,7 +314,7 @@ async function main() {
 
   const root = process.cwd()
   process.stdout.write(`=== Mutación sobre ${area} ===\n`)
-  const r = await probe(root, area, testGlob, limit, (m) => process.stdout.write(m + '\n'), runner)
+  const r = await probe(root, area, testGlob, limit, (m) => process.stdout.write(m + '\n'), runner, extensions)
 
   const score = r.total === 0 ? 0 : Math.round((r.killed / r.total) * 100)
   process.stdout.write(`\nMutantes: ${r.total} · muertos: ${r.killed} · sobreviven: ${r.survivors.length} · score ${score}%\n`)
