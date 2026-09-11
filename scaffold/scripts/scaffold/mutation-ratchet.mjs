@@ -33,13 +33,30 @@ import { probe } from './mutation-probe.mjs'
  * verifier's exit-code line was the first one repaid.
  */
 export const MUTATION_FLOOR = {
-  'scripts/subagent-context': 62,
-  'scripts/sandbox': 57,
-  'scripts/memory-sync': 46,
-  'scripts/sdd-lifecycle': 49,
+  'scripts/subagent-context': 68,
+  'scripts/sandbox': 78,
+  'scripts/memory-sync': 52,
+  'scripts/sdd-lifecycle': 61,
+  // Shell. The installer machinery is where the most destructive defects of
+  // the audit lived, so leaving it unmeasured left the worst code in the
+  // project outside the only check that asks whether its tests bind.
+  'scripts/conf': 62,
+  // Las seis que nunca se habían medido. `scripts` (la raíz) es aoi-doctor y
+  // salió 15%: el peor del repositorio, y el que le dice al Owner que su
+  // workspace está sano. Su veredicto ya quedó cubierto; el resto de su
+  // superficie no.
+  'scripts/multi-harness': 53,
+  'scripts/scaffold': 57,
+  'scripts/spatiotemporal-runtime': 59,
+  'scripts/code-lens': 51,
+  'scripts/mcp-gateway': 57,
+  'scripts': 15,
 }
 
 export const TEST_GLOB = (area) => `${area}/*.test.mjs`
+
+/** Areas whose sources are shell rather than JavaScript. */
+export const SHELL_AREAS = new Set(['scripts/conf'])
 
 /** Compares a measured score against its floor. */
 export function judge(area, killed, total, floor = MUTATION_FLOOR) {

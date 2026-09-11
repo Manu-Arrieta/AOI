@@ -150,7 +150,13 @@ export function areaSources(root, area) {
   if (!fs.existsSync(dir)) return []
   return fs
     .readdirSync(dir)
-    .filter((f) => (f.endsWith('.mjs') || f.endsWith('.sh')) && !f.endsWith('.test.mjs'))
+    .filter(
+      (f) =>
+        (f.endsWith('.mjs') || f.endsWith('.sh') || f.endsWith('.ts')) &&
+        !f.endsWith('.test.mjs') &&
+        !f.endsWith('.test.ts') &&
+        !f.endsWith('.d.ts')
+    )
     .map((f) => path.join(area, f))
     .sort()
 }
@@ -165,12 +171,38 @@ export function areaSources(root, area) {
  * one-second suite ends up taking an hour. A hang IS a killed mutant: the
  * suite did not pass.
  */
-function suitePasses(cwd, glob, timeout = 180000) {
+function suitePasses(cwd, glob, timeout = 180000, runner = null) {
   try {
-    execFileSync('node', ['--test', ...expand(cwd, glob)], { cwd, stdio: 'ignore', timeout })
+    if (runner) {
+      execFileSync(runner.command, runner.args, { cwd: path.join(cwd, runner.cwd ?? '.'), stdio: 'ignore', timeout })
+    } else {
+      execFileSync('node', ['--test', ...expand(cwd, glob)], { cwd, stdio: 'ignore', timeout })
+    }
     return true
   } catch {
     return false
+  }
+}
+
+/**
+ * Makes the copy runnable for a suite that needs installed packages.
+ *
+ * `node --test` over AOI's own scripts needs nothing, but the dashboard runs
+ * under vitest. Copying node_modules would cost more than the measurement;
+ * linking it is free and the run only reads from it.
+ */
+function linkDependencies(root, work, relativeDirs) {
+  for (const rel of relativeDirs) {
+    const source = path.join(root, rel, 'node_modules')
+    if (!fs.existsSync(source)) continue
+    const target = path.join(work, rel, 'node_modules')
+    if (fs.existsSync(target)) continue
+    fs.mkdirSync(path.dirname(target), { recursive: true })
+    try {
+      fs.symlinkSync(source, target, 'dir')
+    } catch {
+      // A copy without dependencies simply fails its baseline, loudly.
+    }
   }
 }
 
@@ -190,7 +222,7 @@ function expand(cwd, glob) {
     .sort()
 }
 
-export async function probe(root, area, testGlob, limit = Infinity, log = () => {}) {
+export async function probe(root, area, testGlob, limit = Infinity, log = () => {}, runner = null) {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-mutate-'))
   // The mirror travels with the copy. Excluding it was a size optimisation
   // and it broke a real test: `scripts/conf` asserts that the files the
@@ -210,8 +242,10 @@ export async function probe(root, area, testGlob, limit = Infinity, log = () => 
     },
   })
 
+  if (runner) linkDependencies(root, work, ['.', runner.cwd ?? '.'])
+
   const startedAt = Date.now()
-  const baseline = suitePasses(work, testGlob)
+  const baseline = suitePasses(work, testGlob, 180000, runner)
   const timeout = mutantTimeout(Date.now() - startedAt)
   if (!baseline) {
     fs.rmSync(work, { recursive: true, force: true })
@@ -230,7 +264,7 @@ export async function probe(root, area, testGlob, limit = Infinity, log = () => 
       if (total >= limit) break
       total += 1
       fs.writeFileSync(target, mutation.mutated)
-      if (suitePasses(work, testGlob, timeout)) {
+      if (suitePasses(work, testGlob, timeout, runner)) {
         survivors.push({ file: rel, ...mutation, mutated: undefined })
       } else {
         killed += 1
@@ -249,6 +283,8 @@ async function main() {
   const [area, testGlob] = process.argv.slice(2)
   const limitFlag = process.argv.indexOf('--limit')
   const limit = limitFlag > -1 ? Number(process.argv[limitFlag + 1]) : Infinity
+  const runnerFlag = process.argv.indexOf('--runner')
+  const runner = runnerFlag > -1 ? JSON.parse(process.argv[runnerFlag + 1]) : null
   if (!area || !testGlob) {
     process.stderr.write('Uso: mutation-probe.mjs <area-dir> <test-glob> [--limit N]\n')
     process.exit(2)
@@ -256,7 +292,7 @@ async function main() {
 
   const root = process.cwd()
   process.stdout.write(`=== Mutación sobre ${area} ===\n`)
-  const r = await probe(root, area, testGlob, limit, (m) => process.stdout.write(m + '\n'))
+  const r = await probe(root, area, testGlob, limit, (m) => process.stdout.write(m + '\n'), runner)
 
   const score = r.total === 0 ? 0 : Math.round((r.killed / r.total) * 100)
   process.stdout.write(`\nMutantes: ${r.total} · muertos: ${r.killed} · sobreviven: ${r.survivors.length} · score ${score}%\n`)

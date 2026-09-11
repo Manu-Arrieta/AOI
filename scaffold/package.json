@@ -22,7 +22,7 @@
     "test:mcp-gateway": "node --test scripts/mcp-gateway/*.test.mjs",
     "doctor": "node scripts/aoi-doctor.mjs",
     "aoi:doctor": "node scripts/aoi-doctor.mjs",
-    "test:doctor": "node --test scripts/aoi-doctor.test.mjs scripts/doctor-verdicts.test.mjs",
+    "test:doctor": "node --test scripts/*.test.mjs",
     "sync:rules": "node scripts/multi-harness/compile-rules.mjs",
     "aoi:sync-rules": "node scripts/multi-harness/compile-rules.mjs",
     "test:sandbox": "node --test scripts/sandbox/*.test.mjs",
