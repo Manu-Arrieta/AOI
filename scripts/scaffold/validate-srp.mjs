@@ -34,18 +34,21 @@ const SOURCE_EXTENSIONS = new Set(['.mjs', '.js', '.ts'])
 const SKIP_DIRS = new Set(['node_modules', '.git', '.nuxt', '.output', 'dist', 'build', 'coverage', 'scaffold'])
 
 /**
- * Files that already exceeded the limit when the gate was introduced, with the
- * size they had at that moment. Each one is a debt, not an exemption: the
- * recorded number is a ceiling that may only be lowered.
+ * Files that exceed the limit, with the size they had when they were recorded.
+ * Each one is a debt, not an exemption: the number may only be lowered.
+ *
+ * **Empty, and that is the point.** The gate shipped with three entries. The
+ * three were paid by splitting along real seams rather than by shaving lines:
+ * `export-memory-bundle.mjs` lost a fifty-line argument parser duplicated in
+ * its sibling, `aoi-doctor.mjs` lost the six checks it runs — leaving it with
+ * the one decision it actually owns — and `detect-base-project.mjs` lost the
+ * pnpm-workspace parsing, which was never about classifying a project.
  *
  * Sizes are as `validateFileSizes` counts them, which is the same count
  * `/sdd-verify` reports. That is one more than `wc -l` for a file ending in a
  * newline; using the gate's own measure keeps the two from disagreeing.
  */
-export const LEGACY_BUDGET = {
-  'scripts/aoi-doctor.mjs': 317,
-  'scripts/sandbox/detect-base-project.mjs': 342,
-}
+export const LEGACY_BUDGET = {}
 
 /**
  * Lists source files to audit, skipping vendored trees and the mirror.
