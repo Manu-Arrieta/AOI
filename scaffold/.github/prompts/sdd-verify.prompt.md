@@ -59,6 +59,8 @@ Hand off to **@integration-specialist** with isolated task context (via `node sc
    - Read each task's `## Test Requirements` section from `tasks.md`
    - Detect test runner from project stack: `npm test`, `pnpm test`, `pytest`, `go test ./...`, `dotnet test`, etc.
    - Run the test suite and capture output. If tests fail → include failures in verify-report as FAIL reason
+   - **Un conteo de 0 tests es un FAIL, nunca un pase.** `rtk` comprime la salida del runner a un resumen, y cuando no se colectó ningún archivo ese resumen es `PASS (0) FAIL (0)`: la línea `No test files found` que lo explicaría se pierde en la compresión y el texto se lee verde. El exit code sí dice la verdad. Ante cualquier `(0)`, reejecutá con `rtk proxy` y mirá la salida cruda.
+   - **Un test que existe pero ningún runner colecta no cuenta.** `pnpm aoi:test-globs` lo detecta; el Invariant Gate ya descarta esos archivos al cruzar tags.
    - If no test files exist for a task that specified test requirements → mark as TDD FAIL
 5. **Software Principles Gate** — review all new/modified files and report violations:
    - **SRP**: Any file >300 LOC? → WARNING (justify or recommend split)
@@ -69,8 +71,9 @@ Hand off to **@integration-specialist** with isolated task context (via `node sc
    - **Observability**: Read `design.md` Observability section — verify that logs/metrics/traces specified in design were actually implemented. New endpoints/controllers without logging? → WARNING
    - **Contract-First**: Read `spec.md` for API contracts defined — verify that interfaces/types/endpoints match the spec. Breaking changes from spec? → WARNING
    Include findings in verify-report under `## Principles Compliance`.
-6. **Mechanical Set Union Consolidation**: When consolidating multiple verification reports (test failures, lint violations, type errors, LOC limits, and TDD coverage pairs), use deterministic Set Union aggregation (via `node scripts/sdd-lifecycle/mechanical-verify-union.mjs`) instead of paying for an LLM fuser/evaluator step.
-7. **Spatiotemporal Rollback on Failure (0-Token Reversibility)**: If verification emits `FAIL` or critical defect count > 0, the active Fiber Sandbox executes `recover_Γ` (`sandbox.rollback()`), restoring the workspace state in 0ms and 0 LLM tokens, eliminating context pollution from broken attempts.
+6. **Diagnostic Distillation (MANDATORY)**: Never read a raw `vitest`/`tsc` failure into context. Pipe it through `node scripts/sdd-lifecycle/diagnostic-distiller.mjs` first, which keeps the assertion and the failing location and drops the stack noise. The saving scales with the size of the crash, so the worse the failure the more it matters.
+7. **Mechanical Set Union Consolidation**: When consolidating multiple verification reports (test failures, lint violations, type errors, LOC limits, and TDD coverage pairs), use deterministic Set Union aggregation (via `node scripts/sdd-lifecycle/mechanical-verify-union.mjs`) instead of paying for an LLM fuser/evaluator step.
+8. **Spatiotemporal Rollback on Failure (0-Token Reversibility)**: If verification emits `FAIL` or critical defect count > 0, the active Fiber Sandbox executes `recover_Γ` (`sandbox.rollback()`), restoring the workspace state in 0ms and 0 LLM tokens, eliminating context pollution from broken attempts.
 
 ### Step 4: Service Discovery Gate Check
 
@@ -94,6 +97,7 @@ node scripts/sdd-lifecycle/invariant-gate.mjs --entity "{WORKSPACE}" --tests-dir
 
 - **Exit 0 → continue.** Status `SKIPPED` means the task never passed through `/sdd-frame` (no BIC facts exist) and is not a failure.
 - **Exit 1 → automatic FAIL gate.** A declared invariant with no test enforcing it is an unguarded contract. Capture the reported `Unenforced Contract Rules` verbatim into the Verify Report. Same severity as the Service Discovery and Resource Workflow Semantics gates.
+- **Si el contrato se contradice a sí mismo, decilo y no lo tapes.** Un ciclo real produjo un BIC cuyo oráculo exigía un estado que sus propios criterios de aceptación asignaban a otro; los dos no podían valer. Marcá el test con `CONTRADICTION PENDING OWNER RESOLUTION` y el gate lo tratará como **no cubierto** en vez de leerlo como enforcement — un contrato que nadie puede satisfacer no debe publicarse reportado como exigido. Se resuelve devolviendo a `/sdd-frame` para recalibrar, no eligiendo una mitad en silencio.
 - **Exit 2 → BLOCKED, also a FAIL.** The contract could not be read (broken ICM toolchain). Absence of evidence is never evidence of compliance: repair the toolchain and re-run. Do NOT interpret an unreadable contract as a clean pass.
 
 Add `--bic {BIC-ID}` to narrow the audit to the contract under verification.

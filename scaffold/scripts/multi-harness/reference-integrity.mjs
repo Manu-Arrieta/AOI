@@ -219,6 +219,17 @@ export async function main() {
   const root = process.argv[2] || process.cwd()
   const audit = auditReferenceIntegrity(root)
   process.stdout.write(formatReport(audit) + '\n')
+
+  // "Every reference resolves" over zero files scanned is not a pass; it is a
+  // gate that found nothing to check and said everything is fine. A wrong
+  // working directory, or a `.github/` that a bad merge emptied, would both
+  // print the checkmark.
+  if (audit.filesScanned === 0) {
+    process.stderr.write('\n❌ Cero archivos escaneados: no hay referencias que verificar.\n')
+    process.stderr.write('Un veredicto afirmativo sobre cero entradas no dice que todo resuelve.\n')
+    process.exit(1)
+  }
+
   if (audit.status !== 'PASSED') process.exit(1)
 }
 

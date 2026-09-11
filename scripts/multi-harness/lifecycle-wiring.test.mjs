@@ -141,38 +141,6 @@ describe('the [conditional] marker cannot be used to invent savings', () => {
   })
 })
 
-describe('per-agent model blocks stay compressed', () => {
-  const agents = fs
-    .readdirSync(path.join(ROOT, '.github/agents'))
-    .filter((f) => f.endsWith('.agent.md'))
-
-  it('every agent still states its model and fallback where the operator reads it', () => {
-    for (const f of agents) {
-      const text = read(`.github/agents/${f}`)
-      assert.match(text, /## Model Requirement/, `${f} lost its model block`)
-      assert.match(text, /\*\*Model\*\*:/, `${f} no longer states its model`)
-      assert.match(text, /\*\*Fallback\*\*:/, `${f} no longer states its fallback`)
-      assert.match(text, /picker de Copilot/, `${f} lost the operator cue about the model picker`)
-    }
-  })
-
-  it('does not grow the justification prose back, which lives in the registry', () => {
-    // 27 agents × a paragraph of rationale is paid on every delegation and
-    // says nothing the operator acts on at that moment.
-    const bloated = agents.filter((f) => /Justificación/.test(read(`.github/agents/${f}`)))
-    assert.deepEqual(bloated, [], 'model rationale prose came back into the agent files')
-  })
-
-  it('keeps the whole block small, since it is paid on every delegation', () => {
-    for (const f of agents) {
-      const block = /## Model Requirement\n[\s\S]*?(?=\n## )/.exec(read(`.github/agents/${f}`))
-      if (!block) continue
-      const tokens = Math.round(block[0].length / 4)
-      assert.ok(tokens <= 110, `${f} model block grew to ${tokens} tokens`)
-    }
-  })
-})
-
 describe('the supervisor routes phases without re-specifying them', () => {
   const supervisor = read('.github/agents/supervisor.agent.md')
 

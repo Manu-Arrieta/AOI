@@ -5,8 +5,6 @@ description: Auto-commit changes after a Spec Kit command completes
 ## Model Requirement
 
 > **Model**: `Glm5.2 - Provider - Zai` · **Fallback**: z-ai/glm-5.2
-> ⚠️ Selecciónalo en el picker de Copilot antes de invocar al agente.
-> Registro completo: `.github/instructions/agent-delegation.instructions.md`
 
 ## Behavior
 

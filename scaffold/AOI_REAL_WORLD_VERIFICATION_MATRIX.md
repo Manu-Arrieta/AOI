@@ -61,9 +61,12 @@ porque las dos protegen contra la misma patología: una suite que reporta verde 
 comprobado nada.
 
 ```bash
-pnpm aoi:test-globs    # todo glob declarado debe resolver a >= 1 archivo
+pnpm aoi:test-globs    # todo glob declarado resuelve, y ningún test queda fuera de todos los runners
 pnpm aoi:srp           # Invariante 5, en modo trinquete
 pnpm aoi:cache-prefix  # la masa que se recarga en las 6 fases no muta ni es volátil
+pnpm aoi:tools         # cada herramienta de ahorro obligatoria está exigida Y se invoca en el ciclo
+pnpm aoi:hooks         # cada hook declarado llega a un harness y su script existe y es ejecutable
+pnpm aoi:registry      # el registry y el disco declaran las mismas tareas
 pnpm aoi:invariant-gate -- --entity "AOI TESTS" --tests-dir . --exit-code
 ```
 
@@ -72,7 +75,10 @@ pnpm aoi:invariant-gate -- --entity "AOI TESTS" --tests-dir . --exit-code
 | `aoi:test-globs` | `node --test` sale 0 cuando el glob no matchea nada. Un directorio de tests vaciado, o nunca instalado, dejaba la cadena en verde sobre cero aserciones. En el repo exige que **todo** glob resuelva; en un workspace instalado tolera lo que legítimamente no se instala, pero sigue fallando si un directorio existe y quedó sin tests. |
 | `aoi:srp` | El límite de 300 LOC solo se miraba por tarea y como WARNING, así que tres archivos se pasaron sin que nadie lo notara. El trinquete falla ante un archivo nuevo por encima del límite, ante deuda vieja que **crece**, y ante una entrada del presupuesto que ya no viola — la lista no puede pudrirse. Solo se mueve hacia abajo. |
 | `aoi:cache-prefix` | Ocho archivos se recargan en las seis fases. Si uno adquiere contenido volátil, o si una fase reescribe una superficie que otra vuelve a leer, no hay cache de prefijo que sobreviva y el costo se paga seis veces sin que nada falle. `aoi:cache-guard` no lo veía: lee los primeros 1.500 caracteres de cada prompt, y por eso el `$(date +%Y)` del offset 7.223 de `sdd-frame.prompt.md` le pasa limpio. |
-| `aoi:invariant-gate` | Ya existía, pero solo se invocaba desde prosa. Ahora es un comando determinista, ejecutable sin LLM de por medio. |
+| `aoi:tools` | Una herramienta de ahorro puede estar instalada, tener tests verdes y no participar del flujo real. Pasó dos veces: `context-tombstone` funcionaba y solo el benchmark lo invocaba, y el proxy `mcp-compressor` que el Invariante 1 declara como SU mecanismo no era ni dependencia. Verifica las dos mitades — que el instalador la exija y que alguien la invoque en el ciclo real, nunca en el benchmark — y distingue lo que comprime la comunicación entre componentes de lo que optimiza una fase. Todas obligatorias salvo Headroom. |
+| `aoi:hooks` | Cinco declaraciones en `.github/hooks/` que ningún harness cargaba, mientras una skill de la banda ×6 le decía al agente que la regla se aplicaba sola. Una declaración cableada a medias se reporta huérfana: media cadena de hooks es una regla que dispara a veces, peor que una que no dispara nunca. También falla si el `.sh` que invoca no existe o no es ejecutable. |
+| `aoi:registry` | `/sdd-new` lee el registry para asignar el próximo TASK-ID. Un ciclo real lo encontró declarando **cero** tareas con dos en disco, así que habría entregado un id ya tomado y la colisión habría sido silenciosa. Compara ambos lados y calcula el próximo id sobre el máximo de los dos. |
+| `aoi:invariant-gate` | Ya existía, pero solo se invocaba desde prosa. Ahora es un comando determinista, ejecutable sin LLM de por medio — y descarta los tests que ningún runner colecta, porque un tag dentro de un archivo inalcanzable no enforcea nada. |
 
 ### Paso 0.3: Verificación del Reinstall Inteligente
 
@@ -373,6 +379,121 @@ EOF
 
 ---
 
+## 5.a Línea Base de Benchmark — Ciclo 2026-09-10 (ejecutado en AOI TESTS)
+
+> [!IMPORTANT]
+> **Esta tabla es la línea base contra la cual se compara el PRÓXIMO ciclo.** Cada ejecución del
+> protocolo debe regenerarla con `pnpm aoi:stress-sdd` en `/Users/equinox/Desktop/AOI TESTS` y
+> reportar el delta por fase. Una caída en cualquier `% Reducción` es una regresión y bloquea el ciclo.
+
+| Fase | Comando | Origen | Tokens Base | Tokens AOI | % Reducción |
+| :--- | :--- | :--- | ---: | ---: | ---: |
+| 0 | `/sdd-frame` | ● real | 2.410 | 211 | **91,2%** |
+| 1 | `/sdd-new` | ● real | 11.758 | 2.740 | **76,7%** |
+| 2 | `/sdd-ff` | ● real | 332 | 251 | **24,4%** |
+| 3 | `/sdd-apply` | ● real | 5.841 | 1.052 | **82,0%** |
+| 4 | `/sdd-verify` | ● real | 719 | 455 | **36,7%** |
+| 5 | `/sdd-archive` | ● real | 261 | 32 | **87,7%** |
+| **TOTAL** | **ciclo completo** | **6 real / 0 fixture** | **21.321** | **4.741** | **77,8%** |
+
+> [!NOTE]
+> Las Fases 0 y 1 se muestrean del árbol vivo del workspace, así que sus números absolutos
+> se mueven entre corridas aunque el código no cambie. Lo que NO debe moverse sin una causa
+> nombrada es el piso, y el piso y la huella son idénticos a la corrida anterior.
+
+**PISO 90.059 · TECHO 106.570 · 63,9% del piso es masa repetida · huella `1d4ee21c9603ca95`.**
+
+**Delta contra el ciclo 2026-09-09:** sin regresión y sin mejora, que es el resultado correcto
+para esta rama. El piso quedó **clavado en 90.059** y el ahorro por ciclo subió de 15.783 a
+**16.580** por el mismo motivo conocido de siempre: la base de la Fase 1 se muestrea del árbol
+vivo filtrando por la palabra `token`, y esta rama agregó archivos que hablan de tokens. **Más
+base con el mismo consumo optimizado es el compresor trabajando sobre más entrada, no un
+compresor mejor** — no leerlo como ganancia.
+
+> [!IMPORTANT]
+> **Lo que esta rama compró fue corrección, no reducción.** Todo lo que agregó vive en
+> `scripts/`, `test/` y `setup.sh`, que no se inyectan en ningún contexto: cuestan 0 tokens de
+> runtime. Una rama que arregla compuertas no tiene por qué mover el piso, y que no lo haya
+> movido es la comprobación de que no coló prosa en una superficie inyectada.
+
+### Verificación conductual del instalador (nuevo en este ciclo)
+
+Siete reinstalaciones reales sobre `AOI TESTS`, con inyección de fallos deliberada en el
+workspace real —nunca en el repositorio de desarrollo— y reversión verificada archivo por
+archivo:
+
+| Qué se inyectó | Qué debía pasar | Resultado |
+| :--- | :--- | :--- |
+| Edición del Owner en un archivo gobernado | conflicto reportado, edición preservada | ✅ |
+| Edición del Owner en el guard y el wrapper | preservadas; el instalador lo dice | ✅ |
+| `checksums.json` corrupto | aviso fuerte, merge deshabilitado explícitamente | ✅ |
+| Clave de spec-kit en `settings.json` | sobrevive al reinstall | ✅ |
+| Servidor MCP propio en `mcp.json` | sobrevive al reinstall | ✅ |
+| — | espejo `scaffold/` refleja lo instalado | ✅ 314 archivos byte a byte |
+| — | hook en `commit-msg`, `pre-commit` retirado | ✅ |
+
+Repetido al cierre del ciclo, con cinco marcas simultáneas sobre una instalación real y una
+reinstalación encima: las seis sobrevivieron —dos archivos gobernados editados, un servidor
+MCP propio, una clave suelta en `settings.json`, las claves de spec-kit— y AOI siguió
+registrando lo suyo. Revertido y verificado sin rastros.
+
+### Cobertura por mutación (nueva dimensión de este ciclo)
+
+`pnpm test` responde si el código sigue haciendo lo que los tests dicen. Esto responde la
+pregunta de abajo: **si los tests siguen diciendo algo**. Se corre a propósito con
+`pnpm aoi:mutation`, no en la cadena por defecto, porque ejecuta la suite del área una vez por
+mutante.
+
+| Área | Mutantes | Muertos | Score | Primera medición |
+| :--- | ---: | ---: | ---: | ---: |
+| `scripts/sandbox` | 58 | 45 | **78%** | 57% |
+| `scripts/subagent-context` | 85 | 58 | **68%** | 44% |
+| `scripts/conf` (shell) | 39 | 24 | **62%** | 56% |
+| `scripts/sdd-lifecycle` | 202 | 124 | **61%** | 46% |
+| `scripts/spatiotemporal-runtime` | 63 | 37 | **59%** | — |
+| `scripts/scaffold` | 131 | 73 | **56%** | — |
+| `scripts/mcp-gateway` | 14 | 8 | **57%** | — |
+| `scripts/multi-harness` | 105 | 56 | **53%** | — |
+| `scripts/memory-sync` | 162 | 85 | **52%** | 46% |
+| `aoi_apps/.../server/utils` | 35 | 18 | **51%** | — |
+| `scripts/code-lens` | 41 | 21 | **51%** | — |
+| `scripts` (aoi-doctor) | 100 | 27 | **27%** | 15% |
+
+El piso registrado en `MUTATION_FLOOR` es el valor medido exacto de cada área: puede subir,
+nunca bajar. `pnpm aoi:mutation` lo verifica.
+
+**Qué reveló la medición, más allá del número.** Los sobrevivientes no estaban repartidos al
+azar: se agrupaban en `main()`. La librería estaba probada y la línea de comandos no, y la
+línea de comandos es lo que el ciclo SDD invoca. Cubrirla encontró dos CLIs que estaban
+MUERTOS —los dos de `memory-sync` guardaban su entrada con
+`` `file://${process.argv[1]}` ``, una concatenación de cadenas que un espacio en la ruta
+basta para romper, así que no hacían nada y salían 0— y una línea del verificador
+determinista cuya inversión aprueba toda tarea rota.
+
+El peor score del repositorio fue `aoi-doctor` con 15%: la frase «AOI Workspace is fully
+operational and healthy» se apoyaba en una sola línea que admitía las dos inversiones.
+
+**Fuera de alcance, declarado:** `setup.sh` (1.840 líneas), `teardown.sh` y los cinco
+helpers de shell de `scripts/` —`aoi-headroom-wrap.sh`, `headroom-vscode-setup.sh`,
+`install-headroom.sh`, `install-codebase-memory.sh`, `nvidia-vscode-setup.sh`— no se mutan.
+Sus tests son aserciones estáticas y reinstalaciones reales, así que casi ningún mutante
+moriría y cada uno costaría una instalación completa. Su verificación es el protocolo de
+reinstalación de la sección anterior, no ésta.
+
+> [!WARNING]
+> Mezclar dos sujetos con historias de testeo distintas en un solo número los esconde a los
+> dos. Extender la sonda a bash hizo que el área `scripts` empezara a mutar esos cinco
+> helpers, y el score del doctor se desplomó de **81%** a un **29%** que era casi todo bash
+> ajeno sin tests. La sonda ahora deja declarar qué extensiones mide cada área.
+
+Los sobrevivientes tienen una forma común en las cuatro áreas: **la librería está probada y su
+`main()` no**, y la CLI es lo que el ciclo SDD invoca de verdad. El caso más caro que se
+encontró y se pagó fue una sola línea del verificador determinista —
+`if (enforceExitCode && unified.status !== 'PASSED')` — que invertida hace que la compuerta
+salga 1 sobre una verificación limpia y 0 sobre una fallida, con la suite entera en verde.
+
+---
+
 ## 5.b Línea Base de Benchmark — Ciclo 2026-09-09 (ejecutado en AOI TESTS)
 
 > [!IMPORTANT]
@@ -506,6 +627,46 @@ de la fase anterior. **25 de 25.**
 en los traspasos entre ellas. No cubre entradas adversarias ni un ciclo real de punta a
 punta con agentes produciendo artefactos de verdad. Sigue siendo una condición necesaria
 verificada sobre todo el ciclo, no una garantía total, y conviene decirlo así.
+
+### Ciclo real punta a punta con delegación — ejecutado 2026-09-09
+
+El eval conductual cubre decisiones DENTRO de una fase y el contrato de traspaso cubre
+lo que cruza entre ellas, los dos sin gastar inferencia. Ninguno responde la pregunta
+que solo un ciclo real responde: **¿el sistema completo, con agentes produciendo
+artefactos de verdad, hace lo que dice?**
+
+Se corrió entero en `AOI TESTS` sobre una feature real del dashboard, con delegación a
+un subagente real, y **terminó en FAIL** — que es el resultado correcto: el ciclo
+detectó problemas reales en vez de aprobar trabajo roto.
+
+| Fase | Cargado | Producido | Ahorrado |
+| :--- | ---: | ---: | ---: |
+| 0 `/sdd-frame` | 12.484 | 60 | **4.077** |
+| 1 `/sdd-new` | 12.390 | 591 | **49.562** |
+| 2 `/sdd-ff` | 23.743 | 0 | 74 |
+| 3 `/sdd-apply` | 0 | 490 | 0 |
+| 4 `/sdd-verify` | 13.958 | 379 | 20 |
+| 5 `/sdd-archive` | 12.188 | 0 | 0 |
+| **TOTAL** | **74.763** | **1.520** | **53.733** |
+
+Los dos ahorros grandes, medidos en vivo: grounding O(1) contra recall semántico
+(195 vs 4.272 tokens) y contraste de relevancia sobre 48 archivos reales del dashboard
+(56.421 → 6.859).
+
+**Lo que encontró el subagente delegado.** Recibió únicamente el payload TOON, sin
+historial. Volvió con cuatro hallazgos, tres de ellos errores del operador que el
+operador no había visto — entre otros, un BIC cuyo oráculo contradecía su propio
+criterio de aceptación.
+
+> El Invariante 2 no es solo ahorro de tokens. **El aislamiento produce un revisor
+> independiente**, y ese es el antídoto contra la patología que este repositorio repite:
+> quien escribe el cambio escribe su guardián con el mismo punto ciego.
+
+**Cómo se corre sin dejar rastro.** El ciclo escribe artefactos reales, así que se toma
+un `tar` del workspace antes y se restaura al final. El primer intento de reverso falló
+en silencio —el borrado no ocurrió y `tar` solo superpuso— y se detectó **verificando en
+vez de asumir**: comprobar que la tarea, la implementación y los facts volvieron a su
+estado previo, uno por uno.
 
 ### Economía del prefijo de cache — `pnpm aoi:cache-prefix`
 

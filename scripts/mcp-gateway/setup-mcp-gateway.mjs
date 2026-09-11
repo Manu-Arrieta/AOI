@@ -13,6 +13,30 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 /**
+ * Checks that every MCP server the workspace registers actually goes through
+ * the compressor, rather than straight to the backend.
+ *
+ * This is the check the module was missing. Everything else here reads a
+ * config file and reports on its shape, which said nothing about whether the
+ * proxy was in the path — and for a long time it was not: `mcp-compressor` was
+ * not a dependency, setup.sh never installed it, and no `mcp.json` named it,
+ * while the audit step in the protocol printed a green line anyway.
+ *
+ * @param {object} mcpJson parsed .vscode/mcp.json
+ * @returns {{ wrapped: string[], direct: string[] }}
+ */
+export function auditServerWrapping(mcpJson) {
+  const wrapped = []
+  const direct = []
+  for (const [name, cfg] of Object.entries(mcpJson?.servers ?? {})) {
+    const command = String(cfg?.command ?? '')
+    if (/mcp-compressor/.test(command)) wrapped.push(name)
+    else direct.push(name)
+  }
+  return { wrapped, direct }
+}
+
+/**
  * Validates gateway configuration structure.
  *
  * @param {object} config
@@ -99,6 +123,21 @@ export async function main() {
       }
     } else {
       process.stdout.write(`✅ MCP Gateway Config OK (${Object.keys(config.servers).length} servers, ${config.tier1CompactTools.length} compact tools)\n`)
+
+      // Config shape is necessary and nowhere near sufficient. What decides
+      // whether Invariant 1 holds is the workspace's own mcp.json.
+      const mcpPath = path.resolve(process.cwd(), '.vscode/mcp.json')
+      if (!fs.existsSync(mcpPath)) {
+        process.stdout.write(`ℹ  .vscode/mcp.json ausente — sin servidores que verificar.\n`)
+        return
+      }
+      const { wrapped, direct } = auditServerWrapping(JSON.parse(fs.readFileSync(mcpPath, 'utf8')))
+      for (const s of wrapped) process.stdout.write(`   ✅ ${s} → detrás de mcp-compressor\n`)
+      for (const s of direct) process.stderr.write(`   ❌ ${s} → conectado DIRECTO, sin comprimir\n`)
+      if (direct.length > 0) {
+        process.stderr.write(`\nInvariante 1: cada servidor MCP debe registrarse detrás del compresor.\n`)
+        process.exit(1)
+      }
     }
   } catch (err) {
     process.stderr.write(`Error reading gateway config: ${err.message}\n`)

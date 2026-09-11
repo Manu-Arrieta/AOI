@@ -59,35 +59,90 @@ to_windows_path() {
   cygpath -w "$path_value"
 }
 
+# Files kept because the Owner had changed them; reported at the end of the run.
+HARNESS_KEPT=""
+
+# Removes one harness path, but ONLY the parts of it that AOI itself shipped.
+#
+# The three-way merge is safe because its comparator walks the SCAFFOLD, never
+# the project: a file the Owner created is never visited, so it cannot be
+# touched. This pruning used to bypass that entirely with `rm -f` / `rm -rf`,
+# which is the same shape as the `aoi_apps` incident — it deleted a customised
+# CLAUDE.md, an edited AGENTS.md and Owner-authored skills under `.agents/`
+# with no backup, no conflict entry and no mention in the run summary.
+#
+# So the rule here is the merge's rule: delete a file only when it is
+# byte-identical to what the scaffold shipped. Anything edited, and anything
+# AOI never shipped at all, stays and is reported.
+prune_path_if_pristine() {
+  local target="$1"
+  local reference="$2"
+
+  [ -e "$target" ] || return 0
+
+  if [ -f "$target" ]; then
+    if [ -f "$reference" ] && cmp -s "$target" "$reference"; then
+      rm -f "$target"
+    else
+      HARNESS_KEPT="$HARNESS_KEPT
+  $target"
+    fi
+    return 0
+  fi
+
+  # A directory is pruned file by file. Owner-authored files inside it have no
+  # counterpart in the scaffold and therefore survive, and the directory itself
+  # only disappears once nothing of the Owner's is left in it.
+  local file rel
+  while IFS= read -r file || [ -n "$file" ]; do
+    [ -n "$file" ] || continue
+    rel="${file#$target/}"
+    prune_path_if_pristine "$file" "$reference/$rel"
+  done <<EOF
+$(find "$target" -type f 2>/dev/null)
+EOF
+
+  find "$target" -type d -empty -delete 2>/dev/null || true
+}
+
 prune_unselected_harness_files() {
   local target_dir="$1"
   local selected_harness="$2"
+  local ref="${3:-$SCAFFOLD_DIR}"
 
   if [ -z "$selected_harness" ] || [ "$selected_harness" = "all" ]; then
     return 0
   fi
 
   if [ "$selected_harness" != "claude" ]; then
-    rm -f "$target_dir/CLAUDE.md"
+    prune_path_if_pristine "$target_dir/CLAUDE.md" "$ref/CLAUDE.md"
   fi
 
   if [ "$selected_harness" != "cursor" ]; then
-    rm -f "$target_dir/.cursorrules"
-    rm -rf "$target_dir/.cursor"
+    prune_path_if_pristine "$target_dir/.cursorrules" "$ref/.cursorrules"
+    prune_path_if_pristine "$target_dir/.cursor" "$ref/.cursor"
   fi
 
   if [ "$selected_harness" != "antigravity" ]; then
-    rm -f "$target_dir/AGENTS.md"
-    rm -rf "$target_dir/.agents"
+    prune_path_if_pristine "$target_dir/AGENTS.md" "$ref/AGENTS.md"
+    prune_path_if_pristine "$target_dir/.agents" "$ref/.agents"
   fi
 
   if [ "$selected_harness" != "cline" ]; then
-    rm -f "$target_dir/.clinerules"
+    prune_path_if_pristine "$target_dir/.clinerules" "$ref/.clinerules"
   fi
 
   if [ "$selected_harness" != "copilot" ]; then
-    rm -f "$target_dir/.github/copilot-instructions.md"
+    prune_path_if_pristine "$target_dir/.github/copilot-instructions.md" "$ref/.github/copilot-instructions.md"
   fi
+}
+
+# Prints what the pruning refused to delete. Silence here is a real signal:
+# it means every harness file removed was untouched AOI content.
+report_harness_kept() {
+  [ -n "$HARNESS_KEPT" ] || return 0
+  warn "Harness pruning kept these because you had changed them:$HARNESS_KEPT"
+  warn "They belong to a harness you did not select. Delete them yourself if you want them gone."
 }
 
 # Sanitize a PowerShell script before passing it to Windows PowerShell 5.1.
@@ -332,7 +387,12 @@ if is_windows_git_bash; then
 fi
 
 # ── Parse arguments ────────────────────────────────────────────────────────
-SELECTED_HARNESS="all"
+# Exportada: snapshot-conf.sh corre como subproceso y sin export leía siempre
+# el default. La persistencia del harness en .conf/manifest.json — que era la
+# mitad del arreglo de G0, la que permite avisar cuando un reinstall cambia de
+# harness — por lo tanto nunca funcionó: el manifest registraba "all" pasara lo
+# que pasara.
+export SELECTED_HARNESS="all"
 RAW_PROJECT_PATH=""
 AUTO_YES=0
 SKIP_DASHBOARD_DEPS=0
@@ -394,7 +454,17 @@ if [ -t 0 ] && [ "$AUTO_YES" -eq 0 ] && [ "$SELECTED_HARNESS" = "all" ] && [ -z 
   esac
 fi
 
-PROJECT_PATH="$(eval echo "$PROJECT_PATH")"
+# Tilde expansion without `eval`.
+#
+# `eval echo "$PROJECT_PATH"` expanded `~`, and also every other shell
+# construct in the string: a path typed or pasted as
+# `/tmp/$(rm -rf ~/algo)x` ran the command before the installer had even
+# checked the directory exists. Verified. Nothing here needs a shell; the
+# only expansion the operator expects is the leading tilde.
+case "$PROJECT_PATH" in
+  "~") PROJECT_PATH="$HOME" ;;
+  "~/"*) PROJECT_PATH="$HOME/${PROJECT_PATH#\~/}" ;;
+esac
 
 if [ ! -d "$PROJECT_PATH" ]; then
   err "Directory not found: $PROJECT_PATH"
@@ -413,7 +483,7 @@ if [ ! -d "$SCAFFOLD_DIR" ]; then
   exit 1
 fi
 
-# ── Phase 1: Install Tools (RTK optional, ICM mandatory) ───────────────
+# ── Phase 1: Install Tools (RTK and ICM both mandatory) ────────────────
 header "Phase 1: Tools"
 
 install_rtk() {
@@ -486,6 +556,53 @@ require_icm() {
 
   err "ICM is mandatory. Installation cannot continue without a working icm command."
   err "Fix the ICM install prerequisites and rerun setup.sh."
+  exit 1
+}
+
+# RTK is mandatory for the same reason ICM is: it is not a convenience, it is
+# one of the mechanisms the product's savings claim rests on.
+require_rtk() {
+  if command -v rtk &>/dev/null; then
+    return 0
+  fi
+
+  err "RTK is mandatory. Installation cannot continue without a working rtk command."
+  err "Install it (brew install rtk-ai/tap/rtk) and rerun setup.sh."
+  exit 1
+}
+
+# The MCP compression proxy — the mechanism Invariant 1 names as the source of
+# its savings, and which until now existed only as a config file describing a
+# proxy nobody installed.
+#
+# Distribution matters here. The npm package `@atlassian/mcp-compressor` is a
+# thin wrapper that delegates to a Rust binary it does not ship: it prints
+# "binary was not found … build it with cargo" AND EXITS 0, so a naive check
+# would read that failure as success. There are no prebuilt binaries in the
+# GitHub releases either. The Python distribution carries the compiled binary,
+# and AOI already requires `uv`, so that is the route.
+install_mcp_compressor() {
+  if command -v mcp-compressor &>/dev/null && mcp-compressor --version &>/dev/null; then
+    ok "MCP compressor present ($(mcp-compressor --version 2>/dev/null))"
+    return 0
+  fi
+
+  command -v uv &>/dev/null || return 1
+  uv tool install mcp-compressor >/dev/null 2>&1 || return 1
+  command -v mcp-compressor &>/dev/null || return 1
+  ok "MCP compressor installed ($(mcp-compressor --version 2>/dev/null))"
+}
+
+# Verified by running it, not by asking whether the command resolves: the npm
+# wrapper resolves fine and still cannot compress anything.
+require_mcp_compressor() {
+  if mcp-compressor --version &>/dev/null; then
+    return 0
+  fi
+
+  err "mcp-compressor is mandatory: it is the proxy Invariant 1 rests on."
+  err "Install it with 'uv tool install mcp-compressor' and rerun setup.sh."
+  err "Do NOT install the npm package: it ships no binary and exits 0 while failing."
   exit 1
 }
 
@@ -606,12 +723,29 @@ ensure_dashboard_runtime() {
 }
 
 # Install order: RTK → ICM → uv → Specify
+#
+# Every token-saving tool is mandatory. Headroom is the one exception, and it
+# stays optional in Phase 1.6. RTK used to be installed best-effort and the run
+# continued on failure with a warning, which meant an installation could end up
+# advertising 60-90% savings on shell output while running every command
+# unfiltered. A saving the product cannot guarantee is not a saving.
 if ! install_rtk; then
-  warn "RTK install failed — continuing without token optimization. Commands will run unfiltered until RTK is available."
+  err "RTK is mandatory: it is the proxy that keeps command output out of the context."
+  err "Install it manually (brew install rtk-ai/tap/rtk) and rerun setup.sh."
+  exit 1
 fi
+require_rtk
 install_icm
 require_icm
 install_uv
+# After uv, because the compressor's working distribution is the Python one.
+if ! install_mcp_compressor; then
+  err "mcp-compressor install failed. It is the proxy that keeps MCP tool"
+  err "schemas out of the context — measured at -83% on this toolset."
+  err "Install it manually ('uv tool install mcp-compressor') and rerun setup.sh."
+  exit 1
+fi
+require_mcp_compressor
 install_specify || true
 
 # ── Phase 1.5: Optional NVIDIA customendpoint helper (non-blocking) ────────
@@ -696,13 +830,30 @@ fi
 mkdir -p "$PROJECT_PATH/scripts"
 mkdir -p "$PROJECT_PATH/.githooks"
 
-cp "$WRAP_SRC" "$PROJECT_PATH/scripts/aoi-headroom-wrap.sh"
-chmod +x "$PROJECT_PATH/scripts/aoi-headroom-wrap.sh"
-ok "Installed aoi-headroom-wrap.sh → PROJECT/scripts/"
+# Both files are governed and both travel inside the scaffold, so the merge
+# below already owns them. They are seeded here only because this phase wires
+# the hook and the wrapper, which run earlier than the merge and need the file
+# to exist.
+#
+# Seeded, not overwritten. A plain `cp` here wrote AOI's version over the
+# owner's BEFORE the comparator read the tree, so the comparator saw its own
+# installer's bytes, found them different from the recorded baseline, and
+# blamed the owner: a CONFLICT on a file nobody had touched. Reproduced on the
+# real installation — `.githooks/pre-commit-aoi-guard.sh` landed in
+# .conf/conflicts/ on a workspace whose owner had never opened it.
+install_governed_seed() {
+  local src="$1" dest="$2" label="$3"
+  if [ -f "$dest" ]; then
+    ok "$label ya presente — lo resuelve el merge (no se pisa)"
+  else
+    cp "$src" "$dest"
+    ok "Installed $label"
+  fi
+  chmod +x "$dest"
+}
 
-cp "$GUARD_SRC" "$PROJECT_PATH/.githooks/pre-commit-aoi-guard.sh"
-chmod +x "$PROJECT_PATH/.githooks/pre-commit-aoi-guard.sh"
-ok "Installed pre-commit-aoi-guard.sh → PROJECT/.githooks/"
+install_governed_seed "$WRAP_SRC" "$PROJECT_PATH/scripts/aoi-headroom-wrap.sh" "aoi-headroom-wrap.sh → PROJECT/scripts/"
+install_governed_seed "$GUARD_SRC" "$PROJECT_PATH/.githooks/pre-commit-aoi-guard.sh" "pre-commit-aoi-guard.sh → PROJECT/.githooks/"
 
 # Register an shim that forces any `aoi-copilot` invoker through the wrapper.
 # This is the seam SDD agents use instead of calling `copilot` directly.
@@ -717,55 +868,85 @@ EOF_SHIM
 chmod +x "$PROJECT_PATH/scripts/bin/aoi-copilot"
 ok "Installed aoi-copilot shim → PROJECT/scripts/bin/"
 
-# Wire up a project-local pre-commit hook chain to include the AOI guard unless
-# the project intentionally wants to opt out. We respect any pre-existing
-# pre-commit with a chain that calls our guard first.
-PROJECT_GITHOOK="$PROJECT_PATH/.git/hooks/pre-commit"
+# Wire the guard as `commit-msg`, chaining any hook the project already had.
+#
+# It used to be wired as `pre-commit`, and that is the one hook which cannot
+# do this job: git writes the message only after pre-commit succeeds, so the
+# guard read the PREVIOUS commit's subject. The `[aoi-managed-ok]` override its
+# own error message instructs the operator to use was therefore inoperative,
+# and its `git log -1` fallback approved today's diff whenever yesterday's
+# commit happened to carry the marker. `commit-msg` receives the message file
+# as $1, the index is already final there, and a non-zero exit still aborts.
+HOOKS_DIR="$PROJECT_PATH/.git/hooks"
+PROJECT_GITHOOK="$HOOKS_DIR/commit-msg"
 if [[ -d "$PROJECT_PATH/.git" ]]; then
+  mkdir -p "$HOOKS_DIR"
+
+  # Retire the pre-commit wiring a previous AOI left behind. Left in place it
+  # blocks first, before commit-msg ever runs, so the override would stay
+  # unreachable no matter how correct the new hook is. Only OUR hook is
+  # touched: one the operator wrote is left exactly as it is.
+  OLD_PRECOMMIT="$HOOKS_DIR/pre-commit"
+  if [[ -f "$OLD_PRECOMMIT" ]] && grep -q "pre-commit-aoi-guard.sh" "$OLD_PRECOMMIT"; then
+    if [[ -f "$HOOKS_DIR/pre-commit.aoi-bak" ]]; then
+      mv "$HOOKS_DIR/pre-commit.aoi-bak" "$OLD_PRECOMMIT"
+      ok "Restaurado el pre-commit propio del proyecto (el guard se movió a commit-msg)"
+    else
+      rm -f "$OLD_PRECOMMIT"
+      ok "Retirado el guard de pre-commit (se movió a commit-msg, donde el marcador funciona)"
+    fi
+  fi
+
   if [[ -f "$PROJECT_GITHOOK" ]]; then
     if ! grep -q "pre-commit-aoi-guard.sh" "$PROJECT_GITHOOK"; then
+      # A previous chain may already have left a .aoi-bak. Overwriting it
+      # discards the ORIGINAL hook — the one AOI first displaced — in favour
+      # of whatever replaced it since. Nothing is thrown away here.
+      if [ -f "$PROJECT_GITHOOK.aoi-bak" ]; then
+        mv "$PROJECT_GITHOOK.aoi-bak" "$PROJECT_GITHOOK.aoi-bak.$(date -u +%Y%m%dT%H%M%SZ)"
+        warn "Ya había un $(basename "$PROJECT_GITHOOK").aoi-bak — se conservó con marca de tiempo"
+      fi
       cp "$PROJECT_GITHOOK" "$PROJECT_GITHOOK.aoi-bak"
-      cat > "$PROJECT_GITHOOK" <<'EOF_PRECOMMIT'
+      cat > "$PROJECT_GITHOOK" <<'EOF_COMMITMSG'
 #!/usr/bin/env bash
-# AOI bootstrap chain: run guard first, then delegate to project pre-commit.
+# AOI bootstrap chain: run guard first, then delegate to project commit-msg.
 SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
 bash "$SELF_DIR/../../.githooks/pre-commit-aoi-guard.sh" "$@" || exit $?
-if [ -f "$SELF_DIR/pre-commit.aoi-bak" ]; then
-  exec bash "$SELF_DIR/pre-commit.aoi-bak" "$@"
+if [ -f "$SELF_DIR/commit-msg.aoi-bak" ]; then
+  exec bash "$SELF_DIR/commit-msg.aoi-bak" "$@"
 fi
 exit 0
-EOF_PRECOMMIT
+EOF_COMMITMSG
       chmod +x "$PROJECT_GITHOOK"
-      ok "Chained AOI guard into existing pre-commit hook"
+      ok "Chained AOI guard into existing commit-msg hook"
     else
-      ok "AOI guard already chained into pre-commit (skipped)"
+      ok "AOI guard already chained into commit-msg (skipped)"
     fi
   else
     cp "$GUARD_SRC" "$PROJECT_GITHOOK"
     chmod +x "$PROJECT_GITHOOK"
-    ok "Installed AOI pre-commit guard → .git/hooks/pre-commit"
+    ok "Installed AOI guard → .git/hooks/commit-msg"
   fi
 else
   info "Target project is not a git repo — AOI guard will activate once 'git init' runs."
-  info "    When ready, run: ln -sf ../../.githooks/pre-commit-aoi-guard.sh .git/hooks/pre-commit"
+  info "    When ready, run: ln -sf ../../.githooks/pre-commit-aoi-guard.sh .git/hooks/commit-msg"
 fi
 
-# ── Phase 1.8: codebase-memory-mcp (OPTIONAL, workspace-local only) ─────────
-header "Phase 1.8: Codebase Memory MCP (opcional)"
+# ── Phase 1.8: codebase-memory-mcp (MANDATORY, workspace-local only) ───────
+header "Phase 1.8: Codebase Memory MCP (obligatorio)"
 
 if [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then
   info "codebase-memory-mcp indexa el repo en un knowledge graph local para reducir"
   info "exploración file-by-file. AOI lo instala con --skip-config para NO tocar"
   info "copilot-instructions.md del operador y registra el MCP sólo en el workspace actual."
-  if [ "$AUTO_YES" -eq 1 ] || ! [ -t 0 ]; then
-    CBM_CHOICE="n"
-  else
-    printf "${YELLOW}▸${NC} Instalar codebase-memory-mcp? [Y/n]: "
-    read -r CBM_CHOICE
-  fi
+  # Mandatory, like RTK and ICM: it is one of the mechanisms that keeps
+  # exploration out of the context. It used to default to "n" whenever stdin
+  # was not a TTY, which silently disabled it in every automated install —
+  # exactly the installs that never get a human to reconsider.
+  CBM_CHOICE="y"
   case "$CBM_CHOICE" in
     n|N|no|NO)
-      warn "codebase-memory-mcp omitido. AOI continúa con ICM/Headroom/RTK normales."
+      warn "codebase-memory-mcp omitido."
       ;;
     *)
       info "Variante UI incluye grafo 3D interactivo en http://localhost:9749"
@@ -851,6 +1032,17 @@ REINSTALL_STATS_ORPHANS_KEPT=0
 if [ "$IS_REINSTALL" -eq 1 ]; then
   info "Detected previous installation (.conf/manifest.json) — entering REINSTALL mode"
 
+  # A reinstall that switches harness prunes the files of the one being left
+  # behind. That used to happen in silence and with no memory of the earlier
+  # choice, because the manifest never recorded it. Now it does, so the change
+  # can at least be named out loud before anything is removed.
+  PREV_HARNESS="$(sed -n 's/.*"selected_harness"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+    "$PROJECT_PATH/.conf/manifest.json" 2>/dev/null | head -1)"
+  if [ -n "$PREV_HARNESS" ] && [ "$PREV_HARNESS" != "$SELECTED_HARNESS" ]; then
+    warn "Harness change: this workspace was installed as '$PREV_HARNESS', now installing as '$SELECTED_HARNESS'."
+    warn "Files belonging to '$PREV_HARNESS' will be pruned — but only the ones you never edited."
+  fi
+
   # ── 3a: Cleanup stale/corrupted files from previous installs ───────────
   # Removes files with doubled extensions (*.agent.agent.md, *.instructions.instructions.md, etc.)
   # that may have been created by bugs in older AOI versions. Safe: only deletes if correct counterpart exists.
@@ -873,10 +1065,24 @@ if [ "$IS_REINSTALL" -eq 1 ]; then
   # ── 3b: Smart merge for every governed file, aoi_apps/ included ─────────
   if [ -f "$CONF_SCRIPTS_DIR/compare-install.sh" ]; then
     COMPARE_STDERR="$(mktemp)"
+    # The exit status is captured on its own. `|| echo '{}'` used to swallow it,
+    # and `{}` is perfectly valid JSON: every list parsed empty, no file was
+    # copied, no warning was printed and the run ended with "Reinstall merge
+    # complete". A comparator that could not read checksums.json therefore
+    # reported a successful reinstall that updated nothing.
+    set +e
     COMPARE_OUTPUT="$(bash "$CONF_SCRIPTS_DIR/compare-install.sh" \
       "$SCAFFOLD_DIR" \
       "$PROJECT_PATH/.conf/checksums.json" \
-      "$PROJECT_PATH" 2>"$COMPARE_STDERR" || echo '{}')"
+      "$PROJECT_PATH" 2>"$COMPARE_STDERR")"
+    COMPARE_STATUS=$?
+    set -e
+    if [ "$COMPARE_STATUS" -ne 0 ]; then
+      warn "compare-install.sh falló (exit $COMPARE_STATUS) — SMART MERGE DESHABILITADO."
+      warn "Los archivos ya presentes NO se van a actualizar en este reinstall."
+      [ -s "$COMPARE_STDERR" ] && sed 's/^/    /' "$COMPARE_STDERR" >&2
+      COMPARE_OUTPUT='{}'
+    fi
 
     # Fail LOUDLY: a malformed comparison silently degrades the reinstall to
     # `rsync --ignore-existing`, which never updates an already-present file.
@@ -1061,25 +1267,79 @@ print(f'COMPARE_TMPDIR={td}')
   ok "Reinstall merge complete"
 
 else
-  # ── Fresh install: ensure scaffold overrides generic specify init templates ──
+  # ── Fresh install ─────────────────────────────────────────────────────────
+  #
+  # "Fresh" means AOI has never been installed here — NOT that the directory is
+  # empty. Adding AOI to a project that already exists is the primary use case,
+  # and a plain `rsync -a` overwrote every file the scaffold happens to carry.
+  # Reproduced: a project's own package.json went from "el-proyecto-del-owner"
+  # to "aoi-workspace", taking its name, version, dependencies and scripts with
+  # it, and its CLAUDE.md was replaced too.
+  #
+  # `--ignore-existing` inverts the default to the safe one: AOI adds what is
+  # missing and never replaces what is already there. On a genuinely empty
+  # directory it behaves identically, so nothing is lost for the simple case.
+  FRESH_KEPT=""
   if command -v rsync &>/dev/null; then
-    rsync -a "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
-    ok "Scaffold merged (rsync)"
+    FRESH_KEPT="$(rsync -a --ignore-existing --out-format='%n' "$SCAFFOLD_DIR/" "$PROJECT_PATH/" >/dev/null 2>&1; \
+      rsync -an --existing --out-format='%n' "$SCAFFOLD_DIR/" "$PROJECT_PATH/" 2>/dev/null | grep -v '/$' || true)"
+    ok "Scaffold merged (rsync, sin pisar lo existente)"
   else
-    # Fallback: cp with directory creation
     cd "$SCAFFOLD_DIR"
-    find . -type f | while read -r file; do
+    while IFS= read -r file || [ -n "$file" ]; do
       target="$PROJECT_PATH/$file"
+      if [ -e "$target" ]; then
+        FRESH_KEPT="$FRESH_KEPT
+${file#./}"
+        continue
+      fi
       mkdir -p "$(dirname "$target")"
       cp "$file" "$target"
-    done
+    done <<EOF
+$(find . -type f)
+EOF
     cd "$PROJECT_PATH"
-    ok "Scaffold merged (cp)"
+    ok "Scaffold merged (cp, sin pisar lo existente)"
   fi
+
+  # AOI needs its own npm scripts to exist, and a project that already has a
+  # package.json just had its copy protected above — so the scripts are merged
+  # in rather than the file being replaced.
+  if [ -f "$PROJECT_PATH/package.json" ] && [ -f "$SCAFFOLD_DIR/package.json" ]; then
+    node "$SCRIPT_DIR/scripts/multi-harness/merge-package-scripts.mjs" \
+      "$PROJECT_PATH/package.json" "$SCAFFOLD_DIR/package.json" \
+      && ok "AOI scripts merged into the existing package.json" \
+      || warn "No se pudieron fusionar los scripts de AOI en package.json — revisalo a mano"
+  fi
+
+  if [ -n "$FRESH_KEPT" ]; then
+    warn "Estos archivos ya existían y NO se tocaron:"
+    printf '%s\n' "$FRESH_KEPT" | while IFS= read -r kept; do
+      [ -n "$kept" ] && printf '     %s\n' "$kept"
+    done
+    warn "Si querés la versión de AOI de alguno, copiala vos desde el scaffold."
+  fi
+
   prune_unselected_harness_files "$PROJECT_PATH" "$SELECTED_HARNESS"
 fi
 
-# Replicate scaffold mirror inside target so validate-scaffold-parity passes in target workspace
+# ── Rebuild the scaffold mirror inside the target ───────────────────────────
+#
+# Invariant 7 asks the mirror to be byte-identical to the governed files, and
+# `validate-scaffold-parity` checks exactly that inside the installed
+# workspace. So the mirror has to be built from what the merge ACTUALLY left on
+# disk, not from what AOI wanted to install.
+#
+# It used to be built the other way: AOI's scaffold was copied over the mirror
+# wholesale and only `scripts/` was re-synced back from the project. Every
+# other governed path — .github/prompts, the dashboard, the constitution —
+# therefore carried AOI's version in the mirror while the project carried the
+# user's. That is precisely the state the merge produces whenever it preserves
+# a conflict, so the reward for resolving a conflict correctly was a parity
+# failure the operator had no way to read.
+#
+# Base layer first (non-governed scaffold content, which has no project
+# counterpart to copy from), then every governed path from the project on top.
 mkdir -p "$PROJECT_PATH/scaffold"
 if command -v rsync &>/dev/null; then
   rsync -a "$SCAFFOLD_DIR/" "$PROJECT_PATH/scaffold/"
@@ -1087,22 +1347,48 @@ else
   cp -R "$SCAFFOLD_DIR/"* "$PROJECT_PATH/scaffold/" 2>/dev/null || true
 fi
 prune_unselected_harness_files "$PROJECT_PATH/scaffold" "$SELECTED_HARNESS"
-if command -v rsync &>/dev/null; then
-  rsync -a "$PROJECT_PATH/scripts/" "$PROJECT_PATH/scaffold/scripts/"
-else
-  cp -R "$PROJECT_PATH/scripts/"* "$PROJECT_PATH/scaffold/scripts/" 2>/dev/null || true
-fi
-ok "Scaffold mirror preserved in target (scaffold/)"
 
-# Copy pnpm workspace and lock configs
-if [ -f "$SCRIPT_DIR/pnpm-workspace.yaml" ]; then
-  cp "$SCRIPT_DIR/pnpm-workspace.yaml" "$PROJECT_PATH/pnpm-workspace.yaml"
-  cp "$SCRIPT_DIR/pnpm-workspace.yaml" "$PROJECT_PATH/scaffold/pnpm-workspace.yaml" 2>/dev/null || true
+# The governed list is published by the gate itself rather than duplicated
+# here: a path added there and forgotten here would silently stop being
+# mirrored, and the mismatch only ever surfaces in someone else's workspace.
+GOVERNED_PATHS="$(node "$SCRIPT_DIR/scripts/scaffold/validate-scaffold-parity.mjs" --list-paths 2>/dev/null || true)"
+if [ -z "$GOVERNED_PATHS" ]; then
+  warn "No se pudo leer la lista de paths gobernados — el espejo queda con la versión de AOI"
+  warn "y validate-scaffold-parity puede fallar en este workspace. Revisá node y el scaffold."
+else
+  while IFS= read -r gp || [ -n "$gp" ]; do
+    [ -z "$gp" ] && continue
+    src="$PROJECT_PATH/$gp"
+    [ -e "$src" ] || continue
+    dst="$PROJECT_PATH/scaffold/$gp"
+    mkdir -p "$(dirname "$dst")"
+    if [ -d "$src" ]; then
+      if command -v rsync &>/dev/null; then
+        rsync -a --delete "$src/" "$dst/"
+      else
+        rm -rf "$dst" && cp -R "$src" "$dst"
+      fi
+    else
+      cp "$src" "$dst"
+    fi
+  done <<GOVERNED_EOF
+$GOVERNED_PATHS
+GOVERNED_EOF
 fi
-if [ -f "$SCRIPT_DIR/pnpm-lock.yaml" ]; then
-  cp "$SCRIPT_DIR/pnpm-lock.yaml" "$PROJECT_PATH/pnpm-lock.yaml"
-  cp "$SCRIPT_DIR/pnpm-lock.yaml" "$PROJECT_PATH/scaffold/pnpm-lock.yaml" 2>/dev/null || true
-fi
+ok "Scaffold mirror rebuilt from the installed tree (scaffold/)"
+
+# NOTE: pnpm-workspace.yaml and pnpm-lock.yaml used to be copied here with a
+# bare `cp`, unconditionally, in both the fresh and the reinstall path.
+#
+# Both files already travel inside the scaffold, so both already go through the
+# policy that protects the owner: `rsync --ignore-existing` on a fresh install,
+# the three-way merge on a reinstall. The copy ran afterwards and overrode
+# whichever of the two had just decided. Adding AOI to an existing pnpm
+# monorepo therefore replaced its `pnpm-workspace.yaml` — every package in it —
+# and its lockfile, with no warning, no backup and no conflict entry.
+#
+# It is gone rather than guarded: the two paths it duplicated are already
+# correct, and a second writer to the same file is what made them wrong.
 
 # Ensure required directories exist (rsync may skip empty dirs)
 mkdir -p "$PROJECT_PATH/.tasks"
@@ -1179,104 +1465,168 @@ if [ -f "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/package.json" ]; then
   fi
 fi
 
-# Patch .vscode/settings.json — replace __LOCAL_BIN__ placeholder with real user home
-# Also handles the case where the project already had a settings.json (rsync skipped ours)
-LOCAL_BIN="$HOME/.local/bin"
+# ── Materialise .vscode/settings.json ───────────────────────────────────────
+#
+# The file is machine-specific: the scaffold ships a `__LOCAL_BIN__`
+# placeholder because the real path depends on $HOME, and the terminal keys
+# depend on the platform. So it is materialised rather than copied.
+#
+# This was three grep-selected branches plus `sed -i ''`, and both halves were
+# broken outside macOS. `-i ''` is the BSD spelling: GNU sed takes the suffix
+# attached to the flag, reads the empty string as the SCRIPT and the real
+# expression as a filename, exits non-zero, and `set -euo pipefail` takes the
+# whole installer down with it. Meanwhile every branch wrote `.osx` keys, which
+# VS Code ignores anywhere else — so the branch that did not abort configured
+# nothing. One materialiser in python3, which this block already depended on,
+# replaces both: no sed dialect to get wrong, and one place where the platform
+# is decided.
 VSCODE_SETTINGS="$PROJECT_PATH/.vscode/settings.json"
+LOCAL_BIN="$HOME/.local/bin"
 HOMEBREW_PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:$LOCAL_BIN:/usr/bin:/bin:/usr/sbin:/sbin"
 
-if [ -f "$VSCODE_SETTINGS" ]; then
-  if grep -q "__LOCAL_BIN__" "$VSCODE_SETTINGS"; then
-    # Scaffold settings.json was copied — patch the placeholder
-    sed -i '' "s|__LOCAL_BIN__|$LOCAL_BIN|g" "$VSCODE_SETTINGS"
-    ok "PATH configured in .vscode/settings.json"
-  elif ! grep -q "terminal.integrated.env.osx" "$VSCODE_SETTINGS"; then
-    # Pre-existing settings.json without PATH config — inject both keys via Python merge
-    python3 - "$VSCODE_SETTINGS" "$HOMEBREW_PATH" <<'PYEOF'
-import sys, json
+case "$(uname -s 2>/dev/null || true)" in
+  Darwin) VSCODE_OS_KEY="osx"; VSCODE_SHELL="/bin/zsh" ;;
+  Linux)  VSCODE_OS_KEY="linux"; VSCODE_SHELL="$(command -v bash || echo /bin/bash)" ;;
+  *)      VSCODE_OS_KEY="windows"; VSCODE_SHELL="" ;;
+esac
 
-settings_path = sys.argv[1]
-path_value = sys.argv[2]
+mkdir -p "$PROJECT_PATH/.vscode"
+if python3 - "$VSCODE_SETTINGS" "$LOCAL_BIN" "$HOMEBREW_PATH" "$VSCODE_OS_KEY" "$VSCODE_SHELL" <<'PYEOF'
+import json, os, sys
 
-with open(settings_path, "r") as f:
-    settings = json.load(f)
+settings_path, local_bin, homebrew_path, os_key, shell = sys.argv[1:6]
 
-settings.setdefault("terminal.integrated.env.osx", {})["PATH"] = path_value
-settings["terminal.integrated.automationProfile.osx"] = {"path": "/bin/zsh", "args": ["-l"]}
+settings = {}
+if os.path.exists(settings_path):
+    try:
+        with open(settings_path) as f:
+            settings = json.load(f)
+    except (ValueError, OSError):
+        # A settings.json we cannot parse belongs to the owner and is not ours
+        # to rewrite. Say so and change nothing.
+        sys.exit(3)
+    if not isinstance(settings, dict):
+        sys.exit(3)
+
+# The placeholder is substituted wherever it survived the copy, so a scaffold
+# file and a hand-written one converge on the same result.
+def substitute(value):
+    if isinstance(value, str):
+        return value.replace("__LOCAL_BIN__", local_bin)
+    if isinstance(value, dict):
+        return {k: substitute(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [substitute(v) for v in value]
+    return value
+
+settings = substitute(settings)
+
+env_key = "terminal.integrated.env." + os_key
+profile_key = "terminal.integrated.automationProfile." + os_key
+
+# Only fill what is missing: a PATH the owner already configured is theirs.
+env = settings.setdefault(env_key, {})
+if isinstance(env, dict) and not env.get("PATH"):
+    env["PATH"] = homebrew_path
+
+if shell and profile_key not in settings:
+    settings[profile_key] = {"path": shell, "args": ["-l"]}
 
 with open(settings_path, "w") as f:
     json.dump(settings, f, indent=4)
     f.write("\n")
 PYEOF
-    ok "PATH + automationProfile injected into existing .vscode/settings.json"
-  elif ! grep -q "automationProfile" "$VSCODE_SETTINGS"; then
-    # Has env.osx but missing automationProfile — add it
-    python3 - "$VSCODE_SETTINGS" <<'PYEOF'
-import sys, json
-
-settings_path = sys.argv[1]
-
-with open(settings_path, "r") as f:
-    settings = json.load(f)
-
-settings["terminal.integrated.automationProfile.osx"] = {"path": "/bin/zsh", "args": ["-l"]}
-
-with open(settings_path, "w") as f:
-    json.dump(settings, f, indent=4)
-    f.write("\n")
-PYEOF
-    ok "automationProfile added to .vscode/settings.json"
-  else
-    ok "PATH already configured in .vscode/settings.json (skipped)"
-  fi
+then
+  ok "PATH + automationProfile configurados en .vscode/settings.json ($VSCODE_OS_KEY)"
 else
-  mkdir -p "$PROJECT_PATH/.vscode"
-  cat > "$VSCODE_SETTINGS" <<EOF
-{
-    "terminal.integrated.env.osx": {
-        "PATH": "$HOMEBREW_PATH"
-    },
-    "terminal.integrated.automationProfile.osx": {
-        "path": "/bin/zsh",
-        "args": ["-l"]
-    }
-}
-EOF
-  ok "Created .vscode/settings.json with PATH + automationProfile"
+  warn ".vscode/settings.json no es JSON válido — se dejó intacto, configuralo a mano"
 fi
 
 VSCODE_MCP="$PROJECT_PATH/.vscode/mcp.json"
 CBM_BIN="$(get_codebase_memory_path || true)"
-if [[ -n "$CBM_BIN" ]]; then
-  cat > "$VSCODE_MCP" <<EOF
-{
-  "servers": {
-    "icm": {
-      "type": "stdio",
-      "command": "bash",
-      "args": ["\${workspaceFolder}/.github/scripts/icm-serve.sh"]
-    },
-    "codebase-memory-mcp": {
-      "type": "stdio",
-      "command": "$CBM_BIN"
-    }
-  }
-}
-EOF
-  ok "Workspace MCP configured in .vscode/mcp.json (ICM + codebase-memory-mcp)"
+
+# Invariant 1 in one line of config: every MCP server is registered BEHIND the
+# compressor instead of directly.
+#
+# Measured on this workspace, `tools/list` before and after:
+#   icm                  31 tools  3.538 -> 638 tokens
+#   codebase-memory-mcp  14 tools  2.888 -> 460 tokens
+#   total                          6.426 -> 1.098 tokens  (-83%)
+#
+# Those tokens are paid in the system prompt of every request that carries the
+# MCP surface, so the saving repeats all session long — it is not a per-cycle
+# figure. `high` rather than `max`: it exposes the same two frontend tools and
+# keeps a wider margin of behavioural safety for a few hundred tokens more.
+#
+# The compressed surface is not a black box. `server_get_tool_schema` carries
+# every backend signature inline — `<tool>icm_memory_recall(query, topic,
+# limit, keyword, project)</tool>` — so the prompts that name those calls still
+# have the signature in view; only the invocation is routed through
+# `server_invoke_tool`.
+MCP_COMPRESSION="${AOI_MCP_COMPRESSION:-high}"
+if command -v mcp-compressor &>/dev/null; then
+  ICM_CMD='"mcp-compressor"'
+  ICM_ARGS="\"-c\", \"$MCP_COMPRESSION\", \"--\", \"bash\", \"\${workspaceFolder}/.github/scripts/icm-serve.sh\""
+  CBM_CMD='"mcp-compressor"'
+  CBM_ARGS="\"-c\", \"$MCP_COMPRESSION\", \"--\", \"$CBM_BIN\""
 else
-  cat > "$VSCODE_MCP" <<'EOF'
-{
-  "servers": {
-    "icm": {
-      "type": "stdio",
-      "command": "bash",
-      "args": ["${workspaceFolder}/.github/scripts/icm-serve.sh"]
+  ICM_CMD='"bash"'
+  ICM_ARGS="\"\${workspaceFolder}/.github/scripts/icm-serve.sh\""
+  CBM_CMD="\"$CBM_BIN\""
+  CBM_ARGS=""
+fi
+
+# Merged by key, not regenerated. The file used to be rewritten wholesale on
+# every run, so an MCP server the owner had registered here — or one another
+# tool added — disappeared without a word. AOI owns exactly its own two
+# entries under "servers"; everything else in the object belongs to whoever
+# put it there.
+if python3 - "$VSCODE_MCP" "$ICM_CMD" "$ICM_ARGS" "$CBM_CMD" "$CBM_ARGS" "${CBM_BIN:-}" <<'PYEOF'
+import json, os, sys
+
+mcp_path, icm_cmd, icm_args, cbm_cmd, cbm_args, cbm_bin = sys.argv[1:7]
+
+def unquote_list(raw):
+    """The shell builds these as a JSON array body, e.g. '"-c", "high"'."""
+    raw = raw.strip()
+    if not raw:
+        return []
+    return json.loads("[" + raw + "]")
+
+config = {}
+if os.path.exists(mcp_path):
+    try:
+        with open(mcp_path) as f:
+            config = json.load(f)
+    except (ValueError, OSError):
+        sys.exit(3)
+    if not isinstance(config, dict):
+        sys.exit(3)
+
+servers = config.setdefault("servers", {})
+if not isinstance(servers, dict):
+    sys.exit(3)
+
+servers["icm"] = {"type": "stdio", "command": json.loads(icm_cmd), "args": unquote_list(icm_args)}
+if cbm_bin:
+    servers["codebase-memory-mcp"] = {
+        "type": "stdio",
+        "command": json.loads(cbm_cmd),
+        "args": unquote_list(cbm_args),
     }
-  }
-}
-EOF
-  ok "Workspace MCP configured in .vscode/mcp.json (ICM only)"
+
+with open(mcp_path, "w") as f:
+    json.dump(config, f, indent=2)
+    f.write("\n")
+PYEOF
+then
+  if [[ -n "$CBM_BIN" ]]; then
+    ok "Workspace MCP configured in .vscode/mcp.json (ICM + codebase-memory-mcp, compression=$MCP_COMPRESSION)"
+  else
+    ok "Workspace MCP configured in .vscode/mcp.json (ICM only, compression=$MCP_COMPRESSION)"
+  fi
+else
+  warn ".vscode/mcp.json no es JSON válido — se dejó intacto, configuralo a mano"
 fi
 
 # ── Phase 4: Configure Tools ────────────────────────────────────────────
@@ -1304,12 +1654,35 @@ if [[ -n "$(get_codebase_memory_path || true)" ]]; then
 fi
 icm init --mode hook 2>/dev/null && ok "ICM → Hooks installed (auto-extraction)" || warn "ICM hooks skipped"
 icm init --mode skill 2>/dev/null && ok "ICM → Skills installed" || warn "ICM skills skipped"
+# `icm init --mode cli` writes rule files for every tool it knows, so it can
+# leave a .windsurfrules behind in a workspace that does not use Windsurf.
+# Cleaning that up is right; deleting one the OWNER wrote is not, and a bare
+# `rm -f` after the fact cannot tell them apart. So the answer is decided
+# before ICM runs: only a file that was not there a moment ago is ours to
+# remove.
+WINDSURFRULES_PREEXISTING=0
+[ -e "$PROJECT_PATH/.windsurfrules" ] && WINDSURFRULES_PREEXISTING=1
+
 icm init --mode cli 2>/dev/null && ok "ICM → CLI instructions" || warn "ICM CLI instructions skipped"
-# Remove tools we don't use (icm init --mode cli installs for all tools indiscriminately)
-rm -f "$PROJECT_PATH/.windsurfrules" 2>/dev/null && warn "Removed .windsurfrules (Windsurf not in use)" || true
+
+if [ "$WINDSURFRULES_PREEXISTING" -eq 0 ] && [ -e "$PROJECT_PATH/.windsurfrules" ]; then
+  rm -f "$PROJECT_PATH/.windsurfrules" && warn "Removed .windsurfrules (lo creó icm init; Windsurf no está en uso)"
+elif [ "$WINDSURFRULES_PREEXISTING" -eq 1 ]; then
+  info ".windsurfrules ya existía — es tuyo, no se toca"
+fi
 # Ensure icm-serve.sh is executable (needed for VS Code that inherits limited PATH)
 chmod +x "$PROJECT_PATH/.github/scripts/icm-serve.sh" 2>/dev/null || true
 chmod +x "$PROJECT_PATH/.github/scripts/icm-hook.sh" 2>/dev/null || true
+
+# Hook wiring. The declarations under .github/hooks/ used to sit there loaded
+# by nobody while a skill in the x6 band told agents the RTK rule enforced
+# itself. Translating them into the harness's own config is what makes that
+# sentence true.
+if [ -f "$SCRIPT_DIR/scripts/multi-harness/install-hooks.mjs" ]; then
+  node "$SCRIPT_DIR/scripts/multi-harness/install-hooks.mjs" 2>/dev/null \
+    && ok "Hooks wired → .claude/settings.json" \
+    || warn "Hook wiring skipped — declarations in .github/hooks/ will not fire"
+fi
 
 # Multi-Harness Rules Compilation
 if [ -f "$SCRIPT_DIR/scripts/multi-harness/compile-rules.mjs" ]; then
@@ -1394,9 +1767,23 @@ if [ -f "$CONF_SNAPSHOT_SCRIPT" ]; then
     CONF_ACTION="reinstall"
   fi
 
-  bash "$CONF_SNAPSHOT_SCRIPT" "$SCAFFOLD_DIR" "$PROJECT_PATH" "$CONF_ACTION" "0.1.x" && \
-    ok "Configuration snapshot persisted to .conf/" || \
-    warn "Configuration snapshot failed — smart reinstall may not work on next run"
+  # Fatal, not a warning. `.conf/` is the ONLY record of what AOI installed,
+  # and the whole three-way merge is subtraction against it. Without it the
+  # next run reads no manifest, concludes this is a first install, and lets
+  # `specify init --force` flatten .github/ and .specify/ — the exact
+  # destruction the reinstall path exists to prevent. An installation that
+  # cannot write its own baseline is not a finished installation, and saying
+  # so now costs one message instead of someone's work later.
+  if bash "$CONF_SNAPSHOT_SCRIPT" "$SCAFFOLD_DIR" "$PROJECT_PATH" "$CONF_ACTION" "0.1.x"; then
+    ok "Configuration snapshot persisted to .conf/"
+  else
+    err "No se pudo escribir .conf/ — la instalación queda sin línea base."
+    err "El próximo reinstall no podría distinguir una actualización de AOI de una edición tuya,"
+    err "y correría 'specify init --force' sobre .github/ y .specify/. Arreglá el acceso a"
+    err "  $PROJECT_PATH/.conf"
+    err "y volvé a correr el instalador."
+    exit 1
+  fi
 
   # On reinstall, update manifest.updated_at and append detailed stats to history
   if [ "$IS_REINSTALL" -eq 1 ] && [ -f "$PROJECT_PATH/.conf/manifest.json" ]; then
@@ -1418,10 +1805,14 @@ with open('$PROJECT_PATH/.conf/manifest.json', 'w') as f:
     ok "Reinstall stats recorded in .conf/history.jsonl"
   fi
 else
-  warn "snapshot-conf.sh not found — .conf/ will not be generated"
+  err "snapshot-conf.sh no está junto a setup.sh — .conf/ no se puede generar."
+  err "Sin esa línea base el próximo reinstall es destructivo. Instalación abortada."
+  exit 1
 fi
 
 # ── Done ─────────────────────────────────────────────────────────────────
+report_harness_kept
+
 header "Installation Complete"
 
 echo "  Project: $PROJECT_PATH"

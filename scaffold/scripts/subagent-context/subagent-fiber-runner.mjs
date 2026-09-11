@@ -20,6 +20,29 @@ import { buildSubagentPayload } from './sanitize-subagent-payload.mjs';
  * @param {string} [options.format='toon'] - 'toon' | 'markdown'
  * @returns {Object} Sandbox controller with execution, tracking, and rollback capabilities
  */
+/**
+ * Puts every tracked file back the way it was, and forgets them.
+ *
+ * `null` means the file did not exist when it was first tracked, so undoing
+ * the subagent's work means removing it. Anything else is the original content
+ * and has to be written back. Inverting that single comparison turns a rollback
+ * into a destroyer of pre-existing files, which is why this is exported: the
+ * test suite asserts it directly instead of only reaching it through one of
+ * its two callers.
+ *
+ * @param {Map<string, string|null>} trackedFiles mutated: cleared when done
+ */
+export function restoreTrackedFiles(trackedFiles) {
+  for (const [filePath, origContent] of trackedFiles.entries()) {
+    if (origContent === null) {
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    } else {
+      fs.writeFileSync(filePath, origContent, 'utf8');
+    }
+  }
+  trackedFiles.clear();
+}
+
 export function createSubagentSandbox({ role, taskDir, format = 'toon' }) {
   const registry = createCoeffectRegistry();
   const runtime = createFiberRuntime(registry);
@@ -54,17 +77,13 @@ export function createSubagentSandbox({ role, taskDir, format = 'toon' }) {
     provide: [`subagent-status-${role}`],
     apply: (ctx) => {
       ctx.provide(`subagent-status-${role}`, { ready: true, role });
-      return () => {
-        // Rollback all tracked file changes on teardown
-        for (const [filePath, origContent] of trackedFiles.entries()) {
-          if (origContent === null) {
-            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-          } else {
-            fs.writeFileSync(filePath, origContent, 'utf8');
-          }
-        }
-        trackedFiles.clear();
-      };
+      // Fiber teardown and the explicit rollback() are the same operation, so
+      // they are the same function. They used to be two byte-identical copies,
+      // and only rollback() had a test — which meant the teardown path, the
+      // one Invariant 3 is actually named after, was free to drift. A mutation
+      // that inverted its `origContent === null` check turned restore into
+      // delete and no test noticed.
+      return () => restoreTrackedFiles(trackedFiles);
     }
   };
 
@@ -97,14 +116,7 @@ export function createSubagentSandbox({ role, taskDir, format = 'toon' }) {
       return trackedFiles.size;
     },
     rollback() {
-      for (const [filePath, origContent] of trackedFiles.entries()) {
-        if (origContent === null) {
-          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        } else {
-          fs.writeFileSync(filePath, origContent, 'utf8');
-        }
-      }
-      trackedFiles.clear();
+      restoreTrackedFiles(trackedFiles);
       fiberController.deactivate();
       fiberController.dispose();
       registry.recover();

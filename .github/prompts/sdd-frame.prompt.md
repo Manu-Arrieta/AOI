@@ -154,7 +154,10 @@ Based on the Owner's response:
 Zero-Task Footprint keeps the **narrative** ephemeral, not the **contract**. The prose canvas is disposable — `spec.md` and `design.md` re-express it downstream. The Never Rules and the Oracle are the only parts nothing downstream reconstructs, so they are persisted as O(1) facts (a handful of lines, no disk artifact, no re-reading cost):
 
 ```bash
-BIC_ID="BIC-$(date +%Y)-NNN"   # sequential; reuse the existing id when evolving a contract
+# Sequential over the ids that already exist — list them first, never assume 001.
+# A real cycle read this line, did not check, and overwrote a live contract.
+icm facts list "{WORKSPACE}" -p "bic."
+BIC_ID="BIC-$(date +%Y)-NNN"   # NNN = highest existing + 1; reuse the id only when evolving that same contract
 # Signature is: icm facts set <ENTITY> <KEY> <VALUE> — three separate arguments.
 icm facts set "{WORKSPACE}" "bic.${BIC_ID}.never.1" "{invariante 1 en una línea}"
 icm facts set "{WORKSPACE}" "bic.${BIC_ID}.never.2" "{invariante 2 en una línea}"

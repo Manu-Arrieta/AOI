@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
-import { basename, dirname, join, relative, resolve } from 'node:path'
+import { basename, dirname, join, relative, resolve, sep } from 'node:path'
 import { promisify } from 'node:util'
 
 import { z } from 'zod'
@@ -52,7 +52,17 @@ function resolveResourcePath(workspaceRoot: string, inputPath: string): { absolu
   const resourcesRoot = resolve(workspaceRoot, '.resources')
   const absolutePath = resolve(workspaceRoot, normalized)
 
-  if (!absolutePath.startsWith(resourcesRoot)) {
+  // A bare `startsWith` is a string test, not a containment test: every
+  // sibling whose name merely BEGINS with `.resources` slips through —
+  // `.resources-production-backup`, `.resources-archive`. An adversarial
+  // audit reproduced it end to end, POSTing `.resources-production-backup`
+  // to /api/resources/delete and watching `rm(..., { recursive: true })`
+  // destroy a tree that was never inside the sandbox.
+  //
+  // Containment needs the separator. The equality case keeps the root itself
+  // addressable, which listing depends on.
+  const insideSandbox = absolutePath === resourcesRoot || absolutePath.startsWith(resourcesRoot + sep)
+  if (!insideSandbox) {
     throw new ResourceOperationError('Resource operations must stay inside .resources.', 403)
   }
 
@@ -247,15 +257,36 @@ export async function deleteResourceFolder(
     throw new ResourceOperationError('The target folder does not exist.', 404)
   }
 
-  await rm(target.absolutePath, { recursive: true, force: false })
-  await updateResourcesConstitution(workspaceRoot, (entries) => {
-    entries.delete(target.relativePath)
-  })
+  // The persistence gate runs BEFORE anything becomes irreversible.
+  //
+  // The order used to be rm → constitution → persist, and `persistChange`
+  // throws 500 "ICM is unavailable, so the governed operation cannot be
+  // persisted" when it cannot record the change. So the one case the gate
+  // exists to prevent — an ungoverned deletion — was the case where the
+  // folder was already gone, recursively, with no record anywhere. The
+  // operator saw a failure and had lost the data.
+  //
+  // The folder is renamed aside first, which is atomic within the filesystem
+  // and reversible. Only once the change is recorded does the rename become a
+  // removal; if recording fails the folder comes back exactly where it was.
+  const quarantine = `${target.absolutePath}.aoi-pending-delete`
+  await rm(quarantine, { recursive: true, force: true })
+  await rename(target.absolutePath, quarantine)
 
-  await persistChange(
-    `## Resources Structure Update\n**Operation**: delete\n**Path**: ${target.relativePath}\n**Reason**: ${input.reason}`,
-    ['resources', 'dashboard', 'delete'],
-  )
+  try {
+    await persistChange(
+      `## Resources Structure Update\n**Operation**: delete\n**Path**: ${target.relativePath}\n**Reason**: ${input.reason}`,
+      ['resources', 'dashboard', 'delete'],
+    )
+    await updateResourcesConstitution(workspaceRoot, (entries) => {
+      entries.delete(target.relativePath)
+    })
+  } catch (error) {
+    await rename(quarantine, target.absolutePath)
+    throw error
+  }
+
+  await rm(quarantine, { recursive: true, force: true })
 
   return {
     ok: true,

@@ -4,28 +4,11 @@ import { computed, nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
 import type { TaskRecord, WorkspaceEventPayload, WorkspaceSnapshot } from '~/shared/types'
 
 import { clearTaskChangeState, diffTaskChangeStates, type TaskChangeState } from '../utils/task-changes'
+import { resolveRefreshWorkspaceOptions, type RefreshWorkspaceInput } from '../utils/refresh-options'
 
 let eventSource: EventSource | null = null
 let consumerCount = 0
 
-type RefreshWorkspaceInput = boolean | {
-  preserveSelection?: boolean
-  silent?: boolean
-}
-
-function resolveRefreshWorkspaceOptions(input: RefreshWorkspaceInput = true) {
-  if (typeof input === 'boolean') {
-    return {
-      preserveSelection: input,
-      silent: false,
-    }
-  }
-
-  return {
-    preserveSelection: input.preserveSelection ?? true,
-    silent: input.silent ?? false,
-  }
-}
 
 export function useWorkspace() {
   const snapshot = useState<WorkspaceSnapshot | null>('ops-dashboard-snapshot', () => null)

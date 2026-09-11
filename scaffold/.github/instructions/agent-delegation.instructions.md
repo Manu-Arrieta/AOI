@@ -4,6 +4,9 @@ description: "Mandatory protocol for all agents that invoke runSubagent. Model s
 applyTo: ".github/{agents,prompts}/**,**/*.agent.md,**/*.prompt.md"
 ---
 
+> ⚠️ Cada agente declara su modelo en su bloque `## Model Requirement`. Seleccionalo
+> en el picker de Copilot antes de invocarlo. Este archivo es el registro completo.
+
 # Agent Delegation Protocol
 
 **MANDATORY for all agents that invoke `runSubagent`.**

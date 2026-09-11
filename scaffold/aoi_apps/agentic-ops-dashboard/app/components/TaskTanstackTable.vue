@@ -11,11 +11,11 @@ import {
 } from '@tanstack/vue-table'
 
 import { useLocale } from '../composables/useLocale'
-import type { TaskItem } from '~/shared/types'
+import type { TaskRecord } from '~/shared/types'
 
 const props = withDefaults(
   defineProps<{
-    tasks?: TaskItem[]
+    tasks?: TaskRecord[]
     selectedTaskId?: string | null
   }>(),
   {
@@ -30,14 +30,23 @@ const emit = defineEmits<{
 
 const { messages } = useLocale()
 const globalFilter = ref('')
-const roleFilter = ref('all')
+// `owner`, not `role`. The component was written against a `TaskItem` type
+// that does not exist in shared/types.ts, reading `featureName` and `role` —
+// two fields the registry parser never produces. TypeScript never caught it
+// because the phantom import is a type-only import that esbuild strips, and
+// no test ever mounted the component. In the running dashboard the Feature
+// column therefore printed the literal 'General' for every row, the Assigned
+// Role column printed 'general', and the role facet had exactly one option.
+// The sibling views, TaskBoard and TaskSummaryCard, always used `feature` and
+// `owner`; only this table invented its own names.
+const ownerFilter = ref('all')
 const statusFilter = ref('all')
 const sorting = ref<SortingState>([])
 
 /** Filtered data source based on facet selectors */
 const filteredData = computed(() => {
   return props.tasks.filter((task) => {
-    if (roleFilter.value !== 'all' && task.role !== roleFilter.value) {
+    if (ownerFilter.value !== 'all' && task.owner !== ownerFilter.value) {
       return false
     }
     if (statusFilter.value !== 'all' && task.status !== statusFilter.value) {
@@ -47,8 +56,8 @@ const filteredData = computed(() => {
   })
 })
 
-/** Role badge color mapping */
-function getRoleBadgeColor(role?: string): 'neutral' | 'info' | 'warning' | 'success' | 'secondary' {
+/** Owner badge color mapping */
+function getOwnerBadgeColor(role?: string): 'neutral' | 'info' | 'warning' | 'success' | 'secondary' {
   const r = (role || '').toLowerCase()
   if (r.includes('front') || r.includes('ui')) return 'info'
   if (r.includes('back') || r.includes('api')) return 'secondary'
@@ -68,7 +77,7 @@ function getStatusBadgeColor(status: string): 'neutral' | 'info' | 'warning' | '
 }
 
 // Columns definition for TanStack Table
-const columns: ColumnDef<TaskItem>[] = [
+const columns: ColumnDef<TaskRecord>[] = [
   {
     accessorKey: 'id',
     header: 'Task ID',
@@ -80,13 +89,13 @@ const columns: ColumnDef<TaskItem>[] = [
     cell: (info) => info.getValue(),
   },
   {
-    accessorKey: 'featureName',
+    accessorKey: 'feature',
     header: 'Feature',
     cell: (info) => info.getValue() || 'General',
   },
   {
-    accessorKey: 'role',
-    header: 'Assigned Role',
+    accessorKey: 'owner',
+    header: 'Owner',
     cell: (info) => info.getValue() || 'general',
   },
   {
@@ -126,12 +135,12 @@ const table = useVueTable({
   },
 })
 
-// Unique role options for filter dropdown
-const roleOptions = computed(() => {
-  const roles = Array.from(new Set(props.tasks.map((t) => t.role).filter(Boolean)))
+// Unique owner options for filter dropdown
+const ownerOptions = computed(() => {
+  const owners = Array.from(new Set(props.tasks.map((t) => t.owner).filter(Boolean)))
   return [
-    { label: 'All Roles', value: 'all' },
-    ...roles.map((r) => ({ label: `@${r}`, value: r })),
+    { label: 'All Owners', value: 'all' },
+    ...owners.map((o) => ({ label: `@${o}`, value: o })),
   ]
 })
 
@@ -161,8 +170,8 @@ const statusOptions = computed(() => {
 
       <div class="flex items-center gap-2">
         <USelect
-          v-model="roleFilter"
-          :items="roleOptions"
+          v-model="ownerFilter"
+          :items="ownerOptions"
           size="sm"
           class="w-36"
         />
@@ -232,18 +241,18 @@ const statusOptions = computed(() => {
             <td class="px-4 py-3 text-slate-400 whitespace-nowrap">
               <span class="inline-flex items-center gap-1">
                 <UIcon name="i-lucide-layers" class="w-3.5 h-3.5 text-slate-500" />
-                {{ row.original.featureName || 'General' }}
+                {{ row.original.feature || 'General' }}
               </span>
             </td>
 
-            <!-- Assigned Role -->
+            <!-- Owner -->
             <td class="px-4 py-3 whitespace-nowrap">
               <UBadge
-                :color="getRoleBadgeColor(row.original.role)"
+                :color="getOwnerBadgeColor(row.original.owner)"
                 variant="subtle"
                 size="xs"
               >
-                @{{ row.original.role || 'general' }}
+                @{{ row.original.owner || 'general' }}
               </UBadge>
             </td>
 

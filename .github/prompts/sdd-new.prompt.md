@@ -46,7 +46,7 @@ Record every user message and agent response during this phase. Transcripts capt
 
 ### Step 3: Determine Feature + Task
 
-1. Read `.tasks/registry.md` for the last TASK-ID used
+1. Get the next TASK-ID from `node scripts/sdd-lifecycle/registry-sync.mjs`, which reads BOTH the registry and `.tasks/` on disk. Reading only the registry hands out ids that already exist: a real cycle found it listing zero tasks while two sat on disk.
 2. Ask the Owner: _"Does this belong to an existing feature or is it new?"_
 3. If **new feature**: create `.tasks/{feature-name}/feature.md` with metadata
 4. Generate `TASK-YYYY-NNN` with current year and next sequential number
@@ -69,7 +69,14 @@ icm facts list "{WORKSPACE}" -p "endpoint."
 icm_memory_recall(query: "services composables endpoints", topic: "{WORKSPACE}-services-catalog")
 ```
 
-Also scan the codebase for existing services, composables, utils, API endpoints that may be relevant. Persist any discoveries as exact facts and in the services catalog:
+The facts catalog is frequently empty on a young workspace, and an empty answer is NOT evidence that nothing exists — a real cycle read "no facts", declared the capability new, and shipped a second `evaluateTokenBudget` next to one that already existed with opposite error semantics. So always scan disk too, and scan for the **exported name you are about to create**, not only for the feature:
+
+```bash
+rtk rg -n "export (function|const) {nameYouWillCreate}" --glob '!node_modules'
+rtk rg -n "{domain keyword}" server/ app/ src/ lib/ --glob '!node_modules'
+```
+
+A name collision with different semantics is a FAIL of this gate, not a detail for later. Persist every discovery as exact facts and in the services catalog, so the next cycle's O(1) probe is not empty either:
 
 ```bash
 icm facts set "{WORKSPACE}" "service.{name}" "{path/to/service}"

@@ -53,7 +53,12 @@ export function createTombstone(turn, replacementTurn) {
  * @returns {Array<object>}
  */
 export function shrinkTurns(turns = []) {
-  if (!Array.isArray(turns) || turns.length <= 1) return [...turns]
+  // The guard used to detect a non-array and then spread it anyway, so
+  // `shrinkTurns(null)` threw "turns is not iterable" — a defence that
+  // crashes on exactly the input it was written for. A string fared no
+  // better: it spread into one entry per character.
+  if (!Array.isArray(turns)) return []
+  if (turns.length <= 1) return [...turns]
 
   const result = []
 

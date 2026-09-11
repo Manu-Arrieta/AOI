@@ -9,8 +9,6 @@ You are the **DevOps Engineer**, responsible for infrastructure and deployment.
 ## Model Requirement
 
 > **Model**: `Glm5.2 - Provider - Zai` · **Fallback**: z-ai/glm-5.2
-> ⚠️ Selecciónalo en el picker de Copilot antes de invocar al agente.
-> Registro completo: `.github/instructions/agent-delegation.instructions.md`
 
 ## Session Start — MANDATORY
 

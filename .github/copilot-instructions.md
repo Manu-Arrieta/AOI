@@ -12,13 +12,19 @@ icm recall "query" -t "topic-name"        # filter by topic
 icm recall-context "query" --limit 5      # formatted for prompt injection
 ```
 
-### Store — MANDATORY triggers
-You MUST call `icm store` when ANY of the following happens:
-1. **Error resolved** → `icm store -t errors-resolved -c "description" -i high -k "keyword1,keyword2"`
-2. **Architecture/design decision** → `icm store -t decisions-{project} -c "description" -i high`
-3. **User preference discovered** → `icm store -t preferences -c "description" -i critical`
-4. **Significant task completed** → `icm store -t context-{project} -c "summary of work done" -i high`
-5. **Conversation exceeds ~20 tool calls without a store** → store a progress summary
+### Store Triggers (MANDATORY) — derivado de `.github/instructions/icm-protocol.instructions.md`
+
+`icm store -t <topic> -c "<description>" -i <importance>` · topics: `decisions-AOI`,
+`context-AOI`, `errors-resolved`, `preferences`.
+
+- `-i critical` → project stack o contexto · decisión de arquitectura · convención establecida · preferencia del Owner (topic `preferences`)
+- `-i high` → spec o plan producido · tarea completada · reporte de QA o verify · error resuelto (topic `errors-resolved`)
+- `-i medium` → progreso de implementación, checkpoint cada 3-5 tareas
+- `-i low` → notas de exploración, ideas temporales (se podan solas)
+
+Configuración exacta como hecho O(1): `icm facts set "AOI" "key" "value"`.
+
+Además: si la conversación pasa ~20 llamadas a herramientas sin un store, guardá un resumen de progreso.
 
 Do this BEFORE responding to the user. Not after. Not later. Immediately.
 

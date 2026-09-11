@@ -13,12 +13,17 @@ icm recall "query" -t "AOI-context"        # Filter by project topic
 icm facts list "AOI"             # O(1) exact project facts
 ```
 
-### Store Triggers (MANDATORY)
-1. **Error resolved** → `icm store -t errors-resolved -c "description" -i high -k "keyword1,keyword2"`
-2. **Architecture / Design decision** → `icm store -t decisions-AOI -c "description" -i high`
-3. **User preference discovered** → `icm store -t preferences -c "description" -i critical`
-4. **Task completed** → `icm store -t context-AOI -c "summary" -i high`
-5. **Exact configuration / endpoint / service** → `icm facts set "AOI" "key" "value"`
+### Store Triggers (MANDATORY) — derivado de `.github/instructions/icm-protocol.instructions.md`
+
+`icm store -t <topic> -c "<description>" -i <importance>` · topics: `decisions-AOI`,
+`context-AOI`, `errors-resolved`, `preferences`.
+
+- `-i critical` → project stack o contexto · decisión de arquitectura · convención establecida · preferencia del Owner (topic `preferences`)
+- `-i high` → spec o plan producido · tarea completada · reporte de QA o verify · error resuelto (topic `errors-resolved`)
+- `-i medium` → progreso de implementación, checkpoint cada 3-5 tareas
+- `-i low` → notas de exploración, ideas temporales (se podan solas)
+
+Configuración exacta como hecho O(1): `icm facts set "AOI" "key" "value"`.
 
 ### Workspace Health Diagnostic (0 Tokens)
 ```bash

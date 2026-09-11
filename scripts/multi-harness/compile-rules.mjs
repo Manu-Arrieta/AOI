@@ -12,10 +12,14 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { deriveSkillFromInstruction, prunePathIfPristine, readStoreTriggers, renderStoreTriggers } from './protocol-source.mjs'
 
 export const SUPPORTED_HARNESSES = ['copilot', 'claude', 'cursor', 'antigravity', 'cline', 'all']
 
-export function generateClaudeMd({ workspace = 'AOI' } = {}) {
+export function generateClaudeMd({ workspace = 'AOI', repoRoot = process.cwd() } = {}) {
+  // Derived, not copied. The hardcoded block this replaces said `-i high` for
+  // an architecture decision while the protocol said `critical`.
+  const derived = renderStoreTriggers(readStoreTriggers(repoRoot), workspace)
   return `<!-- AOI / CLAUDE.md — Auto-compiled by aoi:sync-rules -->
 # ${workspace} — Agentic Operational Infrastructure (AOI)
 
@@ -31,12 +35,12 @@ icm recall "query" -t "${workspace}-context"        # Filter by project topic
 icm facts list "${workspace}"             # O(1) exact project facts
 \`\`\`
 
-### Store Triggers (MANDATORY)
-1. **Error resolved** → \`icm store -t errors-resolved -c "description" -i high -k "keyword1,keyword2"\`
-2. **Architecture / Design decision** → \`icm store -t decisions-${workspace} -c "description" -i high\`
-3. **User preference discovered** → \`icm store -t preferences -c "description" -i critical\`
-4. **Task completed** → \`icm store -t context-${workspace} -c "summary" -i high\`
-5. **Exact configuration / endpoint / service** → \`icm facts set "${workspace}" "key" "value"\`
+${derived || `### Store Triggers (MANDATORY)
+1. **Error resolved** → \\\`icm store -t errors-resolved -c "description" -i high -k "keyword1,keyword2"\\\`
+2. **Architecture / Design decision** → \\\`icm store -t decisions-${workspace} -c "description" -i critical\\\`
+3. **User preference discovered** → \\\`icm store -t preferences -c "description" -i critical\\\`
+4. **Task completed** → \\\`icm store -t context-${workspace} -c "summary" -i high\\\`
+5. **Exact configuration / endpoint / service** → \\\`icm facts set "${workspace}" "key" "value"\\\``}
 
 ### Workspace Health Diagnostic (0 Tokens)
 \`\`\`bash
@@ -96,7 +100,10 @@ export function generateClineRules({ workspace = 'AOI' } = {}) {
 `
 }
 
-export function generateCopilotInstructions({ workspace = 'AOI' } = {}) {
+export function generateCopilotInstructions({ workspace = 'AOI', repoRoot = process.cwd() } = {}) {
+  // Same derivation as CLAUDE.md, and for the same reason: this surface also
+  // carried `-i high` for an architecture decision the protocol calls critical.
+  const derived = renderStoreTriggers(readStoreTriggers(repoRoot), workspace)
   return `<!-- AOI / .github/copilot-instructions.md — Auto-compiled by aoi:sync-rules -->
 <!-- icm:start -->
 ## Persistent memory (ICM) — MANDATORY
@@ -111,13 +118,13 @@ icm recall "query" -t "topic-name"        # filter by topic
 icm recall-context "query" --limit 5      # formatted for prompt injection
 \`\`\`
 
-### Store — MANDATORY triggers
-You MUST call \`icm store\` when ANY of the following happens:
-1. **Error resolved** → \`icm store -t errors-resolved -c "description" -i high -k "keyword1,keyword2"\`
-2. **Architecture/design decision** → \`icm store -t decisions-{project} -c "description" -i high\`
-3. **User preference discovered** → \`icm store -t preferences -c "description" -i critical\`
-4. **Significant task completed** → \`icm store -t context-{project} -c "summary of work done" -i high\`
-5. **Conversation exceeds ~20 tool calls without a store** → store a progress summary
+${derived || `### Store — MANDATORY triggers
+1. **Error resolved** → \\\`icm store -t errors-resolved -c "description" -i high\\\`
+2. **Architecture/design decision** → \\\`icm store -t decisions-${workspace} -c "description" -i critical\\\`
+3. **User preference discovered** → \\\`icm store -t preferences -c "description" -i critical\\\`
+4. **Significant task completed** → \\\`icm store -t context-${workspace} -c "summary" -i high\\\``}
+
+Además: si la conversación pasa ~20 llamadas a herramientas sin un store, guardá un resumen de progreso.
 
 Do this BEFORE responding to the user. Not after. Not later. Immediately.
 
@@ -144,6 +151,7 @@ export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = '
   const shouldCompile = (h) => targetAll || harnesses.includes(h)
   const compiledFiles = []
   const hasScaffold = fs.existsSync(path.join(repoRoot, 'scaffold'))
+  const keptByPrune = []
 
   if (prune && !targetAll) {
     const HARNESS_ITEMS = {
@@ -156,18 +164,31 @@ export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = '
     for (const [h, items] of Object.entries(HARNESS_ITEMS)) {
       if (!shouldCompile(h)) {
         for (const item of items) {
-          const rootTarget = path.join(repoRoot, item)
-          if (fs.existsSync(rootTarget)) {
-            fs.rmSync(rootTarget, { recursive: true, force: true })
-          }
+          // Only what AOI itself shipped. This used to be an unconditional
+          // `rmSync(recursive, force)` — the SECOND door into the same
+          // data-loss the installer's own pruning already had, and the one
+          // that stayed open after that fix, because setup.sh calls this
+          // with `--prune` right after. Reproduced: a customised CLAUDE.md
+          // and an Owner-authored `.agents/skills/mia/SKILL.md` both gone.
+          prunePathIfPristine(path.join(repoRoot, item), path.join(repoRoot, 'scaffold', item), keptByPrune)
           if (hasScaffold) {
+            // The scaffold copy is AOI's by definition, so it goes whole —
+            // but only if the root counterpart was AOI's too. Removing the
+            // reference while the Owner's edited copy stays would leave
+            // nothing to compare against next run.
             const scaffoldTarget = path.join(repoRoot, 'scaffold', item)
-            if (fs.existsSync(scaffoldTarget)) {
+            if (fs.existsSync(scaffoldTarget) && !fs.existsSync(path.join(repoRoot, item))) {
               fs.rmSync(scaffoldTarget, { recursive: true, force: true })
             }
           }
         }
       }
+    }
+    if (keptByPrune.length > 0) {
+      process.stderr.write(
+        `⚠️  Conservados por tener cambios tuyos:\n${keptByPrune.map((p) => `     ${p}`).join('\n')}\n` +
+          `     Pertenecen a un harness que no seleccionaste. Borralos vos si querés que se vayan.\n`
+      )
     }
   }
 
@@ -210,8 +231,19 @@ export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = '
         if (s.isDirectory()) {
           const skillFilePath = path.join(githubSkillsDir, s.name, 'SKILL.md')
           if (fs.existsSync(skillFilePath)) {
-            const skillContent = fs.readFileSync(skillFilePath, 'utf8')
-            writeTargetFile(path.join('.agents', 'skills', s.name, 'SKILL.md'), skillContent)
+            // A skill whose canonical text lives in .github/instructions/ is
+            // DERIVED here rather than mirrored. Antigravity cannot read that
+            // directory, which is the whole reason the duplicate existed: the
+            // orchestrator was paying for a second full copy of a rule it
+            // already receives — 502 tokens in all six phases — purely so a
+            // harness that reads neither could get it from somewhere.
+            // Deriving lets the skill shrink to its trigger without leaving
+            // antigravity behind.
+            const derived = deriveSkillFromInstruction(repoRoot, s.name)
+            writeTargetFile(
+              path.join('.agents', 'skills', s.name, 'SKILL.md'),
+              derived ?? fs.readFileSync(skillFilePath, 'utf8')
+            )
           }
         }
       }

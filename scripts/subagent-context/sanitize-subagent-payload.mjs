@@ -214,6 +214,20 @@ export function buildSubagentPayload({
  * @param {'markdown'|'toon'} [format]
  * @returns {Promise<{ role: string, pendingTaskCount: number, payload: string, format: string }>}
  */
+/**
+ * The workspace name a task directory belongs to.
+ *
+ * A task lives at `<workspace>/.tasks/<feature>/<task-id>`, so the workspace is
+ * the directory holding `.tasks/`. Falls back to the current directory's name
+ * when the path has another shape, which is the same answer the prompts get
+ * from `basename "$PWD"`.
+ */
+export function deriveWorkspace(absTaskDir) {
+  const parts = absTaskDir.split(path.sep)
+  const i = parts.lastIndexOf('.tasks')
+  return i > 0 ? parts[i - 1] : path.basename(process.cwd())
+}
+
 export async function sanitizeTaskPayloadFromDisk(taskDir, role, format = 'markdown') {
   const absDir = path.resolve(taskDir)
   const readFileSafe = (filename) => {
@@ -227,10 +241,17 @@ export async function sanitizeTaskPayloadFromDisk(taskDir, role, format = 'markd
   const relationsJson = readFileSafe('relations.json')
   const taskId = path.basename(absDir)
   const feature = path.basename(path.dirname(absDir))
+  // The workspace was the one field left at its `'workspace'` default, so every
+  // payload a real cycle produced told the subagent it was working in a project
+  // called "workspace" — and that META line is what tells it which ICM project
+  // to write its findings to. Derived the same way the prompts derive it: the
+  // task dir sits at `<workspace>/.tasks/<feature>/<task>`.
+  const workspace = deriveWorkspace(absDir)
 
   return buildSubagentPayload({
     taskId,
     feature,
+    workspace,
     role,
     tasksMd,
     specMd,

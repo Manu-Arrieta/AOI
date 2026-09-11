@@ -108,6 +108,16 @@ function main() {
     ...r.badSkillPath.map((s) => `BAD SKILL PATH  ${s}`),
   ]
 
+  // Zero rows is not "everything resolves"; it is nothing to resolve. An
+  // affirmative verdict over an empty input set is the same false green this
+  // repository keeps finding elsewhere — a registry emptied by a bad merge, or
+  // a gate pointed at the wrong directory, would print a checkmark.
+  if (r.registered === 0) {
+    console.error('\n❌ El registro de ruteo está vacío: cero agentes.')
+    console.error('Un veredicto afirmativo sobre cero entradas no dice que todo resuelve, dice que no hay nada.')
+    process.exit(1)
+  }
+
   if (failures.length > 0) {
     console.error('')
     for (const f of failures) console.error(`❌ ${f}`)

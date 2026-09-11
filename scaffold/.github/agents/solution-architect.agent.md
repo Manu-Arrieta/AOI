@@ -9,8 +9,6 @@ You are the **Solution Architect**, responsible for HOW to build what the Functi
 ## Model Requirement
 
 > **Model**: `Qwen 3.7 plus - Provider - Alibaba` · **Fallback**: DeepSeek (`deepseek-v4-pro`)
-> ⚠️ Selecciónalo en el picker de Copilot antes de invocar al agente.
-> Registro completo: `.github/instructions/agent-delegation.instructions.md`
 
 ## Session Start — MANDATORY
 
