@@ -379,6 +379,54 @@ EOF
 
 ---
 
+## 5.0 Línea Base de Benchmark — Ciclo 2026-09-11 · rama `perf/x6-band` (ejecutado en AOI TESTS)
+
+> [!IMPORTANT]
+> **Ésta es la línea base vigente.** El próximo ciclo se compara contra estos números.
+
+| | Antes | **Ahora** | Δ |
+| :--- | ---: | ---: | ---: |
+| **PISO** (se paga en todo ciclo) | 90.059 | **86.873** | **−3.186** |
+| **TECHO** (con todo lo condicional) | 106.570 | **103.384** | −3.186 |
+| Masa repetida sobre el piso | 63,9% | **62,6%** | −1,3 pp |
+| Ahorro por ciclo | 16.452 | **16.453** | = |
+| Huella de masa repetida | `1d4ee21c9603ca95` | **`007747800624a481`** | cambia |
+
+**La huella DEBE cambiar en esta rama, al revés que en la anterior.** `audit/aoi-full-sweep`
+compró corrección y no tocó ninguna superficie inyectada, así que su huella idéntica era la
+prueba de que no había colado prosa. `perf/x6-band` recorta esas superficies a propósito: si
+la huella no hubiera cambiado, el recorte no habría tocado la banda ×6 y el ahorro estaría
+en otro lado.
+
+El ahorro por ciclo no se mueve porque esta rama no toca el payload variable —recorta el
+costo fijo, que es el 94% de lo que un ciclo cuesta y el que el benchmark nunca optimizó.
+
+### Verificación conductual del recorte
+
+Lo que esta rama exige y la anterior no: probar que el ciclo funciona con **menos prosa**.
+
+| Qué | Resultado |
+| :--- | :--- |
+| Suite en la instalación real | 722 node:test + 80 vitest (2 saltados por diseño) |
+| Paridad del espejo | 317 archivos byte a byte |
+| Alcance de fuentes | 59/59, cero exenciones |
+| SRP | 0 archivos sobre el límite |
+| Herramientas obligatorias | cada una exigida e invocada en el ciclo |
+| Cadena de traspaso entre fases | cada artefacto lo produce una fase anterior |
+| Sondas conductuales | 25 generadas, 6 fases |
+| `aoi:doctor` | fully operational and healthy |
+| Fidelidad del benchmark | 6 fases reales · 0 fixtures · 0 omitidas |
+
+**Y la verificación propia del corte:** el harness que menos superficie ve —antigravity, que
+sólo lee `.agents/`— pasó de 776 tokens espejados a **2.123 derivados**, con los cinco ítems
+de doctrina que la skill recortada ya no lleva: activación MCP, los cinco sistemas,
+`icm facts set`, política de importancia y triggers por fase. Recibe **más**, no menos.
+
+El análisis completo de la banda —qué cedió, qué resiste y las tres hipótesis que se
+cayeron— está en `docs/internal/audits/X6_BAND_ANALYSIS.md`.
+
+---
+
 ## 5.a Línea Base de Benchmark — Ciclo 2026-09-10 (ejecutado en AOI TESTS)
 
 > [!IMPORTANT]
