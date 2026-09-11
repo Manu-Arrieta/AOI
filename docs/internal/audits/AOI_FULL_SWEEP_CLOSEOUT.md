@@ -333,3 +333,38 @@ familia, y vale anotarlo: la sonda de mutación mutaba dentro de literales de
 cadena, el contador de alcance excluía `scripts/scaffold/` por un nombre sin
 anclar y se detenía en un script ejecutado como subproceso. Un instrumento
 que se mide mal a sí mismo reporta sobre sí mismo.
+
+## Verificación de cierre — 2026-09-11
+
+Sobre la instalación real, no sobre el repositorio.
+
+| Qué | Resultado |
+| :--- | :--- |
+| Suite del repositorio | 719 node:test + 79 vitest, exit 0 |
+| Suite de la instalación real | 660 node:test + 80 vitest (2 saltados por diseño), exit 0 |
+| Paridad del espejo | 314 archivos byte a byte |
+| Alcance de fuentes | 59 de 59, **cero exenciones** |
+| Globs de test | ninguno vacío, ningún test fuera de un runner |
+| `aoi:doctor` | 11 pasados, 0 avisos, 0 fallos |
+| Ahorro por ciclo | 16.580 tokens (77,8%), 6 fases sobre artefactos reales |
+| PISO | **90.059 — idéntico** |
+| Huella de masa repetida | **`1d4ee21c9603ca95` — idéntica** |
+
+Las dos últimas filas son las que importan para una rama que no prometió ahorro. El piso es
+lo que todo ciclo paga antes de trabajar, y la huella es el hash de la masa que se re-inyecta
+en cada fase: que ninguno se haya movido es la comprobación de que nada de esto coló prosa en
+una superficie siempre inyectada. Treinta y dos commits de instrumentación que cuestan cero
+tokens de runtime.
+
+### La protección del Owner, medida otra vez
+
+Cinco marcas simultáneas sobre la instalación real, y una reinstalación encima:
+
+- dos archivos gobernados editados a mano
+- un servidor MCP propio en `.vscode/mcp.json`
+- una clave suelta en `.vscode/settings.json`
+- las claves que spec-kit deja ahí
+
+Las seis sobrevivieron, y AOI siguió registrando lo suyo en los mismos objetos JSON. Es la
+prueba de que la fusión por clave hace lo que el modelo de archivo entero no podía hacer en
+ninguna de sus dos direcciones.

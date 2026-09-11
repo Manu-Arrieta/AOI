@@ -388,19 +388,24 @@ EOF
 
 | Fase | Comando | Origen | Tokens Base | Tokens AOI | % Reducción |
 | :--- | :--- | :--- | ---: | ---: | ---: |
-| 0 | `/sdd-frame` | ● real | 2.410 | 178 | **92,6%** |
-| 1 | `/sdd-new` | ● real | 11.842 | 2.886 | **75,6%** |
+| 0 | `/sdd-frame` | ● real | 2.410 | 211 | **91,2%** |
+| 1 | `/sdd-new` | ● real | 11.758 | 2.740 | **76,7%** |
 | 2 | `/sdd-ff` | ● real | 332 | 251 | **24,4%** |
-| 3 | `/sdd-apply` | ● real | 5.842 | 1.052 | **82,0%** |
-| 4 | `/sdd-verify` | ● real | 720 | 455 | **36,8%** |
+| 3 | `/sdd-apply` | ● real | 5.841 | 1.052 | **82,0%** |
+| 4 | `/sdd-verify` | ● real | 719 | 455 | **36,7%** |
 | 5 | `/sdd-archive` | ● real | 261 | 32 | **87,7%** |
-| **TOTAL** | **ciclo completo** | **6 real / 0 fixture** | **21.407** | **4.854** | **77,3%** |
+| **TOTAL** | **ciclo completo** | **6 real / 0 fixture** | **21.321** | **4.741** | **77,8%** |
+
+> [!NOTE]
+> Las Fases 0 y 1 se muestrean del árbol vivo del workspace, así que sus números absolutos
+> se mueven entre corridas aunque el código no cambie. Lo que NO debe moverse sin una causa
+> nombrada es el piso, y el piso y la huella son idénticos a la corrida anterior.
 
 **PISO 90.059 · TECHO 106.570 · 63,9% del piso es masa repetida · huella `1d4ee21c9603ca95`.**
 
 **Delta contra el ciclo 2026-09-09:** sin regresión y sin mejora, que es el resultado correcto
 para esta rama. El piso quedó **clavado en 90.059** y el ahorro por ciclo subió de 15.783 a
-**16.553** por el mismo motivo conocido de siempre: la base de la Fase 1 se muestrea del árbol
+**16.580** por el mismo motivo conocido de siempre: la base de la Fase 1 se muestrea del árbol
 vivo filtrando por la palabra `token`, y esta rama agregó archivos que hablan de tokens. **Más
 base con el mismo consumo optimizado es el compresor trabajando sobre más entrada, no un
 compresor mejor** — no leerlo como ganancia.
@@ -424,8 +429,13 @@ archivo:
 | `checksums.json` corrupto | aviso fuerte, merge deshabilitado explícitamente | ✅ |
 | Clave de spec-kit en `settings.json` | sobrevive al reinstall | ✅ |
 | Servidor MCP propio en `mcp.json` | sobrevive al reinstall | ✅ |
-| — | espejo `scaffold/` refleja lo instalado | ✅ 293 archivos byte a byte |
+| — | espejo `scaffold/` refleja lo instalado | ✅ 314 archivos byte a byte |
 | — | hook en `commit-msg`, `pre-commit` retirado | ✅ |
+
+Repetido al cierre del ciclo, con cinco marcas simultáneas sobre una instalación real y una
+reinstalación encima: las seis sobrevivieron —dos archivos gobernados editados, un servidor
+MCP propio, una clave suelta en `settings.json`, las claves de spec-kit— y AOI siguió
+registrando lo suyo. Revertido y verificado sin rastros.
 
 ### Cobertura por mutación (nueva dimensión de este ciclo)
 
