@@ -46,7 +46,7 @@ export const MUTATION_FLOOR = {
   // los seis chequeos. Los cinco helpers de shell que viven en esa misma raíz
   // quedan fuera por AREA_EXTENSIONS — ver el comentario allí.
   'scripts/multi-harness': 53,
-  'scripts/scaffold': 60,
+  'scripts/scaffold': 61,
   'scripts/spatiotemporal-runtime': 59,
   'scripts/code-lens': 51,
   'scripts/mcp-gateway': 57,
