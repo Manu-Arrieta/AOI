@@ -305,10 +305,17 @@ Ninguna está implementada. Las tres exigen prueba de equivalencia antes de toca
 es la regla de este proyecto: el ahorro nunca justifica una pérdida de capacidad no
 verificada.
 
-## Pendiente
+## Pendiente al cerrar esta primera pasada
 
-- Ciclo SDD real punta a punta con agentes produciendo artefactos.
-- Entradas adversarias.
-- `setup.sh` (1.300+ líneas) más allá del protocolo de reinstall.
-- Dashboard `aoi_apps` más allá de sus 35 tests.
-- Cuantificar A3.
+> [!NOTE]
+> **Los cinco quedaron cerrados en las pasadas segunda y tercera.** Se conservan porque este
+> documento es el registro de lo que se sabía el 2026-09-09, no una lista viva; el estado
+> actual está en `AOI_FULL_SWEEP_CLOSEOUT.md`.
+
+| Ítem | Dónde se cerró |
+| :--- | :--- |
+| Ciclo SDD real punta a punta con agentes produciendo artefactos | segunda pasada; sus seis hallazgos en `fbbce9b` |
+| Entradas adversarias | segunda pasada; de ahí salieron los 32 hallazgos |
+| `setup.sh` más allá del protocolo de reinstall | segunda pasada: nueve defectos, siete reinstalaciones reales con inyección de fallos |
+| Dashboard `aoi_apps` más allá de sus 35 tests | tercera pasada: 79 tests y primera medición por mutación |
+| Cuantificar A3 | 630 tokens por ciclo, implementada en `cc272cc` |
