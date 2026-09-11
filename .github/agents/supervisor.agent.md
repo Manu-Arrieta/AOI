@@ -58,26 +58,12 @@ Load agent roster from `.github/agents/` to discover available agents and their 
 | **Clarify**      | `/speckit.clarify`      | @functional-analyst                                                                                                                                         | Refined requirements                 | —                                                  |
 | **Plan**         | `/speckit.plan`         | @solution-architect                                                                                                                                         | Architecture design                  | `.tasks/{feature}/TASK-YYYY-NNN/design.md`         |
 | **Tasks**        | `/speckit.tasks`        | @solution-architect                                                                                                                                         | Task breakdown                       | `.tasks/{feature}/TASK-YYYY-NNN/tasks.md`          |
-| **Implement**    | `/speckit.implement`    | @frontend-developer, @backend-developer, @devops-engineer                                                                                                   | Working code                         | `.tasks/{feature}/TASK-YYYY-NNN/iterations/`       |
+| **Implement**    | `/speckit.implement`    | @frontend-developer, @backend-developer (optional), @devops-engineer (optional)                                                                                                   | Working code                         | `.tasks/{feature}/TASK-YYYY-NNN/iterations/`       |
 |                  |                         | **🛡️ TDD Gate**: RED → GREEN → REFACTOR cycle per task. No production code without a failing test first. All implementation agents enforce this internally. |                                      |                                                    |
 |                  |                         | **🛡️ UX Gate**: @ux-designer is MANDATORY before any new UI component. @frontend-developer enforces this internally.                                        |                                      |                                                    |
 | **Verify**       | —                       | @integration-specialist                                                                                                                                     | QA + verify report                   | `.tasks/{feature}/TASK-YYYY-NNN/verify-report.md`  |
 | **Archive**      | —                       | @documentation-analyst                                                                                                                                      | Final documentation + archive report | `.tasks/{feature}/TASK-YYYY-NNN/archive-report.md` |
-
-## Agent Roster
-
-| Agent                  | Role                         | Copilot                   |
-| ---------------------- | ---------------------------- | ------------------------- |
-| Supervisor             | Hub orchestrator             | this file                 |
-| Functional Analyst     | Explore + Specify            | `@functional-analyst`     |
-| Solution Architect     | Plan + Tasks                 | `@solution-architect`     |
-| Frontend Developer     | Implement (UI)               | `@frontend-developer`     |
-| Backend Developer      | Implement (API) — optional   | `@backend-developer`      |
-| DevOps Engineer        | Implement (infra) — optional | `@devops-engineer`        |
-| UX Designer            | Design                       | `@ux-designer`            |
-| Documentation Analyst  | Archive                      | `@documentation-analyst`  |
-| Integration Specialist | Verify                       | `@integration-specialist` |
-| Project Expert         | Domain Q&A — transversal     | `@project-expert`         |
+| **Transversal**  | —                       | @project-expert                                                                                                                                             | Domain Q&A, any phase                | —                                                  |
 
 ## Hub-and-Spoke Protocol
 
