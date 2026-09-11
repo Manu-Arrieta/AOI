@@ -185,23 +185,31 @@ function suitePasses(cwd, glob, timeout = 180000, runner = null) {
 }
 
 /**
- * Makes the copy runnable for a suite that needs installed packages.
+ * Makes the copy runnable for a suite that needs generated or installed state.
  *
  * `node --test` over AOI's own scripts needs nothing, but the dashboard runs
  * under vitest. Copying node_modules would cost more than the measurement;
- * linking it is free and the run only reads from it.
+ * linking it is free and the run only reads from it. `.nuxt` is linked for
+ * the same reason and is not optional: `tsconfig.json` extends
+ * `./.nuxt/tsconfig.json`, so without it every test file fails to resolve
+ * before a single assertion runs — the copy reports 23 failed suites and
+ * zero tests, which looks like a broken product rather than a missing link.
  */
+const LINKED_STATE = ['node_modules', '.nuxt']
+
 function linkDependencies(root, work, relativeDirs) {
   for (const rel of relativeDirs) {
-    const source = path.join(root, rel, 'node_modules')
-    if (!fs.existsSync(source)) continue
-    const target = path.join(work, rel, 'node_modules')
-    if (fs.existsSync(target)) continue
-    fs.mkdirSync(path.dirname(target), { recursive: true })
-    try {
-      fs.symlinkSync(source, target, 'dir')
-    } catch {
-      // A copy without dependencies simply fails its baseline, loudly.
+    for (const name of LINKED_STATE) {
+      const source = path.join(root, rel, name)
+      if (!fs.existsSync(source)) continue
+      const target = path.join(work, rel, name)
+      if (fs.existsSync(target)) continue
+      fs.mkdirSync(path.dirname(target), { recursive: true })
+      try {
+        fs.symlinkSync(source, target, 'dir')
+      } catch {
+        // A copy without them simply fails its baseline, loudly.
+      }
     }
   }
 }

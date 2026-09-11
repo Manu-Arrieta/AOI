@@ -116,3 +116,75 @@ describe('a deletion the workspace cannot record does not happen', () => {
     expect(constitution).not.toContain('.resources/temporal')
   })
 })
+
+describe('guards that only fire on input no test had given them', () => {
+  // A mutation probe over server/utils scored 51%, and these are the
+  // survivors that decide whether an operation is refused. Each one is a
+  // single option on a single call, invisible in review and silent when wrong.
+
+  it('refuses to create a folder that already exists', async () => {
+    // `mkdir(..., { recursive: false })`. With `recursive: true` the call
+    // succeeds silently on an existing directory, so a second create would
+    // report success, append a duplicate entry to the constitution, and
+    // record an ICM memory for something that never happened.
+    const workspace = await makeWorkspace()
+    const payload = { folderName: 'contratos', parentPath: '.resources', purpose: 'documentos' }
+    await createResourceFolder(payload, workspace, async () => {})
+
+    await expect(createResourceFolder(payload, workspace, async () => {})).rejects.toThrow(
+      ResourceOperationError
+    )
+
+    const constitution = await readFile(join(workspace, '.resources/constitution.md'), 'utf8')
+    const mentions = constitution.split('.resources/contratos').length - 1
+    expect(mentions, 'la carpeta quedó declarada dos veces').toBe(1)
+  })
+
+  it('removes a quarantined folder with contents, not just an empty one', async () => {
+    // `rm(quarantine, { recursive: true })`. Without `recursive` the cleanup
+    // throws on any folder that has a file in it — which is every real one —
+    // so a successful delete would end in an error after the work was done.
+    const workspace = await makeWorkspace()
+    await createResourceFolder(
+      { folderName: 'conarchivos', parentPath: '.resources', purpose: 'documentos' },
+      workspace,
+      async () => {}
+    )
+    const folder = join(workspace, '.resources/conarchivos')
+    await mkdir(join(folder, 'anidada'), { recursive: true })
+    await writeFile(join(folder, 'anidada/dentro.md'), '# dentro\n')
+
+    await deleteResourceFolder(
+      { targetPath: '.resources/conarchivos', reason: 'prueba', confirmed: true },
+      workspace,
+      async () => {}
+    )
+
+    expect(existsSync(folder)).toBe(false)
+    expect(existsSync(`${folder}.aoi-pending-delete`)).toBe(false)
+  })
+
+  it('clears a leftover quarantine before renaming into it', async () => {
+    // The pre-clean exists because a crash between rename and cleanup leaves
+    // the quarantine behind, and `rename` onto a non-empty directory fails.
+    // Without it the folder would be undeletable until someone cleaned by hand.
+    const workspace = await makeWorkspace()
+    await createResourceFolder(
+      { folderName: 'reintento', parentPath: '.resources', purpose: 'documentos' },
+      workspace,
+      async () => {}
+    )
+    const folder = join(workspace, '.resources/reintento')
+    await mkdir(`${folder}.aoi-pending-delete`, { recursive: true })
+    await writeFile(join(`${folder}.aoi-pending-delete`, 'resto.md'), 'de una corrida anterior\n')
+
+    await deleteResourceFolder(
+      { targetPath: '.resources/reintento', reason: 'prueba', confirmed: true },
+      workspace,
+      async () => {}
+    )
+
+    expect(existsSync(folder)).toBe(false)
+    expect(existsSync(`${folder}.aoi-pending-delete`)).toBe(false)
+  })
+})

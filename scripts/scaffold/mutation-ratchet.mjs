@@ -50,10 +50,30 @@ export const MUTATION_FLOOR = {
   'scripts/spatiotemporal-runtime': 59,
   'scripts/code-lens': 51,
   'scripts/mcp-gateway': 57,
-  'scripts': 15,
+  'scripts': 27,
+  // El dashboard, que no tenía ninguna medición porque corre bajo vitest y no
+  // bajo `node --test`. La sonda acepta un runner distinto y enlaza
+  // node_modules y .nuxt en la copia; sin .nuxt, tsconfig.json no resuelve y
+  // los 23 archivos de test fallan antes de la primera aserción.
+  'aoi_apps/agentic-ops-dashboard/server/utils': 51,
 }
 
 export const TEST_GLOB = (area) => `${area}/*.test.mjs`
+
+/**
+ * Areas that need a runner other than `node --test`.
+ *
+ * The dashboard's suite is vitest, and the sources are TypeScript. Its copy
+ * also needs `node_modules` and `.nuxt` linked, which `probe` does whenever a
+ * runner is given.
+ */
+export const RUNNERS = {
+  'aoi_apps/agentic-ops-dashboard/server/utils': {
+    command: 'npx',
+    args: ['vitest', 'run', '--silent'],
+    cwd: 'aoi_apps/agentic-ops-dashboard',
+  },
+}
 
 /** Areas whose sources are shell rather than JavaScript. */
 export const SHELL_AREAS = new Set(['scripts/conf'])
@@ -76,7 +96,7 @@ async function main() {
   console.log('=== AOI Mutation Ratchet ===\n')
   for (const area of areas) {
     process.stdout.write(`${area} ... `)
-    const r = await probe(process.cwd(), area, TEST_GLOB(area))
+    const r = await probe(process.cwd(), area, TEST_GLOB(area), Infinity, () => {}, RUNNERS[area] ?? null)
     const verdict = judge(area, r.killed, r.total, MUTATION_FLOOR)
     results.push({ ...verdict, total: r.total, survivors: r.survivors.length })
     console.log(`${verdict.score}% (piso ${verdict.expected ?? '—'}) · ${r.total} mutantes · ${r.survivors.length} sobreviven`)
