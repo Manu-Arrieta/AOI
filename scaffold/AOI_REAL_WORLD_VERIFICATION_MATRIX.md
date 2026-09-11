@@ -391,16 +391,16 @@ EOF
 | 0 | `/sdd-frame` | ● real | 2.410 | 178 | **92,6%** |
 | 1 | `/sdd-new` | ● real | 11.842 | 2.886 | **75,6%** |
 | 2 | `/sdd-ff` | ● real | 332 | 251 | **24,4%** |
-| 3 | `/sdd-apply` | ● real | 5.840 | 1.051 | **82,0%** |
-| 4 | `/sdd-verify` | ● real | 719 | 455 | **36,7%** |
+| 3 | `/sdd-apply` | ● real | 5.842 | 1.052 | **82,0%** |
+| 4 | `/sdd-verify` | ● real | 720 | 455 | **36,8%** |
 | 5 | `/sdd-archive` | ● real | 261 | 32 | **87,7%** |
-| **TOTAL** | **ciclo completo** | **6 real / 0 fixture** | **21.404** | **4.853** | **77,3%** |
+| **TOTAL** | **ciclo completo** | **6 real / 0 fixture** | **21.407** | **4.854** | **77,3%** |
 
 **PISO 90.059 · TECHO 106.570 · 63,9% del piso es masa repetida · huella `1d4ee21c9603ca95`.**
 
 **Delta contra el ciclo 2026-09-09:** sin regresión y sin mejora, que es el resultado correcto
 para esta rama. El piso quedó **clavado en 90.059** y el ahorro por ciclo subió de 15.783 a
-**16.551** por el mismo motivo conocido de siempre: la base de la Fase 1 se muestrea del árbol
+**16.553** por el mismo motivo conocido de siempre: la base de la Fase 1 se muestrea del árbol
 vivo filtrando por la palabra `token`, y esta rama agregó archivos que hablan de tokens. **Más
 base con el mismo consumo optimizado es el compresor trabajando sobre más entrada, no un
 compresor mejor** — no leerlo como ganancia.
