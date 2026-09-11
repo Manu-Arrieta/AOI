@@ -44,7 +44,6 @@ const SKIP_DIRS = new Set(['node_modules', '.git', '.nuxt', '.output', 'dist', '
  */
 export const LEGACY_BUDGET = {
   'scripts/aoi-doctor.mjs': 317,
-  'scripts/memory-sync/export-memory-bundle.mjs': 316,
   'scripts/sandbox/detect-base-project.mjs': 342,
 }
 

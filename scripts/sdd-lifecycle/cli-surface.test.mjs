@@ -32,13 +32,18 @@ import { describe, it } from 'node:test'
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const UNION = path.join(HERE, 'mechanical-verify-union.mjs')
 
-/** Runs a CLI and returns its exit code and stdout, never through a pipe. */
+/** Runs a CLI and returns its exit code, stdout and stderr, never through a pipe. */
 function run(script, args, cwd = HERE) {
   try {
-    const stdout = execFileSync('node', [script, ...args], { cwd, encoding: 'utf8', timeout: 60000 })
-    return { code: 0, stdout }
+    const stdout = execFileSync('node', [script, ...args], {
+      cwd,
+      encoding: 'utf8',
+      timeout: 60000,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    return { code: 0, stdout, stderr: '' }
   } catch (e) {
-    return { code: e.status ?? 1, stdout: String(e.stdout ?? '') }
+    return { code: e.status ?? 1, stdout: String(e.stdout ?? ''), stderr: String(e.stderr ?? '') }
   }
 }
 

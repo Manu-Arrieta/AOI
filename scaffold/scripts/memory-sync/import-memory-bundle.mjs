@@ -6,6 +6,10 @@ import {
   resolveExportArtifactPath,
 } from './store-utils.mjs'
 import { prepareVersionManifest } from './prepare-version-manifest.mjs'
+import { resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
+
+import { parseBundleArgs } from './cli-args.mjs'
 
 function assert(condition, message) {
   if (!condition) {
@@ -80,63 +84,22 @@ export async function importMemoryBundle({
 }
 
 function parseArgs(argv) {
-  const [workspace, versionId, relativeArtifactPath, ...rest] = argv
-  const decisions = {
-    retain: [],
-    complement: [],
-    discard: [],
-  }
-  let ownerContext
-  let versionsRoot
-  let exportsRoot
-
-  for (let index = 0; index < rest.length; index += 1) {
-    const token = rest[index]
-
-    if (token === '--owner-context') {
-      ownerContext = rest[index + 1]
-      index += 1
-      continue
-    }
-
-    if (token === '--retain') {
-      decisions.retain.push(rest[index + 1])
-      index += 1
-      continue
-    }
-
-    if (token === '--complement') {
-      decisions.complement.push(rest[index + 1])
-      index += 1
-      continue
-    }
-
-    if (token === '--discard') {
-      decisions.discard.push(rest[index + 1])
-      index += 1
-      continue
-    }
-
-    if (token === '--versions-root') {
-      versionsRoot = rest[index + 1]
-      index += 1
-      continue
-    }
-
-    if (token === '--exports-root') {
-      exportsRoot = rest[index + 1]
-      index += 1
-    }
-  }
+  const { workspace, versionId, relativeArtifactPath, flags } = parseBundleArgs(argv, {
+    lists: ['retain', 'complement', 'discard'],
+  })
 
   return {
     workspace,
     versionId,
     relativeArtifactPath,
-    ownerContext,
-    decisions,
-    versionsRoot,
-    exportsRoot,
+    ownerContext: flags['owner-context'],
+    decisions: {
+      retain: flags.retain,
+      complement: flags.complement,
+      discard: flags.discard,
+    },
+    versionsRoot: flags['versions-root'],
+    exportsRoot: flags['exports-root'],
   }
 }
 
@@ -154,7 +117,12 @@ async function runCli() {
   }, null, 2)}\n`)
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// `pathToFileURL`, not string concatenation: a space in the path made the old
+// `file://${process.argv[1]}` guard never match, so the CLI exited 0 in
+// silence. Explained in full in cli-surface.test.mjs.
+const entryFile = process.argv[1] ? pathToFileURL(resolve(process.argv[1])).href : null
+
+if (entryFile === import.meta.url) {
   runCli().catch((error) => {
     process.stderr.write(`${error.message}\n`)
     process.exitCode = 1
