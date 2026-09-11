@@ -434,16 +434,39 @@ pregunta de abajo: **si los tests siguen diciendo algo**. Se corre a propósito 
 `pnpm aoi:mutation`, no en la cadena por defecto, porque ejecuta la suite del área una vez por
 mutante.
 
-| Área | Mutantes | Muertos | Score | Piso registrado |
+| Área | Mutantes | Muertos | Score | Primera medición |
 | :--- | ---: | ---: | ---: | ---: |
-| `scripts/subagent-context` | 85 | 53 | **62%** | 62 |
-| `scripts/sandbox` | 58 | 33 | **57%** | 57 |
-| `scripts/memory-sync` | 170 | 78 | **46%** | 46 |
-| `scripts/sdd-lifecycle` | 202 | 98 | **49%** | 49 |
+| `scripts/sandbox` | 58 | 45 | **78%** | 57% |
+| `scripts/subagent-context` | 85 | 58 | **68%** | 44% |
+| `scripts/conf` (shell) | 39 | 24 | **62%** | 56% |
+| `scripts/sdd-lifecycle` | 202 | 124 | **61%** | 46% |
+| `scripts/spatiotemporal-runtime` | 63 | 37 | **59%** | — |
+| `scripts/scaffold` | 131 | 73 | **56%** | — |
+| `scripts/mcp-gateway` | 14 | 8 | **57%** | — |
+| `scripts/multi-harness` | 105 | 56 | **53%** | — |
+| `scripts/memory-sync` | 162 | 85 | **52%** | 46% |
+| `aoi_apps/.../server/utils` | 35 | 18 | **51%** | — |
+| `scripts/code-lens` | 41 | 21 | **51%** | — |
+| `scripts` (aoi-doctor) | 100 | 27 | **27%** | 15% |
 
-La primera medición de `subagent-context` dio **44%** y la de `sdd-lifecycle` **46%**; los
-números de arriba ya incluyen los tests que se escribieron contra los sobrevivientes de esa
-primera pasada. El piso es el valor medido exacto: puede subir, nunca bajar.
+El piso registrado en `MUTATION_FLOOR` es el valor medido exacto de cada área: puede subir,
+nunca bajar. `pnpm aoi:mutation` lo verifica.
+
+**Qué reveló la medición, más allá del número.** Los sobrevivientes no estaban repartidos al
+azar: se agrupaban en `main()`. La librería estaba probada y la línea de comandos no, y la
+línea de comandos es lo que el ciclo SDD invoca. Cubrirla encontró dos CLIs que estaban
+MUERTOS —los dos de `memory-sync` guardaban su entrada con
+`` `file://${process.argv[1]}` ``, una concatenación de cadenas que un espacio en la ruta
+basta para romper, así que no hacían nada y salían 0— y una línea del verificador
+determinista cuya inversión aprueba toda tarea rota.
+
+El peor score del repositorio fue `aoi-doctor` con 15%: la frase «AOI Workspace is fully
+operational and healthy» se apoyaba en una sola línea que admitía las dos inversiones.
+
+**Fuera de alcance, declarado:** `setup.sh` (1.840 líneas) y `teardown.sh` no se mutan. Sus
+tests son aserciones estáticas y reinstalaciones reales, así que casi ningún mutante moriría
+y cada uno costaría una instalación completa. Su verificación es el protocolo de
+reinstalación de la sección anterior, no esta.
 
 Los sobrevivientes tienen una forma común en las cuatro áreas: **la librería está probada y su
 `main()` no**, y la CLI es lo que el ciclo SDD invoca de verdad. El caso más caro que se

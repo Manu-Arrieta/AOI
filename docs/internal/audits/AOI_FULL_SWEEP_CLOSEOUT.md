@@ -251,3 +251,85 @@ sí mismo mal reporta sobre sí mismo, no sobre el código.
 - **El piso de tokens no se movió**: 90.059, idéntico al ciclo anterior. Esta
   rama compró corrección, no reducción, y que el piso no se haya movido es la
   comprobación de que no coló prosa en ninguna superficie inyectada.
+
+---
+
+# Tercera pasada — 2026-09-11: la superficie que el ciclo ejecuta
+
+La segunda pasada dejó 253 mutantes vivos y los declaró deuda. Mirarlos de
+cerca mostró que no estaban repartidos al azar: **se agrupaban en `main()`**.
+La librería estaba probada y la línea de comandos no — y la línea de comandos
+es lo que el ciclo SDD invoca de verdad.
+
+## Dos CLIs que estaban muertos
+
+Los dos scripts de bundles de memoria guardaban su punto de entrada así:
+
+```js
+if (import.meta.url === `file://${process.argv[1]}`)
+```
+
+Eso es una concatenación de cadenas, no una URL. Cualquier carácter que la
+ruta necesite percent-encodeado hace que las dos difieran, y alcanza con un
+espacio. Este repositorio vive bajo «GITHUB MIGRATION», así que la guarda
+nunca disparó: `node export-memory-bundle.mjs` no imprimía nada y **salía 0**.
+
+Ese cero es el detalle que importa. Un crash se investiga; un cero se cree. Un
+script que llamara al exportador habría concluido que el bundle estaba
+escrito, y el archivo nunca existió. Los dos estuvieron muertos como CLI desde
+que se escribieron, con su librería verde todo el tiempo.
+
+## La compuerta que aprobaría toda tarea rota
+
+En el verificador determinista:
+
+```js
+if (enforceExitCode && unified.status !== 'PASSED') process.exit(1)
+```
+
+Invirtiendo `!==` a `===`, la compuerta sale 1 sobre una verificación limpia y
+0 sobre una fallida. `/sdd-verify` lee ese exit code para decidir si una tarea
+puede cerrarse, de modo que invertida aprueba toda tarea rota y bloquea toda
+tarea buena — con la suite entera en verde, porque ninguna llamada en proceso
+observa un exit code.
+
+## Y la que le dice al Owner que su workspace está sano
+
+`pnpm aoi:doctor` cierra con «AOI Workspace is fully operational and healthy».
+Esa frase se apoyaba en una línea sin cubrir:
+
+```js
+allChecks.some((c) => c.mandatory && c.status === 'FAILED')
+```
+
+Con `||`, cualquier check no obligatorio condena un workspace sano. Con `!==`,
+un workspace está enfermo exactamente cuando nada falló. `scripts/` medía
+**15%**, el peor score del repositorio, y era la herramienta cuyo verde es la
+razón por la que nadie mira más allá.
+
+## El patrón, otra vez
+
+Tres hallazgos, una sola forma: **un instrumento que afirma algo que nadie
+puede contradecir**. La misma enfermedad que la primera pasada encontró en las
+compuertas que aprobaban sobre cero entradas y en el segundo escritor que
+rompía el merge. Acá aparece en el nivel de arriba: la herramienta que mide,
+la que verifica y la que diagnostica, las tres emitiendo un veredicto que
+ningún test contradecía.
+
+Por eso la regla que produce la cifra de ahorro —`sdd-stress-suite.mjs`, 283
+líneas que ningún runner cargaba— también quedó cubierta en esta pasada. Una
+compuerta rota hace ruido; una regla mal calibrada sólo informa un número, y
+el número ES la evidencia.
+
+## Lo que la medición cuesta y lo que compra
+
+Doce áreas con piso registrado, shell y TypeScript incluidos. Los
+sobrevivientes bajaron de 253 a 195 en las cuatro originales, con seis áreas
+nuevas medidas por primera vez. El score no es la conclusión: el valor estuvo
+en qué señaló, y señaló tres veces el mismo lugar.
+
+Las herramientas de medición tuvieron sus propios defectos de la misma
+familia, y vale anotarlo: la sonda de mutación mutaba dentro de literales de
+cadena, el contador de alcance excluía `scripts/scaffold/` por un nombre sin
+anclar y se detenía en un script ejecutado como subproceso. Un instrumento
+que se mide mal a sí mismo reporta sobre sí mismo.

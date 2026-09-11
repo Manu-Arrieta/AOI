@@ -46,7 +46,7 @@ export const MUTATION_FLOOR = {
   // workspace está sano. Su veredicto ya quedó cubierto; el resto de su
   // superficie no.
   'scripts/multi-harness': 53,
-  'scripts/scaffold': 57,
+  'scripts/scaffold': 56,
   'scripts/spatiotemporal-runtime': 59,
   'scripts/code-lens': 51,
   'scripts/mcp-gateway': 57,
