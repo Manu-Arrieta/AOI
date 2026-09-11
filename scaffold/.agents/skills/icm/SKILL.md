@@ -3,21 +3,41 @@ name: icm
 description: Infinite Context Memory (ICM) protocol — store, recall, exact O(1) facts, memoir graph, feedback, and transcripts across agent sessions. Use when the task involves remembering context, decisions, errors, or project knowledge across sessions.
 ---
 
-# ICM — Infinite Context Memory Protocol
+<!-- Derivado de .github/instructions/icm-protocol.instructions.md por aoi:sync-rules. No editar a mano. -->
 
-You MUST use ICM (Infinite Context Memory) throughout ALL work. ICM has five memory systems. Each one serves a different purpose and ALL FIVE must be used.
+# ICM Protocol — 5-Method Memory Compliance (v4)
 
-## Session Start — MANDATORY
+**MANDATORY FOR ALL AGENTS**: You MUST use ICM (Infinite Context Memory) throughout ALL work. ICM has five distinct memory systems; each serves a specific operational purpose and ALL FIVE must be utilized during the SDD lifecycle.
 
-Before writing code or answering questions, recall context:
+---
 
+## 1. Workspace Isolation & Detection
+
+ICM operates on a shared global database. To prevent memory bleed across projects, **ALL topics, memoirs, feedback topics, and fact entities MUST be prefixed with `{WORKSPACE}`**.
+
+```bash
+# Priority: git remote basename > directory basename
+WORKSPACE=$(basename "$(git remote get-url origin 2>/dev/null | sed 's/.git$//')" 2>/dev/null || basename "$PWD")
 ```
-icm_memory_recall(query: "project context", topic: "{WORKSPACE}-context")
-icm_memory_recall(query: "pending tasks", topic: "sdd-{WORKSPACE}")
-```
 
-Activate MCP tool groups:
+### Canonical Naming Conventions
 
+* `{WORKSPACE}-context` — Project-wide context (stack, architecture baseline, team constraints).
+* `sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN` — Isolated per-task context for SDD lifecycle.
+* `{WORKSPACE}-architecture` — Structural decisions, component boundaries.
+* `{WORKSPACE}-conventions` — Coding patterns, linting, styling standards.
+* `{WORKSPACE}-errors-resolved` — Root cause analysis and fixes for past bugs.
+* `{WORKSPACE}-services-catalog` — Discovered composables, services, and endpoints (informational).
+* `{WORKSPACE}.{subsystem}.{key}` — Structured exact facts (e.g. `{WORKSPACE}.service.auth = /api/v1/auth`).
+* `{WORKSPACE}-session-summaries` — End-of-session milestones.
+* `sandbox-{WORKSPACE}-{SANDBOX_NAME}` — Sandbox-specific state and context.
+
+---
+
+## 2. The 5 Memory Systems & MCP Tool Activation
+
+### Mandatory MCP Activation & Auto-Reactivation Invariant
+At the start of every session (and whenever any tool appears disabled), activate all MCP tool groups:
 ```
 activate_knowledge_graph_management_tools
 activate_long_term_memory_management_tools
@@ -27,42 +47,112 @@ activate_transcript_management_tools
 activate_memory_consolidation_tools
 activate_code_analysis_and_search_tools
 ```
+If an ICM or Codebase MCP tool is reported as disabled or missing during execution, **immediately run its corresponding `activate_*` tool** before proceeding.
 
-## Store Triggers — MANDATORY
+| Method | System Type | Purpose & Lifecycle | Primary MCP / CLI Tools | CLI Fallback |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Memories** | Episodic | Temporal facts with decay & auto-dedup (>85%) | `icm_memory_store` y familia: recall, update, forget, consolidate, list_topics, stats, health | `icm store -t "{TOPIC}" -c "..." -i high` / `icm recall` |
+| **2. Memoirs** | Knowledge Graph | Permanent structured concepts & typed relation graph | `icm_memoir_add_concept` y familia: create, link, refine, search, show, inspect, export | `icm memoir add-concept -m "{WORKSPACE}-architecture"` |
+| **3. Facts** | Structured Exact | Deterministic (entity, key, value) triples with supersession history | `icm facts set`, `icm facts get`, `icm facts list`, `icm facts history` | `icm facts set "{WORKSPACE}" "service.name" "endpoint"` |
+| **4. Feedback** | Self-Correction | Past mistake corrections & assumptions | `icm_feedback_record` y familia: search, stats | `icm feedback record -t "{WORKSPACE}-{category}"` |
+| **5. Transcripts** | Verbatim Logs | Raw prompt & response session capture & replay | `icm_transcript_record` y familia: start_session, search, show, stats | `icm transcript record` |
 
-Store IMMEDIATELY when:
+---
 
-1. Error resolved → `icm_memory_store(topic: "{WORKSPACE}-errors-resolved", content: "...", importance: "high")`
-2. Architecture decision → `icm_memory_store(topic: "{WORKSPACE}-context", content: "...", importance: "critical")`
-3. User preference discovered → `icm_memory_store(topic: "{WORKSPACE}-preferences", content: "...", importance: "critical")`
-4. Task completed → `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", content: "...", importance: "high")`
-5. Exact configuration, endpoint, port or BIC invariant → `icm facts set "{WORKSPACE}" "key" "value"` — three separate arguments, NOT a memory
-6. 20+ tool calls without store → store progress summary
+## 3. Structured Facts Protocol (`icm facts`)
 
-## Five Memory Systems
+Use `icm facts` for deterministic, non-fuzzy operational data to eliminate LLM configuration hallucination:
+* **Endpoints & Routes**: `icm facts set "{WORKSPACE}" "endpoint.{name}" "{path}"`
+* **Ports & Services**: `icm facts set "{WORKSPACE}" "service.{name}.port" "{port}"`
+* **Package/Dependency Versions**: `icm facts set "{WORKSPACE}" "dependency.{name}" "{version}"`
+* **Feature Flags**: `icm facts set "{WORKSPACE}" "feature.{flag}" "{state}"`
 
-| System      | Tool                     | Persistence | Use for                               |
-| ----------- | ------------------------ | ----------- | ------------------------------------- |
-| Memories    | `icm_memory_store`       | Decays      | Decisions, progress, context          |
-| Memoirs     | `icm_memoir_add_concept` | Permanent   | Architecture, component relationships |
-| Facts       | `icm facts set`          | Permanent   | Exact config: endpoints, ports, BIC contracts |
-| Feedback    | `icm_feedback_record`    | Permanent   | Learning from mistakes                |
-| Transcripts | `icm_transcript_record`  | Permanent   | Explore & Archive phases only         |
+When a fact changes, `icm facts set` automatically archives the previous value under `superseded_at` while keeping active lookups O(1) exact.
 
-## Importance Policy
+---
 
-| Level    | Decay  | Auto-prune | Use for                              |
-| -------- | ------ | ---------- | ------------------------------------ |
-| critical | NONE   | never      | Project context, stack, architecture |
-| high     | slow   | never      | Specs, plans, completed tasks        |
-| medium   | normal | yes        | Progress checkpoints                 |
-| low      | fast   | yes        | Experimental ideas                   |
+## 4. Memoirs: Typed Graph Relations & Knowledge Distillation
 
-## Recovery
+### Canonical Typed Relations
+When linking concepts in Memoirs (`icm_memoir_link`), you MUST use one of the canonical typed relations:
+`part_of` · `depends_on` · `related_to` · `contradicts` · `refines` · `alternative_to` · `caused_by` · `instance_of` · `superseded_by`
 
-If MCP tools are not available, use CLI fallback:
-
+### Distillation on Task Closure
+During `/sdd-archive`, run automatic knowledge distillation before consolidating episodic topics:
 ```bash
-icm recall "query" -t "{WORKSPACE}-context"
-icm store -t "{WORKSPACE}-context" -c "..." -i high
+icm extract-patterns -t "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN" -m "{WORKSPACE}-architecture"
+icm memoir distill -t "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN" -m "{WORKSPACE}-architecture"
 ```
+
+---
+
+## 5. Instant Wake-Up Briefings
+
+To achieve zero-latency agent startup without multi-turn context queries:
+1. **Regenerate Briefing** upon task completion/archive:
+   ```bash
+   icm briefing --project "$WORKSPACE"
+   ```
+2. **Instant Recall** on new session start:
+   ```bash
+   icm wake-up
+   ```
+
+---
+
+## 6. Sandbox Isolation & Read-Only Policy
+
+When operating in experimental sandboxes (`.sandboxes/{name}/`) or automated benchmark runners:
+* Set `export ICM_READONLY=1` or pass `--read-only` to all ICM read commands.
+* If sandbox-local state must be written, isolate it under the dedicated topic prefix `sandbox-{WORKSPACE}-{name}`. Never mutate core `{WORKSPACE}-*` topics or facts from an unmerged sandbox.
+
+---
+
+## 7. Importance Policy & Lifecycle Rules
+
+| Importance | Decay Rate | Auto-prune |
+| :--- | :--- | :--- |
+| `critical` | **NONE** | Never |
+| `high` | Slow | Never |
+| `medium` | Normal | Yes |
+| `low` | Fast | Yes |
+
+Qué guardar con cada nivel: ver los disparadores de la sección 8.
+
+* **Auto-Dedup**: Storing content with >85% similarity in the same topic **automatically updates** the existing record.
+* **Consolidation**: When a topic exceeds 7 entries, run `icm_memory_consolidate(topic)` immediately.
+* **Prompt Recall**: Use `icm recall-context "query" -t "{TOPIC}" --limit 3` for compact prompt injection.
+* **What NOT to Store**: Raw build/test output logs, transient git status, or ephemeral scratch.
+
+---
+
+## 8. Phase-by-Phase Operational Action Triggers
+
+**Store triggers** — `icm_memory_store(topic, content, importance)`, CLI `icm store -t topic -c "..." -i {importance}`:
+
+* `critical` → project stack o contexto · decisión de arquitectura · convención establecida · preferencia del Owner (topic `preferences`)
+* `high` → spec o plan producido · tarea completada · reporte de QA o verify · error resuelto (topic `errors-resolved`)
+* `medium` → progreso de implementación, checkpoint cada 3-5 tareas
+* `low` → notas de exploración, ideas temporales (se podan solas)
+
+**Non-store triggers** — cada uno invoca un verbo distinto:
+
+| Event / Phase Boundary | Tool Invocation | CLI Fallback |
+| :--- | :--- | :--- |
+| **Session Start** | `icm wake-up` / `icm_memory_recall` | `icm wake-up` |
+| **Task Start** | `icm_memory_recall(query, topic: "sdd-{WS}-{FEAT}-TASK-YYYY-NNN")` | `icm recall "query" -t "topic"` |
+| **Deterministic Config/Port** | `icm facts set "{WS}" "key" "value"` | `icm facts set "{WS}" "key" "value"` |
+| **Task Archive Closure** | `icm extract-patterns` + `icm memoir distill` | `icm memoir distill -t topic -m arch` |
+| **Post-Archive Briefing** | `icm briefing --project "$WORKSPACE"` | `icm briefing -p "$WORKSPACE"` |
+| **Topic >7 entries** | `icm_memory_consolidate(topic)` | `icm consolidate topic` |
+
+---
+
+## 9. Version-Aware Operational Resolution
+
+When operating in a versioned-memory workspace (pointer at `.specify/memory/versions/active.json`):
+1. Resolve active version before operational mutations using `node scripts/memory-sync/resolve-active-version.mjs "$WORKSPACE"`.
+2. Treat canonical topics (`{WORKSPACE}-context`, `{WORKSPACE}-architecture`) as logical topics governed by the resolved version manifest.
+3. Sync/import operations require explicit `sourceWorkspace` and `sourceVersionId`.
+4. Rollback operations require explicit `targetVersionId` and reason.
+5. Mutate `active.json` and version manifests ONLY via managed lifecycle scripts in `scripts/memory-sync/`.

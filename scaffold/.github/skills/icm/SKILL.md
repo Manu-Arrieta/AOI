@@ -3,66 +3,29 @@ name: icm
 description: Infinite Context Memory (ICM) protocol — store, recall, exact O(1) facts, memoir graph, feedback, and transcripts across agent sessions. Use when the task involves remembering context, decisions, errors, or project knowledge across sessions.
 ---
 
+<!-- canonical-instruction: icm-protocol.instructions.md -->
+
 # ICM — Infinite Context Memory Protocol
 
-You MUST use ICM (Infinite Context Memory) throughout ALL work. ICM has five memory systems. Each one serves a different purpose and ALL FIVE must be used.
+El protocolo completo —aislamiento de workspace, activación MCP, los cinco
+sistemas, el grafo de memoirs, las briefings de wake-up, la política de
+importancia y los disparadores por fase— vive en
+`.github/instructions/icm-protocol.instructions.md`, que tiene `applyTo: "**"`
+y por lo tanto ya está en este contexto. Repetirlo acá costaba 576 tokens en
+cada una de las seis fases para decir dos veces lo mismo.
 
-## Session Start — MANDATORY
+Antigravity, que no lee `.github/instructions/`, recibe el protocolo **entero**
+derivado en `.agents/skills/icm/SKILL.md`.
 
-Before writing code or answering questions, recall context:
+Lo esencial, por si la instruction no estuviera cargada:
 
-```
-icm_memory_recall(query: "project context", topic: "{WORKSPACE}-context")
-icm_memory_recall(query: "pending tasks", topic: "sdd-{WORKSPACE}")
-```
-
-Activate MCP tool groups:
-
-```
-activate_knowledge_graph_management_tools
-activate_long_term_memory_management_tools
-activate_project_management_tools
-activate_feedback_management_tools
-activate_transcript_management_tools
-activate_memory_consolidation_tools
-activate_code_analysis_and_search_tools
-```
-
-## Store Triggers — MANDATORY
-
-Store IMMEDIATELY when:
-
-1. Error resolved → `icm_memory_store(topic: "{WORKSPACE}-errors-resolved", content: "...", importance: "high")`
-2. Architecture decision → `icm_memory_store(topic: "{WORKSPACE}-context", content: "...", importance: "critical")`
-3. User preference discovered → `icm_memory_store(topic: "{WORKSPACE}-preferences", content: "...", importance: "critical")`
-4. Task completed → `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", content: "...", importance: "high")`
-5. Exact configuration, endpoint, port or BIC invariant → `icm facts set "{WORKSPACE}" "key" "value"` — three separate arguments, NOT a memory
-6. 20+ tool calls without store → store progress summary
-
-## Five Memory Systems
-
-| System      | Tool                     | Persistence | Use for                               |
-| ----------- | ------------------------ | ----------- | ------------------------------------- |
-| Memories    | `icm_memory_store`       | Decays      | Decisions, progress, context          |
-| Memoirs     | `icm_memoir_add_concept` | Permanent   | Architecture, component relationships |
-| Facts       | `icm facts set`          | Permanent   | Exact config: endpoints, ports, BIC contracts |
-| Feedback    | `icm_feedback_record`    | Permanent   | Learning from mistakes                |
-| Transcripts | `icm_transcript_record`  | Permanent   | Explore & Archive phases only         |
-
-## Importance Policy
-
-| Level    | Decay  | Auto-prune | Use for                              |
-| -------- | ------ | ---------- | ------------------------------------ |
-| critical | NONE   | never      | Project context, stack, architecture |
-| high     | slow   | never      | Specs, plans, completed tasks        |
-| medium   | normal | yes        | Progress checkpoints                 |
-| low      | fast   | yes        | Experimental ideas                   |
-
-## Recovery
-
-If MCP tools are not available, use CLI fallback:
-
-```bash
-icm recall "query" -t "{WORKSPACE}-context"
-icm store -t "{WORKSPACE}-context" -c "..." -i high
-```
+- ICM tiene **five memory systems** y los cinco son obligatorios: **Memories**
+  (decaen), **Memoirs** (arquitectura, permanentes), **Facts** (exactos O(1),
+  permanentes), **Feedback** (aprender del error) y **Transcripts**.
+- Un dato exacto —endpoint, puerto, invariante de un BIC— se escribe con
+  `icm facts set "{WORKSPACE}" "clave" "valor"`, tres argumentos separados, y
+  NO como memoria. Es el sistema que lee la compuerta de invariantes.
+- Recordá antes de trabajar y almacená apenas ocurre el disparador, no al
+  final.
+- **20+ llamadas a herramientas sin un store** es en sí mismo un disparador:
+  guardá un resumen de progreso. Este umbral no está en ninguna otra parte.

@@ -204,9 +204,36 @@ describe('the supervisor can still route every phase to its agent', () => {
     }
   })
 
-  it('keeps the roster that maps every role to its handle', () => {
+  it('keeps every role reachable by its handle', () => {
+    // Format-agnostic on purpose. The previous assertion required the handle
+    // inside backticks, which was the shape of a separate "Agent Roster"
+    // table — a transposition of the routing table above it, restating the
+    // same eight agents. Folding it away cut 1.098 tokens per cycle from the
+    // x6 band; nothing consumes the backticked form, and reference-integrity
+    // matches either way.
     for (const [, agent] of ROUTING) {
-      assert.match(supervisor, new RegExp(`\`@${agent}\``), `the roster lost @${agent}`)
+      assert.match(supervisor, new RegExp(`@${agent}\\b`), `the supervisor lost @${agent}`)
+    }
+  })
+
+  it('keeps the two things the roster carried and nothing else did', () => {
+    // This is what made the fold safe to do and unsafe to do carelessly. The
+    // roster was the ONLY place that named @project-expert's purpose and the
+    // ONLY place that marked backend and devops as optional — and no test
+    // covered either, so a compression would have dropped them in silence.
+    // Both now live in the routing table, where they describe a phase rather
+    // than a second listing of the cast.
+    assert.match(supervisor, /@project-expert/, 'lost the transversal domain-expert agent')
+    assert.match(supervisor, /Domain Q&A/, "lost @project-expert's purpose")
+    // Per agent, not per row: both sit on the same table row, so looking for
+    // the word anywhere in the line let one of them lose its marker while the
+    // other's kept the assertion green. Caught by a negative control.
+    for (const agent of ['backend-developer', 'devops-engineer']) {
+      assert.match(
+        supervisor,
+        new RegExp(`@${agent} \\(optional\\)`),
+        `@${agent} is no longer marked optional`
+      )
     }
   })
 

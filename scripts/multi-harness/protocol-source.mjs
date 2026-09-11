@@ -81,6 +81,7 @@ export function prunePathIfPristine(target, reference, kept = []) {
  */
 export const SKILL_FROM_INSTRUCTION = {
   rtk: 'rtk.instructions.md',
+  icm: 'icm-protocol.instructions.md',
 }
 
 /**
@@ -118,6 +119,7 @@ ${body}
 /** The `description` line each derived skill announces itself with. */
 export const SKILL_TRIGGERS = {
   rtk: 'RTK CLI proxy for token-optimized command output. Prefix all shell commands with `rtk` to save 60-90% tokens. Use when running terminal commands — builds, tests, git operations, file searches.',
+  icm: 'Infinite Context Memory (ICM) protocol — store, recall, exact O(1) facts, memoir graph, feedback, and transcripts across agent sessions. Use when the task involves remembering context, decisions, errors, or project knowledge across sessions.',
 }
 
 /**
