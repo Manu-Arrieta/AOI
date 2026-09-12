@@ -3,6 +3,16 @@
 **Versión del Protocolo:** `v2.3.0`  
 **Fecha de Vigencia:** 2026-09-12  
 **Estado:** Estándar Canónico Operativo de Auditoría Multi-Harness  
+**Última Modificación por:** Gemini 3.8 Flash (Antigravity)  
+
+### Control de Versiones (Changelog)
+
+| Versión | Fecha | Agente / Modelo | Cambios Principales |
+| :--- | :--- | :--- | :--- |
+| `v2.3.0` | 2026-09-12 | Gemini 3.8 Flash (Antigravity) | Portabilidad POSIX universal (`cmp -s` en vez de `md5`, fallback para `timeout` y `fd`), adición de la sección A.10, robustez en `wiring.mjs` con exclusión de `.git/.tasks/.resources`, indexación canónica en `docs/README.md` y certificación de 25/25 sondas conductuales. |
+| `v2.2.0` | 2026-09-11 | Claude 3.5 Sonnet / Multi-Harness | Redacción inicial del protocolo tras la auditoría comparativa `v2.1.0-12` vs `v2.2.0-53`; formalización de la descomposición de cuatro términos, banda $\times 6$ y compuertas de falso verde. |
+
+---
 
 **Qué es.** El procedimiento completo para auditar una versión de AOI contra otra en
 rendimiento, funcionamiento entre componentes, uso de herramientas, ahorro de tokens y
