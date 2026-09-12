@@ -34,6 +34,12 @@ export const DEFAULT_SYNC_PATHS = [
   'LICENSE',
   'package.json',
   'pnpm-workspace.yaml',
+  // Un formateador de editor sin config fija reescribe el repo a su gusto: el
+  // 2026-09-12 eso rompió la paridad y el SRP de golpe. Si la config no viaja a
+  // la instalación, el mismo accidente es posible ahí y nadie lo ve hasta que
+  // las dos copias divergen.
+  '.prettierrc',
+  '.prettierignore',
   '.resources/constitution.md',
   'AOI_REAL_WORLD_VERIFICATION_MATRIX.md',
   'CLAUDE.md',
