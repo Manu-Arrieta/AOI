@@ -132,7 +132,10 @@ export function auditContextBudget(root, phases = SDD_PHASES) {
     total += cost.total
     floor += cost.floor
   }
-  return { rows, total, floor }
+  // `floor` no cambia: es el numero historico y las lineas base viejas se
+  // comparan contra el. Los adaptadores van aparte, visibles y sin sumar.
+  const adapters = harnessAdapterCost(root)
+  return { rows, total, floor, adapters, floorWithAdapters: floor + adapters.total }
 }
 
 /**
@@ -216,3 +219,68 @@ export function formatHarnessBands(bands) {
     'solo sobre .github/skills describe el ahorro de un harness y no del producto.',
   ].join('\n')
 }
+
+// ── Adaptadores de harness: lo que el piso NO cuenta ─────────────────────────
+//
+// El piso de arriba suma cuatro raices —`.github/prompts`, `.github/agents`,
+// `.github/instructions`, `.github/skills`— y la banda de `.agents/skills`. Todo
+// lo demas que un harness inyecta al abrir sesion quedaba afuera, y el contraste
+// independiente tampoco lo veia porque su lista tenia cinco entradas.
+//
+// Es chico (1.930 tokens medidos, 2,2% del piso) y ese no es el punto: es la
+// misma clase de defecto que `instruction-scope.mjs` documenta haber cometido
+// con las skills — el costo nunca estuvo mal, nunca se conto.
+//
+// Se mide APARTE y no se suma al piso a proposito. Sumarlo cambiaria la
+// definicion del piso y volveria incomparable cada linea base historica; el
+// numero es visible, y la comparacion en el tiempo sigue siendo valida.
+export const HARNESS_ADAPTERS = [
+  '.github/copilot-instructions.md',
+  'CLAUDE.md',
+  'AGENTS.md',
+  '.cursorrules',
+  '.clinerules',
+  '.cursor/rules',
+  '.agents/rules',
+]
+
+/** Todo archivo bajo `target`, aceptando tanto un archivo suelto como un directorio. */
+function filesUnder(target) {
+  if (!fs.existsSync(target)) return []
+  if (fs.statSync(target).isFile()) return [target]
+  const out = []
+  for (const e of fs.readdirSync(target, { withFileTypes: true })) {
+    const p = path.join(target, e.name)
+    out.push(...(e.isDirectory() ? filesUnder(p) : [p]))
+  }
+  return out
+}
+
+/**
+ * Costo de los adaptadores de harness: lo que se inyecta y el piso no cuenta.
+ *
+ * @returns {{ rows: Array<{surface: string, files: number, tokens: number}>, total: number }}
+ */
+export function harnessAdapterCost(root, adapters = HARNESS_ADAPTERS) {
+  const rows = adapters.map((surface) => {
+    const files = filesUnder(path.join(root, surface))
+    const tokens = files.reduce((n, f) => n + estimateTokens(read(f)), 0)
+    return { surface, files: files.length, tokens }
+  })
+  return { rows, total: rows.reduce((n, r) => n + r.tokens, 0) }
+}
+
+/** Renders the unmeasured mass, and forbids adding it to the floor. */
+export function formatHarnessAdapters({ rows, total }, floor) {
+  const share = floor > 0 ? ((total / floor) * 100).toFixed(2) : '0.00'
+  return [
+    'MASA DE ADAPTADORES DE HARNESS (NO esta incluida en el piso de arriba):',
+    ...rows.map((r) => `- ${r.surface.padEnd(32)} ${String(r.tokens).padStart(6)} tok (${r.files} archivo/s)`),
+    `- TOTAL:                                 ${String(total).padStart(6)} tok = ${share}% del piso`,
+    '',
+    'NO se suma al piso: son dos numeros y mezclarlos vuelve incomparable toda',
+    'medicion historica. Va como renglon de alcance — "el piso reportado excluye',
+    'N tokens de adaptadores; el piso real de un Copilot es de piso+N".',
+  ].join('\n')
+}
+

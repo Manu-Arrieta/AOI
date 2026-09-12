@@ -382,13 +382,95 @@ EOF
 
 ---
 
-## 5.0 Línea Base de Benchmark — Ciclo 2026-09-11 · rama `fix/auditoria-2026-09-11` (ejecutado en AOI TESTS)
+## 5.0 Línea Base de Benchmark — Ciclo 2026-09-12 · `v2.3.0` + cambios sin commitear de `v2.4.0` (ejecutado en AOI TESTS)
 
 > [!IMPORTANT]
 > **Ésta es la línea base vigente.** El próximo ciclo se compara contra estos números.
-> Versión instalada: `v2.2.0-53-g2abdaee` más los arreglos de la auditoría.
-> Anotá siempre el `git describe --tags` de lo que instalaste: sin eso la corrida no
-> se puede comparar contra ninguna otra.
+> Versión instalada: **`v2.3.0` más los cambios sin commitear de la auditoría de protocolo**.
+> **No es reproducible desde un tag** y así queda etiquetada: un install desde un árbol sucio
+> no se puede reconstruir desde el historial. Anotá siempre el `git describe --tags` **y** si
+> el árbol estaba limpio.
+
+**Instalación real, no worktree.** `setup.sh -y --harness all` sobre `/Users/equinox/Desktop/AOI TESTS`,
+corrido dos veces sobre el mismo destino: **1280 archivos antes y después, conjunto idéntico**.
+
+| Medición | Valor | Nota |
+| :--- | ---: | :--- |
+| **PISO** por ciclo | **86.873** | idéntico al repositorio **y a las dos líneas base anteriores**: no se movió en tres versiones |
+| **TECHO** por ciclo | **103.384** | |
+| Banda ×6 universal | **54.348** | 62,6% del piso, 8 archivos |
+| Huella de masa repetida | **`8e7b013002e23b4a`** | idéntica a la del ciclo anterior: la auditoría tocó prosa de `docs/` y código, ninguna superficie inyectada |
+| Payload base → optimizado | **21.177 → 4.695** | **16.482 ahorrados · 77,8%** |
+| Fidelidad del payload | **6 de 6 fases reales** | 0 fixtures, 0 omitidas |
+| Paridad en la instalación | **328/328** | repositorio: 326/326 — **diferencia de 2, explicada abajo** |
+| Suite en la instalación | **766 pass · 0 fail · 3 skip** | repositorio: 829 pass · 0 fail · 0 skip |
+| `aoi:doctor` | **11/11** | |
+| Compuertas con exit 0 | **13/13** | dos nuevas respecto del ciclo anterior |
+| **Invariant Gate** | **✅ PASSED · 3/3** | entidad auto-resuelta `AOI TESTS`, contrato `BIC-2026-001`. **Primera auditoría real de ese contrato**: el alias moría con exit 2 antes del arreglo de S1 |
+
+> [!WARNING]
+> **El payload base subió de 21.148 a 21.177 (+29 tokens).** No es una regresión: el corpus de
+> descubrimiento se construye leyendo el `scripts/` del árbol que mide, y esta instalación
+> tiene tres archivos nuevos en `scripts/` respecto de la anterior. Es exactamente la
+> incomparabilidad que advierte la Fase 6 del protocolo de auditoría.
+
+### Diferencia entre repositorio e instalación, explicada
+
+La suite corre **829** tests en el repositorio y **766 pass + 3 skip = 769** en la instalación.
+Las dos diferencias, nombradas:
+
+1. **58 tests**: los 9 archivos de `scripts/conf/`, que prueban al instalador y no se envían.
+   `aoi:test-globs` lo reporta en modo lenient y lo tolera.
+2. **3 skips**, todos autodocumentados:
+
+   | Test | Motivo |
+   | :--- | :--- |
+   | `el protocolo vigente describe el sistema que existe` | `workspace instalado: el veredicto no es sobre AOI` |
+   | `both still pass on the development repository...` | `workspace instalado: el veredicto no es sobre AOI` |
+   | `audit-protocol-integrity catches a script path the protocol still names` | `workspace instalado: el protocolo no se envía, no hay nada que mutar` |
+
+### Los 2 archivos de diferencia, por fin explicados — y por qué es correcto
+
+La línea base anterior anotaba `322/322` en la instalación contra `320/320` en el repositorio —
+**2 archivos de diferencia que nunca se explicaron**. Son los mismos dos de ahora, y ahora
+tienen nombre:
+
+```
++ aoi_apps/agentic-ops-dashboard/server/utils/token-budget.ts
++ aoi_apps/agentic-ops-dashboard/test/server/token-budget.test.ts
+```
+
+**Son los entregables de `TASK-2026-101` (`token-budget`), Archivada el 2026-09-08, con el
+ciclo completo y su contrato `BIC-2026-001` registrado en ICM.**
+
+```bash
+ls -1 "/Users/equinox/Desktop/AOI TESTS/.tasks/token-budget/TASK-2026-101/"   # spec, design, tasks, archive-report…
+rg -n 'TASK-2026-101' "/Users/equinox/Desktop/AOI TESTS/.tasks/registry.md"      # 📦 Archivado
+ls -d "/Users/equinox/Desktop/GITHUB MIGRATION/AOI/.tasks/token-budget"          # no existe
+```
+
+**Decisión del Owner (2026-09-12): se quedan ahí, y es lo correcto.** `AOI TESTS` es el hogar
+de todo el ciclo de pruebas de AOI y de todo lo que el ciclo produce — tareas SDD, contratos
+BIC, entregables, registro y corridas. Lo único que vuelve a este repositorio son **las mejoras
+a la auditoría y sus resultados**, para compararlos en el tiempo: el protocolo, sus
+instrumentos, los informes de auditoría y esta línea base.
+
+Por lo tanto la diferencia de 2 **no es un hallazgo pendiente: es la firma esperada del
+modelo de propiedad.** Queda registrada acá para que la próxima corrida no la vuelva a
+reportar como alarma — el protocolo lo fija en su paso 2.0.1.
+
+**Por qué nadie lo vio en dos ciclos:** `validate-scaffold-parity` compara la raíz contra su
+espejo `scaffold/` **dentro del mismo árbol**. Un archivo presente en los dos lados y ausente
+del repositorio es invisible por construcción: las dos instancias dan su propio `OK` sobre
+conjuntos distintos, y la resta entre ellos no la hacía nadie. El protocolo de auditoría ahora
+lo pide en su paso 14.3.1, y distingue un `+` esperado de un `-` que sí sería defecto.
+
+---
+
+## 5.0.bis Línea base anterior — Ciclo 2026-09-11 · rama `fix/auditoria-2026-09-11`
+
+> Conservada sin editar. Ojo: sus `322/322` vs `320/320` son los dos archivos sin explicar
+> que la línea base 5.0 identifica por nombre. La fila de paridad de abajo ya está explicada.
 
 **Instalación real, no worktree.** `setup.sh -y --harness all` sobre `/Users/equinox/Desktop/AOI TESTS`,
 corrido dos veces sobre el mismo destino sin efectos distintos — la idempotencia quedó
@@ -412,17 +494,9 @@ daban `fixture` y `skipped` porque no hay tareas de verdad ahí. La instalación
 y por eso el payload base sube de 20.870 a 21.148: no es una regresión, es la desaparición
 del último dato inventado del benchmark.
 
-### Diferencia entre repositorio e instalación, explicada
-
-La suite corre 801 tests en el repositorio y 740 en la instalación. La diferencia son los
-9 archivos de `scripts/conf/`, que prueban al instalador y legítimamente no se envían;
-`aoi:test-globs` lo reporta en modo lenient y lo tolera. Correr el protocolo sobre la
-instalación es lo que hizo visible que el resumen de ese gate se contradecía a sí mismo,
-defecto que ninguna corrida dentro del repositorio podía encontrar.
-
 ---
 
-## 5.0.bis Línea base anterior — Ciclo 2026-09-11 · rama `perf/x6-band`
+## 5.0.ter Línea base anterior — Ciclo 2026-09-11 · rama `perf/x6-band`
 
 | | Antes | **Ahora** | Δ |
 | :--- | ---: | ---: | ---: |

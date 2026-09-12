@@ -1,0 +1,37 @@
+# .prettierignore — lo que un formateador NO debe tocar.
+#
+# Por qué existe. El 2026-09-12 un formateo de todo el árbol rompió cuatro cosas
+# de golpe y ninguna se vio hasta correr las compuertas:
+#
+#   1. Paridad: se formateó la raíz y no los espejos de scaffold/ → 11
+#      CONTENT_MISMATCH.
+#   2. SRP: el reflow EXPANDE el código. `invariant-gate.test.mjs` pasó de 245 a
+#      341 LOC y cruzó el límite de 300. Un archivo cerca del límite lo cruza con
+#      sólo formatearlo.
+#   3. y 4. Dos tests en cascada por lo anterior.
+#
+# Y de paso hizo ilegible el changelog del protocolo: Prettier ALINEA las tablas
+# markdown, así que cada fila pasó a 1122 caracteres con runs de ~900 espacios.
+
+# `scaffold/` es contenido ESPEJADO, no fuente. Se regenera copiando desde la
+# raíz; formatearlo por separado es cómo las dos copias divergen. Ignorarlo es lo
+# que hace que un formateo de la raíz deje la paridad ROJA y te enteres — que es
+# exactamente lo que se quiere: un error visible en vez de un commit silencioso.
+scaffold/
+
+# La prosa es de formato manual y deliberado. Prettier reformatea las tablas
+# markdown alineándolas con relleno, lo que destruye la legibilidad de documentos
+# que se leen en un diff. Un formateador de CÓDIGO no tiene por qué tocar
+# documentos.
+*.md
+
+# Artefactos generados y dependencias.
+node_modules/
+.nuxt/
+.output/
+dist/
+pnpm-lock.yaml
+.conf/
+
+# Documentos de datos que se escriben por programa, no por persona.
+*.jsonl

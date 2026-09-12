@@ -80,6 +80,36 @@ describe('invariant-gate answers with three distinct exit codes', () => {
   it('BLOCKS with 2 when given neither --entity nor --facts-file', () => {
     const r = run(GATE, ['--exit-code'])
     assert.equal(r.code, 2)
+    // Bloquear NO alcanza: hay que poder ver qué se intentó auditar. La
+    // entidad se infiere (git remote origin, o basename del directorio), así
+    // que el aviso tiene que decir cuál salió y con qué criterio — o el
+    // llamador no tiene cómo saber si el gate miró donde debía.
+    assert.match(r.stderr, /entidad auto-resuelta "([^"]+)"/, 'no anuncia la entidad inferida')
+    // Y tiene que decir cómo SALIR del bloqueo. La aserción nombra la bandera y
+    // no la frase exacta a propósito: hay DOS formas de bloquear acá —la
+    // entidad inferida no tiene contrato, o ICM no conoce la entidad— y cuál
+    // ocurre depende del entorno. En el repositorio la inferencia da "AOI", que
+    // ICM conoce sin hechos `bic.*`; en una instalación da el basename del
+    // directorio, que ICM no conoce. Exigir una frase ataba el test a una de las
+    // dos ramas y lo hacía pasar verde en el repositorio y rojo instalado —
+    // medido, 784 pass · 1 fail. Las dos ramas nombran `--entity`; eso es lo que
+    // el test puede exigir sin mentir.
+    assert.match(r.stderr, /--entity/, 'no dice cómo desbloquearse')
+  })
+
+  it('an inferred entity with no contract BLOCKS instead of skipping', () => {
+    // Éste es el filo del diseño. `SKIPPED` sale 0 y significa "la tarea no
+    // pasó por /sdd-frame"; una entidad INFERIDA no puede distinguir eso de
+    // "adiviné el nombre equivocado". Si esto sale 0, el gate aprueba sobre un
+    // nombre que nadie afirmó — el falso verde que el gate existe para cazar.
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-gate-empty-'))
+    try {
+      const r = run(GATE, ['--exit-code'], empty)
+      assert.notEqual(r.code, 0, 'aprobó sobre una entidad inferida y sin contrato')
+      assert.equal(r.code, 2)
+    } finally {
+      fs.rmSync(empty, { recursive: true, force: true })
+    }
   })
 
   it('BLOCKS with 2 when the facts file does not exist', () => {

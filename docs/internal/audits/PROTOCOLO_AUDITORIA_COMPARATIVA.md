@@ -1,14 +1,37 @@
 # Protocolo de Auditoría Comparativa de AOI
 
-**Versión del Protocolo:** `v2.3.0`  
+**Versión del Protocolo:** `v2.4.0`  
 **Fecha de Vigencia:** 2026-09-12  
 **Estado:** Estándar Canónico Operativo de Auditoría Multi-Harness  
-**Última Modificación por:** Gemini 3.8 Flash (Antigravity)  
+**Última Modificación por:** GitHub Copilot (DeepSeek v4 Flash) — meta-auditoría de `v2.2.0-66` → `v2.3.0`  
+
+> ### 🔏 Firma y resumen del ciclo `v2.4.0`
+>
+> | | |
+> | :--- | :--- |
+> | **Auditor** | **GitHub Copilot** · modelo **DeepSeek v4 Flash** (provider DeepSeek) |
+> | **Fecha** | 2026-09-12 |
+> | **Extremos auditados** | `v2.2.0-66-gf4ca363` → `v2.3.0` (`f78888e`), 3 commits, diff de sólo `docs/` |
+> | **Dónde se probó** | Repositorio **+ instalación real** en `AOI TESTS` (Fase 13) |
+> | **Informe** | **[`AOI_AUDIT_2026-09-12_v2.2.0-66_vs_v2.3.0.md`](AOI_AUDIT_2026-09-12_v2.2.0-66_vs_v2.3.0.md)** |
+>
+> **Resumen.** Meta-auditoría del protocolo contra el sistema que describe. La comparación de
+> tokens es **degenerada** — los dos extremos sólo difieren en `docs/`, que ningún instrumento
+> de costo mide — así que el titular no es un ahorro sino la auditoría del protocolo mismo:
+> **11 hallazgos del protocolo** (4 con control negativo reproducible) y **3 del sistema**.
+>
+> **Qué cambió.** 1 compuerta nueva (`aoi:audit-protocol`, cableada en `pnpm test`), 1 módulo
+> nuevo (`scripts/scaffold/failure-injection.mjs`), 4 reglas nuevas de procedimiento (2.0,
+> 2.0.1, 14.3.1, 14.3.2) y 3 trampas nuevas de instrumental (A.11, A.12, A.13).
+>
+> **El piso no se movió: 86.873 tokens**, idéntico al repositorio y a los dos ciclos anteriores.
+> Huella de masa repetida `8e7b013002e23b4a`, también idéntica.
 
 ### Control de Versiones (Changelog)
 
 | Versión | Fecha | Agente / Modelo | Cambios Principales |
 | :--- | :--- | :--- | :--- |
+| `v2.4.0` | 2026-09-12 | GitHub Copilot (DeepSeek v4 Flash) | Arregla A.11 (el `\|\|` que re-ejecutaba toda roja), incorpora `pnpm aoi:mutation` a la Fase 8, mide la masa que ningún instrumento contaba (§6.5), fija 2.0 / 2.0.1 / 14.3.1 / 14.3.2, agrega `aoi:audit-protocol` y la Fase 15. → **[informe completo](AOI_AUDIT_2026-09-12_v2.2.0-66_vs_v2.3.0.md)** |
 | `v2.3.0` | 2026-09-12 | Gemini 3.8 Flash (Antigravity) | Portabilidad POSIX universal (`cmp -s` en vez de `md5`, fallback para `timeout` y `fd`), adición de la sección A.10, robustez en `wiring.mjs` con exclusión de `.git/.tasks/.resources`, indexación canónica en `docs/README.md` y certificación de 25/25 sondas conductuales. |
 | `v2.2.0` | 2026-09-11 | Claude 3.5 Sonnet / Multi-Harness | Redacción inicial del protocolo tras la auditoría comparativa `v2.1.0-12` vs `v2.2.0-53`; formalización de la descomposición de cuatro términos, banda $\times 6$ y compuertas de falso verde. |
 
@@ -28,13 +51,37 @@ cometieron.
 determinista sobre archivos en disco. Si te encontrás razonando sobre tokens en vez de
 medirlos, retrocedé: hay un comando para eso.
 
+**Numeración, y esto confunde a propósito de nadie.** Los encabezados numeran la SECCIÓN
+(`## 3. Fase 2`); el texto, el checklist y las referencias cruzadas nombran la FASE. La
+sección $N$ describe la fase $N-1$. El mapa de abajo es la traducción, y es lo único que hay
+que mirar para orientarse:
+
+| Fase | Sección | Qué decide |
+| :--- | :--- | :--- |
+| 0 | §1 | Identificar exactamente qué se compara |
+| 1 | §2 | Árboles aislados |
+| 2 | §3 | Costo fijo: piso y techo |
+| 3 | §4 | La descomposición de cuatro términos |
+| 4 | §5 | ¿El ahorro es real o es contabilidad? |
+| 5 | §6 | La banda $\times 6$ y la masa en disco |
+| 6 | §7 | Payload variable |
+| 7 | §8 | Instrumentación, compuertas y tests |
+| 8 | §9 | Falso verde |
+| 9 | §10 | Herramientas obligatorias |
+| 10 | §11 | Cableado |
+| 11 | §12 | Prueba de equivalencia por cada recorte |
+| 12 | §13 | Ciclo de vida, Invariant Gate y sondas |
+| 13 | §14 | La corrida real sobre una instalación |
+| 14 | §15 | Redacción del informe |
+| 15 | §16 | Arreglos + el protocolo se audita a sí mismo |
+
 ---
 
 ## 0. La regla que gobierna todo el protocolo
 
 > **Un número que no se puede reproducir con un comando no entra en el informe.**
 
-De ahí salen tres reglas operativas que no son negociables:
+De ahí salen cuatro reglas operativas que no son negociables:
 
 1. **Medí las dos versiones con EL MISMO instrumento**, el de la versión nueva. Medir cada
    versión con su propio medidor mezcla *ahorro real* con *corrección de medición*, y el
@@ -44,6 +91,18 @@ De ahí salen tres reglas operativas que no son negociables:
 3. **Verificá antes de afirmar.** Si tu conclusión se apoya en la salida de `rg`, `grep` o
    cualquier herramienta proxy, confirmala con un segundo método antes de escribirla. El
    Apéndice A lista los casos donde eso ya falló.
+4. **El protocolo también es una superficie, y también deriva.** Nombra rutas, símbolos,
+   banderas y una versión, y nada de eso lo ejecuta nadie: un renombre lo pudre en silencio.
+   Por eso existe una compuerta — `aoi:audit-protocol` — y por eso el **paso 0 de cualquier
+   auditoría es correrla antes de tocar nada**:
+
+   ```bash
+   node scripts/multi-harness/audit-protocol-integrity.mjs
+   ```
+
+   Si sale distinto de cero, **el protocolo que estás a punto de ejecutar describe un sistema
+   que ya no existe**. Arreglá el protocolo primero o reportá el hallazgo; no construyas un
+   número encima de una instrucción rota.
 
 ---
 
@@ -92,27 +151,131 @@ rotula con ellos. Sin eso, la corrida no se puede comparar contra ninguna otra.
 Necesitás las dos versiones en disco simultáneamente. **No cambies de rama**: eso destruye
 el estado de trabajo y hace imposible medir en paralelo.
 
+### 2.0 Dónde vive cada cosa — y esto NO es negociable
+
+Hay dos ubicaciones canónicas y una prohibida. Escribilas una vez al principio y usá siempre
+las variables:
+
+| Variable | Ubicación canónica | Qué guarda |
+| :--- | :--- | :--- |
+| `$WORK` | `$HOME/.aoi-audit-work/<YYYY-MM-DD>-<describe-base>_vs_<describe-head>/` | Worktrees y los scripts auxiliares |
+| `$TESTS` | `/Users/equinox/Desktop/AOI TESTS` | El workspace de pruebas instalado (Fase 13) |
+| — | `~/Desktop/` a secas | **PROHIBIDO.** |
+
+> [!CAUTION]
+> **No escribas nada suelto en el Escritorio.** Ni el `$WORK`, ni los scripts auxiliares, ni
+> copias descartables. El Escritorio es del Owner y no es un directorio de trabajo: un
+> `$WORK` ahí deja cinco archivos y dos worktrees tirados en su vista, y el próximo que abra
+> la carpeta no sabe si son basura o parte de una auditoría en curso. Usá `$HOME/.aoi-audit-work/`,
+> que es un directorio oculto, fuera del repo, y sobrevive un reinicio.
+>
+> Las copias descartables de inyección de fallas van donde diga `mkdtemp` —`$TMPDIR`, no el
+> Escritorio— y se borran en el `after()`.
+
+#### 2.0.1 Qué se queda en `$TESTS` y qué vuelve al repositorio
+
+**`AOI TESTS` es el hogar de todo el ciclo de pruebas y de todo lo que el ciclo produce.** Se
+queda ahí, y no es una omisión a corregir:
+
+- las tareas SDD (`.tasks/**`) y sus artefactos — spec, design, tasks, payloads, archive-report;
+- los contratos BIC y su registro ICM bajo la entidad del workspace;
+- el código de los entregables y sus tests;
+- el registro de tareas, el estado instalado y las corridas.
+
+**Lo único que vuelve al repositorio de desarrollo son las mejoras a la auditoría y sus
+resultados**, para poder compararlos en el tiempo:
+
+- el protocolo y sus instrumentos (gates, scripts, tests);
+- los informes de auditoría (`docs/internal/audits/`);
+- la línea base en `AOI_REAL_WORLD_VERIFICATION_MATRIX.md` §5.0.
+
+> [!IMPORTANT]
+> Esto convierte al paso 14.3.1 en **esperado, no en alarma**. Un `+ X` en el diff de
+> conjuntos es la **firma normal** de que `$TESTS` acumuló un ciclo real que el repositorio no
+> tiene — y así se reporta: *"diferencia esperada por diseño: `$TESTS` es el hogar del ciclo"*,
+> con los archivos nombrados. Lo que **sí** es un hallazgo es un `- X`: que el repositorio
+> tenga un archivo gobernado que la instalación no recibió, porque eso es un defecto del
+> instalador.
+>
+> Y sigue siendo un hallazgo que un ciclo **cerrado** cuyos entregables nunca se promovieron
+> quede sin dueño declarado. La regla no es "no mires la diferencia": es "sabé cuál diferencia
+> es esperada y cuál no".
+
 ```bash
-WORK="<directorio-temporal-fuera-del-repo>"
+BASE_SLUG="$(git describe --tags "$BASE")"
+HEAD_SLUG="$(git describe --tags "$HEAD_SHA")"
+WORK="$HOME/.aoi-audit-work/${BASE_SLUG}_vs_${HEAD_SLUG}"
 mkdir -p "$WORK"
+
+# Un `git worktree add` sobre una ruta que ya existe FALLA. Si estás retomando una
+# auditoría interrumpida, los árboles ya están: no los recrees a ciegas.
+for t in base head; do
+  if [ -e "$WORK/$t/.git" ]; then echo "$t ya existe: se reutiliza"; fi
+done
 
 git worktree add --detach "$WORK/base" "$BASE"
 git worktree add --detach "$WORK/head" "$HEAD_SHA"
 git worktree list
 ```
 
-> [!IMPORTANT]
-> Elegí un `$WORK` que **sobreviva a un reinicio de sesión**. Un directorio temporal del
-> harness puede vaciarse entre turnos y perdés los árboles a mitad de la auditoría. Si eso
-> pasa, recrealos con los mismos SHA: los sellos del paso 1.2 son justamente para eso.
-
-Al terminar la auditoría:
+Al terminar, el `$WORK` se limpia **entero** — worktrees, scripts y todo:
 
 ```bash
 git worktree remove --force "$WORK/base"
 git worktree remove --force "$WORK/head"
 git worktree prune
+rm -rf "$WORK"
 ```
+
+### 2.1 Verificar que los árboles son los que creés
+
+Un worktree recreado de memoria, o uno que sobrevivió a un `git fetch` de otra sesión, puede
+no estar en el SHA que dice el informe. Y el paso 1.1 ya enseñó que este repositorio tiene
+formas de devolverte un commit que no pediste. Confirmá los dos extremos **desde adentro de
+cada árbol** antes de medir nada:
+
+```bash
+for t in base head; do
+  printf "%-5s %s\n" "$t" "$(git -C "$WORK/$t" rev-parse HEAD)"
+done
+# Debe imprimir exactamente $BASE y $HEAD_SHA, en ese orden.
+```
+
+> [!CAUTION]
+> Si los dos SHA no coinciden con los del paso 1.2, **tirá los árboles y recrealos**. Una
+> auditoría rótulada con un sello que el disco no respalda es irreproducible, y el trabajo
+> de medirla también.
+
+### 2.2 Registrar la procedencia del instrumento
+
+El protocolo mide los dos árboles con el instrumento del árbol **nuevo**. Ese instrumento es
+código, y el código cambia: un `cache-prefix.mjs` que devuelve otra forma, o un
+`auditContextBudget` que dejó de contar una categoría, produce números que describen al
+instrumento y no al árbol.
+
+Antes de la Fase 2, anotá el SHA del instrumento y comprobá que los snippets de las
+secciones 3.1 y 4.1 siguen corriendo **sin excepciones**:
+
+```bash
+git -C "$WORK/head" rev-parse HEAD -- scripts/sdd-lifecycle/context-budget.mjs \
+  scripts/sdd-lifecycle/cache-prefix.mjs
+
+# Los dos snippets tienen que imprimir una tabla. Una excepción acá NO es un
+# hallazgo sobre las versiones: es un hallazgo sobre el instrumental, y va al
+# informe con esa etiqueta.
+node "$WORK/compare-budget.mjs" "$WORK/base" "$WORK/head" >/dev/null && echo "comparador OK"
+node "$WORK/decompose.mjs" "$WORK/base" "$WORK/head" >/dev/null && echo "descompositor OK"
+```
+
+Si el instrumento nuevo no puede leer el árbol viejo (cambió una forma de retorno, se movió
+una ruta), eso es **`instrumento`**, no `datos`. Reportalo así y no sigas: el delta que
+calcules con un instrumento que falla a medias no significa nada.
+
+> [!IMPORTANT]
+> El `$WORK` de 2.0 —`$HOME/.aoi-audit-work/…`— ya **sobrevive a un reinicio de sesión**,
+> que es lo que este paso necesita. No lo muevas al Escritorio para "tenerlo a mano": ver 2.0.
+> Si un directorio temporal del harness se vacía a mitad de la auditoría, recreá los árboles
+> con los mismos SHA: los sellos del paso 1.2 son justamente para eso.
 
 ---
 
@@ -354,22 +517,41 @@ Guardá como `$WORK/raw-mass.mjs`:
 
 ```javascript
 // Medida independiente del grafo de referencias: cuánta prosa EXISTE.
-// Inmune a marcadores y a cambios del instrumento.
+// No lee marcadores y no depende del instrumento, así que sirve de contraste.
 import fs from 'node:fs'
 import path from 'node:path'
+import { estimateTokens } from '<RUTA_DEL_REPO_AOI>/scripts/sdd-lifecycle/token-accounting.mjs'
 
-const est = (t) => Math.ceil(t.length / 4)
+// EL MISMO estimador que el instrumento. La versión anterior usaba
+// `Math.ceil(len/4)` mientras el instrumento usa `Math.round(len/4)`: el
+// contraste arrancaba con un sesgo de hasta +1 token por archivo, y la
+// convergencia del paso 6.3 se medía contra un error de redondeo propio.
+const est = estimateTokens
+
 const walk = (d) => {
+  if (!fs.existsSync(d)) return []
+  if (fs.statSync(d).isFile()) return [d]
   const o = []
-  if (!fs.existsSync(d)) return o
   for (const e of fs.readdirSync(d, { withFileTypes: true })) {
     const p = path.join(d, e.name)
-    if (e.isDirectory()) o.push(...walk(p))
-    else if (e.name.endsWith('.md')) o.push(p)
+    o.push(...(e.isDirectory() ? walk(p) : [p]))
   }
   return o
 }
-const SUP = ['.github/agents', '.github/prompts', '.github/instructions', '.github/skills', '.agents/skills']
+
+// Toda superficie que un harness INYECTA. Incluye los adaptadores de raíz:
+// son archivos sueltos, no directorios, y la lista tiene que aceptar las dos
+// formas — omitirlos era medir tres harness de cinco y llamarlo "la masa".
+// NO van acá `README.md` ni `AOI_REAL_WORLD_VERIFICATION_MATRIX.md`: se leen
+// a demanda, ningún harness los inyecta, y contarlos infla el contraste con
+// prosa que nadie paga en cada turno.
+const SUP = [
+  '.github/prompts', '.github/agents', '.github/instructions', '.github/skills',
+  '.agents/skills',
+  '.github/copilot-instructions.md', 'CLAUDE.md', 'AGENTS.md',
+  '.cursorrules', '.clinerules', '.cursor/rules', '.agents/rules',
+]
+
 const scan = (root) => {
   const out = {}; let tot = 0, files = 0
   for (const s of SUP) {
@@ -393,8 +575,17 @@ el recorte se hizo exactamente donde el multiplicador es alto. Ese contraste es 
 que la estrategia fue *cortar donde vale seis, gastar donde vale uno* — y no se ve mirando
 ninguno de los dos números por separado.
 
-Verificación cruzada: **el delta de la banda ×6 debería aproximarse al término [A] de la
-descomposición.** Si coinciden, dos métodos independientes convergen y el resultado es sólido.
+Verificación cruzada: el delta de la banda $\times 6$ debería converger con el término **[A]**
+de la descomposición. "Converger" tiene que tener número, o no es verificable:
+
+```
+| bandax6Delta − [A] | / max(1, |[A]|)  ≤  0.10
+```
+
+Dentro del 10%, dos métodos independientes coinciden y el resultado es sólido. **Fuera de
+esa banda no lo declares convergente**: hay un archivo que cambió de banda (de $\times 6$ a
+parcial, o al revés) y la identidad de dos factores no lo captura. Buscalo en el renglón [C]
+de la Fase 3 antes de escribir el titular.
 
 ### 6.4 La banda del otro harness
 
@@ -411,6 +602,59 @@ import("<RUTA>/scripts/sdd-lifecycle/context-budget.mjs").then(m => {
   }
 })' "$WORK/base" "$WORK/head"
 ```
+
+### 6.5 La masa que NINGÚN instrumento cuenta
+
+Las dos bandas de 6.4 siguen sin ser la factura completa de ningún harness. El instrumento
+suma cuatro raíces — `.github/prompts`, `.github/agents`, `.github/instructions`,
+`.github/skills` — más la banda `.agents/skills`. Todo lo demás que un harness inyecta al
+abrir sesión queda **fuera del piso medido**, y el contraste de 6.2 tampoco lo veía antes de
+la corrección.
+
+Medido en `v2.3.0`, son **1.930 tokens por sesión** — un **2,22% del piso de 86.873**. Es
+chico. El problema no es el tamaño, es la clase: es exactamente el defecto que
+`instruction-scope.mjs` documenta haber cometido con las skills — *el costo nunca estuvo mal,
+nunca se contó* — y un auditor que no lo declara está publicando un piso que no es el piso de
+nadie.
+
+#### Ya no es un script externo: el instrumento lo mide
+
+Desde `v2.4.0` **no escribas un script auxiliar para esto.** El número sale del propio
+instrumento, que es donde tiene que estar para que ninguna auditoría pueda olvidarlo:
+
+```bash
+node -e '
+import("<RUTA_DEL_REPO_AOI>/scripts/sdd-lifecycle/context-budget.mjs").then((m) => {
+  for (const [label, root] of [["BASE", process.argv[1]], ["HEAD", process.argv[2]]]) {
+    const b = m.auditContextBudget(root)
+    console.log(`\n### ${label}`)
+    console.log(m.formatHarnessAdapters(b.adapters, b.floor))
+  }
+})' "$WORK/base" "$WORK/head"
+```
+
+La forma que devuelve `auditContextBudget` — y esto es un **contrato**, no un detalle:
+
+| Campo | Qué es |
+| :--- | :--- |
+| `floor` | El piso de siempre. **No cambia** cuando cambian los adaptadores. |
+| `adapters` | `{ rows, total }` — lo que el piso no cuenta, con una fila por superficie. |
+| `floorWithAdapters` | `floor + adapters.total`. La factura de un Copilot, explícita. |
+
+> [!CAUTION]
+> **No sumes `adapters` a `floor`.** Tienta, es un solo carácter, y rompe la comparación
+> histórica: cada línea base medida antes de `v2.4.0` quedaría incomparable contra las nuevas
+> y el cambio se leería como una regresión de tokens que no ocurrió. Los dos números se
+> reportan por separado, siempre. El test `el piso NO se mueve` de
+> `context-budget-adapters.test.mjs` existe para que ese "arreglo" no pase inadvertido.
+
+Si agregás un adapter de harness nuevo, agregalo a `HARNESS_ADAPTERS` en
+`scripts/sdd-lifecycle/context-budget.mjs`. La lista es una sola y el instrumento la expone:
+una segunda copia en la prosa es una copia que va a derivar.
+
+**Cómo entra en el informe.** Como renglón de **alcance**, con esta forma: *"el piso reportado
+excluye $X$ tokens de adaptadores de harness; el piso total de un Copilot es de $Y$"*. Y
+agregá el renglón al checklist de cierre.
 
 ---
 
@@ -438,6 +682,9 @@ representativo en proporción pero no en volumen.
 
 ### 8.1 Qué instrumentos existen en cada versión
 
+La lista es la de los instrumentos que este protocolo **usa o debería usar**, no la de los
+que existen: un instrumento que la auditoría nunca corre es un instrumento que no audita.
+
 ```bash
 for f in scripts/sdd-lifecycle/context-budget.mjs \
          scripts/sdd-lifecycle/cache-prefix.mjs \
@@ -446,12 +693,21 @@ for f in scripts/sdd-lifecycle/context-budget.mjs \
          scripts/sdd-lifecycle/phase-references.mjs \
          scripts/sdd-lifecycle/behavioral-probes.mjs \
          scripts/sdd-lifecycle/registry-sync.mjs \
+         scripts/sdd-lifecycle/invariant-gate.mjs \
          scripts/scaffold/validate-test-globs.mjs \
          scripts/scaffold/validate-srp.mjs \
          scripts/scaffold/source-reachability.mjs \
+         scripts/scaffold/failure-injection.mjs \
+         scripts/scaffold/mutation-probe.mjs \
+         scripts/scaffold/mutation-ratchet.mjs \
+         scripts/scaffold/gate-exit-codes.test.mjs \
          scripts/multi-harness/validate-agent-routing.mjs \
          scripts/multi-harness/token-tool-coverage.mjs \
-         scripts/multi-harness/install-hooks.mjs ; do
+         scripts/multi-harness/reference-integrity.mjs \
+         scripts/multi-harness/cache-guard.mjs \
+         scripts/multi-harness/install-hooks.mjs \
+         scripts/multi-harness/zero-input-verdicts.test.mjs \
+         scripts/multi-harness/audit-protocol-integrity.mjs ; do
   b=$([ -f "$WORK/base/$f" ] && echo SI || echo NO)
   h=$([ -f "$WORK/head/$f" ] && echo SI || echo NO)
   printf "base:%s  head:%s  %s\n" "$b" "$h" "$f"
@@ -472,18 +728,36 @@ for ROOT in "$WORK/base" "$WORK/head"; do
            scripts/scaffold/validate-srp.mjs \
            scripts/scaffold/source-reachability.mjs \
            scripts/multi-harness/validate-agent-routing.mjs \
+           scripts/multi-harness/install-hooks.mjs \
            scripts/sdd-lifecycle/phase-handoffs.mjs \
            scripts/sdd-lifecycle/cache-prefix.mjs \
            scripts/multi-harness/token-tool-coverage.mjs \
            scripts/sdd-lifecycle/registry-sync.mjs \
            scripts/multi-harness/reference-integrity.mjs \
-           scripts/multi-harness/cache-guard.mjs ; do
+           scripts/multi-harness/cache-guard.mjs \
+           scripts/multi-harness/audit-protocol-integrity.mjs ; do
     [ -f "$ROOT/$f" ] || { echo "  [--] $f (no existe)"; continue; }
-    out=$( cd "$ROOT" && (command -v timeout >/dev/null 2>&1 && timeout 180 node "$f" || node "$f") 2>&1 ); code=$?
+    # NO uses `timeout ... || node "$f"`. El `||` no distingue "timeout no está
+    # instalado" de "la compuerta falló", así que re-ejecuta ENTERA toda roja
+    # —y el código que terminás reportando es el de la segunda corrida— y, si
+    # el `timeout` existe y la compuerta se cuelga, el fallback la vuelve a
+    # correr SIN timeout y cuelga la auditoría. Ver A.11.
+    if command -v timeout >/dev/null 2>&1; then
+      out=$( cd "$ROOT" && timeout 180 node "$f" 2>&1 ); code=$?
+    else
+      out=$( cd "$ROOT" && node "$f" 2>&1 ); code=$?
+    fi
     echo "  [$code] $(basename $f) -> $(echo "$out" | tail -1 | cut -c1-90)"
   done
 done
 ```
+
+> [!IMPORTANT]
+> **`install-hooks.mjs` se corre con `--audit`.** Invocado sin la bandera no audita nada:
+> **escribe** en la configuración de cada harness. Reproducido en `v2.3.0`: corriéndolo
+> desnudo, `.claude/settings.json` quedó reescrito en el árbol de trabajo (byte-idéntico acá
+> porque ya estaba instalado, pero es una escritura, no una lectura). Una auditoría que toca
+> el árbol que estaba midiendo deja de poder decir qué midió.
 
 ### 8.3 Suites y paridad
 
@@ -503,29 +777,118 @@ git show "$BASE":package.json | rg -n '"test":'
 rg -n '"test":' package.json
 ```
 
+### 8.4 Qué queda afuera del bucle, con nombre y apellido
+
+El bucle de 8.2 corre **13 pasos**; `pnpm test` encadenaba **24** en `v2.3.0` — **25 desde
+`v2.4.0`**, que le suma `aoi:audit-protocol`. Contá el tuyo antes de citar el número:
+
+```bash
+node -e 'const s=require("./package.json").scripts.test; console.log(s.split("&&").length)'
+```
+
+La diferencia no es un descuido, pero **tampoco puede quedar implícita**: el informe que exige
+honestidad de alcance en la Fase 14 tiene que aplicársela primero a la Fase 7. Declarala con
+estos nombres:
+
+| Fuera del bucle | Por qué |
+| :--- | :--- |
+| `pnpm aoi:mutation` | Es lento a propósito (corre cada área una vez por mutante). Va en la **Fase 8**, no acá. |
+| `pnpm aoi:stress-sdd` | Payload variable: se mide en la **Fase 6**, y casi nunca es comparable. |
+| `pnpm aoi:probes` | Genera sondas; se juzga en el **13.3**. |
+| `pnpm aoi:context`, `pnpm aoi:cache-prefix` (modo reporte) | Instrumentos de medición, no compuertas. Ya se usaron en las Fases 2–5. |
+| `test:doctor`, `test:multi-harness`, `test:sdd-lifecycle`, `test:sandbox`, `test:memory-sync`, `test:memory-sync:bundle`, `test:subagent-payload`, `test:conf`, `test:spatiotemporal`, `test:mcp-gateway`, `test:code-lens`, `test:dashboard` | Suites. Ya las cubre el `node --test "scripts/**/*.test.mjs"` de 8.3, y una por una no agregan una dimensión nueva. |
+
+Si tu auditoría **no** corrió alguno de los que sí importan, escribilo en el informe. Un paso
+que falta y se calla se lee como un paso que pasó.
+
 ---
 
 ## 9. Fase 8 — Falso verde: la dimensión más cara
 
 Una compuerta que nadie vio fallar es indistinguible de una que **no puede** fallar.
 
+### 9.0 Antes de fabricar nada: corré el ratchet que ya existe
+
+Este protocolo mandaba inventar a mano, compuerta por compuerta, la falla que cada una dice
+cazar. Eso es correcto y es caro. Pero el repositorio **ya tiene un instrumento que hace esa
+pregunta de forma sistemática y por línea**, y hasta `v2.3.0` el protocolo no lo nombraba ni
+una vez:
+
+```bash
+( cd "$ROOT" && pnpm aoi:mutation )
+```
+
+`scripts/scaffold/mutation-ratchet.mjs` guarda un piso de score por área
+(`MUTATION_FLOOR`) y falla si baja. Un mutante que sobrevive es, textualmente, una línea que
+nadie mira — la misma pregunta que 9.2 responde a mano, pero sobre todas las líneas y con el
+resultado congelado. Es lento a propósito (corre cada área una vez por mutante, minutos de
+CPU, cero tokens de inferencia), así que no está en la cadena de `pnpm test`: **es una
+medición deliberada, y una auditoría es exactamente el momento de hacerla.**
+
+Leé también `MUTATION_FLOOR` para saber qué áreas **no** tienen ratchet:
+
+```bash
+rg -n 'MUTATION_FLOOR' -A25 scripts/scaffold/mutation-ratchet.mjs
+```
+
+Las compuertas que no caen en ninguna de esas áreas son las únicas que necesitan que
+fabriques la falla a mano en 9.2. Las demás ya tienen quien las mire.
+
 ### 9.1 Cruzar la lista
 
 Sacá la lista de compuertas que `pnpm test` corre y la lista de compuertas que algún test
-ve **salir distinto de cero**. La diferencia es tu zona de riesgo.
+**ve salir distinto de cero**. La diferencia es tu zona de riesgo. Que el cruce sea un cálculo
+y no una lectura:
 
 ```bash
-rg -n 'runGate|notEqual' scripts/scaffold/gate-exit-codes.test.mjs | head -30
+# Compuertas de la cadena
+node -e 'console.log(require("./package.json").scripts.test.split("&&").map(s=>s.trim()))'
+
+# Compuertas con caso de exit no-cero declarado
+rg -n 'runGate\(' scripts/scaffold/gate-exit-codes.test.mjs
 rg -n 'GATES' -A8 scripts/multi-harness/zero-input-verdicts.test.mjs
 ```
+
+> [!NOTE]
+> `gate-exit-codes.test.mjs` es la red de la cadena y `zero-input-verdicts.test.mjs` la red
+> del *verde sobre nada*. Son dos preguntas distintas: la primera pregunta "¿puede fallar?",
+> la segunda "¿falla cuando no hay nada que mirar?". Una compuerta puede pasar la primera y
+> ser un desastre en la segunda.
 
 ### 9.2 Inyectar la falla, siempre en copia aislada
 
 > [!CAUTION]
 > **Nunca inyectes fallas en el árbol de trabajo.** Copiá el repositorio a un directorio
-> descartable, rompé ahí, medí, y borrá la copia. El patrón ya está implementado en
-> `scripts/scaffold/gate-exit-codes.test.mjs` (funciones `mirror`, `runGate`, `withViolation`);
-> reusalo en vez de escribir uno nuevo.
+> descartable, rompé ahí, medí, y borrá la copia.
+
+El patrón **ya está extraído a un módulo importable**, que es lo que hasta `v2.3.0` no era:
+el protocolo mandaba reusar `mirror`, `runGate` y `withViolation` "de `gate-exit-codes.test.mjs`",
+y esas tres eran funciones privadas de un archivo `.test.mjs`. Importar un `.test.mjs` no
+expone nada y además **vuelve a correr la suite entera**: la instrucción era inejecutable y
+el que la seguía al pie de la letra metía una corrida completa de tests adentro de su script.
+Ahora vive en `scripts/scaffold/failure-injection.mjs` y se importa:
+
+```javascript
+import { mirror, runGate, withViolation, append, prepend, sandboxFrom }
+  from '<RUTA_DEL_REPO_AOI>/scripts/scaffold/failure-injection.mjs'
+```
+
+| Función | Firma | Qué hace |
+| :--- | :--- | :--- |
+| `mirror` | `(src, dest, skip?)` | Copia el árbol saltando `node_modules`, `.git`, `.nuxt`, `dist`, `.output`, `.venv`, `.sandboxes` |
+| `sandboxFrom` | `(repoRoot, prefix?)` | `mkdtemp` + `mirror`, en un paso |
+| `runGate` | `(root, script, timeoutMs?)` | Corre la compuerta en la copia y devuelve el exit code; nunca lanza. `124` = se colgó |
+| `withViolation` | `(root, relFile, mutate, script)` | Aplica, mide y **restaura en `finally`** — sin eso la primera violación contamina todas las mediciones siguientes |
+| `append` / `prepend` | `(texto)` | Mutadores listos, para no reescribirlos |
+
+Tres líneas y ya tenés la copia aislada y una mutación medida:
+
+```javascript
+const root = sandboxFrom(process.argv[2], 'aoi-audit-')
+const code = withViolation(root, '.github/prompts/sdd-verify.prompt.md',
+  prepend('<!-- 2026-09-12T00:00:00 -->'), 'scripts/multi-harness/cache-guard.mjs')
+console.log(code === 0 ? '❌ FALSO VERDE' : `✅ la compuerta lo caza (exit ${code})`)
+```
 
 Para cada compuerta sin cobertura, inyectá **la violación exacta que dice cazar**:
 
@@ -541,10 +904,18 @@ Para cada compuerta sin cobertura, inyectá **la violación exacta que dice caza
 | `phase-handoffs` | Que un productor deje de nombrar su artefacto |
 | `reference-integrity` | Una referencia a un script inexistente |
 | `validate-agent-routing` | Un agente en disco sin fila en el registro |
+| `audit-protocol-integrity` | Renombrar una ruta `scripts/*.mjs` **desnuda** dentro del protocolo |
+| `install-hooks` | Sacar una declaración de `.github/hooks/*.json` |
 
 **Resultado esperado: exit distinto de cero en todas.** Si alguna sale 0, ese es un hallazgo
 crítico. Si todas fallan como deben, el hallazgo es más chico pero igual real: *faltaba la
 prueba*, y ahora existe.
+
+> [!WARNING]
+> **Copiá, no importes, cuando el archivo de destino sea un `.test.mjs` de otro.** El caso
+> `audit-protocol-integrity` se inyecta editando el protocolo, no importando la compuerta.
+> Importar un módulo de test para reusar sus helpers es el error que este mismo paso ya
+> cometió una vez.
 
 ### 9.3 Buscar el falso verde por lectura
 
@@ -741,14 +1112,88 @@ rg -n 'invariant-gate' "$WORK/head/.github/prompts/" "$WORK/head/.github/agents/
 
 Una invocación sin el flag reporta FAILED y sale 0, y ninguna cadena de `&&` lo nota.
 
+**Y después corré cada invocación desnuda.** El `rg` te dice dónde está escrito; el exit code
+te dice qué hace. Los dos no coinciden siempre:
+
+```bash
+# El script de npm es una invocación documentada como cualquier otra.
+node scripts/sdd-lifecycle/invariant-gate.mjs          ; echo "sin args  EXIT=$?"
+node scripts/sdd-lifecycle/invariant-gate.mjs --exit-code ; echo "con flag  EXIT=$?"
+```
+
+Hallazgo real y reproducible de la auditoría `v2.2.0-66 → v2.3.0`:
+`"aoi:invariant-gate": "node scripts/sdd-lifecycle/invariant-gate.mjs"` — sin `--entity` y
+sin `--exit-code`. Corrido tal como está escrito sale **2** con
+`Error: provide --entity <WORKSPACE> or --facts-file <path>`; es decir, el atajo de npm no
+audita: falla por uso. Las invocaciones de `.github/` sí llevan el flag y el `--entity`. La
+diferencia entre esas dos superficies es exactamente lo que este paso existe para encontrar:
+**una invocación documentada que nunca puede bloquear a nadie.**
+
 ### 13.3 Sondas conductuales
 
 ```bash
-( cd "$WORK/head" && node scripts/sdd-lifecycle/behavioral-probes.mjs | tail -5 )
+( cd "$WORK/head" && node scripts/sdd-lifecycle/behavioral-runner.mjs --emit )
 ```
 
 Preguntá: **¿alguien las ejecuta contra un modelo, o sólo se generan?** Sondas que se generan
 y nadie corre declaran conductas que ninguna corrida comprueba.
+
+Contestalo con evidencia, no con impresión:
+
+```bash
+rg -n 'behavioral-runner|behavioral-probes' package.json .github/ docs/ scripts/ --glob '!*.test.mjs'
+```
+
+#### El runner: emitir y juzgar
+
+Desde `v2.4.0` hay runner, y el reparto de costos es explícito:
+
+| Paso | Comando | Costo |
+| :--- | :--- | :--- |
+| **Emitir** | `pnpm aoi:probes` → `--emit [dir]` | **0 tokens.** Escribe un prompt por sonda más un `index.json` |
+| Responder | *(el harness, con un modelo)* | **Inferencia.** Es el único paso que la cuesta |
+| **Juzgar** | `pnpm aoi:probes:judge <answers.json>` | **0 tokens.** Compara contra `expected`/`forbidden` |
+
+El formato de respuestas es `{ "<id-de-sonda>": "<respuesta>", ... }`.
+
+> [!IMPORTANT]
+> **Una sonda sin respuesta FALLA, no se saltea.** Es el corazón del runner: si un silencio
+> contara como aprobado, la corrida diría "25/25 conductas correctas" sin haber mirado
+> ninguna. Un id en el archivo de respuestas que no sea sonda también falla — es la firma de
+> respuestas de otra versión.
+
+#### El techo de lo que el runner prueba
+
+`expected` está **sobrecargado a propósito**: tiene que aparecer en el contexto de la fase Y
+describir una respuesta. Esa doble obligación lo vuelve una condición **necesaria**, no
+suficiente, y el reporte lo dice por escrito para que nadie lea "25/25" como más de lo que es:
+
+- **Sí prueba:** que la respuesta no es una evasión, que lleva el porqué, y que contiene el
+  patrón que la fase también contiene.
+- **No prueba:** que el modelo haya **usado** la evidencia. Eso necesita un juez humano o
+  adversarial, y cuesta inferencia.
+
+**Si vas a reportar sondas, reportá el techo.** Un `pass` acota el espacio de respuestas
+incorrectas; no lo cierra.
+
+#### La trampa que este paso ya cometió
+
+Dos de las 25 sondas tenían un criterio que aprobaba **la palabra "no"** en cualquier
+respuesta — incluido `"No se."` y una respuesta **invertida** como *"No hay problema,
+salteala"*. Lo encontró el control negativo del runner, no una lectura: el runner habría
+reportado *"25/25 conductas correctas"* sobre respuestas que no decidían nada.
+
+Viene de la sobrecarga: para pasar el test de evidencia el patrón tiene que estar en la prosa,
+y la prosa usa "no"; entonces el patrón terminó midiendo la palabra y no la decisión. Hay dos
+compuertas permanentes en `behavioral-runner.test.mjs` que lo impiden volver:
+
+- `ninguna sonda aprueba una evasión` — batería de 10 no-respuestas contra las 25 sondas.
+- `ninguna sonda aprueba una respuesta sustantiva pero INCORRECTA` — el caso difícil: larga,
+  con porqué, y que decide al revés. Ésa es la que sobrevive al primer filtro.
+
+> [!WARNING]
+> Las sondas se escriben en `/tmp/aoi-probes` por defecto. Si vas a comparar respuestas entre
+> corridas, copiá el `index.json` afuera antes del próximo reinicio: ver A.4.
 
 ---
 
@@ -758,21 +1203,54 @@ y nadie corre declaran conductas que ninguna corrida comprueba.
 > **Ninguna medición en worktree reemplaza esto.** Dos defectos de esta auditoría sólo
 > aparecieron acá y eran invisibles desde el repositorio.
 
+> [!CAUTION]
+> **Modificar el protocolo OBLIGA a correr esta fase.** El protocolo es prosa ejecutable
+> sobre el producto; un cambio suyo que no se prueba sobre una instalación real es una
+> hipótesis, no una mejora. Si tocaste una sola línea del protocolo, esta fase es
+> obligatoria — y si no la corrés, **decilo en el informe**, no lo omitas.
+>
+> Vale igual para un cambio en un instrumento, en un gate o en `setup.sh`: el worktree mide
+> el repositorio, y el repositorio no es lo que se entrega.
+
 ### 14.1 Preparar
 
 ```bash
-TESTS="/Users/equinox/Desktop/AOI TESTS"   # el workspace de pruebas designado
+TESTS="/Users/equinox/Desktop/AOI TESTS"   # el workspace de pruebas designado — el de 2.0
 
 # Punto de restauración ANTES de tocar nada
 ( cd "$TESTS" && git add -A && git commit -q -m "chore: punto de restauración antes de auditar" )
 ```
 
-Comprobá primero que los cambios locales de ese workspace no tengan nada único:
+Comprobá primero que los cambios locales de ese workspace no tengan nada único. **Esto no es
+un chequeo de trámite: es la última red antes de pisar trabajo ajeno.** Un workspace de pruebas
+acumula corridas, y una de esas corridas pudo dejar algo que sólo existe ahí:
 
 ```bash
 ( cd "$TESTS" && git status --short )
-# y para cada archivo modificado, comparar md5 contra el repo de desarrollo
+
+# Compará BYTE A BYTE contra el repo de desarrollo, contra el COMMIT, no contra el
+# working tree: el working tree del repo tiene tus propios cambios sin commitear y
+# compararse contra sí mismo siempre da "idéntico".
+DEV="<RUTA_DEL_REPO_AOI>"
+for f in $( cd "$TESTS" && git diff --name-only ); do
+  if git -C "$DEV" show "HEAD:$f" > /tmp/aoi-dev-ver 2>/dev/null && cmp -s /tmp/aoi-dev-ver "$TESTS/$f"; then
+    echo "ya está en dev    $f"
+  else
+    echo "*** ÚNICO — NO PISAR *** $f"
+  fi
+done
+rm -f /tmp/aoi-dev-ver
 ```
+
+| Resultado | Qué hacer |
+| :--- | :--- |
+| Todos "ya está en dev" | El workspace es reaplicación de trabajo ya versionado. Seguí. |
+| Aparece algún "ÚNICO" | **Pará.** Traelo al repo de desarrollo o registralo en el informe antes de instalar, o `setup.sh` lo va a sobrescribir. |
+
+> [!WARNING]
+> El "punto de restauración" del bloque de arriba commitea esos cambios **como están**, así
+> que protege el contenido — pero no lo trae al repo. Un commit de restauración no es un
+> rescate: es una foto. Si hay trabajo único, el rescate se hace aparte y primero.
 
 ### 14.2 Instalar y correr el protocolo
 
@@ -789,7 +1267,17 @@ node scripts/sdd-lifecycle/cache-prefix.mjs | rg -i 'huella|PISO:'
 ```
 
 **Corré `setup.sh` dos veces** sobre el mismo destino: si el resultado no cambia, la
-idempotencia queda ejercitada de paso y es un dato del informe.
+idempotencia queda ejercitada de paso y es un dato del informe. Compará el **conjunto de
+archivos**, no sólo el conteo:
+
+```bash
+snap() { find . -path ./node_modules -prune -o -path ./.git -prune -o -type f -print | sort; }
+( cd "$TESTS" && snap > /tmp/aoi-before.txt )
+( cd "<RUTA_DEL_REPO_AOI>" && bash setup.sh -y --harness all "$TESTS" >/dev/null )
+( cd "$TESTS" && snap > /tmp/aoi-after.txt )
+diff /tmp/aoi-before.txt /tmp/aoi-after.txt && echo "idempotente" || echo "DIFIERE: ver A.13"
+rm -f /tmp/aoi-before.txt /tmp/aoi-after.txt
+```
 
 ### 14.3 Qué comparar entre repositorio e instalación
 
@@ -799,7 +1287,93 @@ idempotencia queda ejercitada de paso y es un dato del informe.
 | Huella de masa repetida | **Debe coincidir.** Es la prueba byte a byte de que la banda ×6 es la misma |
 | Cantidad de tests | Puede diferir legítimamente: hay tests que sólo prueban al instalador y no se envían. **Explicá la diferencia con nombres, no la ignores** |
 | Fidelidad del payload | La instalación suele tener artefactos reales que el repositorio no. Fases que allá eran `fixture` o `skipped` acá se miden de verdad |
-| Paridad | La instalación puede gobernar algún archivo más. Verificá cuál |
+| **Conjunto de archivos gobernados** | **Es la fila que nadie hacía, y la más importante.** Ver 14.3.1 |
+
+#### 14.3.1 La paridad NO puede comparar dos árboles
+
+El renglón "Paridad" decía *"la instalación puede gobernar algún archivo más. Verificá cuál"*
+sin decir cómo, y el resultado previsible es que nadie lo verifique nunca. Los baselines
+registrados lo prueban: uno anotaba `322/322` en la instalación contra `320/320` en el
+repositorio, con una diferencia de **dos archivos que jamás se explicó**.
+
+**Por qué la compuerta no lo ve:** `validate-scaffold-parity` compara la raíz contra su espejo
+`scaffold/` **dentro del mismo árbol**. Si un archivo está en los dos lados, la compuerta está
+verde — aunque ese archivo no exista en la fuente de verdad. Un archivo presente en ambos
+lados y ausente del repositorio es **invisible por construcción**. Las dos instancias dan su
+propio `OK` sobre conjuntos distintos, y la resta entre ellos no la hace nadie.
+
+Hacela vos:
+
+```bash
+node -e '
+import("./scripts/scaffold/validate-scaffold-parity.mjs").then(async (m) => {
+  const { DEFAULT_SYNC_PATHS, collectFilePaths } = m
+  const fs = await import("node:fs"); const path = await import("node:path")
+  const list = (root) => {
+    const out = []
+    for (const p of DEFAULT_SYNC_PATHS) {
+      const full = path.join(root, p)
+      if (!fs.existsSync(full)) continue
+      if (fs.statSync(full).isFile()) { out.push(p); continue }
+      for (const r of collectFilePaths(root, p)) out.push(r)
+    }
+    return out.sort()
+  }
+  const A = process.argv[1], B = process.argv[2]
+  const a = list(A), b = list(B)
+  const onlyB = b.filter((x) => !a.includes(x)), onlyA = a.filter((x) => !b.includes(x))
+  console.log("repo:", a.length, " instalacion:", b.length)
+  console.log("=== SOLO en la instalacion (trabajo que el repo no tiene) ===")
+  onlyB.forEach((x) => console.log("  +", x))
+  console.log("=== SOLO en el repo (la instalacion no lo recibio) ===")
+  onlyA.forEach((x) => console.log("  -", x))
+})' "<RUTA_DEL_REPO_AOI>" "$TESTS"
+```
+
+`collectFilePaths` devuelve rutas **ya relativas a la raíz**: no las vuelvas a prefijar.
+
+| Resultado | Lectura |
+| :--- | :--- |
+| `+ X` (sólo en la instalación) | **Esperado por diseño** (paso 2.0.1): `$TESTS` es el hogar del ciclo. Reportalo con los archivos nombrados, no como alarma — salvo que además un ciclo **cerrado** quede sin dueño declarado, y eso sí se reporta. |
+| `- X` (sólo en el repo) | **Hallazgo.** `setup.sh` no lo está distribuyendo. Es un defecto del instalador. |
+| Ninguno | Los dos árboles gobiernan el mismo conjunto. |
+
+> [!IMPORTANT]
+> Un `+` **no** significa que la instalación está mal. Significa que la paridad no puede
+> contestar la pregunta y por lo tanto la contesta el auditor. En la corrida del 2026-09-12
+> aparecieron dos archivos de dashboard (`server/utils/token-budget.ts` y su test) que existen
+> sólo en el workspace de pruebas: el hallazgo no es ni "la instalación sobra" ni "el repo
+> falta", es que **nadie lo había mirado en dos ciclos**. Después se verificó que son los
+> entregables de `TASK-2026-101`, y que su lugar es `$TESTS` — ver 2.0.1.
+
+#### 14.3.2 Un test que lee `docs/` se rompe en la instalación
+
+`docs/` **no se envía** a una instalación. Cualquier test que abra un archivo de ahí obtiene
+`null` o `ENOENT`, y en el repositorio pasa verde. La compuerta puede estar bien —con su split
+estricto/laxo— y el **test** romperse igual:
+
+```
+TypeError: Cannot read properties of null (reading 'replace')
+    at gate-exit-codes.test.mjs
+```
+
+Reproducido en la instalación del 2026-09-12: suite del repositorio **821 pass · 0 fail**,
+suite de la instalación **758 pass · 1 fail**, y el fallo era este. Lo vio **sólo** la Fase 13.
+
+La forma correcta, y es la que ya usa `zero-input-verdicts.test.mjs`:
+
+```javascript
+it('...', (t) => {
+  if (!fs.existsSync(path.join(REPO, 'setup.sh'))) {   // o el archivo puntual que lee
+    t.skip('workspace instalado: docs/ no se envía, no hay nada que mutar')
+    return
+  }
+  // ...
+})
+```
+
+**El skip tiene que estar en el test, no sólo en la compuerta.** Un gate con split
+estricto/laxo y un test sin él es la mitad de un arreglo.
 
 ### 14.4 Registrar la línea base
 
@@ -809,7 +1383,10 @@ Anotala en el protocolo de verificación del repositorio con:
 - el `git describe --tags` de lo instalado;
 - piso, techo, banda ×6 y huella;
 - payload base → optimizado, con la fidelidad por fase;
-- paridad, suite, doctor y compuertas.
+- paridad, suite, doctor y compuertas;
+- **el diff de conjuntos de archivos de 14.3.1 y el veredicto de los skips nombrados**;
+- **la fecha**, y si el instrumento llevaba cambios sin commitear, decilo: un install desde un
+  árbol sucio no es reproducible desde un tag y así hay que etiquetarlo.
 
 ---
 
@@ -827,12 +1404,19 @@ completos y sus fechas. Si el tag no apunta al commit auditado, **decilo explíc
 3. La descomposición de cuatro términos, con la suma de control visible.
 4. El renglón [C] abierto: qué es contabilidad y qué es conducta.
 5. La comparación honesta, con los dos números.
-6. La banda ×6 contra la masa en disco.
-7. Instrumentación: qué no existía en la versión vieja.
-8. Herramientas obligatorias: instalador y cableado.
-9. Payload, con la advertencia de comparabilidad.
-10. Hallazgos, cada uno con `proof` reproducible.
-11. **Alcance no cubierto**, con el mismo nivel de detalle que lo cubierto.
+6. La banda ×6 contra la masa en disco, con la tolerancia del 10% declarada explícitamente.
+7. La masa que ningún instrumento cuenta (paso 6.5), como renglón de alcance — **nunca
+   sumada al piso**.
+8. Instrumentación: qué no existía en la versión vieja, y qué corrió el bucle de 8.2 contra
+   los 24 pasos de `pnpm test` (paso 8.4).
+9. Resultado de `pnpm aoi:mutation`, con el piso por área y qué áreas quedaron sin ratchet.
+10. Herramientas obligatorias: instalador y cableado.
+11. Payload, con la advertencia de comparabilidad.
+12. Hallazgos, cada uno con `proof` reproducible. *Un `proof` es un comando que otro corre y
+    ve el mismo resultado. "Lo revisé" no es un `proof`.*
+13. **Alcance no cubierto**, con el mismo nivel de detalle que lo cubierto.
+14. **Sello de auto-auditoría**: la salida de `aoi:audit-protocol` (paso 16.1). Si el
+    protocolo que produjo este informe no pasaba su propia compuerta, decilo acá.
 
 ### 15.3 Honestidad sobre el alcance
 
@@ -869,6 +1453,49 @@ node --test "scripts/**/*.test.mjs" 2>&1 | tail -6
 node scripts/scaffold/validate-scaffold-parity.mjs | tail -1
 node scripts/scaffold/validate-srp.mjs | tail -1
 ```
+
+### 16.1 El protocolo se audita a sí mismo
+
+Un protocolo que exige compuertas para todo lo que él mismo toca y no tiene ninguna es la
+misma forma de falso verde que persigue: **verde sobre nada**. Hasta `v2.3.0` esto era
+literal — se podía renombrar `scripts/multi-harness/cache-guard.mjs` en una copia aislada y
+`reference-integrity` seguía imprimiendo *"Every reference resolves"*, porque sólo lintea
+referencias del tipo `node scripts/<archivo>.mjs` y el protocolo escribe **24 de sus rutas
+desnudas**, sin `node` adelante, dentro de los bucles de compuertas. Medido, no supuesto.
+
+Desde `v2.4.0` hay una compuerta y **es el paso 0 y el último paso**:
+
+```bash
+node scripts/multi-harness/audit-protocol-integrity.mjs
+```
+
+Verifica cinco cosas, todas deterministas y con 0 tokens de inferencia:
+
+| # | Qué verifica | El defecto que habría cazado |
+| :--- | :--- | :--- |
+| 1 | Toda ruta `scripts/**.mjs` nombrada existe, con o sin `node`, con o sin prefijo de worktree | La ruta desnuda que sobrevivía verde |
+| 2 | Todo símbolo que el protocolo atribuye a un módulo está exportado ahí (lee el fuente, **nunca importa**) | `mirror`/`runGate`/`withViolation` no eran importables |
+| 3 | La versión del encabezado coincide con la que anuncia `docs/README.md` | La versión duplicada que deriva |
+| 4 | Existe una sola copia del protocolo en todo el árbol | La tercera copia que nadie gobierna |
+| 5 | Verificó algo: cero rutas encontradas es un fallo | El verde sobre cero entradas |
+
+**Cómo se extiende** — y esto es obligatorio, no una sugerencia: cuando agregues un
+instrumento, un símbolo o una bandera al protocolo, agregalo también a la tabla de contratos
+de la compuerta. Una instrucción que la compuerta no puede ver es una instrucción que va a
+derivar.
+
+```bash
+# 1. Editá SYMBOL_CONTRACTS en scripts/multi-harness/audit-protocol-integrity.mjs
+# 2. Verificá que el control negativo sigue cazando
+node --test scripts/multi-harness/audit-protocol-integrity.test.mjs
+```
+
+> [!IMPORTANT]
+> **`audit-protocol-integrity` NO es una compuerta que se pueda aprobar por ausencia.** En un
+> workspace instalado `docs/` no se envía, así que sale 0 con un mensaje explícito — el mismo
+> split estricto/laxo de `validate-srp` y `validate-test-globs`. En el repositorio de
+> desarrollo, la ausencia del protocolo **es** un fallo. No la "arregles" volviéndola verde
+> en los dos lados.
 
 ---
 
@@ -951,9 +1578,12 @@ esta auditoría persigue, cometido por el protocolo mismo.
 **La forma portable es entrecomillar el patrón** y dejar que Node lo expanda:
 
 ```bash
-node --test "scripts/**/*.test.mjs"     # ✅ 807 tests en bash y en zsh
+node --test "scripts/**/*.test.mjs"     # ✅ encuentra el mismo conjunto en bash y en zsh
 node --test scripts/**/*.test.mjs       # ❌ depende del shell
 ```
+
+> No pongas el número de tests en el comentario: cambia con cada commit y convierte una nota
+> útil en una nota vieja. Contá, no cites.
 
 Verificalo en tu entorno antes de confiar en cualquier conteo de tests:
 
@@ -971,6 +1601,163 @@ Diferentes sistemas operativos y harnesses ejecutan en shells con distintos coma
 - **`timeout`**: Es parte de GNU Coreutils. En macOS vanilla sin Homebrew no existe de forma nativa. Todo script del protocolo que invoque `timeout` debe verificar su existencia (`command -v timeout >/dev/null 2>&1`) o ejecutar el comando directamente para no generar un falso fallo instrumental.
 - **`fd`**: Es un binario externo (`fd-find`). Si el entorno no lo tiene, el equivalente universal POSIX es `find "$DIR" -name "*$PATTERN*"`.
 - **`md5` vs `cmp`**: macOS y BSD usan `md5 -q "$f"`, mientras que Linux usa `md5sum "$f"`. Para comprobar si dos archivos son byte-idénticos de forma 100% portable y en 0 tokens, usá la primitiva POSIX `cmp -s "$a" "$b"`.
+- **`rg`**: No es POSIX ni viene en un macOS recién instalado. Si falta, `grep -rn` cubre los usos de este protocolo — pero acordate de A.2 antes de creerle a un vacío.
+
+### A.11 El fallback `||` re-ejecuta la compuerta que falló
+
+Un idiom tentador y equivocado, que estaba en el bucle de la Fase 7 hasta `v2.3.0`:
+
+```bash
+# ❌ MAL
+out=$( (command -v timeout >/dev/null 2>&1 && timeout 180 node "$f" || node "$f") 2>&1 ); code=$?
+```
+
+`||` no distingue **"`timeout` no está instalado"** de **"la compuerta falló"**. Con `timeout`
+presente y una compuerta que sale 1, el fallback la corre **otra vez**, y el código que
+terminás reportando es el de la segunda corrida. Medido:
+
+```bash
+printf 'console.log("EJECUTADA")\nprocess.exit(1)\n' > /tmp/demo.mjs
+out=$( (command -v timeout >/dev/null 2>&1 && timeout 180 node /tmp/demo.mjs || node /tmp/demo.mjs) 2>&1 )
+echo "$(echo "$out" | grep -c EJECUTADA) veces ejecutada"   # -> 2
+```
+
+Dos consecuencias, y la segunda es peor que la primera: el costo se duplica en cada roja —en
+una auditoría con varias rojas, eso es la mitad del presupuesto de CPU— y si la compuerta se
+**cuelga**, el `timeout` la mata y el fallback la vuelve a lanzar **sin timeout**, colgando la
+auditoría entera. Un protocolo que persigue falsos verdes no puede tener un falso rojo que se
+re-ejecuta solo.
+
+La forma correcta es un `if`, no un `||`:
+
+```bash
+# ✅ BIEN
+if command -v timeout >/dev/null 2>&1; then
+  out=$( cd "$ROOT" && timeout 180 node "$f" 2>&1 ); code=$?
+else
+  out=$( cd "$ROOT" && node "$f" 2>&1 ); code=$?
+fi
+```
+
+> Vale para cualquier `cmd || fallback` donde `cmd` pueda fallar **por el motivo que estás
+> midiendo**. El `||` es para alternativas, no para diagnósticos.
+
+### A.12 `Math.ceil(len/4)` no es el estimador del instrumento
+
+El instrumento usa `Math.round(len/4)` (`estimateTokens` en
+`scripts/sdd-lifecycle/token-accounting.mjs`). Un contraste escrito con `Math.ceil` arranca
+con un sesgo de hasta +1 token por archivo, y en un árbol de 75 archivos son ~75 tokens de
+diferencia que después hay que explicar en la verificación cruzada del paso 6.3.
+
+**Importá el estimador, no lo reescribas:**
+
+```javascript
+import { estimateTokens } from '<RUTA_DEL_REPO_AOI>/scripts/sdd-lifecycle/token-accounting.mjs'
+```
+
+> Regla general: si el protocolo y el instrumento tienen que coincidir en un número, tienen
+> que compartir el código que lo produce. Dos implementaciones del mismo cálculo divergen
+> siempre; la pregunta es cuándo.
+
+### A.13 Dos formas de medir "no cambió", y sólo una sirve
+
+El paso 14.2 pide correr `setup.sh` dos veces y comparar. **Comparar conteos no prueba
+idempotencia.** Dos corridas pueden dar `1280` y `1280` con archivos distintos adentro, y un
+`wc -l` no lo distingue. Lo que se compara es el **conjunto**:
+
+```bash
+# ❌ dice "1280 = 1280" y no prueba nada
+ls -R "$TESTS" | wc -l
+
+# ✅ dice qué archivo apareció y cuál desapareció
+( cd "$TESTS" && find . -path ./node_modules -prune -o -type f -print | sort ) > /tmp/a.txt
+( cd "$TESTS" && find . -path ./node_modules -prune -o -type f -print | sort ) > /tmp/b.txt
+diff /tmp/a.txt /tmp/b.txt
+```
+
+Y el conjunto de **nombres** tampoco prueba idempotencia: un archivo reescrito con otro
+contenido conserva su nombre. Si querés lo segundo, compará con `cmp -s`:
+
+```bash
+for f in $(cd "$TESTS" && git ls-files); do
+  cmp -s "$SNAP/$f" "$TESTS/$f" || echo "contenido distinto: $f"
+done
+```
+
+**La excepción conocida y legítima** son los artefactos de instalación que registran la
+corrida: `.conf/history.jsonl` acumula una línea por instalación, y `.conf/manifest.json`
+refresca `updated_at`. Su cambio es el resultado esperado, no una falla de idempotencia.
+Nombrálos en el informe en vez de dejar que ensucien el diff.
+
+> Medido en la corrida del 2026-09-12: `setup.sh` dos veces sobre el mismo destino dio el
+> mismo conjunto de 1280 archivos. La idempotencia quedó ejercitada.
+
+### A.14 Un resultado de `rg` cortado por el ancho del terminal no es un dato
+
+`rg` no corta líneas: las corta el **terminal** al mostrarlas. Si leés el resultado de un `rg`
+en la salida del agente o en una consola angosta, una coincidencia puede aparecer partida, y
+el fragmento visible **parece** el valor.
+
+Costó un hallazgo falso en la auditoría del 2026-09-12. Buscando el tag del contrato se
+imprimió:
+
+```
+payload-md.txt:- `l:never.1 never reports ok when used exceeds limit`
+```
+
+y se anotó en el informe que los tags viajaban mutilados como `l:never.1` — con la
+conclusión de que la coincidencia del gate era *casual y no estructural*. **El archivo decía
+`BIC-2026-001:never.1`.** Lo que se leyó fue la cola de esa cadena tras un corte por ancho.
+
+> [!CAUTION]
+> **Un hallazgo que depende de un valor parcial no se escribe hasta verlo entero.** Verificalo
+> con un comando cuyo resultado no pueda partirse:
+>
+> ```bash
+> rg -n 'l:never' "$DIR"                    # ¿existe el valor mutilado? (vacío = no existe)
+> rg -o '[A-Za-z0-9-]*:never\.[0-9]+' "$DIR" | sort | uniq -c   # el valor completo, contado
+> ```
+>
+> La segunda forma es la que sirve: extrae **sólo** el token que importa, sin contexto que
+> pueda cortarse, y lo cuenta. Un `uniq -c` sobre el token completo es imposible de
+> malinterpretar; una línea de `rg` en una consola angosta, no.
+
+Esto es una variante de A.2, con una diferencia que la hace peor: A.2 produce un **vacío** que
+uno desconfía. Ésta produce un **valor con forma de dato**, y el sesgo de confirmación hace el
+resto. Si el fragmento respalda algo que ya sospechabas, sospechá el doble.
+
+### A.15 En AOI, formatear es un cambio de producto
+
+Un "Format Document" del editor no es cosmético acá, y el 2026-09-12 lo demostró rompiendo
+cuatro cosas de golpe, ninguna visible hasta correr las compuertas:
+
+| Qué rompe | Por qué | Medido |
+| :--- | :--- | :--- |
+| **Paridad** | Se formatea la raíz y no los espejos de `scaffold/` | 11 `CONTENT_MISMATCH` |
+| **SRP** | El reflow **expande** el código y el límite son 300 LOC | `invariant-gate.test.mjs` 245 → 341 |
+| Tests en cascada | Los dos anteriores | suite 829 → 827 pass · 2 fail |
+| Docs legibles | Prettier **alinea las tablas markdown** con relleno | filas de 1122 caracteres, con runs de ~900 espacios |
+
+**La regla:** si hay que formatear, es un **cambio propio**, con la config fijada, **espejado a
+`scaffold/`** y con verificación completa. Nunca mezclado en una rama de auditoría — el diff se
+vuelve ilegible y los hallazgos se pierden entre el ruido.
+
+El repo trae `.prettierrc` (estilo fijado: 80 columnas, sin punto y coma, comillas simples) y
+`.prettierignore`, cuya parte que **carga el peso** es:
+
+```
+scaffold/     # contenido espejado: se regenera copiando, no formateando.
+              # Ignorarlo hace que formatear la raíz deje la paridad ROJA, que es
+              # lo que se quiere: un error visible en vez de un commit silencioso.
+*.md          # la prosa es de formato manual. Un formateador de CÓDIGO no tiene
+              # por qué tocar documentos.
+```
+
+> [!WARNING]
+> **Nada de esto reemplaza a las compuertas.** La paridad y el SRP son los que detectan el
+> daño; la config sólo evita que el daño sea arbitrario. Y si tu editor no tiene Prettier
+> instalado en el proyecto —acá no está en `node_modules`— la config sólo gobierna la extensión
+> del editor, que es exactamente de donde salió el accidente.
 
 ---
 
@@ -984,8 +1771,11 @@ Diferentes sistemas operativos y harnesses ejecutan en shells con distintos coma
   directamente.
 - Ejecutá los comandos desde el terminal integrado. No hay orquestación paralela: corré las
   fases en orden, una por una.
-- Para la Fase 8 (falso verde), `gate-exit-codes.test.mjs` ya hace el trabajo pesado; sólo
-  agregá casos para las compuertas que no estén en su lista.
+- Para la Fase 8 (falso verde) hay dos redes ya tejidas y las dos son mejores que la
+  inyección artesanal: `pnpm aoi:mutation` pregunta **por línea** si algo la mira, y
+  `gate-exit-codes.test.mjs` pregunta **por compuerta** si puede fallar. Corré la primera y
+  agregá casos a la segunda sólo para lo que no esté en su lista. El instrumental para
+  fabricar esos casos es `scripts/scaffold/failure-injection.mjs`, no una copia a mano.
 
 ### B.2 Antigravity
 
@@ -1021,7 +1811,11 @@ merece explicación.
 
 ### B.3 Cualquier harness
 
-- Todo este protocolo corre con `bash` + `node`. No requiere ninguna herramienta propietaria.
+- Todo este protocolo corre con `bash` + `node` **+ `rg`**. No requiere ninguna herramienta
+  propietaria, pero decir "bash + node" y nada más es falso: hay pasos que usan `rg` (§5.1,
+  §5.2, §8.3, §11.1, §13.1, §13.2), uno que usa `fd` con fallback a `find` (§5.1), y el bucle
+  de §8.2 usa `timeout` si existe. Con `grep -rn` y `find` el protocolo corre igual — anotá
+  cuál usaste, porque los conteos cambian de una herramienta a otra (ver A.2).
 - Si tu harness ofrece orquestación paralela de subagentes, usala **sólo para las dimensiones
   cualitativas** (prompts, agentes, instalador, aplicación) y con verificación adversarial:
   cada hallazgo, refutado por lentes independientes antes de entrar al informe.
@@ -1037,17 +1831,44 @@ merece explicación.
 Antes de dar la auditoría por terminada:
 
 - [ ] Ambos extremos sellados con `git describe --tags` y SHA completo.
+- [ ] El `$WORK` está en `$HOME/.aoi-audit-work/` y **el Escritorio quedó limpio** (paso 2.0).
+- [ ] El diff de conjuntos repo↔`$TESTS` está reportado: cada `+ X` como **esperado por diseño**
+      (paso 2.0.1) y **todo `- X` como hallazgo**. Ningún ciclo cerrado sin dueño declarado.
+- [ ] Los dos worktrees verificados en el SHA que el informe rótula (paso 2.1).
+- [ ] Los cambios locales de `$TESTS` se compararon contra el COMMIT de dev y no hay ninguno
+      ÚNICO sin rescatar (paso 14.1).
+- [ ] **Si se tocó una línea del protocolo, de un gate o de `setup.sh`: la Fase 13 se corrió.**
+      Si no, está declarado en el alcance no cubierto, con esas palabras.
+- [ ] El conjunto de archivos gobernados se comparó entre repo e instalación, y cada `+`/`-`
+      tiene explicación (paso 14.3.1).
+- [ ] Todo test que lee `docs/` tiene su skip para el workspace instalado (paso 14.3.2), y el
+      skip está en el TEST, no sólo en la compuerta.
+- [ ] La idempotencia se midió por conjunto de archivos, no por conteo (paso 14.2 + A.13).
+- [ ] Los tres skips de la instalación están nombrados con su motivo.
+- [ ] `aoi:audit-protocol` verde **antes** de la primera medición y **después** de los
+      arreglos (§16.1).
 - [ ] La suma de control de la descomposición cierra exactamente.
 - [ ] Cada archivo del renglón [C] fue abierto y clasificado como contabilidad o conducta.
-- [ ] El delta de la banda ×6 converge con el término [A].
+- [ ] El delta de la banda ×6 converge con el término [A] dentro del 10% declarado (paso 6.3).
 - [ ] La masa de prosa en disco está medida y contrastada contra el piso.
+- [ ] La masa que ningún instrumento cuenta está medida y reportada como alcance, **no sumada
+      al piso** (paso 6.5).
 - [ ] Las dos bandas de harness están reportadas por separado.
-- [ ] Todas las compuertas corrieron en ambos árboles, con su exit code.
+- [ ] Todas las compuertas corrieron en ambos árboles, con su exit code, y ninguna se
+      re-ejecutó por el fallback `||` (A.11).
+- [ ] La lista de pasos que quedaron fuera del bucle 8.2 está declarada con nombres (paso 8.4).
+- [ ] `pnpm aoi:mutation` corrió y se leyó qué áreas **no** tienen ratchet (paso 9.0).
 - [ ] Toda compuerta tiene al menos un caso que la vio fallar.
 - [ ] Cada herramienta obligatoria tiene una línea de invocación identificada.
+- [ ] Cada invocación documentada de un gate con flag se corrió desnuda y su exit code está
+      reportado (paso 13.2).
+- [ ] Las sondas conductuales están clasificadas como generadas o ejecutadas, con la evidencia
+      que lo prueba (paso 13.3).
 - [ ] Cada recorte tiene su prueba de equivalencia, o está etiquetado como capacidad perdida.
 - [ ] El Invariant Gate falla cerrado y sus invocaciones llevan el flag que bloquea.
 - [ ] La corrida real sobre la instalación está hecha y registrada como línea base.
 - [ ] Cada hallazgo tiene un `proof` que otro puede ejecutar.
 - [ ] El alcance no cubierto está listado con el mismo detalle que lo cubierto.
 - [ ] Los arreglos van en una rama aparte, cada uno con su compuerta y su control negativo.
+- [ ] Todo instrumento o símbolo nuevo que el protocolo nombre quedó en la tabla de contratos
+      de `audit-protocol-integrity` (§16.1).

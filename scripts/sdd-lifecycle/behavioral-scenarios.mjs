@@ -107,8 +107,13 @@ export const PROBES = [
     scenario:
       'Terminaste el diálogo socrático y el Owner aprobó la intención. ¿Creás ya el TASK-ID y la carpeta ' +
       'en `.tasks/`, o no? Respondé sí o no y en una línea por qué.',
-    expected: /\bno\b|zero-task|sin.*task|no.*crea/i,
-    forbidden: /^s[ií][,. ]/i,
+    // El `\bno\b` suelto que había acá aprobaba cualquier respuesta que
+    // contuviera la palabra "no" — incluido "No se." y, peor, una respuesta
+    // sustantiva pero INCORRECTA como "No hay problema, creá el TASK-ID". El
+    // patrón tiene que exigir la negación DEL acto, no la palabra. Ver el test
+    // `ninguna sonda aprueba una evasión` en behavioral-runner.test.mjs.
+    expected: /\bno\b[^.]{0,60}(cre|gener|materializ|abr|task)|zero-task|sin[^.]{0,20}task|no[^.]{0,10}crea/i,
+    forbidden: /^s[ií][,. ]|s[ií]\s*,?\s*(cre|gener|materializ)/i,
   },
   {
     id: 'bic-persistence',
@@ -128,7 +133,18 @@ export const PROBES = [
     scenario:
       'Tenés prisa y el requerimiento parece obvio. ¿Podés saltarte el Service Discovery Gate en esta fase? ' +
       'Respondé sí o no en una línea.',
-    expected: /\bno\b|mandator|obligator/i,
+    // Mismo defecto que en `zero-task-footprint`: el `\bno\b` suelto aprobaba
+    // "No se." y también una respuesta invertida como "No hay problema,
+    // salteala". Además, la alternativa `mandator` sola matcheaba el contexto
+    // por una razón ajena —la política de Headroom también dice "mandatory"—
+    // así que la evidencia parecía presente por el texto equivocado.
+    //
+    // El criterio tiene que exigir la negación DEL PERMISO, pegada a la
+    // negación. `no\s+[^.]{0,80}(salt|...)` no sirve: en "No hay problema,
+    // podés saltearla" la `no` niega otra cosa y el `salt` está a 20 caracteres,
+    // así que aprobaba la respuesta invertida. Regex no parsea intención — se
+    // elige la forma que sí discrimina y se la fija con un control negativo.
+    expected: /no\s+(pod[eé]s|se\s+puede|est[aá]\s+permitido|es\s+opcional)|obligator|\(MANDATORY\)/i,
   },
   {
     id: 'rtk-prefix',
