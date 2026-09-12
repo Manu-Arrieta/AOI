@@ -69,7 +69,7 @@ function withViolation(relFile, mutate, script) {
 const append = (text) => (full, original) => fs.writeFileSync(full, `${original}\n${text}\n`)
 const prepend = (text) => (full, original) => fs.writeFileSync(full, `${text}\n${original}`)
 
-describe('the seven gates exit non-zero on the violation they claim to catch', () => {
+describe('cada compuerta sale distinto de cero ante la violación que dice cazar', () => {
   before(() => {
     SANDBOX = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-gates-'))
     mirror(REPO, SANDBOX)
@@ -79,7 +79,7 @@ describe('the seven gates exit non-zero on the violation they claim to catch', (
     if (SANDBOX) fs.rmSync(SANDBOX, { recursive: true, force: true })
   })
 
-  it('all seven are green on the untouched copy', () => {
+  it('todas están en verde sobre la copia intacta', () => {
     // Without this, a gate that fails for an unrelated reason would make every
     // case below pass for the wrong reason.
     const gates = [
@@ -164,5 +164,59 @@ describe('the seven gates exit non-zero on the violation they claim to catch', (
       'scripts/scaffold/validate-test-globs.mjs'
     )
     assert.notEqual(code, 0)
+  })
+  // ── Las cuatro que quedaban sin red ───────────────────────────────────────
+  // La auditoría de 2026-09-11 cruzó las once compuertas que corre `pnpm test`
+  // contra las siete que este archivo cubría y encontró cuatro sin un solo caso
+  // que las viera fallar. Una compuerta que nadie vio fallar es indistinguible
+  // de una que no puede fallar, que es exactamente la patología que todas ellas
+  // existen para prevenir, vuelta contra ellas mismas.
+
+  it('parity catches a governed file that drifted from its mirror', () => {
+    const code = withViolation(
+      'CLAUDE.md',
+      (full, original) => fs.writeFileSync(full, `${original}\n<!-- deriva inyectada -->\n`),
+      'scripts/scaffold/validate-scaffold-parity.mjs'
+    )
+    assert.notEqual(code, 0, 'la paridad aprobó con la raíz y el espejo distintos')
+  })
+
+  it('reachability catches a source file that nothing ever loads', () => {
+    const rel = 'scripts/sdd-lifecycle/huerfano-de-prueba.mjs'
+    const body = 'export const nadieMeImporta = 1\n'
+    fs.writeFileSync(path.join(SANDBOX, rel), body)
+    fs.writeFileSync(path.join(SANDBOX, 'scaffold', rel), body)
+    try {
+      assert.notEqual(runGate('scripts/scaffold/source-reachability.mjs'), 0, 'un archivo que nada carga pasó como alcanzable')
+    } finally {
+      fs.rmSync(path.join(SANDBOX, rel), { force: true })
+      fs.rmSync(path.join(SANDBOX, 'scaffold', rel), { force: true })
+    }
+  })
+
+  it('token-tool-coverage catches a mandatory tool nobody invokes any more', () => {
+    // `context-tombstone` se invoca en una sola superficie. Borrar esa línea es
+    // exactamente el estado que la auditoría de 2026-09-09 encontró vivo: la
+    // herramienta existía, estaba testeada, el benchmark le acreditaba ahorro y
+    // ningún prompt la llamaba.
+    const code = withViolation(
+      '.github/prompts/sdd-apply.prompt.md',
+      (full, original) => fs.writeFileSync(full, original.replace(/context-tombstone/g, 'herramienta-que-no-existe')),
+      'scripts/multi-harness/token-tool-coverage.mjs'
+    )
+    assert.notEqual(code, 0, 'aprobó con una herramienta obligatoria sin una sola invocación')
+  })
+
+  it('registry-sync catches a task on disk that the registry never lists', () => {
+    // El allocator de ids lee el registro. Si el disco tiene una tarea que el
+    // registro no, el siguiente id que reparta ya está tomado.
+    const dir = path.join(SANDBOX, '.tasks/tarea-fantasma/TASK-2099-999')
+    fs.mkdirSync(dir, { recursive: true })
+    fs.writeFileSync(path.join(dir, 'spec.md'), '# fantasma\n')
+    try {
+      assert.notEqual(runGate('scripts/sdd-lifecycle/registry-sync.mjs'), 0, 'el registro y el disco discreparon y salió 0')
+    } finally {
+      fs.rmSync(path.join(SANDBOX, '.tasks/tarea-fantasma'), { recursive: true, force: true })
+    }
   })
 })
