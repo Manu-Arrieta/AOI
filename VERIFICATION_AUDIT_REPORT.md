@@ -1,5 +1,16 @@
 # AOI v4.0.0 Real-World Verification Audit Report
 
+> [!WARNING]
+> **Documento histórico. No describe el estado actual del repositorio.**
+> Certifica la corrida del 2026-09-02 y no se volvió a emitir desde entonces:
+> sus cifras —148/148 tests y 205/205 archivos en paridad— quedaron atrás
+> (hoy son 798 y 317), y auditorías posteriores del propio repositorio
+> encontraron defectos abiertos que este informe no podía conocer.
+> Un "0 defectos · 0 GAPs" sin fecha de vigencia se lee como permanente, y
+> eso es justo lo que no es. La comparación viva está en
+> [`AOI_REAL_WORLD_VERIFICATION_MATRIX.md`](AOI_REAL_WORLD_VERIFICATION_MATRIX.md)
+> y en `docs/internal/audits/`.
+
 **Ejecutado por:** Antigravity Autonomous Agent (Google DeepMind)
 **Workspace de Prueba:** `/Users/equinox/Desktop/AOI TESTS`
 **Fecha de Ejecución:** 2026-09-02

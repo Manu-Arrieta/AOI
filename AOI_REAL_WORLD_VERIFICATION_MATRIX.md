@@ -1,8 +1,9 @@
 # Protocolo Autónomo de Instalación, Verificación y Stress-Testing de AOI
-**AOI (Agentic Operational Infrastructure) v2.0.0 + Spatiotemporal Composability Runtime**  
+**AOI (Agentic Operational Infrastructure) + Spatiotemporal Composability Runtime**  
+**Versión bajo prueba:** la que devuelva `git describe --tags` en el repositorio de origen.
+Anotala en el reporte: sin ella, una corrida no se puede comparar contra ninguna otra.  
 **Ubicación de Trabajo:** `/Users/equinox/Desktop/AOI TESTS`  
 **Modo de Ejecución:** 100% Autónomo (Zero-Human Intervention)  
-**Fecha:** 2026-08-29  
 
 ---
 
@@ -40,7 +41,9 @@ pnpm install
 ### Paso 0.2: Validación Inmediata del Entorno Instalado
 Ejecuta la certificación inicial para asegurar que el ambiente está listo:
 ```bash
-# 1. Validar paridad espejo de Scaffold (debe ser 157/157 OK inicial, 158/158 tras nueva tarea)
+# 1. Validar paridad espejo de Scaffold. El gate imprime cuántos archivos gobierna
+#    y sube con cada archivo nuevo: la cifra correcta es la que él reporta, no una
+#    constante en esta prosa. Lo que se exige es exit 0 y 0 divergencias.
 node scripts/scaffold/validate-scaffold-parity.mjs
 
 # 2. Auditar firmas del Gateway MCP Compressor
