@@ -608,11 +608,14 @@ Guardá como `$WORK/wiring.mjs` y corré con `cwd` en el árbol a auditar:
 import fs from 'node:fs'
 import path from 'node:path'
 
+const IGNORAR = new Set(['node_modules', '.git', '.tasks', '.resources'])
 const walk = (d, o = []) => {
   if (!fs.existsSync(d)) return o
   for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+    if (IGNORAR.has(e.name)) continue
     const p = path.join(d, e.name)
-    if (e.isDirectory()) { if (e.name === 'node_modules') continue; walk(p, o) } else o.push(p)
+    if (e.isDirectory()) walk(p, o)
+    else o.push(p)
   }
   return o
 }
@@ -629,7 +632,7 @@ const code = walk('scripts').filter((f) => f.endsWith('.mjs')).map((f) => [f, fs
 console.log('Fuentes .mjs (sin tests):', srcs.length)
 for (const s of srcs) {
   const base = path.basename(s)
-  const enPkg = pkg.includes(s)
+  const enPkg = pkg.includes(s) || pkg.includes(base)
   const enProsa = prosa.includes(base) || raiz.includes(base)
   const importado = code.some(([f, t]) => f !== s && !f.endsWith('.test.mjs') && t.includes(base))
   const soloTest = code.some(([f, t]) => f.endsWith('.test.mjs') && t.includes(base))
@@ -947,6 +950,13 @@ echo "bash: $(bash -c 'ls scripts/**/*.test.mjs 2>/dev/null | wc -l')"
 
 Si los dos números difieren, tu shell no soporta `globstar` y **todo conteo de archivos que
 hagas con `**` sin comillas está mal**.
+
+### A.10 Comandos auxiliares y portabilidad POSIX (`timeout`, `fd`, `md5` vs `cmp`)
+
+Diferentes sistemas operativos y harnesses ejecutan en shells con distintos comandos instalados:
+- **`timeout`**: Es parte de GNU Coreutils. En macOS vanilla sin Homebrew no existe de forma nativa. Todo script del protocolo que invoque `timeout` debe verificar su existencia (`command -v timeout >/dev/null 2>&1`) o ejecutar el comando directamente para no generar un falso fallo instrumental.
+- **`fd`**: Es un binario externo (`fd-find`). Si el entorno no lo tiene, el equivalente universal POSIX es `find "$DIR" -name "*$PATTERN*"`.
+- **`md5` vs `cmp`**: macOS y BSD usan `md5 -q "$f"`, mientras que Linux usa `md5sum "$f"`. Para comprobar si dos archivos son byte-idénticos de forma 100% portable y en 0 tokens, usá la primitiva POSIX `cmp -s "$a" "$b"`.
 
 ---
 

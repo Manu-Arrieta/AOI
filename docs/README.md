@@ -24,6 +24,10 @@ Bienvenido al repositorio de documentación arquitectónica, metodológica y ope
 
 ## 🛡️ Gobernanza y Verificación
 
+### 🔬 [Protocolo de Auditoría Comparativa](internal/audits/PROTOCOLO_AUDITORIA_COMPARATIVA.md)
+* **Procedimiento Operativo Canónico de Auditoría Multi-Harness**
+* **Resumen:** Procedimiento determinista para auditar cualquier versión de AOI contra otra en rendimiento, uso de herramientas, ahorro de tokens y comportamiento SDD, regido por la regla de reproducibilidad estricta, descomposición de cuatro términos sin residuo, pruebas de falso verde y verificación cruzada de bandas de contexto.
+
 ### 🧪 [Matriz de Verificación en el Mundo Real](../AOI_REAL_WORLD_VERIFICATION_MATRIX.md)
 * **Resumen:** Protocolo de validación integral y los 8 invariantes operativos de AOI probados bajo condiciones reales.
 
