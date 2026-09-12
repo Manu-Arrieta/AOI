@@ -1,5 +1,9 @@
 # Protocolo de Auditoría Comparativa de AOI
 
+**Versión del Protocolo:** `v2.3.0`  
+**Fecha de Vigencia:** 2026-09-12  
+**Estado:** Estándar Canónico Operativo de Auditoría Multi-Harness  
+
 **Qué es.** El procedimiento completo para auditar una versión de AOI contra otra en
 rendimiento, funcionamiento entre componentes, uso de herramientas, ahorro de tokens y
 comportamiento del ciclo SDD. Está escrito para que lo ejecute un agente autónomo en
