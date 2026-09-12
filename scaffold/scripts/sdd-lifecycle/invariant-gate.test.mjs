@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
 import {
   auditInvariantCoverage,
@@ -181,7 +182,7 @@ describe('toda invocación documentada del gate lleva --exit-code', () => {
   // riesgo es el otro: que alguien copie el comando a un prompt sin el flag y
   // deje un FAIL que ninguna cadena de `&&` nota. La prosa es ejecutable, así
   // que el flag es parte del contrato, no un detalle de estilo.
-  const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..')
+  const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
   const SUPERFICIES = ['.github/prompts', '.github/agents', '.github/instructions', '.github/skills']
   const INVOCACION = /node\s+scripts\/sdd-lifecycle\/invariant-gate\.mjs[^\n`]*/g
 
