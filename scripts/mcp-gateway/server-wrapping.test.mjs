@@ -14,7 +14,9 @@
 
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
+import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
 import { auditServerWrapping, generateCompactSignature, validateGatewayConfig } from './setup-mcp-gateway.mjs'
@@ -94,4 +96,44 @@ describe('the gateway config itself', () => {
     assert.match(generateCompactSignature('icm_recall'), /icm_recall\(query/)
     assert.equal(generateCompactSignature('tool_desconocida'), 'tool_desconocida(params: object): any')
   })
+})
+
+describe('ningún flag puede saltear la auditoría del Invariante 1', () => {
+  // La auditoría vivía dentro del `else`, así que `--signatures` imprimía las
+  // firmas y salía 0 sin mirar un solo servidor. El Paso 0.2 del protocolo de
+  // verificación invoca exactamente esa rama: el paso que debía certificar el
+  // Invariante 1 era un verde vacío. Se prueba corriendo el CLI de verdad
+  // contra un workspace con un servidor directo.
+  const CLI = path.join(REPO, 'scripts/mcp-gateway/setup-mcp-gateway.mjs')
+
+  /** Workspace mínimo: la config que el CLI busca, más un mcp.json elegido. */
+  function workspaceWith(servers) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-gateway-'))
+    fs.mkdirSync(path.join(dir, 'scripts/mcp-gateway'), { recursive: true })
+    fs.mkdirSync(path.join(dir, '.vscode'), { recursive: true })
+    fs.copyFileSync(
+      path.join(REPO, 'scripts/mcp-gateway/mcp-gateway.config.json'),
+      path.join(dir, 'scripts/mcp-gateway/mcp-gateway.config.json'),
+    )
+    fs.writeFileSync(path.join(dir, '.vscode/mcp.json'), JSON.stringify({ servers }))
+    return dir
+  }
+
+  const DIRECTO = { raw: { command: 'icm', args: ['serve'] } }
+  const ENVUELTO = { proxied: { command: 'mcp-compressor', args: ['-c', 'high', '--', 'icm', 'serve'] } }
+
+  for (const flags of [[], ['--signatures'], ['--filter-coeffects', 'icm_recall']]) {
+    const etiqueta = flags.length ? flags.join(' ') : '(sin flags)'
+
+    it(`falla con un servidor directo bajo ${etiqueta}`, () => {
+      const r = spawnSync(process.execPath, [CLI, ...flags], { cwd: workspaceWith(DIRECTO), encoding: 'utf8' })
+      assert.equal(r.status, 1, `${etiqueta} certificó un servidor conectado directo`)
+      assert.match(r.stderr, /Invariante 1/)
+    })
+
+    it(`pasa con todo envuelto bajo ${etiqueta}`, () => {
+      const r = spawnSync(process.execPath, [CLI, ...flags], { cwd: workspaceWith(ENVUELTO), encoding: 'utf8' })
+      assert.equal(r.status, 0, r.stderr)
+    })
+  }
 })
