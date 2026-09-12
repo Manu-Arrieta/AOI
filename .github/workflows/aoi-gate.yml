@@ -32,5 +32,12 @@ jobs:
       - name: Run Global Test Suite & Scaffold Parity Check
         run: pnpm test
 
+      # El trinquete de mutación tarda minutos, así que quedó fuera de `pnpm test`
+      # para no castigar cada corrida local — y con eso dejó de dispararse en
+      # ningún lado. Un trinquete que nadie acciona no trinca: la cobertura puede
+      # aflojarse sin que nada lo note. Acá sí corre, en cada push y cada PR.
+      - name: Mutation Ratchet (la cobertura no puede aflojarse)
+        run: pnpm aoi:mutation
+
       - name: Build Production Dashboard
         run: pnpm build:dashboard

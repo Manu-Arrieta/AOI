@@ -1,7 +1,7 @@
 ---
 name: "Code Safety Protocol"
 description: "Prevents destruction of existing business logic. Agents must understand context before making changes and verify nothing is broken."
-applyTo: "**/*.{ts,js,vue,py,sh,ps1,json,cs,java,go,rb,php,rs}"
+applyTo: "**/*.{ts,js,mjs,vue,py,sh,ps1,json,cs,java,go,rb,php,rs}"
 ---
 
 # Code Safety Protocol — MANDATORY
