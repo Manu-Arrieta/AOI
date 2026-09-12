@@ -17,7 +17,7 @@ When delegating work to another agent, the caller MUST follow this protocol. NO 
 
 Consult the Agent Registry below to find:
 - `model` — exact value for the `runSubagent` parameter
-- `skillPath` — skill file the subagent MUST read as its first action
+- `{SKILL_PATH}` — no se lista: es derivado, ver la nota del Registry
 
 ## Step 2 — Construct Sanitized Payload (MANDATORY)
 
