@@ -382,10 +382,47 @@ EOF
 
 ---
 
-## 5.0 Línea Base de Benchmark — Ciclo 2026-09-11 · rama `perf/x6-band` (ejecutado en AOI TESTS)
+## 5.0 Línea Base de Benchmark — Ciclo 2026-09-11 · rama `fix/auditoria-2026-09-11` (ejecutado en AOI TESTS)
 
 > [!IMPORTANT]
 > **Ésta es la línea base vigente.** El próximo ciclo se compara contra estos números.
+> Versión instalada: `v2.2.0-53-g2abdaee` más los arreglos de la auditoría.
+> Anotá siempre el `git describe --tags` de lo que instalaste: sin eso la corrida no
+> se puede comparar contra ninguna otra.
+
+**Instalación real, no worktree.** `setup.sh -y --harness all` sobre `/Users/equinox/Desktop/AOI TESTS`,
+corrido dos veces sobre el mismo destino sin efectos distintos — la idempotencia quedó
+ejercitada de paso.
+
+| Medición | Valor | Nota |
+| :--- | ---: | :--- |
+| **PISO** por ciclo | **86.873** | idéntico al medido en el repositorio |
+| **TECHO** por ciclo | **103.384** | |
+| Banda ×6 universal | **54.348** | 62,6% del piso, 8 archivos |
+| Huella de masa repetida | **`8e7b013002e23b4a`** | cambió respecto de `007747800624a481`: el arreglo tocó `agent-delegation`, que está en la banda |
+| Payload base → optimizado | **21.148 → 4.696** | **16.452 ahorrados · 77,8%** |
+| Fidelidad del payload | **6 de 6 fases reales** | 0 fixtures, 0 omitidas — primera corrida sin ninguna de las dos |
+| Paridad en la instalación | **322/322** | repositorio: 320/320 |
+| Suite en la instalación | **740 pass · 1 skip** | repositorio: 801 pass. El skip está autodocumentado |
+| `aoi:doctor` | **11/11** | |
+| Compuertas con exit 0 | **11/11** | |
+
+**Las fases 2 y 5 se midieron por primera vez sobre artefactos reales.** En el worktree
+daban `fixture` y `skipped` porque no hay tareas de verdad ahí. La instalación sí las tiene,
+y por eso el payload base sube de 20.870 a 21.148: no es una regresión, es la desaparición
+del último dato inventado del benchmark.
+
+### Diferencia entre repositorio e instalación, explicada
+
+La suite corre 801 tests en el repositorio y 740 en la instalación. La diferencia son los
+9 archivos de `scripts/conf/`, que prueban al instalador y legítimamente no se envían;
+`aoi:test-globs` lo reporta en modo lenient y lo tolera. Correr el protocolo sobre la
+instalación es lo que hizo visible que el resumen de ese gate se contradecía a sí mismo,
+defecto que ninguna corrida dentro del repositorio podía encontrar.
+
+---
+
+## 5.0.bis Línea base anterior — Ciclo 2026-09-11 · rama `perf/x6-band`
 
 | | Antes | **Ahora** | Δ |
 | :--- | ---: | ---: | ---: |
