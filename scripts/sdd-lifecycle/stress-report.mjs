@@ -18,7 +18,7 @@
  * whether what one phase produces is what the next can consume.
  */
 
-import { auditContextBudget, formatBudgetSummary, toBudgetRows } from './context-budget.mjs'
+import { auditContextBudget, formatBudgetSummary, formatHarnessBands, harnessSkillBands, toBudgetRows } from './context-budget.mjs'
 import { formatCacheReport, partitionSurface, surfaceDigest, surfaceLoadMap } from './cache-prefix.mjs'
 import { formatHandoffChain } from './phase-handoffs.mjs'
 import { formatTotals, toTableRows } from './token-accounting.mjs'
@@ -38,6 +38,9 @@ export function printExecutiveSummary(root, ledger) {
   const budget = auditContextBudget(root)
   console.table(toBudgetRows(budget))
   console.log(formatBudgetSummary(budget, ledger.totals.optimizedTokens))
+
+  console.log(`\n${THIN}`)
+  console.log(formatHarnessBands(harnessSkillBands(root)))
 
   console.log(`\n${THIN}`)
   const surface = partitionSurface(surfaceLoadMap(root))
