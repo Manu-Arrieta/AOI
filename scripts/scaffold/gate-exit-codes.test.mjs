@@ -14,65 +14,37 @@
  * Each case builds an isolated copy of the repository, injects the exact
  * violation the gate claims to catch, and runs the real CLI. The copy is what
  * makes this safe: fault injection never touches the working tree.
+ *
+ * El instrumental de inyección vive en `failure-injection.mjs` desde que el
+ * protocolo de auditoría comparativa lo nombra como el patrón a reusar: era
+ * privado de este archivo, y una instrucción que manda importar algo que no se
+ * puede importar es una instrucción que nadie puede seguir.
  */
 
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { after, before, describe, it } from 'node:test'
+import {
+  append,
+  prepend,
+  runGate as runGateIn,
+  sandboxFrom,
+  withViolation as withViolationIn,
+} from './failure-injection.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
-/** Directories that would make the copy enormous and that no gate reads. */
-const SKIP = new Set(['node_modules', '.git', '.nuxt', 'dist', '.venv'])
-
 let SANDBOX = ''
 
-/** Recursively copies the repository into a throwaway directory. */
-function mirror(src, dest) {
-  fs.mkdirSync(dest, { recursive: true })
-  for (const e of fs.readdirSync(src, { withFileTypes: true })) {
-    if (SKIP.has(e.name)) continue
-    const from = path.join(src, e.name)
-    const to = path.join(dest, e.name)
-    if (e.isDirectory()) mirror(from, to)
-    else if (e.isFile()) fs.copyFileSync(from, to)
-  }
-}
-
-/** Runs a gate inside the sandbox and returns its exit code. */
-function runGate(script) {
-  try {
-    execFileSync('node', [script], { cwd: SANDBOX, stdio: 'ignore', timeout: 120000 })
-    return 0
-  } catch (e) {
-    return e.status ?? 1
-  }
-}
-
-/** Applies a mutation, measures the gate, then puts the file back. */
-function withViolation(relFile, mutate, script) {
-  const full = path.join(SANDBOX, relFile)
-  const original = fs.existsSync(full) ? fs.readFileSync(full, 'utf8') : null
-  try {
-    mutate(full, original)
-    return runGate(script)
-  } finally {
-    if (original === null) fs.rmSync(full, { force: true })
-    else fs.writeFileSync(full, original)
-  }
-}
-
-const append = (text) => (full, original) => fs.writeFileSync(full, `${original}\n${text}\n`)
-const prepend = (text) => (full, original) => fs.writeFileSync(full, `${text}\n${original}`)
+/** Atajos atados a la copia de esta suite, para no repetir el root en cada caso. */
+const runGate = (script) => runGateIn(SANDBOX, script)
+const withViolation = (relFile, mutate, script) => withViolationIn(SANDBOX, relFile, mutate, script)
 
 describe('cada compuerta sale distinto de cero ante la violación que dice cazar', () => {
   before(() => {
-    SANDBOX = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-gates-'))
-    mirror(REPO, SANDBOX)
+    SANDBOX = sandboxFrom(REPO, 'aoi-gates-')
   })
 
   after(() => {
@@ -90,6 +62,7 @@ describe('cada compuerta sale distinto de cero ante la violación que dice cazar
       'scripts/multi-harness/validate-agent-routing.mjs',
       'scripts/scaffold/validate-srp.mjs',
       'scripts/scaffold/validate-test-globs.mjs',
+      'scripts/multi-harness/audit-protocol-integrity.mjs',
     ]
     for (const g of gates) assert.equal(runGate(g), 0, `${g} ya falla sin violación inyectada`)
   })
@@ -218,5 +191,35 @@ describe('cada compuerta sale distinto de cero ante la violación que dice cazar
     } finally {
       fs.rmSync(path.join(SANDBOX, '.tasks/tarea-fantasma'), { recursive: true, force: true })
     }
+  })
+
+  it('audit-protocol-integrity catches a script path the protocol still names', (t) => {
+    // La ruta va BARE, sin `node` adelante, que es como están escritas las 24
+    // del bucle de compuertas del protocolo. `reference-integrity` sólo lintea
+    // `node scripts/x.mjs`, así que una ruta desnuda podía morir en silencio:
+    // medido, la mutación sobrevivía verde. Esta es la compuerta que la ve.
+    //
+    // El skip NO es una comodidad: `docs/` no se envía a una instalación, así
+    // que en un workspace instalado no hay protocolo que mutar y `original` es
+    // null. Sin este guard el caso no falla por encontrar el defecto — revienta
+    // con un `TypeError` que no dice nada, y la suite del instalado queda roja
+    // por una razón que no tiene nada que ver con lo que el caso prueba.
+    // Medido: verde 821/821 en el repositorio, 758/761 con 1 fallo en la
+    // instalación, y este era el fallo. Sólo lo vio la Fase 13.
+    const PROTOCOLO = 'docs/internal/audits/PROTOCOLO_AUDITORIA_COMPARATIVA.md'
+    if (!fs.existsSync(path.join(SANDBOX, PROTOCOLO))) {
+      t.skip('workspace instalado: el protocolo no se envía, no hay nada que mutar')
+      return
+    }
+    const code = withViolation(
+      PROTOCOLO,
+      (full, original) =>
+        fs.writeFileSync(
+          full,
+          original.replace('scripts/multi-harness/cache-guard.mjs', 'scripts/multi-harness/cache-guard-fantasma.mjs'),
+        ),
+      'scripts/multi-harness/audit-protocol-integrity.mjs'
+    )
+    assert.notEqual(code, 0, 'el protocolo nombró un script inexistente y la compuerta aprobó')
   })
 })
