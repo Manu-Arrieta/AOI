@@ -82,21 +82,68 @@ export function extractContractRules(facts = [], bicFilter = '') {
 }
 
 /**
+ * ¿ICM contestó que no tiene NADA para esta entidad?
+ *
+ * `icm` no usa códigos de salida: una entidad inexistente devuelve `no facts
+ * for <entity>` en stdout **con exit 0**, indistinguible de una consulta exitosa
+ * si uno sólo mira el código. La única señal es este texto.
+ */
+function noFacts(text) {
+  return /^no facts for /im.test(String(text))
+}
+
+/** Una invocación cruda a `icm facts list`, sin interpretar el resultado. */
+function listFacts(entity, prefix) {
+  const args = ['facts', 'list', entity]
+  if (prefix) args.push('-p', prefix)
+  args.push('--read-only')
+  return execFileSync('icm', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+}
+
+/**
  * Reads the fact table for an entity via the `icm` CLI.
  *
  * Never throws: a broken toolchain is a RESULT the caller has to block on, not
- * an exception to swallow. `reason` exists so exit 2 can say which of the two
- * failures happened — `icm` missing from PATH or `icm` erroring.
+ * an exception to swallow. `reason` exists so exit 2 can say which failure
+ * happened.
+ *
+ * **Distingue "sin contrato" de "entidad desconocida", y esa distinción es un
+ * arreglo, no un detalle.** Medido: `--entity "ENTIDAD-QUE-NO-EXISTE" --exit-code`
+ * salía **0** reportando `SKIPPED`. O sea que un nombre mal escrito —o un
+ * workspace que nunca corrió `/init`— pasaba como "no hay contrato que
+ * incumplir": un falso verde en el gate que existe para cazar falsos verdes.
+ *
+ * El `SKIPPED` documentado sigue siendo válido donde corresponde: una entidad
+ * que ICM CONOCE pero sin hechos `bic.*` es un workspace real que no pasó por
+ * `/sdd-frame`. Ésa no tiene nada que exigir y sale 0. Una entidad que ICM no
+ * conoce no es un contrato vacío: es una consulta que no encontró su objeto.
  *
  * @param {string} entity
  * @returns {{ ok: boolean, text: string, reason?: string }}
  */
 export function readFactsFromIcm(entity) {
   try {
-    const text = execFileSync('icm', ['facts', 'list', entity, '-p', 'bic.', '--read-only'], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    })
+    const text = listFacts(entity, 'bic.')
+    if (noFacts(text)) {
+      // Sin hechos bic.*: ¿la entidad existe y simplemente no tiene contrato,
+      // o no existe? La consulta SIN prefijo lo decide — es la única forma de
+      // preguntarle a ICM si conoce la entidad.
+      let all = ''
+      try {
+        all = listFacts(entity, '')
+      } catch {
+        all = ''
+      }
+      if (noFacts(all) || all.trim() === '') {
+        return {
+          ok: false,
+          text: '',
+          reason:
+            `ICM no conoce la entidad "${entity}": no tiene ningún hecho. ` +
+            'O el nombre está mal escrito, o el workspace nunca corrió /init',
+        }
+      }
+    }
     return { ok: true, text }
   } catch (err) {
     const reason =

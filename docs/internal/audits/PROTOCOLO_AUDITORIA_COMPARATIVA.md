@@ -611,55 +611,50 @@ suma cuatro raíces — `.github/prompts`, `.github/agents`, `.github/instructio
 abrir sesión queda **fuera del piso medido**, y el contraste de 6.2 tampoco lo veía antes de
 la corrección.
 
-Medido en `v2.3.0`, son **1.930 tokens por sesión** que ningún instrumento cuenta — un
-**2,22% del piso de 86.873**. Es chico. El problema no es el tamaño, es la clase: es
-exactamente el defecto que `instruction-scope.mjs` documenta haber cometido con las skills
-— *el costo nunca estuvo mal, nunca se contó* — y un auditor que no lo declara está publicando
-un piso que no es el piso de nadie.
+Medido en `v2.3.0`, son **1.930 tokens por sesión** — un **2,22% del piso de 86.873**. Es
+chico. El problema no es el tamaño, es la clase: es exactamente el defecto que
+`instruction-scope.mjs` documenta haber cometido con las skills — *el costo nunca estuvo mal,
+nunca se contó* — y un auditor que no lo declara está publicando un piso que no es el piso de
+nadie.
 
-Guardá como `$WORK/unmeasured-mass.mjs` y corrélo contra los dos árboles:
+#### Ya no es un script externo: el instrumento lo mide
 
-```javascript
-import fs from 'node:fs'
-import path from 'node:path'
-import { estimateTokens } from '<RUTA_DEL_REPO_AOI>/scripts/sdd-lifecycle/token-accounting.mjs'
+Desde `v2.4.0` **no escribas un script auxiliar para esto.** El número sale del propio
+instrumento, que es donde tiene que estar para que ninguna auditoría pueda olvidarlo:
 
-// La lista de superficies que el harness inyecta y el instrumento NO suma.
-// Si agregás un adapter de harness, entra acá y el número cambia: por eso el
-// paso es un script y no una nota.
-const ADAPTADORES = [
-  '.github/copilot-instructions.md', 'CLAUDE.md', 'AGENTS.md',
-  '.cursorrules', '.clinerules', '.cursor/rules', '.agents/rules',
-]
-
-const walk = (d) => {
-  if (!fs.existsSync(d)) return []
-  if (fs.statSync(d).isFile()) return [d]
-  const o = []
-  for (const e of fs.readdirSync(d, { withFileTypes: true })) {
-    const p = path.join(d, e.name)
-    o.push(...(e.isDirectory() ? walk(p) : [p]))
+```bash
+node -e '
+import("<RUTA_DEL_REPO_AOI>/scripts/sdd-lifecycle/context-budget.mjs").then((m) => {
+  for (const [label, root] of [["BASE", process.argv[1]], ["HEAD", process.argv[2]]]) {
+    const b = m.auditContextBudget(root)
+    console.log(`\n### ${label}`)
+    console.log(m.formatHarnessAdapters(b.adapters, b.floor))
   }
-  return o
-}
-
-for (const [label, root] of [['BASE', process.argv[2]], ['HEAD', process.argv[3]]]) {
-  let tot = 0
-  const rows = ADAPTADORES.map((s) => {
-    const fl = walk(path.join(root, s))
-    const t = fl.reduce((n, f) => n + estimateTokens(fs.readFileSync(f, 'utf8')), 0)
-    tot += t
-    return { Superficie: s, archivos: fl.length, tokens: t }
-  })
-  console.table(rows)
-  console.log(`${label}: ${tot} tokens/sesión inyectados por algún harness y NO contados.`)
-}
+})' "$WORK/base" "$WORK/head"
 ```
 
-**Cómo entra en el informe.** No lo sumes al piso: son dos números distintos y mezclarlos
-vuelve a hacer incomparable todo lo de la Fase 3. Va en la sección de alcance, con esta
-forma: *"el piso reportado excluye $X$ tokens de adaptadores de harness; el piso total de un
-Copilot es de $Y$"*. Y agregá el renglón al checklist de cierre.
+La forma que devuelve `auditContextBudget` — y esto es un **contrato**, no un detalle:
+
+| Campo | Qué es |
+| :--- | :--- |
+| `floor` | El piso de siempre. **No cambia** cuando cambian los adaptadores. |
+| `adapters` | `{ rows, total }` — lo que el piso no cuenta, con una fila por superficie. |
+| `floorWithAdapters` | `floor + adapters.total`. La factura de un Copilot, explícita. |
+
+> [!CAUTION]
+> **No sumes `adapters` a `floor`.** Tienta, es un solo carácter, y rompe la comparación
+> histórica: cada línea base medida antes de `v2.4.0` quedaría incomparable contra las nuevas
+> y el cambio se leería como una regresión de tokens que no ocurrió. Los dos números se
+> reportan por separado, siempre. El test `el piso NO se mueve` de
+> `context-budget-adapters.test.mjs` existe para que ese "arreglo" no pase inadvertido.
+
+Si agregás un adapter de harness nuevo, agregalo a `HARNESS_ADAPTERS` en
+`scripts/sdd-lifecycle/context-budget.mjs`. La lista es una sola y el instrumento la expone:
+una segunda copia en la prosa es una copia que va a derivar.
+
+**Cómo entra en el informe.** Como renglón de **alcance**, con esta forma: *"el piso reportado
+excluye $X$ tokens de adaptadores de harness; el piso total de un Copilot es de $Y$"*. Y
+agregá el renglón al checklist de cierre.
 
 ---
 
@@ -1137,26 +1132,68 @@ diferencia entre esas dos superficies es exactamente lo que este paso existe par
 ### 13.3 Sondas conductuales
 
 ```bash
-( cd "$WORK/head" && node scripts/sdd-lifecycle/behavioral-probes.mjs | tail -5 )
+( cd "$WORK/head" && node scripts/sdd-lifecycle/behavioral-runner.mjs --emit )
 ```
 
 Preguntá: **¿alguien las ejecuta contra un modelo, o sólo se generan?** Sondas que se generan
 y nadie corre declaran conductas que ninguna corrida comprueba.
 
-Contestalo con evidencia, no con impresión — buscá quién las consume:
+Contestalo con evidencia, no con impresión:
 
 ```bash
-rg -n 'behavioral-probes' package.json .github/ docs/ scripts/ --glob '!*.test.mjs'
+rg -n 'behavioral-runner|behavioral-probes' package.json .github/ docs/ scripts/ --glob '!*.test.mjs'
 ```
 
-Medido en `v2.3.0`: `aoi:probes` las **escribe** (25 sondas), ninguna superficie las
-**ejecuta**, y `behavioral-coverage.mjs` sólo verifica que cada escenario tenga su sonda
-declarada. Los "25/25" del changelog `v2.3.0` son un conteo de generación, no una
-certificación de conducta. Escribilo así en el informe.
+#### El runner: emitir y juzgar
+
+Desde `v2.4.0` hay runner, y el reparto de costos es explícito:
+
+| Paso | Comando | Costo |
+| :--- | :--- | :--- |
+| **Emitir** | `pnpm aoi:probes` → `--emit [dir]` | **0 tokens.** Escribe un prompt por sonda más un `index.json` |
+| Responder | *(el harness, con un modelo)* | **Inferencia.** Es el único paso que la cuesta |
+| **Juzgar** | `pnpm aoi:probes:judge <answers.json>` | **0 tokens.** Compara contra `expected`/`forbidden` |
+
+El formato de respuestas es `{ "<id-de-sonda>": "<respuesta>", ... }`.
+
+> [!IMPORTANT]
+> **Una sonda sin respuesta FALLA, no se saltea.** Es el corazón del runner: si un silencio
+> contara como aprobado, la corrida diría "25/25 conductas correctas" sin haber mirado
+> ninguna. Un id en el archivo de respuestas que no sea sonda también falla — es la firma de
+> respuestas de otra versión.
+
+#### El techo de lo que el runner prueba
+
+`expected` está **sobrecargado a propósito**: tiene que aparecer en el contexto de la fase Y
+describir una respuesta. Esa doble obligación lo vuelve una condición **necesaria**, no
+suficiente, y el reporte lo dice por escrito para que nadie lea "25/25" como más de lo que es:
+
+- **Sí prueba:** que la respuesta no es una evasión, que lleva el porqué, y que contiene el
+  patrón que la fase también contiene.
+- **No prueba:** que el modelo haya **usado** la evidencia. Eso necesita un juez humano o
+  adversarial, y cuesta inferencia.
+
+**Si vas a reportar sondas, reportá el techo.** Un `pass` acota el espacio de respuestas
+incorrectas; no lo cierra.
+
+#### La trampa que este paso ya cometió
+
+Dos de las 25 sondas tenían un criterio que aprobaba **la palabra "no"** en cualquier
+respuesta — incluido `"No se."` y una respuesta **invertida** como *"No hay problema,
+salteala"*. Lo encontró el control negativo del runner, no una lectura: el runner habría
+reportado *"25/25 conductas correctas"* sobre respuestas que no decidían nada.
+
+Viene de la sobrecarga: para pasar el test de evidencia el patrón tiene que estar en la prosa,
+y la prosa usa "no"; entonces el patrón terminó midiendo la palabra y no la decisión. Hay dos
+compuertas permanentes en `behavioral-runner.test.mjs` que lo impiden volver:
+
+- `ninguna sonda aprueba una evasión` — batería de 10 no-respuestas contra las 25 sondas.
+- `ninguna sonda aprueba una respuesta sustantiva pero INCORRECTA` — el caso difícil: larga,
+  con porqué, y que decide al revés. Ésa es la que sobrevive al primer filtro.
 
 > [!WARNING]
-> Las sondas se escriben en `/tmp/aoi-probes`. Si vas a compararlas entre corridas, copialas
-> afuera antes del próximo reinicio: ver A.4.
+> Las sondas se escriben en `/tmp/aoi-probes` por defecto. Si vas a comparar respuestas entre
+> corridas, copiá el `index.json` afuera antes del próximo reinicio: ver A.4.
 
 ---
 
@@ -1654,6 +1691,73 @@ Nombrálos en el informe en vez de dejar que ensucien el diff.
 
 > Medido en la corrida del 2026-09-12: `setup.sh` dos veces sobre el mismo destino dio el
 > mismo conjunto de 1280 archivos. La idempotencia quedó ejercitada.
+
+### A.14 Un resultado de `rg` cortado por el ancho del terminal no es un dato
+
+`rg` no corta líneas: las corta el **terminal** al mostrarlas. Si leés el resultado de un `rg`
+en la salida del agente o en una consola angosta, una coincidencia puede aparecer partida, y
+el fragmento visible **parece** el valor.
+
+Costó un hallazgo falso en la auditoría del 2026-09-12. Buscando el tag del contrato se
+imprimió:
+
+```
+payload-md.txt:- `l:never.1 never reports ok when used exceeds limit`
+```
+
+y se anotó en el informe que los tags viajaban mutilados como `l:never.1` — con la
+conclusión de que la coincidencia del gate era *casual y no estructural*. **El archivo decía
+`BIC-2026-001:never.1`.** Lo que se leyó fue la cola de esa cadena tras un corte por ancho.
+
+> [!CAUTION]
+> **Un hallazgo que depende de un valor parcial no se escribe hasta verlo entero.** Verificalo
+> con un comando cuyo resultado no pueda partirse:
+>
+> ```bash
+> rg -n 'l:never' "$DIR"                    # ¿existe el valor mutilado? (vacío = no existe)
+> rg -o '[A-Za-z0-9-]*:never\.[0-9]+' "$DIR" | sort | uniq -c   # el valor completo, contado
+> ```
+>
+> La segunda forma es la que sirve: extrae **sólo** el token que importa, sin contexto que
+> pueda cortarse, y lo cuenta. Un `uniq -c` sobre el token completo es imposible de
+> malinterpretar; una línea de `rg` en una consola angosta, no.
+
+Esto es una variante de A.2, con una diferencia que la hace peor: A.2 produce un **vacío** que
+uno desconfía. Ésta produce un **valor con forma de dato**, y el sesgo de confirmación hace el
+resto. Si el fragmento respalda algo que ya sospechabas, sospechá el doble.
+
+### A.15 En AOI, formatear es un cambio de producto
+
+Un "Format Document" del editor no es cosmético acá, y el 2026-09-12 lo demostró rompiendo
+cuatro cosas de golpe, ninguna visible hasta correr las compuertas:
+
+| Qué rompe | Por qué | Medido |
+| :--- | :--- | :--- |
+| **Paridad** | Se formatea la raíz y no los espejos de `scaffold/` | 11 `CONTENT_MISMATCH` |
+| **SRP** | El reflow **expande** el código y el límite son 300 LOC | `invariant-gate.test.mjs` 245 → 341 |
+| Tests en cascada | Los dos anteriores | suite 829 → 827 pass · 2 fail |
+| Docs legibles | Prettier **alinea las tablas markdown** con relleno | filas de 1122 caracteres, con runs de ~900 espacios |
+
+**La regla:** si hay que formatear, es un **cambio propio**, con la config fijada, **espejado a
+`scaffold/`** y con verificación completa. Nunca mezclado en una rama de auditoría — el diff se
+vuelve ilegible y los hallazgos se pierden entre el ruido.
+
+El repo trae `.prettierrc` (estilo fijado: 80 columnas, sin punto y coma, comillas simples) y
+`.prettierignore`, cuya parte que **carga el peso** es:
+
+```
+scaffold/     # contenido espejado: se regenera copiando, no formateando.
+              # Ignorarlo hace que formatear la raíz deje la paridad ROJA, que es
+              # lo que se quiere: un error visible en vez de un commit silencioso.
+*.md          # la prosa es de formato manual. Un formateador de CÓDIGO no tiene
+              # por qué tocar documentos.
+```
+
+> [!WARNING]
+> **Nada de esto reemplaza a las compuertas.** La paridad y el SRP son los que detectan el
+> daño; la config sólo evita que el daño sea arbitrario. Y si tu editor no tiene Prettier
+> instalado en el proyecto —acá no está en `node_modules`— la config sólo gobierna la extensión
+> del editor, que es exactamente de donde salió el accidente.
 
 ---
 

@@ -115,15 +115,26 @@ describe('invariant-gate unit tests', () => {
     assert.match(report, /SKIPPED/)
   })
 
-  it('readFactsFromIcm reports readability structurally so a broken toolchain cannot pass silently', () => {
+  it('readFactsFromIcm blocks on an unknown entity instead of reporting a clean skip', () => {
+    // Este test tenía la forma correcta y la aserción débil, y eso dejó vivir al
+    // defecto que su propio comentario describía: decía que una lectura fallida
+    // debía bloquear con exit 2 "en vez de una lista vacía que parezca un
+    // SKIPPED limpio" — y `readFactsFromIcm` devolvía `ok: true` con texto vacío
+    // para una entidad inexistente, así que el CLI reportaba SKIPPED y salía 0.
+    //
+    // Medido antes del arreglo: `--entity "ENTIDAD-QUE-NO-EXISTE" --exit-code`
+    // salía **0**. Un typo en el nombre pasaba como "no hay contrato que
+    // incumplir", que es el falso verde que este gate existe para cazar.
+    //
+    // `icm` no usa códigos de salida: contesta `no facts for <entity>` con exit
+    // 0, y la única señal es ese texto.
     const result = readFactsFromIcm('AOI-entity-that-does-not-exist-in-tests')
 
     assert.equal(typeof result, 'object')
     assert.equal(typeof result.ok, 'boolean')
     assert.equal(typeof result.text, 'string')
-    // A failed read MUST explain itself; the CLI turns this into a blocking exit 2
-    // rather than an empty fact list that would look like a clean SKIPPED pass.
-    if (!result.ok) assert.ok(String(result.reason).length > 0)
+    assert.equal(result.ok, false, 'una entidad que ICM no conoce NO es un contrato vacío: es una consulta sin objeto')
+    assert.match(result.reason, /no conoce la entidad/, 'no explica por qué bloqueó')
   })
 })
 
