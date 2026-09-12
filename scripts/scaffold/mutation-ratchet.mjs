@@ -45,11 +45,16 @@ export const MUTATION_FLOOR = {
   // veredicto no tenía un solo test, y 81% una vez cubiertos el veredicto y
   // los seis chequeos. Los cinco helpers de shell que viven en esa misma raíz
   // quedan fuera por AREA_EXTENSIONS — ver el comentario allí.
-  'scripts/multi-harness': 53,
+  // Subió de 53 a 54 con la compuerta `aoi:audit-protocol` y su suite (13 casos),
+  // que le dan a este área 26 mutantes más que antes mataba. Nunca baja.
+  'scripts/multi-harness': 54,
   'scripts/scaffold': 61,
   'scripts/spatiotemporal-runtime': 59,
   'scripts/code-lens': 51,
-  'scripts/mcp-gateway': 57,
+  // Subió de 57 a 71 en la medición del 2026-09-12. El salto NO viene de un
+  // cambio en este área: el gateway no se tocó. Es una mejora de suite que llevaba
+  // tiempo sin medirse, y el trinquete la registra para que no se pierda.
+  'scripts/mcp-gateway': 71,
   'scripts': 81,
   // El dashboard, que no tenía ninguna medición porque corre bajo vitest y no
   // bajo `node --test`. La sonda acepta un runner distinto y enlaza

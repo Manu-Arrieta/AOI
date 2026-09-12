@@ -834,6 +834,27 @@ rg -n 'MUTATION_FLOOR' -A25 scripts/scaffold/mutation-ratchet.mjs
 Las compuertas que no caen en ninguna de esas áreas son las únicas que necesitan que
 fabriques la falla a mano en 9.2. Las demás ya tienen quien las mire.
 
+**Y reportá el resultado, no sólo que corrió.** La salida del ratchet tiene cuatro datos y los
+cuatro van al informe:
+
+| Dato | Por qué importa |
+| :--- | :--- |
+| Score por área contra su piso | Una caída **es un hallazgo crítico**: significa que un cambio aflojó los tests |
+| `N sobreviven` por área | Dónde la suite **no** está atando. Es el mapa de lo que falta cubrir |
+| La suma total | El titular honesto: *"$T$ mutantes, $S$ sobreviven, $K$% matados"* |
+| Qué áreas mejoraron | El ratchet te pide subirlas. **Hacelo**: si no, el trinquete sólo retiene caídas y el progreso se pierde |
+
+> [!IMPORTANT]
+> **Una mejora de score es un cambio de código, no una nota.** Si el ratchet dice *"subieron,
+> actualizá `MUTATION_FLOOR`"*, esa edición va al informe como entregable: sin ella, la próxima
+> medición puede caer al piso viejo sin que nada falle, y la mejora deja de estar protegida.
+
+> [!WARNING]
+> **Los scores bajos NO son un hallazgo por sí mismos.** `MUTATION_FLOOR` los fija "low on
+> purpose rather than aspiration" — registrar dónde están las suites es lo que hace visible la
+> próxima mejora. Reportarlos como deuda cuando coinciden con el piso es inventar un problema;
+> lo que se reporta es **cuántos sobreviven** y **dónde**.
+
 ### 9.1 Cruzar la lista
 
 Sacá la lista de compuertas que `pnpm test` corre y la lista de compuertas que algún test
