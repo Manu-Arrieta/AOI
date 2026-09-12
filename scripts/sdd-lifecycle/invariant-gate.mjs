@@ -146,9 +146,16 @@ function parseArgValue(args, flag) {
 function readEntityFacts(entity) {
   const read = readFactsFromIcm(entity)
   if (!read.ok) {
+    // Las DOS salidas tienen que estar nombradas en las dos formas de bloqueo.
+    // Antes este mensaje sólo ofrecía `--facts-file`, y el de la entidad
+    // inferida sólo `--entity`: un test que exigía "dice cómo desbloquearse"
+    // pasaba en el repositorio y fallaba en la instalación, donde la inferencia
+    // cae en otra rama. El mensaje tiene que ser útil sin importar por cuál de
+    // los dos caminos se llegó.
     process.stderr.write(
       `Invariant Gate BLOCKED: cannot read BIC facts for "${entity}" because ${read.reason}.\n` +
-        'Fix the ICM toolchain or pass --facts-file to audit from a captured table.\n'
+        'Fix the ICM toolchain, confirm the entity with --entity <WORKSPACE>, ' +
+        'or pass --facts-file to audit from a captured table.\n'
     )
     process.exit(2)
   }
