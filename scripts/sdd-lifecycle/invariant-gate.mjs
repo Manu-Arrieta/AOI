@@ -13,79 +13,20 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { collectTestSources, dropUnreachableTests } from './test-reachability.mjs'
+import { resolveWorkspaceEntity } from './workspace-identity.mjs'
 
 // Re-exported: collecting test sources moved to test-reachability.mjs when this
 // file crossed 300 LOC, but it is part of this module's public surface and
 // callers should not have to know where the split landed.
 export { collectTestSources } from './test-reachability.mjs'
 
-/** Fact key shapes written by /sdd-frame on Intent Gate approval. */
-export const NEVER_KEY_PATTERN = /^bic\.([A-Za-z0-9_-]+)\.never\.(\d+)$/
-export const ORACLE_KEY_PATTERN = /^bic\.([A-Za-z0-9_-]+)\.oracle$/
-
-/**
- * Parses the two-column table emitted by `icm facts list <entity>`.
- * @param {string} text
- * @returns {Array<{ key: string, value: string }>}
- */
-export function parseFactTable(text = '') {
-  const facts = []
-  for (const rawLine of String(text).split('\n')) {
-    const line = rawLine.trimEnd()
-    if (!line.trim()) continue
-    if (/^-{3,}$/.test(line.trim())) continue
-    if (/^key\s+value$/i.test(line.trim())) continue
-
-    const match = line.match(/^(\S+)\s{2,}(.*)$/)
-    if (!match) continue
-
-    const key = match[1].trim()
-    const value = match[2].trim()
-    if (key) facts.push({ key, value })
-  }
-  return facts
-}
-
-/**
- * Extracts BIC contract rules (Never Rules + Business Oracles) from ICM facts.
- * @param {Array<{ key: string, value: string }>} facts
- * @param {string} [bicFilter] Optional BIC id to narrow the audit.
- * @returns {Array<{ bicId: string, kind: 'never'|'oracle', tag: string, statement: string }>}
- */
-export function extractContractRules(facts = [], bicFilter = '') {
-  const rules = []
-
-  for (const fact of facts) {
-    if (!fact || typeof fact.key !== 'string') continue
-
-    const never = fact.key.match(NEVER_KEY_PATTERN)
-    if (never) {
-      rules.push({
-        bicId: never[1],
-        kind: 'never',
-        tag: `${never[1]}:never.${never[2]}`,
-        statement: String(fact.value || '').trim(),
-      })
-      continue
-    }
-
-    const oracle = fact.key.match(ORACLE_KEY_PATTERN)
-    if (oracle) {
-      rules.push({
-        bicId: oracle[1],
-        kind: 'oracle',
-        tag: `${oracle[1]}:oracle`,
-        statement: String(fact.value || '').trim(),
-      })
-    }
-  }
-
-  const filtered = bicFilter ? rules.filter((r) => r.bicId === bicFilter) : rules
-  return filtered.sort((a, b) => a.tag.localeCompare(b.tag))
-}
+// Re-exported for the same reason, when the entity-resolution work pushed this
+// file over the line again: reading and parsing the contract is a different
+// question from crossing it against the suite.
+export { NEVER_KEY_PATTERN, ORACLE_KEY_PATTERN, extractContractRules, parseFactTable, readFactsFromIcm } from './contract-facts.mjs'
+import { extractContractRules, parseFactTable, readFactsFromIcm } from './contract-facts.mjs'
 
 /**
  * Audits whether every declared contract rule is referenced by at least one test.
@@ -191,31 +132,27 @@ export function formatInvariantGateReport(audit) {
   return lines.join('\n').trim()
 }
 
-/**
- * Reads the fact table for an entity via the `icm` CLI.
- *
- * @param {string} entity
- * @returns {string}
- */
-export function readFactsFromIcm(entity) {
-  try {
-    const text = execFileSync('icm', ['facts', 'list', entity, '-p', 'bic.', '--read-only'], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    })
-    return { ok: true, text }
-  } catch (err) {
-    const reason =
-      err?.code === 'ENOENT'
-        ? 'the `icm` binary is not on PATH'
-        : `icm exited with an error (${err?.message || 'unknown'})`
-    return { ok: false, text: '', reason }
-  }
-}
-
 function parseArgValue(args, flag) {
   const index = args.indexOf(flag)
   return index !== -1 && args[index + 1] ? args[index + 1] : ''
+}
+
+/**
+ * Reads an entity's fact table, blocking with exit 2 when the ICM toolchain
+ * cannot answer. Never pass silently on a broken toolchain: absence of evidence
+ * is not evidence of compliance. A distinct exit code because "could not read
+ * the contract" and "read it and it failed" need different fixes.
+ */
+function readEntityFacts(entity) {
+  const read = readFactsFromIcm(entity)
+  if (!read.ok) {
+    process.stderr.write(
+      `Invariant Gate BLOCKED: cannot read BIC facts for "${entity}" because ${read.reason}.\n` +
+        'Fix the ICM toolchain or pass --facts-file to audit from a captured table.\n'
+    )
+    process.exit(2)
+  }
+  return read.text
 }
 
 // CLI Execution
@@ -223,8 +160,10 @@ export async function main() {
   const args = process.argv.slice(2)
   if (args.includes('-h') || args.includes('--help')) {
     process.stdout.write(
-      'Usage: node scripts/sdd-lifecycle/invariant-gate.mjs --entity <WORKSPACE> ' +
+      'Usage: node scripts/sdd-lifecycle/invariant-gate.mjs [--entity <WORKSPACE>] ' +
         '[--facts-file <table.txt>] [--tests-dir <dir>] [--bic <BIC-ID>] [--json] [--exit-code]\n' +
+        '\n--entity se resuelve solo (git remote origin, con fallback a\n' +
+        'basename del directorio) cuando no se pasa --entity ni --facts-file.\n' +
         '\nExit codes (with --exit-code):\n' +
         '  0  PASSED or SKIPPED (no BIC facts for this workspace)\n' +
         '  1  FAILED — a declared invariant or oracle has no test asserting it\n' +
@@ -248,20 +187,27 @@ export async function main() {
     }
     factTable = fs.readFileSync(factsFile, 'utf8')
   } else if (entity) {
-    const read = readFactsFromIcm(entity)
-    if (!read.ok) {
-      // Never pass silently on a broken toolchain: absence of evidence is not
-      // evidence of compliance. Blocks with a distinct exit code (2 = tooling).
+    factTable = readEntityFacts(entity)
+  } else {
+    // Ni --entity ni --facts-file: la invocación desnuda. Resuelve sola en vez
+    // de morir por uso, pero ANUNCIA qué entidad eligió y con qué criterio.
+    const resolved = resolveWorkspaceEntity(process.cwd())
+    process.stderr.write(resolved.notice)
+    factTable = readEntityFacts(resolved.entity)
+
+    // Y falla CERRADO si la entidad inferida no tiene contrato. Una entidad
+    // inferida no puede distinguir "la tarea nunca pasó por /sdd-frame" de
+    // "adiviné el nombre equivocado". `SKIPPED` asume lo primero y sale 0; con
+    // un nombre adivinado eso es un pase silencioso, que es justo el defecto
+    // que este gate existe para impedir. Con `--entity` explícito sí vale el
+    // `SKIPPED` documentado: alguien afirmó el nombre.
+    if (extractContractRules(parseFactTable(factTable)).length === 0) {
       process.stderr.write(
-        `Invariant Gate BLOCKED: cannot read BIC facts for "${entity}" because ${read.reason}.\n` +
-          'Fix the ICM toolchain or pass --facts-file to audit from a captured table.\n'
+        `Invariant Gate BLOCKED: la entidad inferida "${resolved.entity}" no tiene hechos bic.*.\n` +
+          `Si "${resolved.entity}" es la correcta y la tarea no pasó por /sdd-frame, confirmala con --entity.\n`
       )
       process.exit(2)
     }
-    factTable = read.text
-  } else {
-    process.stderr.write('Error: provide --entity <WORKSPACE> or --facts-file <path>\n')
-    process.exit(2)
   }
 
   const rules = extractContractRules(parseFactTable(factTable), bicFilter)

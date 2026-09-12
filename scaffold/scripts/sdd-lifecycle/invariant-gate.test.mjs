@@ -183,20 +183,41 @@ describe('toda invocación documentada del gate lleva --exit-code', () => {
   // deje un FAIL que ninguna cadena de `&&` nota. La prosa es ejecutable, así
   // que el flag es parte del contrato, no un detalle de estilo.
   const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
-  const SUPERFICIES = ['.github/prompts', '.github/agents', '.github/instructions', '.github/skills']
+  const SUPERFICIES = [
+    '.github/prompts',
+    '.github/agents',
+    '.github/instructions',
+    '.github/skills',
+    // El alias de npm es una invocación documentada como cualquier otra: está
+    // en la lista de comandos del producto y un agente lo corre tal cual. Hasta
+    // esta auditoría quedaba fuera del barrido —sólo se miraban `.md`— y por eso
+    // sobrevivió un alias sin `--exit-code`: era letra muerta que ninguna
+    // cadena de `&&` podía ver, porque nada ejecuta `pnpm aoi:invariant-gate`.
+    'package.json',
+  ]
+  // Las dos superficies citan distinto y por eso el patrón NO puede cortar en
+  // la comilla: en un `.md` el comando va entre backticks y puede contener
+  // `"{WORKSPACE}"`, mientras que en `package.json` va entre comillas dobles.
+  // Cortar en `"` partía las invocaciones de la prosa justo antes del flag y
+  // hacía fallar este test por un artefacto de parseo, no por un defecto real.
+  // Se corta sólo en fin de línea o backtick, y la puntuación JSON se limpia.
   const INVOCACION = /node\s+scripts\/sdd-lifecycle\/invariant-gate\.mjs[^\n`]*/g
+  const LIMPIAR = /["',\s]+$/
 
   function invocaciones() {
     const out = []
-    const walk = (dir) => {
-      if (!fs.existsSync(dir)) return
-      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        const p = path.join(dir, e.name)
+    const scan = (p) => {
+      for (const m of fs.readFileSync(p, 'utf8').matchAll(INVOCACION)) {
+        out.push({ file: path.relative(REPO, p), cmd: m[0].replace(LIMPIAR, '') })
+      }
+    }
+    const walk = (target) => {
+      if (!fs.existsSync(target)) return
+      if (fs.statSync(target).isFile()) { scan(target); return }
+      for (const e of fs.readdirSync(target, { withFileTypes: true })) {
+        const p = path.join(target, e.name)
         if (e.isDirectory()) { walk(p); continue }
-        if (!e.name.endsWith('.md')) continue
-        for (const m of fs.readFileSync(p, 'utf8').matchAll(INVOCACION)) {
-          out.push({ file: path.relative(REPO, p), cmd: m[0] })
-        }
+        if (e.name.endsWith('.md') || e.name === 'package.json') scan(p)
       }
     }
     for (const s of SUPERFICIES) walk(path.join(REPO, s))
@@ -205,6 +226,15 @@ describe('toda invocación documentada del gate lleva --exit-code', () => {
 
   it('hay al menos una, o el gate dejó de estar cableado al ciclo', () => {
     assert.ok(invocaciones().length > 0, 'ningún prompt ni agente invoca el Invariant Gate')
+  })
+
+  it('el barrido alcanza el alias de npm, que era el que se escapaba', () => {
+    // Control negativo del barrido mismo: si `package.json` sale de
+    // SUPERFICIES, el caso de abajo vuelve a pasar por la razón equivocada.
+    assert.ok(
+      invocaciones().some((i) => i.file === 'package.json'),
+      'el barrido no está leyendo package.json: el alias quedó fuera otra vez'
+    )
   })
 
   it('ninguna omite el flag que convierte FAILED en exit 1', () => {

@@ -80,6 +80,27 @@ describe('invariant-gate answers with three distinct exit codes', () => {
   it('BLOCKS with 2 when given neither --entity nor --facts-file', () => {
     const r = run(GATE, ['--exit-code'])
     assert.equal(r.code, 2)
+    // Bloquear NO alcanza: hay que poder ver qué se intentó auditar. La
+    // entidad se infiere (git remote origin, o basename del directorio), así
+    // que el aviso tiene que decir cuál salió y con qué criterio — o el
+    // llamador no tiene cómo saber si el gate miró donde debía.
+    assert.match(r.stderr, /entidad auto-resuelta "([^"]+)"/, 'no anuncia la entidad inferida')
+    assert.match(r.stderr, /confirmala con --entity/, 'no dice cómo desbloquearse')
+  })
+
+  it('an inferred entity with no contract BLOCKS instead of skipping', () => {
+    // Éste es el filo del diseño. `SKIPPED` sale 0 y significa "la tarea no
+    // pasó por /sdd-frame"; una entidad INFERIDA no puede distinguir eso de
+    // "adiviné el nombre equivocado". Si esto sale 0, el gate aprueba sobre un
+    // nombre que nadie afirmó — el falso verde que el gate existe para cazar.
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-gate-empty-'))
+    try {
+      const r = run(GATE, ['--exit-code'], empty)
+      assert.notEqual(r.code, 0, 'aprobó sobre una entidad inferida y sin contrato')
+      assert.equal(r.code, 2)
+    } finally {
+      fs.rmSync(empty, { recursive: true, force: true })
+    }
   })
 
   it('BLOCKS with 2 when the facts file does not exist', () => {
