@@ -5,11 +5,33 @@
 **Estado:** Estándar Canónico Operativo de Auditoría Multi-Harness  
 **Última Modificación por:** GitHub Copilot (DeepSeek v4 Flash) — meta-auditoría de `v2.2.0-66` → `v2.3.0`  
 
+> ### 🔏 Firma y resumen del ciclo `v2.4.0`
+>
+> | | |
+> | :--- | :--- |
+> | **Auditor** | **GitHub Copilot** · modelo **DeepSeek v4 Flash** (provider DeepSeek) |
+> | **Fecha** | 2026-09-12 |
+> | **Extremos auditados** | `v2.2.0-66-gf4ca363` → `v2.3.0` (`f78888e`), 3 commits, diff de sólo `docs/` |
+> | **Dónde se probó** | Repositorio **+ instalación real** en `AOI TESTS` (Fase 13) |
+> | **Informe** | **[`AOI_AUDIT_2026-09-12_v2.2.0-66_vs_v2.3.0.md`](AOI_AUDIT_2026-09-12_v2.2.0-66_vs_v2.3.0.md)** |
+>
+> **Resumen.** Meta-auditoría del protocolo contra el sistema que describe. La comparación de
+> tokens es **degenerada** — los dos extremos sólo difieren en `docs/`, que ningún instrumento
+> de costo mide — así que el titular no es un ahorro sino la auditoría del protocolo mismo:
+> **11 hallazgos del protocolo** (4 con control negativo reproducible) y **3 del sistema**.
+>
+> **Qué cambió.** 1 compuerta nueva (`aoi:audit-protocol`, cableada en `pnpm test`), 1 módulo
+> nuevo (`scripts/scaffold/failure-injection.mjs`), 4 reglas nuevas de procedimiento (2.0,
+> 2.0.1, 14.3.1, 14.3.2) y 3 trampas nuevas de instrumental (A.11, A.12, A.13).
+>
+> **El piso no se movió: 86.873 tokens**, idéntico al repositorio y a los dos ciclos anteriores.
+> Huella de masa repetida `8e7b013002e23b4a`, también idéntica.
+
 ### Control de Versiones (Changelog)
 
 | Versión | Fecha | Agente / Modelo | Cambios Principales |
 | :--- | :--- | :--- | :--- |
-| `v2.4.0` | 2026-09-12 | GitHub Copilot (DeepSeek v4 Flash) | Meta-auditoría del protocolo contra el sistema que describe, **con la Fase 13 corrida sobre la instalación real**. Arregla el fallback `\|\|` del bucle 8.2 que re-ejecutaba toda compuerta roja (A.11); reemplaza el puntero a helpers no importables por el módulo real `scripts/scaffold/failure-injection.mjs`; incorpora `pnpm aoi:mutation` como instrumento principal de la Fase 8 en vez de inyección artesanal; cierra la masa de prosa que ningún instrumento contaba (§6.5, 1.930 tok/sesión medidos); corrige el estimador y las superficies de `raw-mass.mjs`; declara ubicaciones canónicas, prohíbe escribir en el Escritorio y fija qué se queda en `$TESTS` y qué vuelve al repo (paso 2.0 y 2.0.1); agrega el diff de conjuntos repo↔instalación que la paridad no puede ver (paso 14.3.1); documenta el test que lee `docs/` y rompe en la instalación (paso 14.3.2, A.13); declara el alcance excluido de la Fase 7 con nombres; agrega la compuerta `aoi:audit-protocol` y la Fase 15 de auto-auditoría; corrige contradicciones internas (md5 vs `cmp -s`, "bash + node"). |
+| `v2.4.0` | 2026-09-12 | GitHub Copilot (DeepSeek v4 Flash) | Arregla A.11 (el `\|\|` que re-ejecutaba toda roja), incorpora `pnpm aoi:mutation` a la Fase 8, mide la masa que ningún instrumento contaba (§6.5), fija 2.0 / 2.0.1 / 14.3.1 / 14.3.2, agrega `aoi:audit-protocol` y la Fase 15. → **[informe completo](AOI_AUDIT_2026-09-12_v2.2.0-66_vs_v2.3.0.md)** |
 | `v2.3.0` | 2026-09-12 | Gemini 3.8 Flash (Antigravity) | Portabilidad POSIX universal (`cmp -s` en vez de `md5`, fallback para `timeout` y `fd`), adición de la sección A.10, robustez en `wiring.mjs` con exclusión de `.git/.tasks/.resources`, indexación canónica en `docs/README.md` y certificación de 25/25 sondas conductuales. |
 | `v2.2.0` | 2026-09-11 | Claude 3.5 Sonnet / Multi-Harness | Redacción inicial del protocolo tras la auditoría comparativa `v2.1.0-12` vs `v2.2.0-53`; formalización de la descomposición de cuatro términos, banda $\times 6$ y compuertas de falso verde. |
 
