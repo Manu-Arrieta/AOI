@@ -89,6 +89,31 @@ export function generateCompactSignature(toolName) {
   }
 }
 
+/**
+ * Audits Invariant 1 against the workspace's real `.vscode/mcp.json`.
+ *
+ * Config shape is necessary and nowhere near sufficient: what decides whether
+ * Invariant 1 holds is which servers the workspace actually registers, and
+ * whether each one sits behind the compressor.
+ *
+ * Exits 1 on any server connected directly — absence of the file is not a
+ * failure (there is nothing to wrap), but a direct server is.
+ */
+export function auditWorkspaceWrapping(cwd = process.cwd()) {
+  const mcpPath = path.resolve(cwd, '.vscode/mcp.json')
+  if (!fs.existsSync(mcpPath)) {
+    process.stdout.write(`ℹ  .vscode/mcp.json ausente — sin servidores que verificar.\n`)
+    return
+  }
+  const { wrapped, direct } = auditServerWrapping(JSON.parse(fs.readFileSync(mcpPath, 'utf8')))
+  for (const s of wrapped) process.stdout.write(`   ✅ ${s} → detrás de mcp-compressor\n`)
+  for (const s of direct) process.stderr.write(`   ❌ ${s} → conectado DIRECTO, sin comprimir\n`)
+  if (direct.length > 0) {
+    process.stderr.write(`\nInvariante 1: cada servidor MCP debe registrarse detrás del compresor.\n`)
+    process.exit(1)
+  }
+}
+
 // CLI Execution
 export async function main() {
   const args = process.argv.slice(2)
@@ -123,22 +148,14 @@ export async function main() {
       }
     } else {
       process.stdout.write(`✅ MCP Gateway Config OK (${Object.keys(config.servers).length} servers, ${config.tier1CompactTools.length} compact tools)\n`)
-
-      // Config shape is necessary and nowhere near sufficient. What decides
-      // whether Invariant 1 holds is the workspace's own mcp.json.
-      const mcpPath = path.resolve(process.cwd(), '.vscode/mcp.json')
-      if (!fs.existsSync(mcpPath)) {
-        process.stdout.write(`ℹ  .vscode/mcp.json ausente — sin servidores que verificar.\n`)
-        return
-      }
-      const { wrapped, direct } = auditServerWrapping(JSON.parse(fs.readFileSync(mcpPath, 'utf8')))
-      for (const s of wrapped) process.stdout.write(`   ✅ ${s} → detrás de mcp-compressor\n`)
-      for (const s of direct) process.stderr.write(`   ❌ ${s} → conectado DIRECTO, sin comprimir\n`)
-      if (direct.length > 0) {
-        process.stderr.write(`\nInvariante 1: cada servidor MCP debe registrarse detrás del compresor.\n`)
-        process.exit(1)
-      }
     }
+
+    // El Invariante 1 se audita SIEMPRE, cualquiera sea el flag. Vivía dentro
+    // del `else`, así que `--signatures` imprimía firmas y salía 0 sin mirar un
+    // solo servidor — y el Paso 0.2 del protocolo de verificación invoca
+    // exactamente esa rama. Un flag elige QUÉ se imprime de más, nunca si el
+    // invariante se comprueba.
+    auditWorkspaceWrapping()
   } catch (err) {
     process.stderr.write(`Error reading gateway config: ${err.message}\n`)
     process.exit(1)

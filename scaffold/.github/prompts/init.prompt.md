@@ -171,12 +171,13 @@ For each file, validate: `head -7 .github/instructions/{file}` shows correct YAM
 
 ### Step 8: Verify Skills
 
-Check that all 5 skills exist in `.github/skills/` with valid `SKILL.md`:
+Check that all 6 skills exist in `.github/skills/` with valid `SKILL.md`:
 
 | Skill                  | Directory                              | Purpose                       |
 | ---------------------- | -------------------------------------- | ----------------------------- |
 | `icm`                  | `.github/skills/icm/`                  | ICM protocol & memory systems |
 | `rtk`                  | `.github/skills/rtk/`                  | RTK CLI usage                 |
+| `sdd-entry`            | `.github/skills/sdd-entry/`            | Elegir `/sdd-frame` o `/sdd-new` |
 | `sdd-lifecycle`        | `.github/skills/sdd-lifecycle/`        | SDD phases, gates, artifacts  |
 | `memory-governance`    | `.github/skills/memory-governance/`    | Memory versioning & bundles   |
 | `spec-kit-integration` | `.github/skills/spec-kit-integration/` | Spec-kit commands & templates |

@@ -271,7 +271,7 @@ AOI Doctor verifica de forma determinista:
 - [El Paradigma de la Intención: Behavioral Intent Contracts (BIC)](docs/internal/architecture/BEHAVIORAL_INTENT_CONTRACTS_PARADIGM.md) — Tratado metodológico sobre el estándar agéntico que reemplaza las historias de usuario por contratos conductuales ($\Delta S$, Invariantes "Never Rules", Topología de Actores y Oráculos de Negocio) y la fase Pre-SDD (`/sdd-frame`).
 - [Fundamentos Matemáticos de Spatiotemporal Runtime](docs/internal/architecture/SPATIOTEMPORAL_MATHEMATICAL_FOUNDATIONS.es.md) — Especificación formal de efectos reversibles ($\partial\Gamma$), coefectos ($\Sigma$) y pruebas de solidez.
 - [Notas de la Versión v2.0.0](docs/internal/releases/v2.0.0.es.md) — Arquitectura de bootstrapper ligero y matriz TanStack.
-- [Matriz de Verificación en el Mundo Real](docs/internal/verification/AOI_REAL_WORLD_VERIFICATION_MATRIX.md) — Protocolo de validación integral.
+- [Matriz de Verificación en el Mundo Real](AOI_REAL_WORLD_VERIFICATION_MATRIX.md) — Protocolo de validación integral.
 - [Benchmark de Optimización de Tokens](docs/internal/benchmarks/TOKEN_OPTIMIZATION_BENCHMARK_v2.0.0.es.md) — Métricas y mediciones de ahorro de tokens.
 - [Guía de Custom Endpoints de VS Code](scaffold/.vscode/README.md) — Configuración opcional multi-proveedor (DeepSeek, Zai, Alibaba, MiniMax, NVIDIA).
 

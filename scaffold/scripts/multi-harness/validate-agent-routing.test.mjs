@@ -104,4 +104,26 @@ describe('the shipped registry', () => {
     assert.deepEqual(r.missingFallback, [], 'an agent lost its fallback provider')
     assert.deepEqual(r.badSkillPath, [], 'a routing row points at a missing file')
   })
+
+  it('ninguna superficie inyectada manda a buscar el campo `skillPath`, que ya no existe', () => {
+    // Al borrar la columna derivable quedó viva la instrucción que mandaba a
+    // buscarla: el Paso 1 del protocolo de delegación pedía un `skillPath` que
+    // no está en el registro ni lo emite el constructor de payloads. Una orden
+    // insatisfecible, y en la banda que se inyecta en las seis fases.
+    const superficies = ['.github/instructions', '.github/agents', '.github/prompts', '.github/skills', 'scripts/subagent-context']
+    const culpables = []
+
+    const recorrer = (dir) => {
+      if (!fs.existsSync(dir)) return
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, e.name)
+        if (e.isDirectory()) { recorrer(p); continue }
+        if (!/\.(md|mjs)$/.test(e.name)) continue
+        if (fs.readFileSync(p, 'utf8').includes('skillPath')) culpables.push(p)
+      }
+    }
+    for (const s of superficies) recorrer(path.join(process.cwd(), s))
+
+    assert.deepEqual(culpables, [], 'quedó prosa o código nombrando un campo que el registro no tiene')
+  })
 })

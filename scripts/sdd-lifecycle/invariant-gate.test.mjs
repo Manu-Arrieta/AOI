@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
 import {
   auditInvariantCoverage,
@@ -172,5 +173,43 @@ describe('un contrato contradictorio no se puede satisfacer fijando el punto en 
 
     assert.equal(r.status, 'PASSED')
     assert.equal(r.covered[0].evidence, 'real.test.ts', 'tomó como evidencia el test en disputa')
+  })
+})
+
+describe('toda invocación documentada del gate lleva --exit-code', () => {
+  // Sin `--exit-code` el gate reporta FAILED y sale 0. Es deliberado —hay un
+  // test arriba que lo fija— porque permite inspeccionar sin bloquear. El
+  // riesgo es el otro: que alguien copie el comando a un prompt sin el flag y
+  // deje un FAIL que ninguna cadena de `&&` nota. La prosa es ejecutable, así
+  // que el flag es parte del contrato, no un detalle de estilo.
+  const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
+  const SUPERFICIES = ['.github/prompts', '.github/agents', '.github/instructions', '.github/skills']
+  const INVOCACION = /node\s+scripts\/sdd-lifecycle\/invariant-gate\.mjs[^\n`]*/g
+
+  function invocaciones() {
+    const out = []
+    const walk = (dir) => {
+      if (!fs.existsSync(dir)) return
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, e.name)
+        if (e.isDirectory()) { walk(p); continue }
+        if (!e.name.endsWith('.md')) continue
+        for (const m of fs.readFileSync(p, 'utf8').matchAll(INVOCACION)) {
+          out.push({ file: path.relative(REPO, p), cmd: m[0] })
+        }
+      }
+    }
+    for (const s of SUPERFICIES) walk(path.join(REPO, s))
+    return out
+  }
+
+  it('hay al menos una, o el gate dejó de estar cableado al ciclo', () => {
+    assert.ok(invocaciones().length > 0, 'ningún prompt ni agente invoca el Invariant Gate')
+  })
+
+  it('ninguna omite el flag que convierte FAILED en exit 1', () => {
+    const sinFlag = invocaciones().filter((i) => !i.cmd.includes('--exit-code'))
+
+    assert.deepEqual(sinFlag.map((i) => i.file), [], 'una invocación documentada reporta FAILED y sale 0')
   })
 })

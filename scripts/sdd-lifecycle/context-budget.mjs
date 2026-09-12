@@ -179,3 +179,40 @@ export function toBudgetRows({ rows }) {
     TECHO: r.total,
   }))
 }
+
+/**
+ * Skill band each harness pays per cycle.
+ *
+ * The floor above is the Copilot/Claude bill: it counts `.github/skills` and
+ * `.github/instructions`. The antigravity harness reads neither — `compile-rules`
+ * maps it to `.agents/`, where the skills are DERIVED from the instructions and
+ * are therefore larger on purpose, since for that harness the skill is the only
+ * place the doctrine appears.
+ *
+ * Nothing reported that band, so a cut that shrank `.github/skills` by a quarter
+ * while `.agents/skills` grew by the same order read as a pure saving. It was
+ * one for one harness. Reporting a single number for a multi-harness product is
+ * the same class of error as reporting a ceiling as a floor.
+ */
+export function harnessSkillBands(root, phases = SDD_PHASES) {
+  const band = (dir) =>
+    phases.reduce((n, [phase]) => n + skillsFor(root, phase, dir).reduce((m, s) => m + s.tokens, 0), 0)
+
+  return { github: band('.github/skills'), agents: band('.agents/skills') }
+}
+
+/** Renders the per-harness band so the floor is never read as universal. */
+export function formatHarnessBands(bands) {
+  const delta = bands.agents - bands.github
+  return [
+    'BANDA DE SKILLS POR HARNESS (el piso de arriba es el de Copilot/Claude):',
+    `- Copilot/Claude, lee .github/skills:   ${bands.github.toLocaleString()} tokens por ciclo`,
+    `- Antigravity, lee .agents/skills:      ${bands.agents.toLocaleString()} tokens por ciclo`,
+    `- Diferencia:                           ${delta >= 0 ? '+' : ''}${delta.toLocaleString()}`,
+    '',
+    'Antigravity no lee .github/instructions/, asi que su skill lleva la doctrina',
+    'derivada y pesa mas a proposito. La diferencia no es un defecto: es el precio',
+    'de que ese harness no quede ignorante. Se reporta porque un recorte medido',
+    'solo sobre .github/skills describe el ahorro de un harness y no del producto.',
+  ].join('\n')
+}

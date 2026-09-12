@@ -95,3 +95,37 @@ describe('auditTestGlobs', () => {
     fs.rmSync(root, { recursive: true, force: true })
   })
 })
+
+describe('el modo lenient distingue ausente de vaciado, y lo dice', () => {
+  // La distincion es la razon de ser de los dos modos: un directorio que solo
+  // existe para probar al instalador legitimamente no se envia, mientras que un
+  // directorio presente y sin tests es erosion real. Confundirlos vuelve inutil
+  // al gate en el unico sitio donde el producto corre de verdad.
+  it('tolera un glob cuyo directorio no llego a la instalacion', () => {
+    const root = workspace({ scripts: { 'test:conf': 'node --test scripts/conf/*.test.mjs' } })
+    const r = auditTestGlobs(root)
+
+    assert.equal(r.strict, false, 'sin setup.sh en la raiz deberia ser una instalacion')
+    assert.deepEqual(r.empty, [], 'un directorio no instalado no es un glob vacio')
+    assert.deepEqual(r.absent.map((a) => a.glob), ['scripts/conf/*.test.mjs'])
+  })
+
+  it('sigue fallando si el directorio existe y quedo sin tests', () => {
+    const root = workspace({
+      scripts: { 'test:conf': 'node --test scripts/conf/*.test.mjs' },
+      files: ['scripts/conf/helper.mjs'],
+    })
+    const r = auditTestGlobs(root)
+
+    assert.deepEqual(r.absent, [], 'el directorio esta: no puede reportarse como no instalado')
+    assert.deepEqual(r.empty.map((e) => e.glob), ['scripts/conf/*.test.mjs'])
+  })
+
+  it('en el repo de desarrollo un directorio ausente es una falla, no una tolerancia', () => {
+    const root = workspace({ scripts: { 'test:conf': 'node --test scripts/conf/*.test.mjs' }, devRepo: true })
+    const r = auditTestGlobs(root)
+
+    assert.equal(r.strict, true)
+    assert.deepEqual(r.empty.map((e) => e.glob), ['scripts/conf/*.test.mjs'])
+  })
+})

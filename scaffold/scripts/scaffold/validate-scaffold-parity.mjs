@@ -20,6 +20,10 @@ export const DEFAULT_SYNC_PATHS = [
   'scripts/subagent-context',
   'scripts/sandbox',
   'scripts/scaffold',
+  // Se envia a toda instalacion via scaffold/ pero no estaba gobernado: raiz y
+  // espejo podian derivar sin que nada fallara, que es la misma forma del
+  // protocolo duplicado que esta auditoria encontro divergido.
+  'scripts/code-lens',
   'scripts/memory-sync',
   'scripts/sdd-lifecycle',
   'scripts/mcp-gateway',

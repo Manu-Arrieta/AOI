@@ -183,3 +183,31 @@ describe('compile-rules DERIVES the antigravity copy instead of mirroring it', (
     })
   }
 })
+
+describe('/init verifica exactamente las skills que el repositorio envía', () => {
+  // Nadie ata la lista del prompt al disco, así que cada skill nueva nace sin
+  // verificación: `sdd-entry` se agregó y `/init` siguió diciendo «all 5»
+  // durante todo un ciclo. Una instalación nueva no comprobaba la skill más
+  // reciente y nada fallaba.
+  const PROMPT = '.github/prompts/init.prompt.md'
+
+  const enDisco = () =>
+    fs.readdirSync(path.join(ROOT, '.github/skills'), { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
+      .sort()
+
+  it('nombra cada directorio de .github/skills/', () => {
+    const texto = read(PROMPT)
+    const faltantes = enDisco().filter((s) => !texto.includes(`.github/skills/${s}/`))
+
+    assert.deepEqual(faltantes, [], 'hay skills que /init no verifica: nacen sin compuerta')
+  })
+
+  it('el número que anuncia coincide con lo que hay', () => {
+    const m = read(PROMPT).match(/Check that all (\d+) skills exist/)
+
+    assert.ok(m, 'desapareció la línea que declara cuántas skills verificar')
+    assert.equal(Number(m[1]), enDisco().length, 'el conteo del prompt quedó desfasado del disco')
+  })
+})
