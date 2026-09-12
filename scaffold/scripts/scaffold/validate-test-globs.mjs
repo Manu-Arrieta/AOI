@@ -321,7 +321,16 @@ function main() {
     process.exit(1)
   }
 
-  console.log('✅ Every declared test glob resolves to at least one file.')
+  // El resumen tiene que decir lo mismo que las lineas de arriba. Decia
+  // "Every declared test glob resolves to at least one file" tambien en modo
+  // lenient, donde acababa de listar globs que no resuelven a ninguno: un
+  // instrumento que se contradice a si mismo en la ultima linea, que es la
+  // unica que un operador apurado lee.
+  console.log(
+    absent.length > 0
+      ? `✅ ${checked - absent.length} de ${checked} globs resuelven; ${absent.length} no esta(n) instalado(s) acá, y se tolera.`
+      : '✅ Every declared test glob resolves to at least one file.',
+  )
   console.log('✅ Ningún test queda fuera de todos los runners.')
 }
 
