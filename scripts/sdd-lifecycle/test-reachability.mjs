@@ -79,20 +79,42 @@ export function collectTestSources(dir) {
 /**
  * Partitions test sources into the ones a runner collects and the ones it does not.
  *
+ * **Devuelve TRES estados, no dos, y el tercero es un arreglo medido.** La versión
+ * anterior, ante un `package.json` ausente o ilegible, devolvía `kept: sources` —
+ * o sea, *"no pude determinar la alcanzabilidad"* se trataba como *"todo es
+ * alcanzable"*.
+ *
+ * Una verificación adversarial encontró la consecuencia: con un `package.json`
+ * corrupto, un archivo que ningún runner colecta pasaba a ser **la evidencia de
+ * que el contrato está enforced**, y el Invariant Gate daba PASSED. Contradecía la
+ * doctrina del propio módulo unas líneas más arriba —*"unresolvable is reported,
+ * never assumed reachable"*— aplicada a las specs de vitest y no al
+ * `package.json`.
+ *
+ * `determinable: false` no decide por el llamador: le dice que la pregunta no se
+ * pudo responder, y el Invariant Gate bloquea con exit 2. Seguir sin dropear nada
+ * es correcto —dropear un test real por no poder preguntar sería el mismo error al
+ * revés—, pero **callarlo no lo era**.
+ *
  * @param {string} root repository root
  * @param {Array<{file: string, content: string}>} sources
- * @returns {{ kept: Array, dropped: string[] }}
+ * @returns {{ kept: Array, dropped: string[], determinable: boolean, reason: string }}
  */
 export function dropUnreachableTests(root, sources) {
   let orphans
   try {
     orphans = new Set(findOrphanTests(root).map((o) => path.resolve(root, o.file)))
-  } catch {
-    // No package.json, or an unreadable one: reachability has no answer here,
-    // so every source stands rather than being silently discarded. Dropping a
-    // real test because the question could not be asked would be the same
-    // class of error this module exists to prevent, pointed the other way.
-    return { kept: sources, dropped: [] }
+  } catch (err) {
+    // No package.json, o uno ilegible: la pregunta no se pudo responder. Se
+    // conservan todos los fuentes —dropear un test real por no poder preguntar
+    // sería el mismo error al revés— pero se declara que la respuesta es
+    // INDETERMINADA, para que quien decide no la lea como un sí.
+    return {
+      kept: sources,
+      dropped: [],
+      determinable: false,
+      reason: `no se pudo leer package.json para determinar alcanzabilidad (${err?.message || 'error desconocido'})`,
+    }
   }
 
   const kept = []
@@ -101,5 +123,5 @@ export function dropUnreachableTests(root, sources) {
     if (orphans.has(path.resolve(s.file))) dropped.push(s.file)
     else kept.push(s)
   }
-  return { kept, dropped }
+  return { kept, dropped, determinable: true, reason: '' }
 }

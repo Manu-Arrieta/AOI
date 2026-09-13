@@ -50,7 +50,19 @@ function gateWorkspace({ facts = '', tests = {}, packageJson = null } = {}) {
   for (const [name, body] of Object.entries(tests)) {
     fs.writeFileSync(path.join(root, 'test', name), body)
   }
-  if (packageJson) fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify(packageJson))
+  // Un `package.json` que COLECTA los tests del fixture, y no es un detalle de
+  // conveniencia: el gate ahora bloquea con exit 2 cuando no puede determinar
+  // alcanzabilidad, porque con un `package.json` ilegible un test que ningún
+  // runner ejecuta es indistinguible de evidencia. El fixture no lo escribía, así
+  // que estos casos pasaban apoyados en el fail-open que se acaba de cerrar —
+  // exactamente el defecto que una verificación adversarial encontró.
+  //
+  // Un workspace real tiene `package.json`. El fixture ahora también.
+  // Sin comillas alrededor del glob: `collectTestGlobs` toma los tokens tal como
+  // aparecen, así que `'test/*.test.mjs'` con comillas NO matchea nada y el test
+  // queda huérfano. Un `package.json` real no las lleva; el fixture tampoco.
+  const pkg = packageJson ?? { scripts: { test: 'node --test test/*.test.mjs' } }
+  fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify(pkg))
   return root
 }
 

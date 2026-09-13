@@ -46,14 +46,24 @@ function workspace(facts) {
   SANDBOXES.push(root)
   fs.mkdirSync(path.join(root, 'tests'), { recursive: true })
   fs.writeFileSync(path.join(root, 'tests/a.test.mjs'), 'import {test} from "node:test"\ntest("x",()=>{})\n')
+  // Un `package.json` que colecta los tests, para que estos casos midan lo que
+  // dicen medir. Sin él, la alcanzabilidad es indeterminada y el gate bloquea por
+  // ESA razón —ver el describe de abajo— y no por la entrada que cada caso prueba.
+  fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ scripts: { test: 'node --test tests/*.test.mjs' } }))
   for (const [name, body] of Object.entries(facts)) fs.writeFileSync(path.join(root, name), body)
   return root
 }
 
 /** Corre el gate y devuelve su exit code, nunca a través de un pipe. */
 function exitCode(root, args) {
+  // `--tests-dir` es la RAÍZ del árbol, no la carpeta de tests, y no es un
+  // detalle del fixture: la alcanzabilidad se responde leyendo el `package.json`
+  // del repo, así que si se le pasa un subdirectorio la pregunta se hace en un
+  // lugar donde la respuesta no está. Es la forma documentada de invocar el gate
+  // (`--tests-dir .` desde el árbol que se audita) y los tests viven en `tests/`,
+  // que el glob del `package.json` cubre.
   try {
-    execFileSync('node', [GATE, ...args, '--tests-dir', path.join(root, 'tests'), '--exit-code'], {
+    execFileSync('node', [GATE, ...args, '--tests-dir', root, '--exit-code'], {
       cwd: root,
       stdio: 'ignore',
       timeout: 60000,
@@ -116,5 +126,35 @@ describe('lo que NO debe bloquear, porque bloquear de más rompe el ciclo', () =
   it('un contrato con reglas sin cobertura sigue dando FAILED con 1', () => {
     const root = workspace({ 'good.txt': UNA_REGLA })
     assert.equal(exitCode(root, ['--facts-file', 'good.txt']), 1)
+  })
+})
+
+describe('la alcanzabilidad INDETERMINADA bloquea, no aprueba', () => {
+  // El escenario exacto que una verificación adversarial encontró: con un
+  // `package.json` que no se puede leer, `dropUnreachableTests` devolvía
+  // `kept: sources` —*"no pude determinar"* se leía como *"todo es alcanzable"*—
+  // así que un archivo que ningún runner colecta pasaba a ser LA EVIDENCIA de que
+  // el contrato está enforced, y el gate daba PASSED.
+  //
+  // Contradecía la doctrina del propio `test-reachability.mjs`, escrita unas
+  // líneas más arriba y aplicada a las specs de vitest y no al `package.json`:
+  // *"unresolvable is reported, never assumed reachable"*.
+  it('un package.json ilegible da BLOCKED, no PASSED', () => {
+    const root = workspace({ 'good.txt': 'bic.T1.never.1  El precio nunca baja\n' })
+    fs.writeFileSync(path.join(root, 'package.json'), '{ roto\n')
+    assert.equal(exitCode(root, ['--facts-file', 'good.txt']), 2)
+  })
+
+  it('y sin package.json tampoco puede certificar cobertura', () => {
+    const root = workspace({ 'good.txt': 'bic.T1.never.1  El precio nunca baja\n' })
+    fs.rmSync(path.join(root, 'package.json'))
+    assert.equal(exitCode(root, ['--facts-file', 'good.txt']), 2)
+  })
+
+  it('con el package.json sano, el mismo caso llega al juicio de cobertura', () => {
+    // Control: el bloqueo es por la entrada ilegible, no porque el gate se haya
+    // vuelto un bloqueo permanente.
+    const root = workspace({ 'good.txt': 'bic.T1.never.1  El precio nunca baja\n' })
+    assert.equal(exitCode(root, ['--facts-file', 'good.txt']), 1, 'debería ser FAILED por falta de cobertura')
   })
 })
