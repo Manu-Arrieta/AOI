@@ -400,7 +400,8 @@ corrido dos veces sobre el mismo destino: **1280 archivos antes y después, conj
 | **TECHO** por ciclo | **103.384** | |
 | Banda ×6 universal | **54.348** | 62,6% del piso, 8 archivos |
 | Huella de masa repetida | **`8e7b013002e23b4a`** | idéntica a la del ciclo anterior: la auditoría tocó prosa de `docs/` y código, ninguna superficie inyectada |
-| Payload base → optimizado | **20.958 → 4.608** | **16.350 ahorrados · 78,0%** · **3 corridas, mismo número** |
+| Payload base → optimizado (`--hermetic`) | **18.282 → 4.466** | **13.816 ahorrados** · el modo hermético excluye la Fase 0, que lee el store ICM **vivo** y hacía que el número no fuera función del árbol |
+| Payload con la Fase 0 incluida | 20.691 → 4.607 | Se mide igual, pero **no es comparable entre versiones**: depende del store compartido |
 | Fidelidad del payload | **6 de 6 fases reales** | 0 fixtures, 0 omitidas |
 | Paridad en la instalación | **336/336** | repositorio: 334/334 — **diferencia de 2, explicada abajo** |
 | Suite en la instalación | **pasa · 0 fail · 4 skip** | repositorio: 875 pass · 0 fail · 0 skip |
