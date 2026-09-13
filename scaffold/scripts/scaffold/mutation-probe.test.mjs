@@ -15,9 +15,12 @@ import os from 'node:os'
 import path from 'node:path'
 import { describe, it, after } from 'node:test'
 import {
+  assertEnoughMemory,
+  availableMemoryMB,
   GHOST_MARK,
   ghostPidToReap,
   literalMask,
+  MUTANT_HEAP_MB,
   mutationsFor,
   NO_PID,
   OPERATORS,
@@ -410,6 +413,62 @@ describe('literalMask', () => {
     assert.equal(mask[line.indexOf('/[/]/')], true, 'no tapo la apertura')
     assert.equal(mask[line.lastIndexOf('/')], true, 'no tapo la barra de cierre')
     assert.equal(mask.at(-1), false, 'el flag quedo adentro del literal')
+  })
+})
+
+/**
+ * La precondición de memoria.
+ *
+ * El probe corre en la máquina del operador y sus mutantes pueden asignar sin
+ * freno. Medido el 2026-09-13: con la máquina al 91% de uso, el pico de memoria
+ * de una corrida alcanzó para que el sistema empiece a terminar procesos
+ * ajenos —el Owner lo vio como "se cerraron todas las aplicaciones"— mientras
+ * el probe seguía midiendo como si nada. Un instrumento que daña el entorno
+ * donde mide no es un instrumento, y la única defensa que tiene el probe sobre
+ * eso es negarse a arrancar cuando sabe que no hay lugar.
+ *
+ * `assertEnoughMemory` y `availableMemoryMB` se fijan con casos directos por la
+ * misma razón que `suitePasses`: la decisión se puede atar, el efecto no.
+ */
+describe('precondición de memoria', () => {
+  it('corta cuando hay menos que el mínimo', () => {
+    assert.throws(
+      () => assertEnoughMemory(2048, () => 300),
+      /Memoria reclamable insuficiente/,
+      'no cortó con 300 MB contra un mínimo de 2048'
+    )
+  })
+
+  it('deja pasar cuando alcanza, y devuelve lo que midió', () => {
+    assert.equal(assertEnoughMemory(2048, () => 9000), 9000)
+  })
+
+  it('el borde exacto pasa', () => {
+    // La dirección peligrosa de un `<` mal puesto: cortar una corrida que sí
+    // entraba deja al operador sin medición y sin saber por qué.
+    assert.equal(assertEnoughMemory(2048, () => 2048), 2048)
+  })
+
+  it('en esta máquina mide algo plausible', () => {
+    const mb = availableMemoryMB()
+    assert.ok(Number.isFinite(mb), `no devolvió un número: ${mb}`)
+    assert.ok(mb > 0, `devolvió ${mb} MB, que no puede ser`)
+    // Cota superior: la RAM física. Un error de unidades (páginas contra
+    // bytes) daría un número enorme y la precondición dejaría de cortar nunca.
+    const totalMB = Math.round(os.totalmem() / 1048576)
+    assert.ok(mb <= totalMB, `devolvió ${mb} MB y la máquina tiene ${totalMB} MB`)
+  })
+
+  it('el techo de heap deja margen sobre el uso real medido', () => {
+    // Medido: la suma de TODOS los procesos de `node --test` de una corrida
+    // normal pico en 322 MB, así que uno solo queda muy por debajo. El techo
+    // tiene que estar cómodo por arriba de eso: uno demasiado bajo haría morir
+    // mutantes legítimos por memoria y los contaría como muertos, que infla el
+    // score en la dirección peligrosa.
+    assert.ok(
+      MUTANT_HEAP_MB >= 384,
+      `el techo de ${MUTANT_HEAP_MB} MB queda demasiado cerca del pico medido (322 MB)`
+    )
   })
 })
 

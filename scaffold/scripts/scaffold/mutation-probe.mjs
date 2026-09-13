@@ -282,7 +282,14 @@ export function areaSources(root, area, extensions = DEFAULT_EXTENSIONS) {
 export function suitePasses(cwd, glob, timeout = 180000, runner = null) {
   const [command, args, opts] = runner
     ? [runner.command, runner.args, { cwd: path.join(cwd, runner.cwd ?? '.') }]
-    : ['node', ['--test', ...expand(cwd, glob)], { cwd }]
+    : // La concurrencia se limita a 2. El default de `node --test` es
+      // `availableParallelism() - 1`, que en esta máquina son 11, y con un
+      // mutante que asigna de más el pico de memoria de la corrida es el de
+      // once procesos sumados. Medido: el conjunto de `node --test` pico en
+      // 322 MB con el default, sobre una máquina que ya venía al 91% de uso.
+      // Con 2 el pico baja y, de paso, el veredicto de cada mutante se mide
+      // sin competir por CPU con los otros diez.
+      ['node', ['--test', '--test-concurrency=2', ...expand(cwd, glob)], { cwd }]
 
   // El padre puede ser a su vez un proceso de `node --test`, que inyecta
   // NODE_TEST_CONTEXT y convierte al hijo en un reportero de máquina: no corre
@@ -292,21 +299,20 @@ export function suitePasses(cwd, glob, timeout = 180000, runner = null) {
   delete env.NODE_TEST_CONTEXT
   delete env.NODE_TEST_WORKER_ID
 
-  // Techo de heap, heredado por los nietos via NODE_OPTIONS porque `node --test`
+  // Techo de heap, heredado por los nietos vía NODE_OPTIONS porque `node --test`
   // corre cada archivo en su propio proceso.
   //
-  // Un mutante no necesita el heap entero para responder si el codigo sigue
-  // haciendo lo que dice: las suites reales de este repositorio no llegan ni a
-  // 300 MB. El default de V8 en una maquina de 16 GB ronda los 4 GB, y un
-  // mutante que gira sin freno los pide todos antes de abortar. Medido el
-  // 2026-09-13: 21 abortos por `FatalProcessOutOfMemory` en un dia, y la presion
-  // de memoria que generan es lo que hace que el sistema operativo empiece a
-  // matar procesos que no tienen nada que ver con el probe.
+  // Un mutante no necesita el heap entero para responder si el código sigue
+  // haciendo lo que dice. El default de V8 en una máquina de 16 GB ronda los
+  // 4 GB, y un mutante que gira sin freno los pide todos antes de abortar.
+  // Medido el 2026-09-13: veintiún abortos por `FatalProcessOutOfMemory` en un
+  // día con el default, y la presión que generan es lo que hace que el sistema
+  // operativo empiece a terminar procesos que no tienen nada que ver.
   //
   // El techo no cambia el veredicto —un mutante que no termina ya cuenta como
-  // muerto por el timeout— y convierte una asignacion que amenaza a la maquina
-  // en un fallo contenido y rapido. El margen es 3x sobre el uso real medido,
-  // para que no convierta un mutante legitimo en un falso muerto.
+  // muerto por el timeout— y convierte una asignación que amenaza a la máquina
+  // en un fallo contenido. Va acompañado de `assertEnoughMemory()`: el techo
+  // acota a UN proceso, la precondición cuida a la máquina.
   env.NODE_OPTIONS = [env.NODE_OPTIONS, `--max-old-space-size=${MUTANT_HEAP_MB}`]
     .filter(Boolean)
     .join(' ')
@@ -374,11 +380,93 @@ export function mutantTimeout(baselineMs) {
 /**
  * Techo de heap (MB) para los procesos que corre un mutante.
  *
- * Ver el comentario en `suitePasses`. El valor sale del uso real de las suites
- * de este repositorio (<300 MB) con 3x de margen, para acotar el dano sin
- * convertir un mutante legitimo en un falso muerto.
+ * Ver el comentario en `suitePasses`. El valor sale del uso real medido de las
+ * suites de este repositorio —la suma de todos los procesos de `node --test`
+ * en una corrida normal pico en 322 MB, así que uno solo queda muy por
+ * debajo— con margen para varias veces eso.
+ *
+ * El margen importa en las DOS direcciones y la peligrosa es la de abajo: un
+ * techo demasiado bajo hace que un mutante legítimo muera por falta de memoria
+ * en vez de por un test que falla, y eso se cuenta como mutante muerto e infla
+ * el score. Ante la duda, el techo sube.
  */
-export const MUTANT_HEAP_MB = 1024
+export const MUTANT_HEAP_MB = 512
+
+/**
+ * Memoria reclamable mínima (MB) para que el probe arranque.
+ *
+ * Es una guarda de segundo orden, y conviene decir por qué, porque medir el
+ * problema real desmintió la primera explicación. La máquina del Owner reportó
+ * "se cerraron todas las aplicaciones" durante corridas del probe, y el primer
+ * diagnóstico fue presión de memoria. Al medir: la memoria reclamable era de
+ * siete GB, así que no era eso. Lo que apareció en el log del sistema fue una
+ * tormenta de `mdworker` —los indexadores de Spotlight— muriendo por SIGKILL.
+ *
+ * La causa es AMPLIFICACIÓN DE I/O Y DE PROCESOS, que es una propiedad de este
+ * instrumento y no de la máquina:
+ *
+ *   - `gate-exit-codes.test.mjs` copia el árbol de fuentes a un temporal en su
+ *     `before()`, y ese archivo corre en CADA mutante. Medido: 978 archivos y
+ *     unos 23 MB por copia, o sea unos 161.000 archivos creados y borrados por
+ *     corrida.
+ *   - Cada uno de esos casos corre compuertas con `execFileSync`, unas diecisiete
+ *     invocaciones de `node` por mutante: unos 2.800 procesos por corrida.
+ *   - Todo eso vive en el temporal, así que Spotlight intenta indexarlo y el
+ *     sistema gasta CPU e I/O en indexar archivos que existen para borrarse.
+ *
+ * La memoria sigue valiendo como guarda —un mutante que asigna sin freno pide
+ * su techo entero— pero NO es la causa principal, y dejarlo escrito como si lo
+ * fuera sería el mismo error que este repositorio ya tiene documentado: confundir
+ * el síntoma medido con el mecanismo.
+ *
+ * Leer esto antes de correr el probe en una máquina de trabajo.
+ */
+export const MIN_FREE_MB = 2048
+
+/**
+ * Memoria que el sistema puede reclamar ahora, en MB.
+ *
+ * En macOS `Pages free` solo no sirve: el sistema usa la RAM libre como caché
+ * a propósito y reporta muy poco "libre" en una máquina sana. Lo que importa
+ * es lo reclamable —libre, inactiva y especulativa— que es el número que
+ * Activity Monitor muestra cerca de "disponible".
+ */
+export function availableMemoryMB() {
+  try {
+    const out = execFileSync('vm_stat', { encoding: 'utf8' })
+    const pageSize = Number(/page size of (\d+)/.exec(out)?.[1]) || 4096
+    const pages = (label) => Number(new RegExp(`${label}:\\s+(\\d+)`).exec(out)?.[1]) || 0
+    const reclaimable =
+      pages('Pages free') + pages('Pages inactive') + pages('Pages speculative')
+    if (reclaimable > 0) return Math.round((reclaimable * pageSize) / 1048576)
+  } catch {
+    // No es macOS, o `vm_stat` no está: se cae al dato de Node.
+  }
+  return Math.round(os.freemem() / 1048576)
+}
+
+/**
+ * Corta si la máquina no tiene memoria para sostener la corrida.
+ *
+ * Guarda de segundo orden: la causa principal del daño al entorno es la
+ * amplificación de I/O y de procesos (ver `MIN_FREE_MB`), no la memoria. Esta
+ * corta el caso en que ni siquiera hay lugar para un proceso más.
+ *
+ * @param {number} minMB umbral
+ * @param {() => number} probeFn inyectable para poder fijar el contrato
+ */
+export function assertEnoughMemory(minMB = MIN_FREE_MB, probeFn = availableMemoryMB) {
+  const have = probeFn()
+  if (have < minMB) {
+    throw new Error(
+      `Memoria reclamable insuficiente para correr el probe: ${have} MB, mínimo ${minMB} MB.\n` +
+        `El probe planta un mutante por vez sobre una copia y algunos mutantes asignan sin freno.\n` +
+        `Con la máquina justa de memoria eso termina en presión de memoria y el sistema empieza a\n` +
+        `terminar procesos ajenos al probe. Cerrá lo que no necesites y volvé a intentar.`
+    )
+  }
+  return have
+}
 
 /** La marca que el fixture de `mutation-probe.test.mjs` le pone a su fantasma. */
 export const GHOST_MARK = 'aoi-probe-ghost-'
@@ -522,6 +610,10 @@ export async function probe(root, area, testGlob, limit = Infinity, log = () => 
   })
 
   if (runner) linkDependencies(root, work, ['.', runner.cwd ?? '.'])
+
+  // Antes de plantar nada: si la máquina no tiene memoria para sostener esto,
+  // se corta acá y no a mitad de camino con el sistema reaccionando.
+  assertEnoughMemory()
 
   const startedAt = Date.now()
   const baseline = await suitePasses(work, testGlob, 180000, runner)
