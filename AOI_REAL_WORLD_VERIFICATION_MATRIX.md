@@ -400,11 +400,11 @@ corrido dos veces sobre el mismo destino: **1280 archivos antes y después, conj
 | **TECHO recuperable por cache de prefijo** | **42.277** | no es una promesa: AOI no arma el request ni coloca los cortes, así que el reuso lo decide el harness. Lo que sí es incondicional es el multiplicador |
 | Banda ×6 universal | **56.370** | 8 archivos, 9.395 tok/fase · **el 63,4% del piso es masa repetida** |
 | Huella de masa repetida | **`0b9c49bb3a0cf440`** | cambió respecto de `8e7b013002e23b4a`: la cuarta pasada tocó **cuatro superficies de la banda** (`agent-delegation`, `icm-protocol`, y los dos módulos cuyas cabeceras se corrigieron). Es un cambio **esperado**, no un ruido |
-| Payload base → optimizado (`--hermetic`) | **18.666 → 5.032** | **13.634 ahorrados (73,0%)** · subió respecto de 4.711 y **la atribución está medida:** las Fases 1 y 3 son las únicas que se mueven, y las dos por la razón correcta. La Fase 3 sube de 1041 a **1111** porque dejó de borrar listas de imports (ver A.20, gap 4): son **70 tokens que se pagan a cambio del contrato del archivo**. El resto es la Fase 1, que muestrea `scripts/` y recibió la prosa nueva |
-| Payload con la Fase 0 incluida | 20.691 → 4.852 | Se mide igual, pero **no es comparable entre versiones**: depende del store compartido |
+| Payload base → optimizado (`--hermetic`) | **19.432 → 5.407** | **14.025 ahorrados (72,2%)** · subió respecto de 5.032 y **la causa está medida**: la Fase 3 pasó de `1111` a `1486` **porque el arreglo de contención por symlink agregó código a `resource-operations.ts`**, que es uno de los dos archivos que esa fase mide. El ahorro porcentual baja 0,8 puntos y **es el precio del escape cerrado**: el mismo benchmark que antes premiaba un archivo más corto ahora mide uno que sí contiene |
+| Payload con la Fase 0 incluida | 21.244 → 5.676 | Se mide igual, pero **no es comparable entre versiones**: depende del store compartido |
 | Fidelidad del payload | **6 de 6 fases reales** | 0 fixtures, 0 omitidas |
-| Paridad en la instalación | **342/342** | repositorio: 340/340 |
-| Suite en la instalación | **869 pass · 0 fail · 4 skip** | repositorio: **933 pass · 0 fail · 0 skip** |
+| Paridad en la instalación | **344/344** | repositorio: 342/342 |
+| Suite en la instalación | **881 pass · 0 fail · 4 skip** | repositorio: **945 pass · 0 fail · 0 skip** |
 | `aoi:doctor` | **11/11** | |
 | Compuertas con exit 0 | **14/14** | tres nuevas respecto del primer ciclo: `aoi:audit-protocol`, `aoi:importance` y el gate de mutación |
 | **Invariant Gate** | **✅ PASSED · 3/3** | entidad auto-resuelta `AOI TESTS`, contrato `BIC-2026-001`. **Primera auditoría real de ese contrato**: el alias moría con exit 2 antes del arreglo de S1 |
