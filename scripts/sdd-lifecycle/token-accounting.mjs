@@ -133,8 +133,21 @@ export function formatTotals(ledger) {
   const { rawTokens, optimizedTokens, savedTokens } = ledger.totals
   const pct = rawTokens > 0 ? ((savedTokens / rawTokens) * 100).toFixed(1) : '0.0'
   const counts = provenanceBreakdown(ledger)
+  const total = counts[MEASURED] + counts[FIXTURE] + counts[SKIPPED]
+  // El titular tiene que decir lo mismo que la línea de fidelidad de abajo.
+  // Decía "CICLO SDD COMPLETO" siempre, incluso con una fase omitida: el
+  // porcentaje se calculaba sobre un ciclo al que le faltaba un sexto, y la
+  // única línea que lo aclaraba era la de fidelidad — que es justo la que no
+  // se cita. Un ciclo incompleto no puede encabezar un total como completo.
+  const header =
+    counts[SKIPPED] === 0 && counts[FIXTURE] === 0
+      ? 'TOTAL ACUMULADO POR CICLO SDD COMPLETO:'
+      : `TOTAL ACUMULADO · ${counts[MEASURED]} de ${total} fase(s) sobre artefactos reales` +
+        (counts[FIXTURE] > 0 ? `, ${counts[FIXTURE]} por fixture` : '') +
+        (counts[SKIPPED] > 0 ? `, ${counts[SKIPPED]} omitida(s)` : '') +
+        ' — NO es un ciclo completo:'
   const lines = [
-    'TOTAL ACUMULADO POR CICLO SDD COMPLETO:',
+    header,
     `- Consumo Base Estimado:     ${rawTokens.toLocaleString()} tokens`,
     `- Consumo AOI:               ${optimizedTokens.toLocaleString()} tokens`,
     `- AHORRO TOTAL:              ${savedTokens.toLocaleString()} tokens (${pct}% de reducción neta)`,

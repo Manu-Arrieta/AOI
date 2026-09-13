@@ -87,6 +87,29 @@ describe('provenance reporting', () => {
     ledger.record('a', 'a', { raw: 10, opt: 1, provenance: MEASURED })
     assert.doesNotMatch(formatTotals(ledger), /volumen absoluto no/)
   })
+
+  it('no encabeza como completo un ciclo al que le falta una fase', () => {
+    // Medido en la corrida del 2026-09-13: con `.tasks/` sin tareas, la fase 5
+    // se omite y la 2 cae a fixture, y el bloque igual encabezaba "CICLO SDD
+    // COMPLETO" con el porcentaje calculado sobre un ciclo de cinco sextos. La
+    // línea de fidelidad lo aclaraba, pero es la que no se cita.
+    const ledger = createLedger()
+    ledger.record('a', 'a', { raw: 10, opt: 1, provenance: MEASURED })
+    ledger.record('b', 'b', { raw: 0, opt: 0, provenance: SKIPPED })
+
+    const out = formatTotals(ledger)
+    assert.doesNotMatch(out, /CICLO SDD COMPLETO/)
+    assert.match(out, /NO es un ciclo completo/)
+    assert.match(out, /1 de 2 fase/)
+  })
+
+  it('sí lo encabeza como completo cuando las seis fases son reales', () => {
+    const ledger = createLedger()
+    for (let i = 0; i < 6; i++) ledger.record(`p${i}`, `p${i}`, { raw: 10, opt: 1, provenance: MEASURED })
+    const out = formatTotals(ledger)
+    assert.match(out, /CICLO SDD COMPLETO/)
+    assert.doesNotMatch(out, /NO es un ciclo completo/)
+  })
 })
 
 describe('findRealTaskDir', () => {
