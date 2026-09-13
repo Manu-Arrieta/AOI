@@ -396,16 +396,16 @@ corrido dos veces sobre el mismo destino: **1280 archivos antes y después, conj
 
 | Medición | Valor | Nota |
 | :--- | ---: | :--- |
-| **PISO** por ciclo | **86.873** | idéntico al repositorio **y a las dos líneas base anteriores**: no se movió en tres versiones |
+| **PISO** por ciclo | **86.875** | +2 tokens respecto de 86.873: el arreglo de `importance: high` → `critical` en dos agentes. Es un cambio de prosa **legítimo**, no una regresión: no se movió por otra cosa en tres versiones |
 | **TECHO** por ciclo | **103.384** | |
 | Banda ×6 universal | **54.348** | 62,6% del piso, 8 archivos |
 | Huella de masa repetida | **`8e7b013002e23b4a`** | idéntica a la del ciclo anterior: la auditoría tocó prosa de `docs/` y código, ninguna superficie inyectada |
 | Payload base → optimizado | **20.958 → 4.608** | **16.350 ahorrados · 78,0%** · **3 corridas, mismo número** |
 | Fidelidad del payload | **6 de 6 fases reales** | 0 fixtures, 0 omitidas |
-| Paridad en la instalación | **333/333** | repositorio: 331/331 — **diferencia de 2, explicada abajo** |
-| Suite en la instalación | **788 pass · 0 fail · 4 skip** | repositorio: 852 pass · 0 fail · 0 skip |
+| Paridad en la instalación | **336/336** | repositorio: 334/334 — **diferencia de 2, explicada abajo** |
+| Suite en la instalación | **pasa · 0 fail · 4 skip** | repositorio: 875 pass · 0 fail · 0 skip |
 | `aoi:doctor` | **11/11** | |
-| Compuertas con exit 0 | **13/13** | dos nuevas respecto del ciclo anterior |
+| Compuertas con exit 0 | **14/14** | tres nuevas respecto del primer ciclo: `aoi:audit-protocol`, `aoi:importance` y el gate de mutación |
 | **Invariant Gate** | **✅ PASSED · 3/3** | entidad auto-resuelta `AOI TESTS`, contrato `BIC-2026-001`. **Primera auditoría real de ese contrato**: el alias moría con exit 2 antes del arreglo de S1 |
 
 > [!WARNING]

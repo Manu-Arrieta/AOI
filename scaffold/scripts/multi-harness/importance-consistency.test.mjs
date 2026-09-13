@@ -21,7 +21,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { after, describe, it } from 'node:test'
-import { DECISION_LEVEL, SURFACES, findMismatches, formatVerdict } from './importance-consistency.mjs'
+import { SURFACES, decisionLevelFromProtocol, findMismatches, formatVerdict } from './importance-consistency.mjs'
 
 const SANDBOXES = []
 
@@ -164,12 +164,49 @@ describe('sobre el repositorio real', () => {
     assert.deepEqual(
       findMismatches(REPO).map((m) => `${m.file}:${m.line}`),
       [],
-      `un agente leería esta contradicción en cada tarea (nivel esperado: ${DECISION_LEVEL})`
+      `un agente leería esta contradicción en cada tarea (nivel esperado: ${decisionLevelFromProtocol(REPO)})`
     )
   })
 
   it('verifica sobre las superficies que un agente lee en contexto', () => {
     assert.ok(SURFACES.includes('.github/agents'))
     assert.ok(SURFACES.includes('.github/instructions'))
+  })
+})
+
+describe('lo que la verificación adversarial encontró y ahora está cubierto', () => {
+  it('lee la forma CLI `icm store -i high`, no sólo `importance:`', () => {
+    // La forma CLI es la que `icm-protocol.instructions.md` documenta como
+    // fallback canónico. Una compuerta que no la lee no puede vigilar su propia
+    // fuente, y la primera versión sólo miraba `importance: "X"`.
+    const root = repo({
+      '.github/agents/arq.agent.md': '4. **Store** infra decisions: `icm store -t "t" -c "chose ECS" -i high`\n',
+    })
+    assert.deepEqual(
+      findMismatches(root).map((m) => m.level),
+      ['high']
+    )
+  })
+
+  it('DERIVA el nivel del protocolo en vez de tenerlo hardcodeado', () => {
+    // El encabezado afirmaba que la tabla salía del protocolo y el nivel estaba
+    // fijo en `'critical'`: con el protocolo invertido, la compuerta habría
+    // marcado como error exactamente lo que el protocolo pedía.
+    const root = repo({
+      '.github/agents/arq.agent.md': '9. **Persist architecture**:\n```\nicm_memory_store(\n  importance: "high",\n)\n```\n',
+    })
+    assert.equal(decisionLevelFromProtocol(root), 'critical')
+
+    // Invertido: ahora una decisión de arquitectura se guarda con `high`.
+    const invertido = repo(
+      { '.github/agents/arq.agent.md': '9. **Persist architecture**:\n```\nicm_memory_store(\n  importance: "high",\n)\n```\n' },
+      { protocol: '.github/instructions/icm-protocol.instructions.md' }
+    )
+    fs.writeFileSync(
+      path.join(invertido, '.github/instructions/icm-protocol.instructions.md'),
+      '* `high` → decisión de arquitectura · stack\n* `critical` → spec o plan producido\n'
+    )
+    assert.equal(decisionLevelFromProtocol(invertido), 'high')
+    assert.deepEqual(findMismatches(invertido), [], 'siguió exigiendo el nivel viejo en vez de seguir al protocolo')
   })
 })

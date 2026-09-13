@@ -26,7 +26,7 @@ export { collectTestSources } from './test-reachability.mjs'
 // file over the line again: reading and parsing the contract is a different
 // question from crossing it against the suite.
 export { NEVER_KEY_PATTERN, ORACLE_KEY_PATTERN, extractContractRules, parseFactTable, readFactsFromIcm } from './contract-facts.mjs'
-import { extractContractRules, parseFactTable, readFactsFromIcm } from './contract-facts.mjs'
+import { extractContractRules, noFacts, parseFactTable, readFactsFromIcm } from './contract-facts.mjs'
 
 /**
  * Audits whether every declared contract rule is referenced by at least one test.
@@ -187,6 +187,7 @@ export async function main() {
   const enforceExitCode = args.includes('--exit-code')
 
   let factTable = ''
+  let inferredEntity = ''
   if (factsFile) {
     if (!fs.existsSync(factsFile)) {
       process.stderr.write(`Invariant Gate BLOCKED: --facts-file not found: ${factsFile}\n`)
@@ -201,23 +202,72 @@ export async function main() {
     const resolved = resolveWorkspaceEntity(process.cwd())
     process.stderr.write(resolved.notice)
     factTable = readEntityFacts(resolved.entity)
-
-    // Y falla CERRADO si la entidad inferida no tiene contrato. Una entidad
-    // inferida no puede distinguir "la tarea nunca pasó por /sdd-frame" de
-    // "adiviné el nombre equivocado". `SKIPPED` asume lo primero y sale 0; con
-    // un nombre adivinado eso es un pase silencioso, que es justo el defecto
-    // que este gate existe para impedir. Con `--entity` explícito sí vale el
-    // `SKIPPED` documentado: alguien afirmó el nombre.
-    if (extractContractRules(parseFactTable(factTable)).length === 0) {
-      process.stderr.write(
-        `Invariant Gate BLOCKED: la entidad inferida "${resolved.entity}" no tiene hechos bic.*.\n` +
-          `Si "${resolved.entity}" es la correcta y la tarea no pasó por /sdd-frame, confirmala con --entity.\n`
-      )
-      process.exit(2)
-    }
+    inferredEntity = resolved.entity
   }
 
-  const rules = extractContractRules(parseFactTable(factTable), bicFilter)
+  // ── La guardia de "¿leí algo?", y por qué vive acá y no en una rama ───────
+  //
+  // Estaba sólo en la rama de la entidad INFERIDA, y eso dejaba tres pases
+  // silenciosos que una verificación adversarial encontró ejecutando el gate:
+  //
+  //   1. `--facts-file` con texto que `parseFactTable` no entiende (separado por
+  //      tabs, en formato `key: value`, truncado): todos sus `continue` son
+  //      silenciosos, así que *no pude parsear* se reportaba como *no hay
+  //      contrato* → SKIPPED, exit 0.
+  //   2. `--bic TYPO`: el contrato SÍ tenía hechos, el filtro no matcheó ninguno,
+  //      y el gate decía "No BIC contract facts found for this workspace". Un
+  //      mensaje falso y un exit 0.
+  //   3. Peor: la guardia se evaluaba sobre el conjunto SIN filtrar, así que
+  //      agregar `--bic <typo>` **desactivaba la única comprobación de que había
+  //      leído algo**. Bastaba un argumento de más para apagar el fail-closed.
+  //
+  // La pregunta correcta nunca fue "¿el toolchain contestó?" sino **"¿mi parser
+  // extrajo al menos una regla?"**. Se responde una sola vez, después de parsear,
+  // y vale para los tres caminos de entrada.
+  const parsedRows = parseFactTable(factTable)
+  const allRules = extractContractRules(parsedRows)
+  const rules = bicFilter ? allRules.filter((r) => r.bicId === bicFilter) : allRules
+
+  // Un `--facts-file` que no produce NINGUNA fila es una captura rota: alguien
+  // apuntó el gate a un archivo y el archivo no tenía nada legible. Y si el texto
+  // vino de ICM en un formato inesperado, es lo mismo: el parser espera columnas
+  // separadas por DOS O MÁS espacios, y todos sus `continue` son silenciosos.
+  //
+  // Los dos casos se leían como *no hay contrato* y salían 0. La distinción que
+  // se recupera acá es la que importa: **no es lo mismo no tener contrato que no
+  // poder leerlo**. El marcador de "ICM contestó que no hay hechos" lo posee
+  // `contract-facts.mjs`; acá sólo se lo consulta.
+  const deArchivo = Boolean(factsFile) && parsedRows.length === 0
+  const ilegible = !deArchivo && factTable.trim() !== '' && parsedRows.length === 0 && !noFacts(factTable)
+  if (deArchivo || ilegible) {
+    process.stderr.write(
+      `Invariant Gate BLOCKED: ${deArchivo ? `--facts-file "${factsFile}" no produjo ninguna fila legible.` : 'la tabla de hechos llegó con texto pero no se le pudo extraer ninguna fila.'}\n` +
+        'Revisá la captura, o pasá --entity si querés consultar ICM en vivo.\n'
+    )
+    process.exit(2)
+  }
+
+  if (allRules.length > 0 && rules.length === 0) {
+    process.stderr.write(
+      `Invariant Gate BLOCKED: --bic "${bicFilter}" no coincide con ninguna regla del contrato, que tiene ${allRules.length}.\n` +
+        `Reglas disponibles: ${allRules.map((r) => r.bicId).join(', ')}\n`
+    )
+    process.exit(2)
+  }
+
+  if (allRules.length === 0 && inferredEntity) {
+    // Una entidad INFERIDA sin contrato no puede distinguir "la tarea nunca pasó
+    // por /sdd-frame" de "adiviné el nombre equivocado". `SKIPPED` asume lo
+    // primero y sale 0; con un nombre adivinado eso es un pase silencioso. Con
+    // `--entity` explícito sí vale el `SKIPPED` documentado: alguien afirmó el
+    // nombre.
+    process.stderr.write(
+      `Invariant Gate BLOCKED: la entidad inferida "${inferredEntity}" no tiene hechos bic.*.\n` +
+        `Si "${inferredEntity}" es la correcta y la tarea no pasó por /sdd-frame, confirmala con --entity.\n`
+    )
+    process.exit(2)
+  }
+
   const { kept, dropped } = dropUnreachableTests(testsDir, collectTestSources(testsDir))
   if (dropped.length > 0) {
     // Named out loud: a contract that goes uncovered because its test is

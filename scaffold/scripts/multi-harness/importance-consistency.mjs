@@ -67,13 +67,50 @@ export const SURFACES = ['.github/agents', '.github/prompts', '.github/instructi
 export const DECISION_WORDS =
   /\b(architecture|arquitectura|stack|convention|convenci[oó]n|infra|infrastructure|infraestructura)\b/i
 
-/** El nivel que el protocolo le asigna a una decisión. */
-export const DECISION_LEVEL = 'critical'
+/**
+ * El nivel que el protocolo le asigna a una decisión, LEÍDO del protocolo.
+ *
+ * Lo tenía hardcodeado como `'critical'`, y el encabezado de este archivo
+ * afirmaba que la tabla salía del protocolo. Una verificación adversarial lo
+ * encontró: el nivel no se derivaba de ningún lado, y con el protocolo invertido
+ * la compuerta seguía exigiendo `critical` — habría marcado como error exactamente
+ * lo que el protocolo pedía.
+ *
+ * Se deriva buscando, en la tabla de niveles, cuál mapea a los casos de decisión
+ * que este archivo reconoce. Si el protocolo cambia de criterio, la compuerta
+ * cambia con él; si no se puede leer, cae al valor que el protocolo tiene hoy, y
+ * eso es un default explícito y no una verdad escondida.
+ */
+export function decisionLevelFromProtocol(root) {
+  try {
+    const text = fs.readFileSync(path.join(root, ICM_PROTOCOL), 'utf8')
+    for (const m of text.matchAll(/`(critical|high|medium|low)`\s*→\s*([^\n]+)/g)) {
+      if (DECISION_WORDS.test(m[2])) return m[1]
+    }
+  } catch {
+    // Sin protocolo legible: se sigue verificando con el criterio vigente, y el
+    // veredicto lo dice en vez de fingir que citó una tabla.
+  }
+  return 'critical'
+}
 
 /** Nivel que el protocolo asigna a lo que NO es decisión (progreso, entregable). */
 export const PROGRESS_LEVELS = new Set(['high', 'medium'])
 
-const IMPORTANCE = /importance:\s*"?(critical|high|medium|low)"?/g
+/**
+ * Los niveles aparecen en DOS sintaxis, y la primera versión sólo veía una.
+ *
+ *   `importance: "high"`                      (MCP, la forma que usan los agentes)
+ *   `icm store -t "..." -c "..." -i high`     (CLI, la que documenta el protocolo)
+ *
+ * `.github/instructions/icm-protocol.instructions.md` define la forma CLI como el
+ * fallback canónico, así que una compuerta que no la lee no puede vigilar su
+ * propia fuente. Lo encontró la verificación adversarial.
+ */
+const IMPORTANCE = /(?:importance:\s*"?(critical|high|medium|low)"?|\s-i\s+(critical|high|medium|low)\b)/g
+
+/** La ventana donde se busca el rótulo, en caracteres hacia atrás. */
+const WINDOW = 1500
 
 /** Todo archivo bajo `target`, sea archivo suelto o directorio. */
 export function filesUnder(target) {
@@ -121,6 +158,7 @@ function lastLabel(before) {
  */
 export function findMismatches(root, surfaces = SURFACES) {
   const out = []
+  const DECISION_LEVEL = decisionLevelFromProtocol(root)
   for (const surface of surfaces) {
     for (const file of filesUnder(path.join(root, surface))) {
       if (!file.endsWith('.md')) continue
@@ -128,10 +166,16 @@ export function findMismatches(root, surfaces = SURFACES) {
       const rel = path.relative(root, file)
 
       for (const m of text.matchAll(IMPORTANCE)) {
-        const level = m[1]
+        const level = m[1] || m[2]
         if (level === DECISION_LEVEL) continue
-        const window = text.slice(Math.max(0, m.index - 400), m.index + m[0].length)
-        const callStart = window.lastIndexOf('icm_memory_store')
+        const window = text.slice(Math.max(0, m.index - WINDOW), m.index + m[0].length)
+        // Las DOS formas de llamada, no una: `icm_memory_store(...)` es la MCP y
+        // `icm store -t ...` la CLI. Buscar sólo la primera hacía invisible la
+        // forma que el propio protocolo documenta como fallback.
+        const callStart = Math.max(
+          window.lastIndexOf('icm_memory_store'),
+          window.lastIndexOf('icm store')
+        )
         if (callStart === -1) continue
 
         const label = lastLabel(window.slice(0, callStart))
@@ -144,11 +188,12 @@ export function findMismatches(root, surfaces = SURFACES) {
   return out.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line)
 }
 
-/** Lee la tabla del protocolo, para que el veredicto cite la fuente. */
-export function decisionLevelFromProtocol(root) {
+/** Los casos que el protocolo asocia al nivel de decisión, para poder citarlos. */
+export function protocolCases(root) {
   try {
     const text = fs.readFileSync(path.join(root, ICM_PROTOCOL), 'utf8')
-    const m = /`critical`\s*→\s*([^\n]+)/.exec(text)
+    const level = decisionLevelFromProtocol(root)
+    const m = new RegExp('`' + level + '`\\s*→\\s*([^\\n]+)').exec(text)
     return m ? m[1].trim() : ''
   } catch {
     return ''
@@ -157,7 +202,8 @@ export function decisionLevelFromProtocol(root) {
 
 /** Reporte legible. Devuelve el código de salida. */
 export function formatVerdict(root, mismatches = findMismatches(root)) {
-  const protocolSays = decisionLevelFromProtocol(root)
+  const DECISION_LEVEL = decisionLevelFromProtocol(root)
+  const protocolSays = protocolCases(root)
   const lines = ['=== Consistencia de `importance` contra el protocolo ICM ===']
   if (protocolSays) lines.push(`  El protocolo asigna \`critical\` a: ${protocolSays}`)
 

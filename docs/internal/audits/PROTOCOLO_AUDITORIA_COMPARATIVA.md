@@ -1855,7 +1855,32 @@ cuando alguien agregue una fase que corra otro proceso.
 
 ---
 
+### A.17 Una guardia vive en UNA rama, y un argumento de más la apaga
+
+La verificación adversarial de esta auditoría encontró **seis** caminos por los que el Invariant Gate aprobaba sin haber leído nada. No fue leer código: fue ejecutarlo contra entradas que nadie prueba.
+
+La forma general del defecto, que vale más que los seis casos: **una guardia escrita dentro de una rama protege esa rama y ninguna otra**. La comprobación de "¿extraje al menos una regla?" vivía en el `else` de la entidad inferida. Consecuencias medidas:
+
+| Entrada | Antes | Por qué |
+| :--- | ---: | :--- |
+| `--facts-file` con tabla separada por **tabs** | SKIPPED 0 | `parseFactTable` sólo acepta `\S+\s{2,}` y **todos sus `continue` son silenciosos**: *no pude parsear* se reportaba como *no hay contrato* |
+| `--facts-file` con formato `key: value` | SKIPPED 0 | Igual |
+| `--facts-file` **vacío** | SKIPPED 0 | Igual |
+| `--bic TYPO` sobre un contrato con reglas | SKIPPED 0 | Y con un mensaje **falso**: "No BIC contract facts found" |
+| `--bic TYPO` (el peor) | SKIPPED 0 | La guardia se evaluaba sobre el conjunto **sin filtrar**. **Un argumento de más apagaba el fail-closed.** |
+| Salida de ICM en formato inesperado | SKIPPED 0 | Distinguía `ok`/`no-ok`, nunca "¿cuántas reglas extraje?" |
+
+**La pregunta correcta nunca fue *"¿el toolchain contestó?"* sino *"¿mi parser extrajo al menos una regla?"*.** Se responde una vez, después de parsear, y vale para los tres caminos de entrada. Es lo que el arreglo hace.
+
+> [!CAUTION]
+> **Un `continue` silencioso en un parser es una guardia que no existe.** Si el parser descarta una línea sin dejar rastro, el resultado no es "no pude leerlo": es "no hay nada", y ésas son dos cosas distintas con el mismo exit code. Todo parser que alimente una compuerta tiene que poder decir *cuántas entradas descartó y por qué*.
+
+Y la lección de método: **los seis caminos salieron de ejecutar el gate contra entradas raras**, no de leerlo. Un test escrito por el autor del código prueba lo que al autor se le ocurrió; una lente con mandato de refutar prueba lo que el autor no quiso ver.
+
+---
+
 ## Apéndice B — Adaptación por harness
+
 
 
 ### B.1 GitHub Copilot

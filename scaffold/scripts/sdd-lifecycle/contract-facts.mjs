@@ -88,7 +88,7 @@ export function extractContractRules(facts = [], bicFilter = '') {
  * for <entity>` en stdout **con exit 0**, indistinguible de una consulta exitosa
  * si uno sólo mira el código. La única señal es este texto.
  */
-function noFacts(text) {
+export function noFacts(text) {
   return /^no facts for /im.test(String(text))
 }
 
