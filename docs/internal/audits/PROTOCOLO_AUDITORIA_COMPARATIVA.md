@@ -1229,6 +1229,26 @@ suficiente, y el reporte lo dice por escrito para que nadie lea "25/25" como má
 **Si vas a reportar sondas, reportá el techo.** Un `pass` acota el espacio de respuestas
 incorrectas; no lo cierra.
 
+#### Una corrida no es una medición: reportá el `n`
+
+Una sonda contestada **una vez** no distingue un fallo sistemático de una casualidad del modelo.
+Medido el 2026-09-12: `verify-delegation` falló en la primera corrida —el modelo contestó
+`/sdd-frame` sobre un contexto que dice `Hand off to **@integration-specialist**` **tres veces**—
+y **las dos corridas siguientes contestaron bien**, citando la evidencia correcta.
+
+Con `n=1` ese resultado se puede leer de dos maneras opuestas y no hay forma de elegir: *"la sonda
+detectó un fallo de conducta"* o *"el modelo tuvo una mala pasada"*. Las dos son plausibles y la
+segunda era cierta.
+
+> [!IMPORTANT]
+> **Corré cada sonda al menos dos veces, y reportá el `n` y la dispersión.** Un informe que dice
+> *"23/25"* sin decir cuántas veces corrió cada sonda está reportando una muestra como si fuera
+> una población. Y si el número cambia entre corridas, **eso es el dato**: significa que la
+> conducta no es estable, que es más interesante que el promedio.
+>
+> El costo es inferencia y por eso no se hace siempre. Pero entonces decilo: *"n=1"* es una
+> limitación honesta; presentarlo como un resultado, no.
+
 #### Cuando el criterio se vuelve el problema: la línea que carga la decisión
 
 La lente adversarial demolió la primera versión del juez con dos contraejemplos que **ningún patrón puede distinguir**:

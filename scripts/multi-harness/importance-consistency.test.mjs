@@ -210,3 +210,46 @@ describe('lo que la verificación adversarial encontró y ahora está cubierto',
     assert.deepEqual(findMismatches(invertido), [], 'siguió exigiendo el nivel viejo en vez de seguir al protocolo')
   })
 })
+
+describe('los tres falsos positivos que la lente adversarial encontró', () => {
+  // Una compuerta con más falsos positivos que aciertos se desactiva, y
+  // desactivada es peor que inexistente. Estos tres la hacían inservible: los
+  // tres marcaban líneas CORRECTAS.
+  it('un `stack trace` no es el stack tecnológico', () => {
+    const root = repo({
+      '.github/agents/be.agent.md': '5. **Store** stack traces on failure: `icm_memory_store(topic: "t", importance: "medium")`\n',
+    })
+    assert.deepEqual(findMismatches(root), [])
+  })
+
+  it('un store de PROGRESO con dominio en el rótulo sigue siendo de progreso', () => {
+    // `high` es lo que el protocolo asigna a "tarea completada", y el dominio que
+    // el rótulo mencione no cambia eso.
+    const root = repo({
+      '.github/agents/devops.agent.md': '9. **Store** infra task progress: `icm_memory_store(topic: "t", importance: "high")`\n',
+    })
+    assert.deepEqual(findMismatches(root), [])
+  })
+
+  it('un rótulo pertenece a la llamada que SIGUE, no a la anterior', () => {
+    // `4. Persist progress:` no matchea ningún patrón de rótulo (no lleva
+    // asteriscos), así que heredaba el rótulo de la llamada de arriba y se
+    // reportaba con el nombre equivocado.
+    const root = repo({
+      '.github/agents/arq.agent.md':
+        '7. **Store** architecture decisions: `icm_memory_store(topic: "t", importance: "critical")`\n\n4. Persist progress: `icm_memory_store(topic: "t", importance: "high")`\n',
+    })
+    assert.deepEqual(findMismatches(root), [])
+  })
+
+  it('y el caso verdadero SIGUE detectándose', () => {
+    // Control: los tres arreglos no pueden haber dejado la compuerta ciega.
+    const root = repo({
+      '.github/agents/arq.agent.md': '9. **Persist architecture**: `icm_memory_store(topic: "t", importance: "high")`\n',
+    })
+    assert.deepEqual(
+      findMismatches(root).map((m) => m.level),
+      ['high']
+    )
+  })
+})

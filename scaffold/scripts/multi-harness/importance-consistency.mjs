@@ -65,7 +65,23 @@ export const SURFACES = ['.github/agents', '.github/prompts', '.github/instructi
  * `{WORKSPACE}-architecture`.
  */
 export const DECISION_WORDS =
-  /\b(architecture|arquitectura|stack|convention|convenci[oó]n|infra|infrastructure|infraestructura)\b/i
+  /\b(architecture|arquitectura|convention|convenci[oó]n|infra|infrastructure|infraestructura)\b|\bstack\b(?!\s*trace)/i
+
+/**
+ * Palabras que marcan un store como de PROGRESO, y ganan sobre cualquier otra.
+ *
+ * Un triple falso positivo de una verificación adversarial: `**Store** infra task
+ * progress:` era marcado porque el rótulo nombra el DOMINIO —infra— aunque el
+ * store guarde progreso, y para progreso el protocolo pide justamente `high`. El
+ * encabezado de este archivo dice que la primera versión teñía stores de progreso
+ * que mencionan decisiones en su contenido; el arreglo de entonces movió el
+ * problema al rótulo.
+ *
+ * La regla: si el rótulo dice que el store es de progreso o de cierre, lo es.
+ * `high` es lo que el protocolo asigna a "tarea completada", y el dominio que
+ * mencione no cambia eso.
+ */
+export const PROGRESS_WORDS = /\b(progress|progreso|completed|completado|completion|cierre|closure|status|checkpoint)\b/i
 
 /**
  * El nivel que el protocolo le asigna a una decisión, LEÍDO del protocolo.
@@ -178,7 +194,21 @@ export function findMismatches(root, surfaces = SURFACES) {
         )
         if (callStart === -1) continue
 
-        const label = lastLabel(window.slice(0, callStart))
+        // La ventana del rótulo arranca DESPUÉS de la llamada anterior: un rótulo
+        // pertenece a la llamada que lo sigue, no a la que está dos párrafos más
+        // abajo. Sin ese límite, un `Persist progress:` sin asteriscos —que no
+        // matchea ningún patrón de rótulo— heredaba el rótulo de la llamada
+        // anterior y se reportaba con el nombre equivocado.
+        const antes = window.slice(0, callStart)
+        const previo = Math.max(
+          antes.lastIndexOf('icm_memory_store'),
+          antes.lastIndexOf('icm store')
+        )
+        const label = lastLabel(previo === -1 ? antes : antes.slice(previo))
+        if (!label) continue
+        // El progreso gana: si el rótulo dice que el store es de progreso o de
+        // cierre, lo es, aunque nombre el dominio.
+        if (PROGRESS_WORDS.test(label)) continue
         if (!DECISION_WORDS.test(label)) continue
 
         out.push({ file: rel, line: text.slice(0, m.index).split('\n').length, level, label })
