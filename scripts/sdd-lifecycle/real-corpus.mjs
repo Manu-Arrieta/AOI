@@ -87,6 +87,49 @@ export function buildDiscoveryCorpus(root, { keyword, searchDir = 'scripts', max
  *
  * @returns {{ ok: boolean, failing: string, passing: string }}
  */
+/**
+ * Borra de la salida capturada todo lo que cambia entre dos corridas idénticas.
+ *
+ * Por qué existe, y es un defecto medido, no una precaución. `captureRealTestRun`
+ * corre `node --test` y captura su stdout; ese texto se convierte en el `content`
+ * de los turnos de depuración, que la Fase 3 del stress suite mide.
+ *
+ * Consecuencia medida: el mismo comando sobre el mismo árbol daba
+ * `5844 -> 1051` una vez y `5845 -> 1052` la siguiente, y el total del payload
+ * oscilaba entre 4.683 y 4.684. Eso viola la regla que gobierna todo el protocolo
+ * de auditoría —*un número que no se puede reproducir con un comando no entra en
+ * el informe*— **con un comando que sí es reproducible**: el instrumento medía la
+ * salida de un proceso vivo y la reportaba como aritmética estática.
+ *
+ * Y contamina la comparación entre versiones: un ±1 token en el payload se lee
+ * como una mejora o una regresión que no ocurrió.
+ *
+ * Son TRES fuentes, y la primera versión de esta función cubrió sólo una. Vale
+ * escribirlas porque cada una necesitó su propia regla:
+ *
+ *   1. `(0.51675ms)` — la duración que el reporter `spec` pone entre paréntesis.
+ *   2. `duration_ms 55.436` — el mismo dato como campo del resumen, y **con un
+ *      espacio, no con `:`**. Una regla que exigía `[:=]` lo dejaba pasar, y con
+ *      distinto número de decimales entre corridas (55.436 vs 55.907834).
+ *   3. El nombre **aleatorio** del directorio temporal (`aoi-corpus-AUJDeG`), que
+ *      `mkdtemp` cambia en cada corrida y aparece en cada ruta del reporte. No
+ *      cambia el largo, pero hace que dos capturas nunca sean iguales byte a byte
+ *      — y una captura que no se puede comparar no sirve como evidencia.
+ *
+ * @param {string} text
+ * @param {string[]} volatilePaths rutas a reemplazar por un marcador estable
+ */
+export function stripVolatile(text, volatilePaths = []) {
+  let out = String(text)
+  for (const p of volatilePaths) {
+    if (p) out = out.split(p).join('<tmp>')
+  }
+  return out
+    .replace(/\(\s*\d+(?:\.\d+)?\s*ms\s*\)/g, '(0ms)')
+    .replace(/(duration_ms\s*[:=]?\s*)\d+(?:\.\d+)?/g, '$1 0')
+    .replace(/aoi-corpus-[A-Za-z0-9]+/g, 'aoi-corpus-XXXXXX')
+}
+
 export function captureRealTestRun() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-corpus-'))
   const failing = path.join(dir, 'red.test.mjs')
@@ -138,7 +181,14 @@ export function captureRealTestRun() {
     }
   }
 
-  const result = { ok: true, failing: run(failing), passing: run(passing) }
+  // Lo capturado se NORMALIZA antes de devolverlo: sin esto, las duraciones y el
+  // nombre aleatorio del temporal entran al benchmark y lo vuelven
+  // irreproducible. Ver `stripVolatile`.
+  const result = {
+    ok: true,
+    failing: stripVolatile(run(failing), [dir]),
+    passing: stripVolatile(run(passing), [dir]),
+  }
   fs.rmSync(dir, { recursive: true, force: true })
   if (!result.failing.trim()) result.ok = false
   return result

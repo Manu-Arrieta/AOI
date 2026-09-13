@@ -10,6 +10,7 @@ import {
   fallbackDebuggingTurns,
   fallbackDiscoveryCorpus,
   FALLBACK_CRASH,
+  stripVolatile,
 } from './real-corpus.mjs'
 
 /** Builds a throwaway source tree to sample. */
@@ -109,5 +110,56 @@ describe('fallbacks', () => {
 
     assert.equal(fallbackDebuggingTurns().length, 5)
     assert.match(FALLBACK_CRASH, /AssertionError/)
+  })
+})
+
+describe('la captura es reproducible, o el benchmark no lo es', () => {
+  // Ésta es la compuerta que faltaba, y nació de un defecto medido: la Fase 3
+  // del stress suite reportaba 5844 -> 1051 una vez y 5845 -> 1052 la siguiente,
+  // con el mismo árbol y el mismo comando. Violaba la regla que gobierna todo
+  // el protocolo —"un número que no se puede reproducir con un comando no entra
+  // en el informe"— con un comando que SÍ era reproducible: el instrumento
+  // medía la salida de un proceso vivo y la reportaba como aritmética estática.
+  //
+  // Y contamina la comparación entre versiones: un ±1 token se lee como una
+  // mejora o una regresión que no ocurrió.
+  it('dos capturas del mismo test son byte a byte idénticas', () => {
+    const a = captureRealTestRun()
+    const b = captureRealTestRun()
+
+    assert.equal(a.failing, b.failing, 'el reporte del test que falla cambió entre corridas')
+    assert.equal(a.passing, b.passing, 'el reporte del test que pasa cambió entre corridas')
+  })
+
+  it('stripVolatile borra las TRES formas volátiles, no una', () => {
+    // Las tres necesitaron su propia regla, y la primera versión cubrió sólo la
+    // primera: `duration_ms` viene con ESPACIO, no con `:`, y el nombre del
+    // temporal es aleatorio.
+    const raw = [
+      '✔ passes (0.51675ms)',
+      'ℹ duration_ms 55.907834',
+      'test at /tmp/aoi-corpus-AUJDeG/red.test.mjs:5:3',
+    ].join('\n')
+
+    // Con la ruta conocida, se reemplaza ENTERA por un marcador.
+    const clean = stripVolatile(raw, ['/tmp/aoi-corpus-AUJDeG'])
+    assert.doesNotMatch(clean, /0\.51675/, 'no borró la duración entre paréntesis')
+    assert.doesNotMatch(clean, /55\.907834/, 'no borró duration_ms con separador de espacio')
+    assert.doesNotMatch(clean, /AUJDeG/, 'no borró el nombre aleatorio del temporal')
+    assert.match(clean, /<tmp>/, 'no dejó el marcador de la ruta')
+
+    // Y SIN la ruta —cuando aparece en una forma que no se pasó— la regla del
+    // nombre aleatorio sola tiene que alcanzar. Éste es el caso que la primera
+    // versión del test no cubría y por eso afirmaba el mecanismo equivocado.
+    const sinRuta = stripVolatile(raw)
+    assert.doesNotMatch(sinRuta, /AUJDeG/)
+    assert.match(sinRuta, /aoi-corpus-XXXXXX/)
+  })
+
+  it('no borra contenido que sí importa', () => {
+    // Control en la otra dirección: el guard no puede comerse el diagnóstico.
+    const real = 'AssertionError: Expected values to be strictly equal:\n  + actual - expected'
+    assert.equal(stripVolatile(real), real)
+    assert.equal(stripVolatile('assert.equal(evaluate(2, 2), 5)'), 'assert.equal(evaluate(2, 2), 5)')
   })
 })

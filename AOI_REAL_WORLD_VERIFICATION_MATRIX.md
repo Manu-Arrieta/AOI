@@ -400,10 +400,10 @@ corrido dos veces sobre el mismo destino: **1280 archivos antes y después, conj
 | **TECHO** por ciclo | **103.384** | |
 | Banda ×6 universal | **54.348** | 62,6% del piso, 8 archivos |
 | Huella de masa repetida | **`8e7b013002e23b4a`** | idéntica a la del ciclo anterior: la auditoría tocó prosa de `docs/` y código, ninguna superficie inyectada |
-| Payload base → optimizado | **21.177 → 4.695** | **16.482 ahorrados · 77,8%** |
+| Payload base → optimizado | **20.958 → 4.608** | **16.350 ahorrados · 78,0%** · **3 corridas, mismo número** |
 | Fidelidad del payload | **6 de 6 fases reales** | 0 fixtures, 0 omitidas |
-| Paridad en la instalación | **328/328** | repositorio: 326/326 — **diferencia de 2, explicada abajo** |
-| Suite en la instalación | **766 pass · 0 fail · 3 skip** | repositorio: 829 pass · 0 fail · 0 skip |
+| Paridad en la instalación | **333/333** | repositorio: 331/331 — **diferencia de 2, explicada abajo** |
+| Suite en la instalación | **788 pass · 0 fail · 4 skip** | repositorio: 852 pass · 0 fail · 0 skip |
 | `aoi:doctor` | **11/11** | |
 | Compuertas con exit 0 | **13/13** | dos nuevas respecto del ciclo anterior |
 | **Invariant Gate** | **✅ PASSED · 3/3** | entidad auto-resuelta `AOI TESTS`, contrato `BIC-2026-001`. **Primera auditoría real de ese contrato**: el alias moría con exit 2 antes del arreglo de S1 |

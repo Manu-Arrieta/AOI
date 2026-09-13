@@ -670,6 +670,38 @@ agregá el renglón al checklist de cierre.
 > leyendo el propio `scripts/` del árbol, así que cada versión se mide contra un corpus
 > distinto. Una mejora de «1,8 puntos» puede ser puro artefacto del corpus.
 
+### 7.1 Antes de comparar dos versiones: comprobá que el instrumento se reproduzca
+
+Esto va **primero**, y es una condición previa que no estaba escrita en ningún lado. El paso
+6.3 exige convergencia entre dos métodos; comparar dos versiones exige algo anterior: que el
+instrumento dé **el mismo número dos veces sobre el mismo árbol**.
+
+Medido el 2026-09-12, y **fallaba**: el mismo comando daba `5844 -> 1051` y después
+`5845 -> 1052`, con el payload oscilando entre 4.683 y 4.684.
+
+```bash
+# Dos corridas sobre el árbol que estás midiendo. Un solo valor = reproducible.
+for i in 1 2; do
+  ( cd "$ROOT" && node scripts/sdd-lifecycle/sdd-stress-suite.mjs 2>/dev/null ) \
+    | rg -o 'Payload optimizado del ciclo:\s+[0-9,]+'
+done | sort -u | wc -l    # 1 = sirve. 2+ = no sirve, y nada de lo que siga vale.
+```
+
+> [!CAUTION]
+> **Si da 2 o más, PARÁ.** Un instrumento que no se reproduce contra sí mismo no puede comparar
+> dos versiones: un ±1 token se lee como una mejora o una regresión que no ocurrió. Es la regla
+> 1 del protocolo aplicada al instrumento mismo.
+
+**La causa, porque es la forma general del problema.** El stress suite no mide sólo archivos:
+en la Fase 3 corre `node --test` de verdad y **mide su salida**. Esa salida trae duraciones de
+test y el nombre aleatorio de un directorio temporal — o sea que el instrumento medía **un
+proceso vivo** y lo reportaba como *"aritmética estática sobre archivos en disco"*. Tres
+fuentes distintas, cada una con su propia regla de limpieza: ver **A.16**.
+
+> **No preguntes si el instrumento es estático: comprobalo.** El mensaje del propio suite
+> afirmaba "0 tokens de inferencia" y "aritmética estática", y las dos cosas eran ciertas. Lo
+> que no era cierto es que fuera **reproducible**, que es otra propiedad.
+
 Qué sí es comparable: el **payload optimizado absoluto**. Si se mantiene prácticamente igual,
 esa es la señal correcta de que el ciclo de trabajo tocó la **prosa fija** y no los mecanismos
 de compresión. Anotá también la **fidelidad**: cuántas fases se midieron sobre artefactos
@@ -1782,7 +1814,49 @@ scaffold/     # contenido espejado: se regenera copiando, no formateando.
 
 ---
 
+### A.16 Un instrumento que mide un proceso vivo no es reproducible
+
+Un benchmark que dice *"aritmética estática sobre archivos en disco, 0 tokens de inferencia"*
+puede ser **no determinista igual**, y no por los archivos. Medido el 2026-09-12 en
+`sdd-stress-suite.mjs`: el mismo comando sobre el mismo árbol daba `5844 -> 1051` y después
+`5845 -> 1052`, con el payload oscilando entre 4.683 y 4.684.
+
+**La causa.** La Fase 3 no mide sólo archivos: corre `node --test` de verdad y **mide su
+salida**. Y esa salida cambia entre corridas por **tres** razones independientes:
+
+| Fuente | Cómo aparece | Regla |
+| :--- | :--- | :--- |
+| Duración por test | `✔ passes (0.51675ms)` | `/\(\s*\d+(?:\.\d+)?\s*ms\s*\)/g` → `(0ms)` |
+| Duración del resumen | `ℹ duration_ms 55.907834` | `/(duration_ms\s*[:=]?\s*)\d+(?:\.\d+)?/g` |
+| Directorio temporal | `/tmp/aoi-corpus-AUJDeG/red.test.mjs` | reemplazar la ruta o `aoi-corpus-XXXXXX` |
+
+> [!CAUTION]
+> **La segunda es la que casi se escapa, y enseña la lección.** La primera versión de la
+> limpieza exigía un separador `:` o `=` después de `duration_ms`, y **el reporter usa un
+> espacio**. La regla no matcheaba, la duración seguía entrando al cómputo, y la limpieza
+> *parecía* completa porque ya no se veía la forma entre paréntesis.
+>
+> Y la tercera no cambia el **largo** del texto, así que un benchmark que mide caracteres no
+> la detecta — pero hace que dos capturas nunca sean iguales byte a byte, y **una captura que
+> no se puede comparar no sirve como evidencia**.
+
+**Cómo se detecta, y va antes de cualquier comparación.** Corré el instrumento **dos veces
+sobre el mismo árbol** y difará los números: si difieren, el instrumento no se reproduce y
+nada de lo que construyas encima vale. `sort -u | wc -l` da 1 cuando sirve. Ver el paso 7.1.
+
+Y la compuerta permanente: el test `dos capturas del mismo test son byte a byte idénticas` en
+`real-corpus.test.mjs`. Es la que habría cazado esto el día uno, y la que impide que vuelva
+cuando alguien agregue una fase que corra otro proceso.
+
+> La regla general: **un instrumento que ejecuta algo y mide el resultado tiene que limpiar lo
+> volátil antes de medir**, y tiene que tener un test que lo pruebe corriéndolo dos veces. El
+> "0 tokens de inferencia" y el "aritmética estática" pueden ser ciertos los dos y no protegerte
+> de nada: la propiedad que falta es la **reproducibilidad**, y es distinta.
+
+---
+
 ## Apéndice B — Adaptación por harness
+
 
 ### B.1 GitHub Copilot
 
@@ -1871,6 +1945,10 @@ Antes de dar la auditoría por terminada:
 - [ ] La suma de control de la descomposición cierra exactamente.
 - [ ] Cada archivo del renglón [C] fue abierto y clasificado como contabilidad o conducta.
 - [ ] El delta de la banda ×6 converge con el término [A] dentro del 10% declarado (paso 6.3).
+- [ ] **El instrumento del payload se reproduce contra sí mismo**: dos corridas sobre el mismo
+      árbol dan el mismo número (paso 7.1). Si no, el payload no se reporta.
+- [ ] La fidelidad del payload está declarada: cuántas fases reales, cuántas fixture, cuántas
+      omitidas.
 - [ ] La masa de prosa en disco está medida y contrastada contra el piso.
 - [ ] La masa que ningún instrumento cuenta está medida y reportada como alcance, **no sumada
       al piso** (paso 6.5).
