@@ -400,11 +400,11 @@ corrido dos veces sobre el mismo destino: **1280 archivos antes y después, conj
 | **TECHO recuperable por cache de prefijo** | **42.277** | no es una promesa: AOI no arma el request ni coloca los cortes, así que el reuso lo decide el harness. Lo que sí es incondicional es el multiplicador |
 | Banda ×6 universal | **56.370** | 8 archivos, 9.395 tok/fase · **el 63,4% del piso es masa repetida** |
 | Huella de masa repetida | **`0b9c49bb3a0cf440`** | cambió respecto de `8e7b013002e23b4a`: la cuarta pasada tocó **cuatro superficies de la banda** (`agent-delegation`, `icm-protocol`, y los dos módulos cuyas cabeceras se corrigieron). Es un cambio **esperado**, no un ruido |
-| Payload base → optimizado (`--hermetic`) | **19.432 → 5.407** | **14.025 ahorrados (72,2%)** · subió respecto de 5.032 y **la causa está medida**: la Fase 3 pasó de `1111` a `1486` **porque el arreglo de contención por symlink agregó código a `resource-operations.ts`**, que es uno de los dos archivos que esa fase mide. El ahorro porcentual baja 0,8 puntos y **es el precio del escape cerrado**: el mismo benchmark que antes premiaba un archivo más corto ahora mide uno que sí contiene |
+| Payload base → optimizado (`--hermetic`) | **19.432 → 5.402** | **14.030 ahorrados (72,2%)** · bajó 5 tokens respecto de 5.407 y **la causa está medida**: la Fase 3 dio idéntica (`1486`) y el resto son las declaraciones nuevas en `scripts/memory-sync`, que la Fase 1 muestrea |
 | Payload con la Fase 0 incluida | 21.244 → 5.676 | Se mide igual, pero **no es comparable entre versiones**: depende del store compartido |
 | Fidelidad del payload | **6 de 6 fases reales** | 0 fixtures, 0 omitidas |
-| Paridad en la instalación | **344/344** | repositorio: 342/342 |
-| Suite en la instalación | **881 pass · 0 fail · 4 skip** | repositorio: **945 pass · 0 fail · 0 skip** |
+| Paridad en la instalación | **347/347** | repositorio: 345/345 |
+| Suite en la instalación | **970 pass · 0 fail · 4 skip** | repositorio: **1034 pass · 0 fail · 0 skip** (+89 casos: la sexta pasada cerró los mutantes de `memory-sync`) |
 | `aoi:doctor` | **11/11** | |
 | Compuertas con exit 0 | **14/14** | tres nuevas respecto del primer ciclo: `aoi:audit-protocol`, `aoi:importance` y el gate de mutación |
 | **Invariant Gate** | **✅ PASSED · 3/3** | entidad auto-resuelta `AOI TESTS`, contrato `BIC-2026-001`. **Primera auditoría real de ese contrato**: el alias moría con exit 2 antes del arreglo de S1 |

@@ -37,9 +37,16 @@ function normalizeDecisionList(values, fieldName) {
 }
 
 function normalizeSelectedScopes(selectedScopes) {
-  const scopes = selectedScopes?.length ? selectedScopes : defaultSelectedScopes
-  assert(Array.isArray(scopes) && scopes.length > 0, 'selectedScopes must be a non-empty array.')
-  return scopes
+  // Misma forma inalcanzable que en `export-memory-bundle.mjs`: el ternario
+  // garantiza un array no vacío —`defaultSelectedScopes` lo es—, así que la
+  // guardia de después no podía disparar con ninguna entrada. Se valida lo que
+  // el llamador pasó.
+  assert(
+    selectedScopes === undefined || Array.isArray(selectedScopes),
+    'selectedScopes must be an array.',
+  )
+
+  return selectedScopes?.length ? selectedScopes : defaultSelectedScopes
 }
 
 async function ensureManifestDoesNotExist(manifestPath) {

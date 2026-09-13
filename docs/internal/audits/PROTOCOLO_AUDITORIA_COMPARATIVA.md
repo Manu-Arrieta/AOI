@@ -2376,6 +2376,127 @@ compara la secuencia de inversos entre `dispose()` y `deactivate()` y exige que 
 
 ---
 
+### A.23 Una guardia ejercitada sólo con entrada válida no está ejercitada
+
+Sexta pasada, y el hallazgo salió de **leer la lista de mutantes supervivientes**, no
+de una lente. `scripts/memory-sync` tenía **78 de 167** sin matar — la mayor
+concentración del repo — y al agruparlos por tipo apareció que **60 eran de operador
+booleano**: 26 `and→or`, 25 `gt→gte`, 9 `or→and`.
+
+Eso no es una coincidencia. Es una **forma de escribir guardias**:
+
+```js
+assert(typeof x === 'string' && x.trim().length > 0, 'x is required.')
+```
+
+y cada guardia así deja sobrevivir **exactamente dos** mutantes, por dos razones
+distintas:
+
+| Mutante | Qué hace | Cómo se mata |
+| :--- | :--- | :--- |
+| `gt→gte` | `length >= 0` es **siempre verdadero**: la guardia no dispara nunca más | Pasando `''` o `'   '` |
+| `and→or` | deja de mirar el `typeof`: con un número, el `.trim()` tira `TypeError` **antes** del assert | Pasando un **no-string** y exigiendo **el mensaje de la guardia** |
+
+Los dos casos comparten la causa: **todos los tests pasaban un nombre válido.** Una
+guardia que sólo ve entrada buena no distingue `>` de `>=` ni `&&` de `||`, porque con
+entrada válida las cuatro expresiones dan lo mismo.
+
+**Y lo mismo vale para las cadenas de comparaciones.** Una guardia de la forma
+`assert(status === 'candidate' || status === 'active', …)` deja sobrevivir `eq→ne` y
+`or→and`, y los dos se matan igual: **un valor que esté FUERA del conjunto**. Con una
+sola rama probada, las otras quedan sin ejercitar.
+
+#### El arreglo es una tabla, no cuarenta tests
+
+Los casos no tienen lógica propia: son la misma aserción sobre N pares (campo,
+mensaje). Cuarenta funciones casi idénticas **esconderían** que son el mismo caso. Una
+tabla dice de un vistazo qué está cubierto y agrega un caso en una línea:
+
+```js
+const GUARDIAS = [
+  ['exportMemoryBundle', exportMemoryBundle, 'workspace', /workspace is required/],
+  // …
+]
+for (const [nombre, fn, campo, patron] of GUARDIAS) {
+  for (const [etiqueta, valor] of Object.entries({ vacio: '', enBlanco: '   ', noString: 42 })) {
+    it(`${nombre}: ${campo} = ${etiqueta}`, async () => {
+      await assert.rejects(() => fn({ ...BASES[nombre](), [campo]: valor }), patron)
+    })
+  }
+}
+```
+
+**El par `BASES` + un campo roto es lo que hace la tabla posible**: cada caso rompe una
+sola cosa y el resto sigue válido, así que un caso que falla apunta a un solo lugar.
+
+> [!CAUTION]
+> **`BASES` apunta a un directorio que no existe, a propósito.** Las guardias corren
+> antes de cualquier lectura, así que un caso que **llega hasta el I/O** es un caso que
+> **no disparó la guardia que decía probar** — y queremos que se note en vez de que
+> pase por el motivo equivocado. Sin esa decisión, media tabla pasaría con el mensaje
+> de otro error y nadie lo sabría.
+
+#### Y dos de los 78 no se arreglaban con tests: eran CÓDIGO MUERTO
+
+La parte más útil de la pasada, y la que no se ve mirando los mutantes.
+
+**Una guardia inalcanzable.** Esto estaba después de un ternario que garantiza un array
+no vacío:
+
+```js
+const scopes = selectedScopes?.length ? [...selectedScopes] : [...allowedScopes]
+assert(Array.isArray(scopes) && scopes.length > 0, 'selectedScopes must be a non-empty array.')
+```
+
+`scopes` **siempre** es un array no vacío, así que el assert no puede disparar con
+ninguna entrada: sus dos mutantes eran equivalentes y **ningún test podía matarlos,
+porque no hay entrada que los distinga**. Y el efecto lateral era peor que el código
+muerto: `selectedScopes: 'memories'` pasaba el ternario y se **desparramaba en
+caracteres**, así que el error que salía era `unsupported scope "m"` — un mensaje sobre
+un carácter en vez de sobre el tipo.
+
+**Tres ramas subsumidas.** El predicado que decide qué memoria entra en un bundle era
+
+```js
+topic === `${ws}-context` || topic === `${ws}-session-summaries`
+|| topic === `${ws}-errors-resolved` || topic.startsWith(`${ws}-`)
+```
+
+y los tres `===` **están contenidos** en el `startsWith`: un topic que empieza con
+`{ws}-` ya incluye a los tres canónicos. Seis mutantes equivalentes, y la función se
+simplifica a tres líneas **sin cambiar un solo resultado** — medido sobre 56
+combinaciones de cuatro workspaces por catorce topics, y fijado en un test que corre
+las dos versiones y las compara.
+
+> [!CAUTION]
+> **Código muerto no se cubre con tests: se hace vivo o se borra.** Un mutante
+> equivalente no es un agujero de cobertura, es la señal de que hay un camino que no
+> puede cambiar el resultado. Perseguirlo con tests es imposible —no existe la
+> entrada— y dejarlo es peor: infla el denominador del score y, como en el caso del
+> string desparramado, **esconde un defecto real detrás de una guardia que nunca
+> corre**.
+>
+> Y el complemento, igual de importante: **los equivalentes que NO se pueden eliminar
+> se declaran.** Los dos `for (let i = 0; i < len; i++)` que la sonda reporta no se
+> pueden matar porque `i <= len` sólo agrega una lectura de `undefined` que el cuerpo
+> ya descarta; quedan anotados en vez de perseguidos.
+
+#### Los tres tipos de superviviente, y qué hacer con cada uno
+
+| Tipo | Cómo se reconoce | Qué hacer |
+| :--- | :--- | :--- |
+| **Falta la entrada** | El mutante cambia la conducta para un valor que ningún test pasa (`''`, `42`, `'otro'`) | **Un test.** Es un agujero de cobertura real |
+| **Equivalente por código muerto** | El mutante no puede cambiar ningún resultado observable | **Borrar el camino**, o hacerlo vivo si debería existir |
+| **Equivalente por construcción** | El mutante cambia la expresión y la expresión no cambia el resultado (`i <= len` con un cuerpo que descarta `undefined`) | **Declararlo** y no perseguirlo |
+
+**Y el orden importa: primero agrupar, después escribir.** Los 78 no eran 78 problemas,
+eran **dos formas de escribir una guardia**. Agrupar por tipo de mutante antes de
+escribir un test convierte 78 casos en 2 decisiones, y las dos se implementan en una
+tabla. Es el paso 9.0 del protocolo —`pnpm aoi:mutation`— leído como entrada y no como
+veredicto.
+
+---
+
 ## Apéndice B — Adaptación por harness
 
 

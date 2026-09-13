@@ -43,9 +43,22 @@ export const MUTATION_FLOOR = {
   // mutantes del guard que antes sobrevivían porque ningún test le daba la
   // entrada que el guard existe para atrapar.
   'scripts/sandbox': 88,
-  // 52 → 53. `reason` pasó a ser obligatorio y se persiste: los casos que
-  // exigen su ausencia y su presencia son mutantes que antes sobrevivían.
-  'scripts/memory-sync': 53,
+  // 52 → 53 → 93. El salto grande no viene de más tests: viene de mirar POR QUÉ
+  // sobrevivían. 60 de los 78 eran de operador booleano —`and→or`, `gt→gte`,
+  // `or→and`— en guardias que se ejercitaban SÓLO con entrada válida, y cada una
+  // deja sobrevivir exactamente dos mutantes: `length >= 0` es siempre verdadero,
+  // y `||` deja de mirar el `typeof` y explota antes del assert. Ver A.23.
+  //
+  // Y dos de los 78 no se arreglaban con tests: eran CÓDIGO MUERTO. Una guardia
+  // inalcanzable después de un ternario que garantiza un array no vacío, y tres
+  // ramas subsumidas por un `startsWith`. Se borraron, no se cubrieron.
+  //
+  // Quedan 11, y son de otra clase: el manejo de fallas del CLI de ICM, que
+  // necesita un `icm` que falle a demanda para poder ejercitarse.
+  'scripts/memory-sync': 93,
+  // Los 11 que quedan son el manejo de fallas del CLI de ICM (`ok`, `error.code`,
+  // `allowFailure`): necesitan un `icm` que falle a demanda. Declarado, no
+  // perseguido.
   // 67 → 68. Los casos de la guardia de ancho de `buildArchiveClosure` (paso
   // 7.4) matan mutantes que antes sobrevían. Los mutantes del área subieron de
   // 229 a 249 por el código nuevo, y el score subió igual.

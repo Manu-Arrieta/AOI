@@ -26,9 +26,14 @@ function assert(condition, message) {
 }
 
 function normalizeSelectedScopes(selectedScopes) {
-  const scopes = selectedScopes?.length ? [...selectedScopes] : [...allowedScopes]
+  // La guardia vieja estaba DESPUÉS del ternario: `scopes` ya era un array no
+  // vacío, así que era inalcanzable. Se valida la entrada CRUDA. Ver el test.
+  assert(
+    selectedScopes === undefined || Array.isArray(selectedScopes),
+    'selectedScopes must be an array.',
+  )
 
-  assert(Array.isArray(scopes) && scopes.length > 0, 'selectedScopes must be a non-empty array.')
+  const scopes = selectedScopes?.length ? [...selectedScopes] : [...allowedScopes]
 
   if (scopes.includes('all')) {
     assert(scopes.length === 1, 'selectedScopes cannot combine "all" with other scopes.')
@@ -73,11 +78,14 @@ function extractTopicFromBlock(block) {
   return topicMatch ? topicMatch[1].trim() : null
 }
 
-function isWorkspaceScopedTopic(topic, workspace) {
-  return topic === `${workspace}-context`
-    || topic === `${workspace}-session-summaries`
-    || topic === `${workspace}-errors-resolved`
-    || topic.startsWith(`${workspace}-`)
+/**
+ * ¿El topic pertenece a este workspace? Exportada para probarla sola.
+ *
+ * Los tres topics canónicos tenían su rama con `===`, subsumida por el primer
+ * `startsWith`: ramas muertas con seis mutantes equivalentes. Ver el test.
+ */
+export function isWorkspaceScopedTopic(topic, workspace) {
+  return topic.startsWith(`${workspace}-`)
     || topic.startsWith(`sdd-${workspace}-`)
     || topic.startsWith(`sandbox-${workspace}-`)
 }
@@ -195,9 +203,12 @@ export async function exportMemoryBundle({
   assert(typeof formatVersion === 'string' && formatVersion.trim().length > 0, 'formatVersion must be a non-empty string.')
   assert(typeof loadScopePayload === 'function', 'loadScopePayload must be a function.')
 
+  // Antes de tocar el disco: vivía más abajo y un argumento inválido se
+  // reportaba como un ENOENT del manifiesto.
+  const normalizedScopes = normalizeSelectedScopes(selectedScopes)
+
   const manifestPath = getManifestPath(versionsRoot, workspace.trim(), versionId.trim())
   const manifest = await loadManifestAtPath(manifestPath)
-  const normalizedScopes = normalizeSelectedScopes(selectedScopes)
 
   assert(manifest.workspace === workspace.trim(), `Manifest workspace mismatch for "${workspace}".`)
 
