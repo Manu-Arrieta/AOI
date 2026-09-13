@@ -702,6 +702,43 @@ fuentes distintas, cada una con su propia regla de limpieza: ver **A.16**.
 > afirmaba "0 tokens de inferencia" y "aritmética estática", y las dos cosas eran ciertas. Lo
 > que no era cierto es que fuera **reproducible**, que es otra propiedad.
 
+#### 7.2 El payload tiene que ser función del ÁRBOL, y hay una fase que no lo es
+
+El paso 7.1 exige que el instrumento se reproduzca **contra sí mismo**. Hay una condición más
+fuerte y la encontró una lente adversarial: que el número sea función del **árbol**, y no del
+entorno.
+
+Medido: **la Fase 0 lee el store ICM vivo.** `icm facts list`, `icm wake-up` y `icm recall`
+consultan un almacén **compartido y mutable** —el mismo que los otros proyectos escriben—, así
+que agregar **un solo hecho** movía el payload de 4.607 a 4.643 y el consumo base de 20.711 a
+20.427, **con `git status` vacío**. El número no describía el árbol que se estaba auditando.
+
+```bash
+# Para comparar DOS VERSIONES, excluí la fase que depende del entorno:
+node scripts/sdd-lifecycle/sdd-stress-suite.mjs --hermetic
+```
+
+`--hermetic` omite la Fase 0 y el total vuelve a ser función del árbol. Sin el flag se sigue
+midiendo, porque el ahorro de grounding O(1) contra recall semántico es real y vale verlo —
+pero **entonces el payload no es comparable entre versiones**, que es exactamente para lo que
+sirve la Fase 6.
+
+> [!CAUTION]
+> **Un benchmark no puede leer estado mutable compartido y llamarse reproducible.** Es la misma
+> familia que las otras trampas de este apéndice: el instrumento mide algo más de lo que dice
+> medir. Si tu número cambia cuando cambia algo fuera del árbol, no estás midiendo el árbol.
+
+#### 7.3 Y la captura de un proceso hijo no puede depender del `cwd`
+
+Segunda fuente, también medida: `captureRealTestRun` corría `node --test` **heredando el cwd del
+padre**, y el reporter `spec` imprime las ubicaciones **relativas a ese cwd**. El mismo árbol,
+byte a byte, medido desde otra profundidad producía `../../../../../private/…` en vez de `../…`,
+y el payload cambiaba. `stripVolatile` no puede cubrirlo: no sabe cuántos niveles de `../` va a
+haber.
+
+Arreglado con un `cwd` **fijo** en el directorio temporal. Verificado: la captura da 1890 bytes
+desde el repo y desde `/tmp`, idéntica.
+
 Qué sí es comparable: el **payload optimizado absoluto**. Si se mantiene prácticamente igual,
 esa es la señal correcta de que el ciclo de trabajo tocó la **prosa fija** y no los mecanismos
 de compresión. Anotá también la **fidelidad**: cuántas fases se midieron sobre artefactos
