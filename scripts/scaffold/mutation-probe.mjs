@@ -383,23 +383,69 @@ export const MUTANT_HEAP_MB = 1024
 /** La marca que el fixture de `mutation-probe.test.mjs` le pone a su fantasma. */
 export const GHOST_MARK = 'aoi-probe-ghost-'
 
+/** Nada que recoger. Un centinela numérico, no un booleano: ver `ghostPidToReap`. */
+export const NO_PID = -1
+
 /**
- * Si una línea de `ps` es un fantasma que hay que recoger.
+ * El pid que esta línea autoriza a terminar, o -1 si ninguno.
  *
- * Es una función aparte, y no un `if` dentro del bucle, por la misma razón por
- * la que `suitePasses` se separó de su CLI: la decisión se puede fijar con
- * casos directos, el efecto no. Medido el 2026-09-13: con la guarda inline, sus
- * dos mutantes de operador booleano sobrevivían y bajaban el área de 62 a 61 —
- * ninguna entrada del test llegaba a las ramas que la guarda existe para
- * atrapar, que es la forma de superviviente más común del proyecto.
+ * DEVUELVE UN PID Y NO UN BOOLEANO, y esa elección es la diferencia entre un
+ * reaper y una catástrofe. El probe se mide a sí mismo —`mutation-probe.mjs`
+ * vive dentro del área que mide— así que su propio código recibe mutantes, y el
+ * conjunto de operadores incluye `true→false` y `false→true`, que reescriben el
+ * literal booleano, más `&&→||`, que convierte una conjunción en una disyunción.
+ *
+ * Medido el 2026-09-13: con la versión booleana —`if (!marca) return false`, con
+ * la validación de pid en un `&&`— el mutante `false→true` sobre el
+ * `return false` hace que el predicado matchee **492 de 492 líneas** de
+ * `ps -Ao pid,args`, incluido `pid 1 /sbin/launchd`. Y `and→or` sobre la
+ * validación tiene el mismo efecto por el otro lado: desactiva la exigencia de
+ * la marca. Cualquiera de los dos convierte `reapGhosts` en un asesino que
+ * recorre la tabla de procesos y le manda SIGKILL a cada uno. Eso es lo que
+ * cerraba las aplicaciones del Owner: no era el sistema operativo con presión
+ * de memoria, era este mutante matando vecinos.
+ *
+ * Un número no tiene literal que invertir. Las mutaciones que quedan solo pueden
+ * volver al predicado MÁS restrictivo —`idx < 0` a `idx <= 0`, que el caso de
+ * test que exige recoger un fantasma real detecta— o dejar pasar líneas que
+ * IGUAL llevan la marca, que son las que este módulo creó.
  *
  * @param {string} line una línea de `ps -Ao pid,args`
+ * @param {string[]} marks marcas que este llamador tiene permitido recoger
  * @param {number} selfPid el pid del proceso que llama, para no recogerse solo
  */
-export function isGhostToReap(line, selfPid) {
-  if (!line.includes(GHOST_MARK)) return false
+export function ghostPidToReap(line, marks, selfPid = process.pid) {
+  const idx = ghostMarkIndex(line, marks)
+  if (idx < 0) return NO_PID
   const pid = Number(line.trim().split(/\s+/)[0])
-  return Number.isInteger(pid) && pid > 0 && pid !== selfPid
+  if (!Number.isInteger(pid) || pid <= 1 || pid === selfPid) return NO_PID
+  return pid
+}
+
+/**
+ * El índice de la primera marca que la línea lleva, o -1.
+ *
+ * Está escrito con una guarda `continue` por condición y NO con una conjunción,
+ * y esa forma es el punto. Verificado con un script que genera los diez
+ * mutantes de este par de funciones y evalúa cada uno contra la salida real de
+ * `ps` sin mandar una señal: con la versión `&&` —`typeof m === 'string' &&
+ * m.length > 0 && line.includes(m)`— el mutante `and→or` hace que la primera
+ * condición sea verdadera para cualquier marca y que `findIndex` devuelva 0 en
+ * TODAS las líneas. El guardián se volvía incondicional y autorizaba 483 de 486
+ * procesos. Con `continue`, cada mutación posible o bien es más restrictiva
+ * —y el caso de test que exige recoger un fantasma real la mata— o bien lanza
+ * excepción, que también mata al mutante. Ninguna puede autorizar de más.
+ */
+function ghostMarkIndex(line, marks) {
+  if (!Array.isArray(marks)) return NO_PID
+  if (marks.length === 0) return NO_PID
+  for (let i = 0; i < marks.length; i++) {
+    const m = marks[i]
+    if (typeof m !== 'string') continue
+    if (m.length === 0) continue
+    if (line.includes(m)) return i
+  }
+  return NO_PID
 }
 
 /**
@@ -417,9 +463,13 @@ export function isGhostToReap(line, selfPid) {
  * acumule sigue siendo un problema, así que se recogen desde afuera del código
  * mutado.
  *
+ * @param {string[]} marks marcas a recoger. **Vacío significa no matar nada**,
+ *   que es la dirección segura: un llamador que se olvide del argumento deja
+ *   fantasmas vivos, y eso se nota; al revés mataría procesos ajenos en
+ *   silencio.
  * @returns {number} cuántos procesos se terminaron
  */
-export function reapGhosts() {
+export function reapGhosts(marks = [GHOST_MARK]) {
   let out = ''
   try {
     out = execFileSync('ps', ['-Ao', 'pid,args'], { encoding: 'utf8' })
@@ -428,8 +478,8 @@ export function reapGhosts() {
   }
   let reaped = 0
   for (const line of out.split('\n')) {
-    if (!isGhostToReap(line, process.pid)) continue
-    const pid = Number(line.trim().split(/\s+/)[0])
+    const pid = ghostPidToReap(line, marks, process.pid)
+    if (pid < 0) continue
     try {
       process.kill(pid, 'SIGKILL')
       reaped += 1

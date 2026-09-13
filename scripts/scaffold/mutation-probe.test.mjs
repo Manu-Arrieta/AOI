@@ -16,9 +16,10 @@ import path from 'node:path'
 import { describe, it, after } from 'node:test'
 import {
   GHOST_MARK,
-  isGhostToReap,
+  ghostPidToReap,
   literalMask,
   mutationsFor,
+  NO_PID,
   OPERATORS,
   reapGhosts,
   suitePasses,
@@ -262,26 +263,59 @@ describe('reapGhosts', () => {
    * de 62 y la compuerta tenía razón: la lógica estaba sin atar.
    */
   const SELF = 4242
+  const MARKS = [GHOST_MARK]
   const GHOST_PATH = `/tmp/${GHOST_MARK}abc/ghost-1.mjs`
   const GHOSTS = [
-    ['una línea de ps normal', 900, GHOST_PATH, true],
-    ['el pid propio, que no se puede recoger solo', SELF, GHOST_PATH, false],
-    ['un pid cero', 0, GHOST_PATH, false],
-    ['un pid negativo', -1, GHOST_PATH, false],
-    ['un primer campo que no es un número', 'x', GHOST_PATH, false],
-    ['una línea sin la marca', 900, '/tmp/otra-cosa.mjs', false],
+    ['una línea de ps normal', 900, GHOST_PATH, 900],
+    ['el pid propio, que no se puede recoger solo', SELF, GHOST_PATH, NO_PID],
+    ['un pid cero', 0, GHOST_PATH, NO_PID],
+    ['un pid negativo', -1, GHOST_PATH, NO_PID],
+    ['un primer campo que no es un número', 'x', GHOST_PATH, NO_PID],
+    ['una línea sin la marca', 900, '/tmp/otra-cosa.mjs', NO_PID],
   ]
 
   for (const [what, pid, args, expected] of GHOSTS) {
-    it(`${expected ? 'recoge' : 'ignora'} ${what}`, () => {
-      assert.equal(isGhostToReap(`${pid} node ${args}`, SELF), expected)
+    it(`${expected === NO_PID ? 'ignora' : 'recoge'} ${what}`, () => {
+      assert.equal(ghostPidToReap(`${pid} node ${args}`, MARKS, SELF), expected)
     })
   }
 
   it('la marca se busca en toda la línea, no solo al principio', () => {
     // `ps` pone el pid primero, así que la marca nunca está al inicio de la
     // línea. Un `startsWith` la perdería entera.
-    assert.equal(isGhostToReap(`900 node ${GHOST_PATH}`, SELF), true)
+    assert.equal(ghostPidToReap(`900 node ${GHOST_PATH}`, MARKS, SELF), 900)
+  })
+
+  it('sin marcas declaradas no autoriza ningún pid', () => {
+    // La dirección segura: un llamador que se olvide del argumento deja
+    // fantasmas vivos, y eso se nota; al revés mataría procesos ajenos en
+    // silencio. Es el caso que hace que `marks` vacío no sea "matar todo".
+    assert.equal(ghostPidToReap(`900 node ${GHOST_PATH}`, [], SELF), NO_PID)
+    assert.equal(ghostPidToReap(`900 node ${GHOST_PATH}`, undefined, SELF), NO_PID)
+  })
+
+  it('el número de procesos que autoriza es acotado, no la tabla entera', () => {
+    // El caso que falla si el predicado se vuelve peligroso, y el que faltaba
+    // cuando esto mató aplicaciones del Owner.
+    //
+    // El probe se mide a sí mismo, así que este predicado recibe mutantes
+    // `true→false` y `&&→||`. En su versión booleana, el mutante que convierte
+    // su `return false` en `return true` lo hacía matchear 492 de 492 líneas
+    // de `ps`, incluido `pid 1`, y `reapGhosts` recorría la tabla de procesos
+    // mandándole SIGKILL a cada uno.
+    //
+    // Un predicado que devuelve un PID sólo puede autorizar UNO por línea. Si
+    // alguna mutación volviera esto "todo", acá se ve: la cantidad de pids
+    // autorizados no puede superar la de líneas que llevan la marca.
+    const ps = execFileSync('ps', ['-Ao', 'pid,args'], { encoding: 'utf8' })
+    const lines = ps.split('\n').filter(Boolean)
+    const marked = lines.filter((l) => l.includes(GHOST_MARK)).length
+    const authorized = lines.filter((l) => ghostPidToReap(l, MARKS, SELF) !== NO_PID).length
+    assert.equal(
+      authorized,
+      marked,
+      `autorizó ${authorized} de ${lines.length} líneas contra ${marked} con la marca`
+    )
   })
 
   const countMark = (mark) =>
