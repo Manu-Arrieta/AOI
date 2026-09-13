@@ -2153,6 +2153,52 @@ reloj.
 > de arreglar un caso, buscá la misma forma en todo el archivo** —y si la forma es una
 > comparación o un escaneo, preguntate si debería existir una sola vez.
 
+#### El cuarto defecto, que el barrido encontró: plegar una FORMA borra el contrato
+
+Al medir el barrido con `.ts` y `.vue` —extensiones que `node --check` no puede validar—
+apareció una segunda cosa, y es la peor de todas porque **es el modo de falla que el
+instrumento tiene prohibido**:
+
+```
+import { /* folded: 5 lines */ } from '../utils/resource-tree'
+export { /* folded: 4 lines */ }
+export const config = { /* folded: 4 lines */ }
+```
+
+El plegador trataba **toda** llave como un cuerpo. Un import multilínea quedaba
+**vacío**; un re-export, **vacío**; un objeto exportado, **sin ninguna de sus claves**.
+
+Eso no comprime una implementación: **borra el contrato**. Y el contrato es exactamente
+lo que un agente necesita para escribir código correcto —qué importa y qué expone el
+archivo—, o sea que era lo único que el esqueleto ocultaba. El encabezado prometía
+conservar *"imports, tipos, interfaces y firmas"* y para un import multilínea no lo
+hacía. La medición de la Fase 3 lo premiaba: **el 81,6% de ahorro se pagaba con 70
+tokens que salían de borrar listas de imports.**
+
+La regla que lo cierra es de contexto, no de lista: **se pliega un cuerpo, no una
+forma.** Si el último carácter antes de la llave es un operador de inicialización
+—`=`, `,`, `(`, `:`, `[`— o viene de `import`, `export` o `return`, es una forma y se
+conserva entera. Si termina en `)` o en `=>`, es un cuerpo y se pliega. Con los tres
+controles —función, arrow, método— todavía plegando, porque **una regla que conserva
+todo también deja de comprimir, y un instrumento inútil se desactiva igual que uno
+roto.**
+
+> [!WARNING]
+> **Y un gate que escribí, NO lo shipeé.** El intento natural era una compuerta
+> repo-wide de *"todo especificador de import de nivel superior aparece en el
+> esqueleto"*. La escribí, y encontró cuatro casos — y **los cuatro eran falsos
+> positivos**: `real-corpus.mjs` y `synthesize-stubs.mjs` **generan código como
+> texto** (`"import assert from 'node:assert/strict'"` dentro de un array), y esos
+> strings desaparecen con el cuerpo plegado, que es lo correcto.
+>
+> Se descartó. **Un falso positivo en una compuerta es peor que la ausencia de la
+> compuerta**: la primera vez que bloquea algo correcto, alguien la desactiva, y de
+> ahí en adelante no protege nada. Lo que sí se shipeó es lo que se puede probar sin
+> margen —`node --check` sobre `.mjs`/`.js`, y los ocho casos unitarios de la regla
+> nueva—, y **el alcance no cubierto quedó declarado**: `.ts` y `.vue` no tienen
+> validación sintáctica, porque el `node` de esta máquina rechaza todo TypeScript
+> válido y el compilador del dashboard no es una dependencia del área.
+
 ---
 
 ## Apéndice B — Adaptación por harness

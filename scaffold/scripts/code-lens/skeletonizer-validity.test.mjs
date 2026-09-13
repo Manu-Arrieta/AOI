@@ -143,6 +143,63 @@ describe('el esqueleto de todo el árbol compila, o el instrumento miente', () =
   })
 })
 
+describe('una FORMA no se pliega: plegarla borra el contrato', () => {
+  // El plegador trataba toda llave como un cuerpo. Medido, eso destruía las tres
+  // formas donde vive el contrato del archivo:
+  //
+  //   import { folded } from './x.mjs'        → el import queda VACÍO
+  //   export { folded }                       → el re-export queda VACÍO
+  //   export const config = { folded }        → el objeto pierde sus claves
+  //
+  // Y es el peor modo de falla del instrumento: lo que un agente necesita para
+  // escribir código correcto es exactamente qué importa y qué expone el archivo,
+  // y era lo único que el esqueleto ocultaba. El encabezado prometía conservar
+  // imports y firmas; para un import multilínea no lo hacía, y nadie lo miraba.
+  const conserva = (src, simbolos) => {
+    const out = skeletonizeCode(src)
+    const faltan = simbolos.filter((s) => !new RegExp(`\\b${s}\\b`).test(out))
+    assert.deepEqual(faltan, [], `el esqueleto perdió ${faltan.join(', ')}`)
+    return out
+  }
+
+  it('conserva los nombres de un import multilínea', () => {
+    conserva("import {\n  alfa,\n  beta,\n  gama,\n} from './x.mjs'\n", ['alfa', 'beta', 'gama'])
+  })
+
+  it('conserva los nombres de un `import type` multilínea', () => {
+    conserva("import type {\n  Alfa,\n  Beta,\n  Gama,\n} from './t.ts'\n", ['Alfa', 'Beta', 'Gama'])
+  })
+
+  it('conserva los nombres de un re-export multilínea', () => {
+    conserva('export {\n  alfa,\n  beta,\n  gama,\n}\n', ['alfa', 'beta', 'gama'])
+  })
+
+  it('conserva las claves de un objeto exportado multilínea', () => {
+    conserva('export const config = {\n  alfa: 1,\n  beta: 2,\n  gama: 3,\n}\n', ['alfa', 'beta', 'gama'])
+  })
+
+  it('conserva los campos de una interface multilínea', () => {
+    conserva('export interface C {\n  alfa: number\n  beta: string\n  gama: boolean\n}\n', ['alfa', 'beta', 'gama'])
+  })
+
+  // Los controles importan tanto como los casos: una regla que conserva TODO
+  // también deja de comprimir, y el instrumento se desactiva por inútil.
+  it('CONTROL: un cuerpo de función SÍ se pliega', () => {
+    const out = skeletonizeCode('export function f(a) {\n  const w = 1\n  const x = 2\n  const y = 3\n  const z = 4\n  return w\n}\n')
+    assert.match(out, /folded/, 'dejó de plegar el cuerpo de una función')
+  })
+
+  it('CONTROL: una arrow SÍ se pliega', () => {
+    const out = skeletonizeCode('export const g = (a) => {\n  const w = 1\n  const x = 2\n  const y = 3\n  const z = 4\n  return w\n}\n')
+    assert.match(out, /folded/, 'dejó de plegar el cuerpo de una arrow')
+  })
+
+  it('CONTROL: el cuerpo de una clase SÍ se pliega', () => {
+    const out = skeletonizeCode('export class K {\n  m() {\n    const w = 1\n    const x = 2\n    const y = 3\n    const z = 4\n    return w\n  }\n}\n')
+    assert.match(out, /folded/, 'dejó de plegar el cuerpo de un método')
+  })
+})
+
 describe('las dos pasadas del plegador comparten el escáner', () => {
   // La compuerta que impide la re-divergencia, y es la lección de A.13 aplicada:
   // *si dos partes tienen que coincidir en cómo leen lo mismo, tienen que

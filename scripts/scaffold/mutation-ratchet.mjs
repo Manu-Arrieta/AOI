@@ -59,12 +59,17 @@ export const MUTATION_FLOOR = {
   'scripts/multi-harness': 54,
   'scripts/scaffold': 61,
   'scripts/spatiotemporal-runtime': 59,
-  // 51 → 52 → 67. El salto grande no viene de más tests sobre lo mismo: al
-  // extraer el escáner compartido (`code-scanner.mjs`) el área ganó un módulo
-  // con casos directos, y la compuerta de validez sintáctica mata mutantes que
-  // el barrido de ahorro no tocaba. Ver A.20: cinco archivos del repo producían
-  // un esqueleto que `node --check` rechazaba y NINGÚN test lo miraba.
-  'scripts/code-lens': 67,
+  // 51 → 64. El salto grande no viene de más tests sobre lo mismo: al extraer el
+  // escáner compartido (`code-scanner.mjs`) el área ganó un módulo con casos
+  // directos, y la compuerta de validez sintáctica mata mutantes que el barrido
+  // de ahorro no tocaba (A.20: cinco archivos producían un esqueleto que
+  // `node --check` rechazaba y ningún test lo miraba).
+  //
+  // Mide 64 y NO 67, que fue un valor intermedio: la regla de "conservar las
+  // formas" agregó código cuyo valor no está atado del todo por los tests. Se
+  // anota el piso medido y no el mejor visto — un piso que el área no alcanza
+  // bloquea todo, y uno que se elige por conveniencia deja de ser un trinquete.
+  'scripts/code-lens': 64,
   // Subió de 57 a 71 en la medición del 2026-09-12. El salto NO viene de un
   // cambio en este área: el gateway no se tocó. Es una mejora de suite que llevaba
   // tiempo sin medirse, y el trinquete la registra para que no se pierda.

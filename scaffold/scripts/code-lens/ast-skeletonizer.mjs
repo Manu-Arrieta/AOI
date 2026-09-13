@@ -47,6 +47,43 @@ import { fileURLToPath } from 'node:url'
 import { scanNonStructural } from './code-scanner.mjs'
 
 /**
+ * ¿La llave en `{` abre una FORMA —una lista de import, un tipo, un objeto— y no
+ * un cuerpo de función?
+ *
+ * Plegar una forma no comprime una implementación: **borra el contrato**. Medido,
+ * las tres formas que el plegador destruía sin que nada lo mirara:
+ *
+ *   `import { /* folded *\/ } from './x.mjs'`      → el import queda VACÍO
+ *   `export { /* folded *\/ }`                     → el re-export queda VACÍO
+ *   `export const config = { /* folded *\/ }`      → el objeto pierde sus claves
+ *
+ * Y es el peor modo de falla del instrumento: lo que un agente necesita para
+ * escribir código correcto es exactamente **qué importa y qué expone** el archivo,
+ * y era lo único que el esqueleto ocultaba. El encabezado prometía conservar
+ * "imports, tipos, interfaces y firmas", y para un import multilínea no lo hacía.
+ *
+ * La regla es la del contexto: si el último carácter antes de la llave es un
+ * operador de inicialización —`=`, `,`, `(`, `:`, `[`— o viene de `import`,
+ * `export` o `return`, es una forma. Si termina en `)` o en `=>`, es un cuerpo.
+ */
+const SHAPE_PRECEDING_CHARS = '=,(:['
+
+function opensShape(prefix) {
+  // El prefijo puede traer marcadores de pliegue ya escritos; no son contexto.
+  const p = prefix.replace(/\{ \/\* folded: \d+ lines \*\/ \}/g, ' ').trimEnd()
+  if (!p) return false
+  // `import { … }` y `export { … }`: la llave que se está mirando TODAVÍA no se
+  // escribió, así que el prefijo termina en la palabra clave y no en el `{`. Ésa
+  // fue la primera versión de esta regla y no matcheaba nunca: la condición pedía
+  // un `{` que sólo existe después. Y la segunda tampoco: el `trimEnd()` de arriba
+  // borra el espacio que un `\s+` exigía, así que `import ` quedaba en `import`.
+  if (/\b(?:import|export)(?:\s+type)?$/.test(p)) return true
+  if (/\b(?:import|export)(?:\s+type)?\s*\{[^{}]*$/.test(p)) return true
+  if (/\b(?:return|default|as)\s*$/.test(p)) return true
+  return SHAPE_PRECEDING_CHARS.includes(p[p.length - 1])
+}
+
+/**
  * Folds block bodies delimited by matching braces { ... }
  *
  * Las DOS pasadas de este archivo —el recorrido externo y el contador que busca
@@ -107,8 +144,9 @@ export function foldBlockBodies(code) {
       const prefix = result.slice(Math.max(0, result.length - 120))
       const isTypeOrInterface = /\b(interface|type|enum)\s+[A-Za-z0-9_$]+/.test(prefix) && !/\bfunction\b|\bclass\b|=>/.test(prefix)
 
-      if (isTypeOrInterface || bodyLines <= 2) {
-        // Keep interface, type, or short inline objects unfolded
+      if (isTypeOrInterface || opensShape(prefix) || bodyLines <= 2) {
+        // Una forma —import, tipo, interfaz, objeto— se conserva entera: sus
+        // miembros SON el contrato. Sólo se pliega un cuerpo de más de dos líneas.
         result += code.slice(i, j)
       } else {
         // Fold the body
