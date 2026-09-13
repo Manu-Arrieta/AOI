@@ -100,7 +100,15 @@ describe('a suite leaves no process behind, by either exit', () => {
         "import { test } from 'node:test'",
         "test('launches a ghost', async () => {",
         '  const here = path.dirname(fileURLToPath(import.meta.url))',
+        // El fantasma se deja en `unref` —su vida no la sostiene el padre, que
+        // es justamente lo que hay que recoger— y el caso `hang` se sostiene
+        // con un intervalo propio. Esa separación es la que hace que cada caso
+        // mida su camino: sin el intervalo, una suite sin nada pendiente hace
+        // que el runner salga por su cuenta y el caso del reloj mediría una
+        // salida temprana; con el fantasma referenciado, el caso `exit` no
+        // terminaría nunca y mediría un timeout.
         `  spawn(process.execPath, [path.join(here, '${mark}.mjs')], { stdio: 'ignore' }).unref()`,
+        kind === 'hang' ? '  setInterval(() => {}, 1000)' : '',
         kind === 'hang' ? '  await new Promise(() => {})' : '',
         '})',
         '',
@@ -146,8 +154,21 @@ describe('a suite leaves no process behind, by either exit', () => {
     it(`kills the group when the suite ${label}`, async () => {
       const { dir, mark } = fixture(kind)
       try {
+        const startedAt = Date.now()
         const passed = await suitePasses(dir, '*.test.mjs', timeout)
+        const elapsed = Date.now() - startedAt
         assert.equal(passed, expected, `la suite no salió por donde el caso pretende (${label})`)
+        // El reloj es lo que distingue el camino del timeout de una salida
+        // temprana del runner. `false` lo producen LOS DOS, así que sin esta
+        // aserción el caso medía una salida temprana creyendo medir el reloj —
+        // y el mutante que convierte `finish(false)` en `finish(true)`
+        // sobrevivía en la versión donde el runner sale antes.
+        if (kind === 'hang') {
+          assert.ok(
+            elapsed >= timeout * 0.8,
+            `salió en ${elapsed}ms y el timeout es de ${timeout}ms: no fue el reloj, fue una salida temprana del runner`
+          )
+        }
         const left = await alive(mark)
         assert.equal(left, 0, `quedó vivo el nieto: la suite ${label} y no se recogió el grupo`)
       } finally {
