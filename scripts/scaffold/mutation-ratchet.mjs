@@ -79,7 +79,18 @@ export const MUTATION_FLOOR = {
   // Subió de 53 a 54 con la compuerta `aoi:audit-protocol` y su suite (13 casos),
   // que le dan a este área 26 mutantes más que antes mataba. Nunca baja.
   'scripts/multi-harness': 55,
-  'scripts/scaffold': 61,
+  // 61 → 62. El arreglo de la fuga de procesos de `mutation-probe` agregó 4
+  // mutantes (137 → 141) y al principio NO estaba cubierto: el área cayó a 59.
+  // Bajarlo a 59 habría sido registrar un bug como baseline. Los casos que fijan
+  // el contrato de `suitePasses` —mata el grupo de procesos por las DOS vías, la
+  // del timeout y la de la salida propia— matan esos 4 y los supervivientes
+  // vuelven a 54, el mismo número que antes del arreglo.
+  //
+  // Nota que este piso no se movía desde la medición inicial, y que su área era
+  // invisible para `validate-srp`: `SKIP_DIRS` saltea por NOMBRE en cualquier
+  // profundidad, así que `scripts/scaffold/` entero queda fuera del conteo de
+  // 300 LOC. Este archivo lo pasa. Ver el comentario en `validate-srp.mjs`.
+  'scripts/scaffold': 62,
   'scripts/spatiotemporal-runtime': 59,
   // 51 → 64. El salto grande no viene de más tests sobre lo mismo: al extraer el
   // escáner compartido (`code-scanner.mjs`) el área ganó un módulo con casos

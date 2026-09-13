@@ -9,8 +9,12 @@
  */
 
 import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
-import { literalMask, mutationsFor, OPERATORS } from './mutation-probe.mjs'
+import { execFileSync } from 'node:child_process'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { describe, it, after } from 'node:test'
+import { literalMask, mutationsFor, OPERATORS, suitePasses } from './mutation-probe.mjs'
 
 describe('mutations are generated only where a decision is made', () => {
   it('mutates a real comparison', () => {
@@ -56,6 +60,113 @@ describe('mutations are generated only where a decision is made', () => {
     const m = mutationsFor('const a = 1\nif (b === c) {}')
     assert.equal(m[0].line, 2)
     assert.equal(m[0].before, 'if (b === c) {}')
+  })
+})
+
+/**
+ * El contrato de `suitePasses`, que hasta ahora no tenía un solo caso directo.
+ *
+ * Importa más de lo que parece: el probe termina por dos vías —el timeout o el
+ * evento `exit` del hijo— y matar el grupo de procesos en UNA sola de las dos
+ * deja vivos a los procesos que la suite lanzó. Medido el 2026-09-13: trece
+ * huérfanos, hasta cuatro horas girando, y el probe reportando esos mutantes
+ * como muertos —correctamente— mientras la máquina quedaba al 100%.
+ *
+ * Los casos usan un NIETO de verdad, porque el nieto es lo que se filtraba: el
+ * hijo directo siempre moría. Un caso que sólo mira al hijo no distingue un
+ * arreglo de una fuga.
+ */
+describe('a suite leaves no process behind, by either exit', () => {
+  const SANDBOXES = []
+  after(() => {
+    for (const d of SANDBOXES) fs.rmSync(d, { recursive: true, force: true })
+  })
+
+  /**
+   * Un directorio con una suite que lanza un proceso fantasma.
+   * @param {'hang'|'exit'} kind si la suite además se cuelga o termina
+   */
+  function fixture(kind) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-probe-ghost-'))
+    SANDBOXES.push(dir)
+    const mark = `ghost-${process.pid}-${Math.random().toString(36).slice(2, 8)}`
+    fs.writeFileSync(path.join(dir, `${mark}.mjs`), 'while (true) {}\n')
+    fs.writeFileSync(
+      path.join(dir, 'suite.test.mjs'),
+      [
+        "import { spawn } from 'node:child_process'",
+        "import path from 'node:path'",
+        "import { fileURLToPath } from 'node:url'",
+        "import { test } from 'node:test'",
+        "test('launches a ghost', async () => {",
+        '  const here = path.dirname(fileURLToPath(import.meta.url))',
+        `  spawn(process.execPath, [path.join(here, '${mark}.mjs')], { stdio: 'ignore' }).unref()`,
+        kind === 'hang' ? '  await new Promise(() => {})' : '',
+        '})',
+        '',
+      ].join('\n')
+    )
+    return { dir, mark }
+  }
+
+  /** Cuántos procesos con la marca siguen vivos; espera a que bajen a cero. */
+  async function alive(mark) {
+    for (let i = 0; i < 12; i++) {
+      const out = execFileSync('ps', ['-Ao', 'args'], { encoding: 'utf8' })
+      const n = out.split('\n').filter((l) => l.includes(mark)).length
+      if (n === 0) return 0
+      await new Promise((r) => setTimeout(r, 100))
+    }
+    return 1
+  }
+
+  /** Un fantasma que sobrevive no puede quedar suelto entre casos. */
+  function reap(mark) {
+    const out = execFileSync('ps', ['-Ao', 'pid,args'], { encoding: 'utf8' })
+    for (const line of out.split('\n')) {
+      if (!line.includes(mark)) continue
+      try {
+        process.kill(Number(line.trim().split(/\s+/)[0]), 'SIGKILL')
+      } catch {}
+    }
+  }
+
+  /**
+   * El valor esperado NO es decorativo: es lo que prueba por qué camino salió.
+   * En el caso `exit` el timeout es largo a propósito, así que pasar significa
+   * que la suite terminó sola y el grupo se mató igual. Sin esa aserción el caso
+   * podría estar midiendo el camino del timeout dos veces y seguiría verde.
+   */
+  const CASES = [
+    ['hang', false, 1200, 'se cuelga y el timeout la corta'],
+    ['exit', true, 10000, 'termina sola'],
+  ]
+
+  for (const [kind, expected, timeout, label] of CASES) {
+    it(`kills the group when the suite ${label}`, async () => {
+      const { dir, mark } = fixture(kind)
+      try {
+        const passed = await suitePasses(dir, '*.test.mjs', timeout)
+        assert.equal(passed, expected, `la suite no salió por donde el caso pretende (${label})`)
+        const left = await alive(mark)
+        assert.equal(left, 0, `quedó vivo el nieto: la suite ${label} y no se recogió el grupo`)
+      } finally {
+        reap(mark)
+      }
+    })
+  }
+
+  it('reports pass for a green suite and failure for a red one', async () => {
+    const green = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-probe-green-'))
+    const red = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-probe-red-'))
+    SANDBOXES.push(green, red)
+    const body = (n) =>
+      `import { test } from 'node:test'\nimport assert from 'node:assert/strict'\ntest('t', () => assert.equal(1, ${n}))\n`
+    fs.writeFileSync(path.join(green, 'suite.test.mjs'), body(1))
+    fs.writeFileSync(path.join(red, 'suite.test.mjs'), body(2))
+
+    assert.equal(await suitePasses(green, '*.test.mjs', 10000), true, 'una suite verde no reportó pass')
+    assert.equal(await suitePasses(red, '*.test.mjs', 10000), false, 'una suite roja no reportó fallo')
   })
 })
 

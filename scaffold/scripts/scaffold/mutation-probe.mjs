@@ -195,29 +195,53 @@ export function areaSources(root, area, extensions = DEFAULT_EXTENSIONS) {
  *
  * `detached: true` gives the child its own process group, so `-pid` reaches
  * every descendant and never the process that called us.
+ *
+ * The kill happens on BOTH paths, and that second half was another leak. Killing
+ * only on the timeout misses the case where the child exits ON ITS OWN while
+ * something it spawned keeps running: a suite that launches a script and
+ * finishes leaves that script reparented to PID 1. Measured on 2026-09-13 with a
+ * three-process reproducer: on the timeout path zero survivors, on the exit path
+ * one. Killing the group on every completion closes both, and it is safe on the
+ * exit path precisely because the direct child is already gone — whatever the
+ * group still holds is a descendant to reap. A group that no longer exists
+ * throws ESRCH, which is ignored.
+ *
+ * Exported so its contract can be tested directly: a defect here corrupts every
+ * number the probe reports, which is the same reason `mutationsFor` is exported.
  */
-function suitePasses(cwd, glob, timeout = 180000, runner = null) {
+export function suitePasses(cwd, glob, timeout = 180000, runner = null) {
   const [command, args, opts] = runner
     ? [runner.command, runner.args, { cwd: path.join(cwd, runner.cwd ?? '.') }]
     : ['node', ['--test', ...expand(cwd, glob)], { cwd }]
 
+  // El padre puede ser a su vez un proceso de `node --test`, que inyecta
+  // NODE_TEST_CONTEXT y convierte al hijo en un reportero de máquina: no corre
+  // ningún test y sale 0. Una suite vacía se reporta verde y el mutante que
+  // debía morir sobrevive. `real-corpus.mjs` ya se defendía de esto; la sonda no.
+  const env = { ...process.env }
+  delete env.NODE_TEST_CONTEXT
+  delete env.NODE_TEST_WORKER_ID
+
   return new Promise((resolve) => {
-    const child = spawn(command, args, { ...opts, stdio: 'ignore', detached: true })
+    const child = spawn(command, args, { ...opts, env, stdio: 'ignore', detached: true })
+
+    const killGroup = () => {
+      try {
+        process.kill(-child.pid, 'SIGKILL')
+      } catch {
+        // El grupo ya no existe: nada que recoger.
+      }
+    }
+
     let settled = false
     const finish = (passed) => {
       if (settled) return
       settled = true
       clearTimeout(timer)
+      killGroup()
       resolve(passed)
     }
-    const timer = setTimeout(() => {
-      try {
-        process.kill(-child.pid, 'SIGKILL')
-      } catch {
-        // El grupo ya no existe: nada que matar.
-      }
-      finish(false)
-    }, timeout)
+    const timer = setTimeout(() => finish(false), timeout)
     child.on('exit', (code) => finish(code === 0))
     child.on('error', () => finish(false))
   })
