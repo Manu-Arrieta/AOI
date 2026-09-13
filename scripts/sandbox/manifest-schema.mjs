@@ -3,6 +3,8 @@
 // `scripts/memory-sync/schema.mjs` precedent: throw-on-first assertion with a
 // descriptive, path-prefixed message.
 
+import { posix } from "node:path";
+
 export const allowedKinds = new Set([
   "frontend",
   "backend",
@@ -112,14 +114,45 @@ function assertTargetToken(value, fieldName, options = {}) {
 function assertSandboxPath(value, fieldName, sandbox) {
   assertString(value, fieldName);
 
-  const expectedPrefix = `.sandboxes/${sandbox}/`;
+  // El nombre del sandbox compone el prefijo, así que tiene que ser un segmento
+  // solo: con `foo/bar` el prefijo pasa a ser `.sandboxes/foo/bar/` y el guard
+  // valida contra un sandbox que no existe; con `..` el prefijo mismo sale del
+  // árbol. Antes no se validaba y los dos casos pasaban.
   assert(
-    value.startsWith(expectedPrefix),
+    sandbox !== "" && !sandbox.includes("/") && !sandbox.includes("\\") && sandbox !== ".." && sandbox !== ".",
+    `sandbox name must be a single path segment (received "${sandbox}").`,
+  );
+
+  const sandboxRoot = `.sandboxes/${sandbox}`;
+  const expectedPrefix = `${sandboxRoot}/`;
+
+  // Separador de Windows. `split("/")` NO ve una barra invertida, así que
+  // `.sandboxes/x/..\..\..\Windows` se colaba entero: para el chequeo de `..`
+  // era un único elemento de nombre raro. Medido: pasaba y el CLI salía 0, o sea
+  // un falso verde en una compuerta que `/sdd-verify` declara como FAIL.
+  // `resource-operations.ts` ya normaliza `\` -> `/` antes de testear contención;
+  // acá faltaba.
+  const normalized = value.replaceAll("\\", "/");
+
+  assert(
+    normalized.startsWith(expectedPrefix),
     `${fieldName} must stay within "${expectedPrefix}" (received "${value}").`,
   );
+
+  // Contención sobre el path NORMALIZADO y no sobre el string crudo, y las dos
+  // direcciones importan:
+  //
+  //   `.sandboxes/x/../../../etc`  -> `../../../etc`          -> RECHAZADO
+  //   `.sandboxes/x/a/../b`        -> `.sandboxes/x/b`        -> ACEPTADO
+  //
+  // La versión anterior exigía que no hubiera NINGÚN `..` en el path, así que
+  // rechazaba el segundo —un path válido y dentro del sandbox— y a la vez dejaba
+  // pasar el primero escrito con barras invertidas, que sale del árbol. Resolver
+  // primero arregla los dos: es la misma prueba que hace el dashboard.
+  const resolved = posix.normalize(normalized);
   assert(
-    !value.split("/").includes(".."),
-    `${fieldName} must not contain ".." path traversal (received "${value}").`,
+    resolved === sandboxRoot || resolved.startsWith(expectedPrefix),
+    `${fieldName} resolves outside "${expectedPrefix}" (received "${value}").`,
   );
 }
 

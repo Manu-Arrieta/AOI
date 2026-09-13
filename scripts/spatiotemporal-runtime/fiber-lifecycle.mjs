@@ -224,11 +224,44 @@ export function createFiberRuntime(coeffectRegistry) {
       fiber,
       activate,
       deactivate,
+      /**
+       * Desuscribe y descarga la fibra. Devuelve una promesa.
+       *
+       * Y devuelve una promesa porque el ORDEN acá era el defecto. La versión
+       * anterior hacía:
+       *
+       *     deactivate();        // sin await
+       *     fibers.delete(uid);  // mismo tick
+       *
+       * `deactivate()` empieza esperando `pendingActivation` —cede a un
+       * microtask—, así que cuando por fin llegaba a `isReliedUpon()` la fibra
+       * YA estaba fuera del mapa: `providerFiber` quedaba `undefined`, el guard
+       * no encontraba dependientes y no corría `deactivateDependentsOf()`. El
+       * proveedor se destruía ANTES que sus dependientes, y el inverso del
+       * dependiente corría contra un contexto al que ya le faltaba su
+       * dependencia — exactamente el estado que este guardado existe para hacer
+       * imposible.
+       *
+       * Medido por una lente adversarial: el mismo par de fibras por
+       * `deactivate()` daba el orden correcto
+       * (`inverse:C1` con la dependencia presente, después `inverse:P`) y por
+       * `dispose()` daba `inverse:P` primero y después
+       * `inverse:C1 (Coeffect 'db' is unsatisfied)`. No es un bloqueo: es
+       * corrupción silenciosa, que es peor.
+       *
+       * La afirmación del encabezado es sobre el TEARDOWN, no sobre un camino
+       * del teardown, así que los dos caminos tienen que respetar el guardado.
+       */
       dispose() {
         for (const unsub of fiber.unsubs) unsub();
-        deactivate();
-        fibers.delete(uid);
-        controllers.delete(uid);
+        return deactivate()
+          .catch((e) => console.error(`Failed to dispose fiber ${fiber.uid}:`, e))
+          .finally(() => {
+            // Después de la desactivación, no antes: mientras el guardado corre,
+            // el mapa tiene que seguir completo o el guardado no ve a nadie.
+            fibers.delete(uid);
+            controllers.delete(uid);
+          });
       }
     };
     controllers.set(uid, controller);

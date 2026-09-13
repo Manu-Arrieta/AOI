@@ -189,3 +189,93 @@ describe('Spatiotemporal Runtime: Fiber Lifecycle & Orchestration', () => {
     runtime.disposeAll();
   });
 });
+
+describe('el guardado de descarga vale para TODOS los caminos del teardown', () => {
+  // El encabezado de `fiber-lifecycle.mjs` afirma: *"guarded unloading: ¬relied_n(γ)
+  // prevents provider teardown until all dependent fibers have finished
+  // deactivation"*. Es una afirmación sobre el teardown, no sobre un camino del
+  // teardown, y `dispose()` la violaba.
+  //
+  // `dispose()` hacía `deactivate()` SIN await y borraba la fibra del mapa en el
+  // mismo tick. `deactivate()` empieza esperando `pendingActivation` —cede a un
+  // microtask—, así que al llegar a `isReliedUpon()` la fibra ya no estaba en
+  // `fibers`: `providerFiber` quedaba `undefined`, el guard no veía dependientes
+  // y el proveedor se destruía primero. El inverso del dependiente corría
+  // entonces contra un contexto al que le faltaba su dependencia.
+  //
+  // El caso de `deactivate()` ya estaba cubierto más arriba. Éste fija el OTRO
+  // camino, y la aserción es el ORDEN y no el estado final: los dos terminan con
+  // las dos fibras INACTIVE, así que mirar el estado no distingue el correcto del
+  // corrupto.
+  const orden = [];
+  const provider = () => ({
+    name: 'db-provider',
+    inject: [],
+    provide: ['db'],
+    apply: (ctx) => {
+      ctx.provide('db', { connected: true });
+      return () => orden.push('inverse:proveedor');
+    },
+  });
+  const consumer = () => ({
+    name: 'api-consumer',
+    inject: ['db'],
+    provide: [],
+    apply: (ctx) => {
+      ctx.inject('db');
+      return () => {
+        // Si el proveedor se fue primero, este `inject` tira.
+        let presente = true;
+        try {
+          ctx.inject('db');
+        } catch {
+          presente = false;
+        }
+        orden.push(presente ? 'inverse:consumidor (dep presente)' : 'inverse:consumidor (dep AUSENTE)');
+      };
+    },
+  });
+
+  it('por dispose(): el dependiente se desactiva ANTES que el proveedor', async () => {
+    orden.length = 0;
+    const registry = createCoeffectRegistry();
+    const runtime = createFiberRuntime(registry);
+
+    // Consumidor primero: queda INACTIVE esperando la dependencia.
+    const api = runtime.instantiate(consumer());
+    const db = runtime.instantiate(provider());
+    await new Promise((r) => setTimeout(r, 10));
+    assert.equal(db.fiber.state, 'ACTIVE');
+    assert.equal(api.fiber.state, 'ACTIVE', 'premisa: el consumidor tiene que estar activo');
+
+    await db.dispose();
+    await new Promise((r) => setTimeout(r, 10));
+
+    assert.deepEqual(
+      orden,
+      ['inverse:consumidor (dep presente)', 'inverse:proveedor'],
+      'el proveedor se destruyó antes que su dependiente, que corrió su inverso sin la dependencia'
+    );
+    runtime.disposeAll();
+  });
+
+  it('por dispose() y por deactivate() el orden es el MISMO', async () => {
+    // La aserción que impide que los dos caminos vuelvan a divergir: el guardado
+    // es una propiedad del teardown, no de la función que lo invoca.
+    const correr = async (via) => {
+      orden.length = 0;
+      const registry = createCoeffectRegistry();
+      const runtime = createFiberRuntime(registry);
+      const api = runtime.instantiate(consumer());
+      const db = runtime.instantiate(provider());
+      await new Promise((r) => setTimeout(r, 10));
+      if (via === 'dispose') await db.dispose();
+      else await db.deactivate();
+      await new Promise((r) => setTimeout(r, 10));
+      runtime.disposeAll();
+      return orden.join(' | ');
+    };
+
+    assert.equal(await correr('deactivate'), await correr('dispose'));
+  });
+});

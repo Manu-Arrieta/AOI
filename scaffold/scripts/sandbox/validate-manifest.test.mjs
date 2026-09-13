@@ -151,7 +151,10 @@ test("rejects a dangling compartment reference", () => {
 test("rejects a path that escapes the sandbox subtree", () => {
   const manifest = baseManifest();
   manifest.elements[0].path = ".sandboxes/auth-v2/../secrets.txt";
-  assert.throws(() => validateManifest(manifest), /path traversal/);
+  // El mensaje cambió con el arreglo de contención: antes decía "must not contain
+  // .." —una regla sobre el string— y ahora dice "resolves outside", que es la
+  // prueba correcta. El rechazo es el mismo caso; lo que cambió es la razón.
+  assert.throws(() => validateManifest(manifest), /resolves outside/);
 });
 
 test("rejects a path outside the sandbox subtree", () => {

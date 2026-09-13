@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, realpathSync } from 'node:fs'
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, relative, resolve, sep } from 'node:path'
 import { promisify } from 'node:util'
@@ -47,6 +47,68 @@ function normalizeRelativePath(value: string): string {
   return value.replaceAll('\\', '/').replace(/\/$/, '')
 }
 
+/**
+ * El ancestro MÁS LARGO de `absolutePath` que ya existe en disco.
+ *
+ * Existe para poder resolver symlinks: `resolve()` es léxico y no sigue enlaces,
+ * así que hay que preguntarle al sistema de archivos. El ancestro que existe es
+ * el último punto donde un symlink puede desviar la escritura.
+ */
+function deepestExistingAncestor(absolutePath: string): string | null {
+  let current = absolutePath
+  while (true) {
+    if (existsSync(current)) return current
+    const parent = dirname(current)
+    if (parent === current) return null
+    current = parent
+  }
+}
+
+/**
+ * ¿`absolutePath` está DENTRO de `.resources`, con symlinks resueltos?
+ *
+ * La comparación de strings no alcanza, y éste es el segundo defecto de la misma
+ * familia en este archivo. El comentario de abajo documenta el primero —un
+ * `startsWith` que dejaba pasar a cualquier hermano cuyo nombre EMPEZARA con
+ * `.resources`— y se arregló con el separador. Pero `resolve()` **no resuelve
+ * symlinks**: si `.resources/evil` es un enlace a un directorio de afuera,
+ * `mkdir` y `rename` siguen ese enlace en los componentes padre y escriben fuera
+ * del sandbox. Medido por una lente adversarial: `createResourceFolder` escribió
+ * un directorio afuera y `moveResourceFolder` exfiltró un archivo.
+ *
+ * La prueba correcta resuelve el ancestro existente y compara contra el `.resources`
+ * real. El ancestro y no el path entero porque un path nuevo todavía no existe:
+ * lo que importa es que ningún componente YA presente desvíe la operación.
+ */
+function isInsideResources(workspaceRoot: string, absolutePath: string, resourcesRoot: string): boolean {
+  const lexical = absolutePath === resourcesRoot || absolutePath.startsWith(resourcesRoot + sep)
+  if (!lexical) return false
+
+  const ancestor = deepestExistingAncestor(absolutePath)
+  if (ancestor === null) return true // nada existe todavía: la prueba léxica manda
+
+  let realAncestor: string
+  let realRoot: string
+  try {
+    realAncestor = realpathSync(ancestor)
+    realRoot = existsSync(resourcesRoot) ? realpathSync(resourcesRoot) : resourcesRoot
+  } catch {
+    // Si no se puede resolver, se RECHAZA. `no pude determinar` no se lee como
+    // `todo bien`: es la misma regla que el Invariant Gate aplica cuando la
+    // alcanzabilidad es indeterminada.
+    return false
+  }
+
+  // Sólo una dirección: el ancestro tiene que estar DENTRO de la raíz real.
+  // La primera versión de esta función tenía una tercera cláusula
+  // —`realRoot.startsWith(realAncestor + sep)`— razonando "por si el ancestro es
+  // un padre de `.resources`". Es fail-open: acepta cualquier cosa cuando el
+  // ancestro está afuera y la raíz adentro. La dirección inversa no hace falta
+  // porque el chequeo léxico de arriba ya exige que el path empiece por
+  // `.resources`.
+  return realAncestor === realRoot || realAncestor.startsWith(realRoot + sep)
+}
+
 function resolveResourcePath(workspaceRoot: string, inputPath: string): { absolutePath: string; relativePath: string } {
   const normalized = normalizeRelativePath(inputPath)
   const resourcesRoot = resolve(workspaceRoot, '.resources')
@@ -61,8 +123,11 @@ function resolveResourcePath(workspaceRoot: string, inputPath: string): { absolu
   //
   // Containment needs the separator. The equality case keeps the root itself
   // addressable, which listing depends on.
-  const insideSandbox = absolutePath === resourcesRoot || absolutePath.startsWith(resourcesRoot + sep)
-  if (!insideSandbox) {
+  //
+  // Y necesita además resolver symlinks, que es lo que hace `isInsideResources`
+  // — ver su comentario: el separador cierra el caso de los hermanos y deja
+  // abierto el del enlace padre.
+  if (!isInsideResources(workspaceRoot, absolutePath, resourcesRoot)) {
     throw new ResourceOperationError('Resource operations must stay inside .resources.', 403)
   }
 

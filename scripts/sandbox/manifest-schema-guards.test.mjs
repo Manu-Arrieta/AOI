@@ -212,3 +212,60 @@ describe('a string array rejects a non-string member', () => {
     rejects(m, /must be an array/)
   })
 })
+
+describe('la contención del sandbox se prueba sobre el path RESUELTO', () => {
+  // Nació de una lente adversarial, y el escape es de una familia que este repo
+  // ya había arreglado en OTRO archivo. `resource-operations.ts` tiene el
+  // comentario: *"A bare `startsWith` is a string test, not a containment test"*,
+  // y ahí normaliza `\` -> `/` antes de testear. Acá faltaba lo mismo, así que el
+  // guard tenía las dos fallas a la vez:
+  //
+  //   `.sandboxes/x/..\..\..\Windows\System32\config`  SE COLABA — `split("/")` no
+  //   ve una barra invertida, así que `..\..\...` era UN elemento de nombre raro
+  //   y el chequeo de `..` no lo miraba. Medido: el CLI salía **0** sobre un
+  //   manifest con un path que sale del árbol, o sea un falso verde en una
+  //   compuerta que `/sdd-verify` declara como FAIL.
+  //
+  //   `.sandboxes/x/a/../b`  SE RECHAZABA DE MÁS — es un path válido y adentro.
+  //
+  // Resolver con `posix.normalize` antes de comparar arregla los dos, y es la
+  // misma prueba que hace el dashboard.
+  const accepts = (manifest) => assert.doesNotThrow(() => validateManifest(manifest))
+  const withPath = (path) => {
+    const m = good()
+    m.elements[0].path = path
+    return m
+  }
+
+  it('rechaza un `..` escrito con barras invertidas, que antes se colaba', () => {
+    rejects(withPath('.sandboxes/auth-v2/..\\..\\..\\Windows\\System32\\config'), /resolves outside/)
+  })
+
+  it('rechaza un `..` con barras normales que sale del árbol', () => {
+    rejects(withPath('.sandboxes/auth-v2/../../../etc/passwd'), /resolves outside/)
+  })
+
+  it('ACEPTA un `..` que vuelve adentro, que antes se rechazaba de más', () => {
+    accepts(withPath('.sandboxes/auth-v2/api/../api/auth.post.ts'))
+  })
+
+  it('sigue aceptando el caso normal y la raíz del sandbox', () => {
+    accepts(withPath('.sandboxes/auth-v2/api/auth.post.ts'))
+    accepts(withPath('.sandboxes/auth-v2/'))
+  })
+
+  it('rechaza un path fuera del sandbox y uno absoluto', () => {
+    rejects(withPath('.sandboxes/otro-sandbox/x.ts'), /must stay within/)
+    rejects(withPath('/etc/passwd'), /must stay within/)
+  })
+
+  it('rechaza un nombre de sandbox que no sea un segmento solo', () => {
+    // El nombre compone el prefijo: con `foo/bar` el guard valida contra un
+    // sandbox que no existe, y con `..` el prefijo mismo sale del árbol.
+    for (const name of ['foo/bar', '..', '.', '', 'con\\barra']) {
+      const m = good()
+      m.sandbox = name
+      rejects(m, /sandbox name must be a single path segment|sandbox must be a non-empty/)
+    }
+  })
+})

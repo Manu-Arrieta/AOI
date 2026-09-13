@@ -2256,6 +2256,126 @@ nunca cierra— **la hace fallar a ella también**.
 
 ---
 
+### A.21 La contención es una propiedad del sistema de archivos, no del string
+
+Quinta pasada, y la más productiva por hallazgo: los dos ESCAPES del ciclo salieron de
+acá, y los dos son la misma idea mal implementada en dos archivos distintos.
+
+**Lo que hace medible a una lente es la afirmación citada, no el subsistema.** Cuatro
+lentes sobre `spatiotemporal-runtime`, `sandbox` y el dashboard. Las cuatro refutaron.
+
+| Módulo | Lo que dice de sí mismo | Qué midió la lente |
+| :--- | :--- | :--- |
+| `fiber-lifecycle` | *"guarded unloading: ¬relied_n(γ) prevents provider teardown until all dependent fibers have finished deactivation"* | El guardado existe en `deactivate()` y **`dispose()` lo saltea entero**: borra la fibra del mapa en el mismo tick, así que el guard no ve dependientes y el proveedor se destruye primero |
+| `effect-tracker` | *"**Every** context mutation carries an explicit inverse"* | **Falso**: `getState()` devolvía el objeto vivo, así que toda mutación por ahí quedaba sin registrar. Y `set()` guardaba el previo **por referencia** |
+| `effect-tracker` | *"inverses accumulate in LIFO order **or commute under independence**"* | Prosa no implementada: no hay detección de conmutatividad. El orden es LIFO incondicional |
+| `sandbox/manifest-schema` | *`assertSandboxPath`: "must stay within `.sandboxes/{name}/`"* | **Escape**: `split("/")` no ve una barra invertida, así que `.sandboxes/x/..\..\..\Windows` pasaba. Medido: **el CLI salía 0** sobre un manifest que sale del árbol |
+| `dashboard/resource-operations` | *"Containment needs the separator"* (su propio comentario, ya arreglado una vez) | El separador cierra los hermanos y deja abierto el **symlink**: `resolve()` es léxico, así que `mkdir`/`rename` siguen un enlace padre y escriben afuera |
+
+#### Los dos escapes, y por qué son un solo defecto
+
+Los dos archivos prueban contención **sobre un string**. El string no es el sistema de
+archivos, y hay dos formas de que difieran:
+
+| | Cómo difiere | Quién lo padecía |
+| :--- | :--- | :--- |
+| **Separador** | `\` y `/` son el mismo separador para el SO, y dos caracteres distintos para `split('/')` | `assertSandboxPath` |
+| **Enlace** | Un symlink es un camino real y ningún cambio en el texto | `resolveResourcePath` |
+
+Y el detalle que lo hace ejemplar: **`resource-operations.ts` ya tenía el comentario
+que describe el primero** —*"A bare `startsWith` is a string test, not a containment
+test"*— y la lección no había viajado al otro archivo del mismo repo. **Una lección
+arreglada en un lugar y no enumerada en los demás es medio arreglo.** Es la forma de
+A.17 aplicada a una IDEA y no a una rama.
+
+**La prueba correcta, y vale para los dos:**
+
+```js
+// 1. normalizar el separador ANTES de testear
+const normalized = value.replaceAll("\\", "/")
+// 2. resolver, y testear contención sobre el resultado
+const resolved = posix.normalize(normalized)
+assert(resolved === root || resolved.startsWith(root + sep))
+```
+
+Eso arregla **las dos direcciones**, que es lo que ninguna de las dos versiones
+anteriores lograba: cierra el `..\..\` que se colaba y **acepta** el `a/../b` que es
+válido y adentro. Para el symlink hace falta una tercera cosa que el texto no puede
+dar: preguntarle al sistema de archivos.
+
+```js
+// 3. el ancestro EXISTENTE más largo, resuelto con realpath, contra la raíz real
+const ancestor = deepestExistingAncestor(absolutePath)
+const realAncestor = realpathSync(ancestor)
+```
+
+El ancestro y no el path entero porque un path nuevo todavía no existe: lo que importa
+es que ningún componente **ya presente** desvíe la operación.
+
+> [!CAUTION]
+> **`resolve()` es léxico.** Ordena `..` y colapsa separadores, y no sigue enlaces. Si
+> el resultado de `resolve()` es lo único que comparás contra la raíz, un enlace padre
+> mueve la escritura afuera **sin cambiar un carácter del path**. La contención se
+> prueba con el sistema de archivos, no con la aritmética de strings.
+
+**Y la asimetría, que salió como efecto secundario.** Las dos guardias tenían versiones
+que **rechazaban de más**: `assertSandboxPath` rechazaba todo path con un `..` aunque
+volviera adentro. Eso no es seguridad, es una guardia que se va a desactivar: la primera
+vez que bloquea un caso legítimo, alguien la saca. **Una guardia se prueba en las dos
+direcciones o no se probó.**
+
+---
+
+### A.22 Un guardado vale para todos los caminos que lo invocan, o no vale
+
+`fiber-lifecycle.mjs` afirma en su encabezado:
+
+> *"guarded unloading: ¬relied_n(γ) prevents provider teardown until all dependent
+> fibers have finished deactivation"*
+
+Es una afirmación sobre **el teardown**, no sobre una función del teardown. El guardado
+estaba implementado en `deactivate()`, con un comentario que documenta el defecto que lo
+motivó y todo. Y `dispose()` —el otro camino público al teardown— hacía:
+
+```js
+dispose() {
+  for (const unsub of fiber.unsubs) unsub();
+  deactivate();        // ← sin await
+  fibers.delete(uid);  // ← mismo tick
+}
+```
+
+`deactivate()` empieza esperando `pendingActivation`, o sea que **cede a un microtask**.
+Cuando por fin llegaba a `isReliedUpon()`, la fibra ya estaba fuera del mapa:
+`providerFiber` quedaba `undefined`, el guard no encontraba dependientes y no corría
+`deactivateDependentsOf()`. El proveedor se destruía antes que sus dependientes, y el
+inverso del dependiente corría contra un contexto al que ya le faltaba su dependencia.
+
+| Camino | Orden de los inversos | Veredicto |
+| :--- | :--- | :--- |
+| `deactivate()` | `inverse:C1 (dependencia presente)` → `inverse:P` | correcto |
+| `dispose()` | `inverse:P` → `inverse:C1 (Coeffect 'db' is unsatisfied)` | **corrupción** |
+
+**No es un bloqueo, es peor que un bloqueo:** un deadlock se ve y se arregla; esto
+termina bien y deja un inverso corriendo contra un estado imposible. Los dos caminos
+terminan con las fibras `INACTIVE`, así que **mirar el estado final no distingue el
+correcto del corrupto** — la única aserción que sirve es el ORDEN.
+
+> [!CAUTION]
+> **Cuando un guardado protege una operación, todos los caminos que llegan a esa
+> operación tienen que pasar por él.** Y el modo de fallarlo casi nunca es el olvido:
+> es el **orden**. Acá el guardado estaba bien escrito y era correcto; lo que estaba mal
+> era que el llamador limpiaba el estado que el guardado necesitaba leer, **una línea
+> antes**. Si tu guardado depende de leer un mapa, un registro o un flag, la pregunta no
+> es *"¿está el guardado?"* sino **"¿sigue estando lo que el guardado lee, cuando lo
+> lee?"**
+
+**Y la compuerta tiene que afirmar el orden, no el resultado.** El test que cierra esto
+compara la secuencia de inversos entre `dispose()` y `deactivate()` y exige que sean
+**iguales**. Con eso, los dos caminos no pueden volver a divergir sin que algo falle.
+
+---
+
 ## Apéndice B — Adaptación por harness
 
 
@@ -2357,6 +2477,12 @@ Antes de dar la auditoría por terminada:
       negativo no la hace fallar, todavía no sabés si sirve. Puede ser que el código esté
       doblemente protegido —entonces hay que revertir los **dos** mecanismos— o que la
       compuerta mida una propiedad distinta de la que el instrumento promete (A.20).
+- [ ] **Toda guardia de contención se prueba en las DOS direcciones**: que rechace lo de
+      afuera —con `\`, con `/`, con symlink— y que **acepte** lo de adentro, incluido el
+      `..` que resuelve adentro. Una guardia que rechaza de más se desactiva igual que una
+      que acepta de más (A.21).
+- [ ] **Todo guardado se probó por TODOS los caminos** que llegan a la operación que
+      protege, y la aserción es el **orden** y no el estado final (A.22).
 - [ ] Las lentes del §12.5 corrieron con **una afirmación textual citada** cada una —no con un
       mandato general— y su veredicto quedó en el informe. Un subsistema sin lente es alcance
       no cubierto y se declara (A.19).

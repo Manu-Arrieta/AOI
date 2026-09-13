@@ -38,7 +38,11 @@ export const MUTATION_FLOOR = {
   // archivo con la corrida de OTRO, y que dos turnos sin `id` no se tumbaban
   // nunca. Los casos que fijan las dos correcciones matan más mutantes.
   'scripts/subagent-context': 69,
-  'scripts/sandbox': 86,
+  // 86 → 88. Los casos de contención de `assertSandboxPath` —barra invertida,
+  // `..` que vuelve adentro, nombre de sandbox que no es un segmento— matan
+  // mutantes del guard que antes sobrevivían porque ningún test le daba la
+  // entrada que el guard existe para atrapar.
+  'scripts/sandbox': 88,
   // 52 → 53. `reason` pasó a ser obligatorio y se persiste: los casos que
   // exigen su ausencia y su presencia son mutantes que antes sobrevivían.
   'scripts/memory-sync': 53,

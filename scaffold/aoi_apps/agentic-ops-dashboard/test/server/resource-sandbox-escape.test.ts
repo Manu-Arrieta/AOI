@@ -12,12 +12,12 @@
  * arriba que angoste el path: esta guarda es la única.
  */
 
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { deleteResourceFolder, moveResourceFolder } from '../../server/utils/resource-operations'
+import { createResourceFolder, deleteResourceFolder, moveResourceFolder } from '../../server/utils/resource-operations'
 
 let root: string
 const noop = async () => {}
@@ -70,5 +70,65 @@ describe('a sibling that merely starts with .resources is outside the sandbox', 
     await deleteResourceFolder({ targetPath: '.resources/borrable', reason: 'limpieza', confirmed: true }, root, noop)
 
     expect(existsSync(join(root, '.resources/borrable'))).toBe(false)
+  })
+})
+
+describe('el separador cierra los hermanos y deja abierto el enlace', () => {
+  // Segunda ronda de la misma familia. El arreglo del separador —el de arriba—
+  // prueba contención sobre el resultado de `resolve()`, y `resolve()` es
+  // LÉXICO: no sigue symlinks. Si un componente YA EXISTENTE del path es un
+  // enlace a un directorio de afuera, `mkdir` y `rename` lo siguen y la
+  // operación escribe fuera del sandbox.
+  //
+  // Medido por una lente adversarial antes de este arreglo: `createResourceFolder`
+  // escribió un directorio afuera del workspace y `moveResourceFolder` exfiltró
+  // un archivo. Las dos operaciones pasaban la guarda de strings.
+  const outside = () => {
+    const dir = mkdtempSync(join(tmpdir(), 'aoi-fuera-'))
+    return dir
+  }
+
+  it('no deja CREAR a través de un enlace que apunta afuera', async () => {
+    const fuera = outside()
+    mkdirSync(join(root, '.resources/evil'), { recursive: true })
+    rmSync(join(root, '.resources/evil'), { recursive: true, force: true })
+    symlinkSync(fuera, join(root, '.resources/evil'))
+
+    await expect(
+      createResourceFolder({ folderName: 'adr', parentPath: '.resources/evil', purpose: 'x' }, root, noop),
+    ).rejects.toThrow(/stay inside \.resources/)
+
+    expect(existsSync(join(fuera, 'adr'))).toBe(false)
+    rmSync(fuera, { recursive: true, force: true })
+  })
+
+  it('no deja MOVER a través de un enlace que apunta afuera', async () => {
+    const fuera = outside()
+    mkdirSync(join(root, '.resources/adr'), { recursive: true })
+    writeFileSync(join(root, '.resources/adr/secret.md'), 'no sale de acá')
+    symlinkSync(fuera, join(root, '.resources/evil'))
+
+    await expect(
+      moveResourceFolder(
+        { sourcePath: '.resources/adr', destinationPath: '.resources/evil/adr', reason: 'x' },
+        root,
+        noop,
+      ),
+    ).rejects.toThrow(/stay inside \.resources/)
+
+    expect(existsSync(join(fuera, 'adr'))).toBe(false)
+    expect(existsSync(join(root, '.resources/adr/secret.md'))).toBe(true)
+    rmSync(fuera, { recursive: true, force: true })
+  })
+
+  it('sigue operando sobre lo que está adentro y es real', async () => {
+    // El control en la otra dirección: resolver symlinks no puede bloquear el
+    // caso normal, porque una guarda que rechaza todo se desactiva igual que una
+    // que acepta todo.
+    mkdirSync(join(root, '.resources/real'), { recursive: true })
+
+    await deleteResourceFolder({ targetPath: '.resources/real', reason: 'limpieza', confirmed: true }, root, noop)
+
+    expect(existsSync(join(root, '.resources/real'))).toBe(false)
   })
 })

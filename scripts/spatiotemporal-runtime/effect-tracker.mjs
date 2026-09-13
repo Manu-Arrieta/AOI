@@ -3,9 +3,47 @@
  *
  * Implements Revertible Effects (Definition 8, 12, 17, 18 from DeepSeek Spatiotemporal Composability Paper).
  * Mathematical formulation: E_Γ := Γ -> Γ × (Γ -> Γ)
- * Every context mutation carries an explicit inverse disposer function that undoes the mutation.
- * Inverses accumulate in LIFO order or commute under independence.
+ *
+ * El contrato REAL, medido, porque el encabezado anterior afirmaba más de lo que
+ * un objeto de JavaScript puede prometer:
+ *
+ *   - Las mutaciones hechas por `set()` y `effect()` quedan registradas y son
+ *     revertibles en orden inverso.
+ *   - El inverso de `set()` guarda una **copia** del valor previo, así que una
+ *     mutación in-place posterior del objeto original no lo corrompe.
+ *   - `getState()` devuelve una **copia desprendida**: mutarla no cambia el
+ *     contexto, y por eso no hay mutación sin registro.
+ *   - `effect(callback)` recibe el estado vivo, y el contrato es del llamador:
+ *     el callback tiene que devolver su inverso. Es la única puerta que queda, y
+ *     está declarada en vez de escondida.
+ *
+ * La versión anterior decía *"Every context mutation carries an explicit inverse
+ * disposer function that undoes the mutation"* y era falsa en dos formas que una
+ * lente adversarial midió: `getState()` entregaba el objeto VIVO —sin copia ni
+ * congelado—, así que `ctx.getState().a.b = 42` mutaba sin registrar nada y
+ * `recover()` no lo deshacía; y `set()` guardaba `prevValue` **por referencia**,
+ * así que mutar el objeto previo después del `set` hacía que `recover()`
+ * restaurara el valor mutado (`{b:999}` en vez de `{b:0}`).
+ *
+ * Y la frase *"or commute under independence"* era prosa no implementada: no hay
+ * detección de conmutatividad, el orden es LIFO incondicional. Se quita en vez de
+ * dejar una promesa que el código no cumple.
  */
+
+/**
+ * Copia defensiva de un valor del estado.
+ *
+ * `structuredClone` cubre el caso normal. Un valor con funciones adentro no es
+ * clonable, y ahí se devuelve la referencia: es peor copiar mal que no copiar,
+ * y el fallback queda declarado en vez de romper el `set`.
+ */
+function snapshot(value) {
+  try {
+    return structuredClone(value)
+  } catch {
+    return value
+  }
+}
 
 /**
  * Creates an empty or wrapped effect context ∂Γ := Γ × (Γ -> Γ)
@@ -18,10 +56,17 @@ export function createEffectContext(initialState = {}) {
 
   const ctx = {
     /**
-     * Reads current state or state property
+     * Una COPIA del estado, no el estado.
+     *
+     * Devolver el objeto vivo dejaba una puerta abierta para mutar el contexto
+     * sin registrar el inverso, que es exactamente lo que este módulo promete
+     * impedir. Con una copia, la única forma de cambiar el contexto es por una
+     * operación trackeada.
+     *
+     * @returns {Object}
      */
     getState() {
-      return state;
+      return snapshot(state);
     },
 
     /**
@@ -73,8 +118,13 @@ export function createEffectContext(initialState = {}) {
      * @returns {Function} Disposer that restores previous value
      */
     set(key, value) {
-      const prevValue = state[key];
+      // El previo se guarda como COPIA, y es la diferencia entre deshacer y
+      // deshacer mal. Con la referencia, `set('a', x)` sobre un objeto que
+      // después se muta in-place hacía que `recover()` restaurara ESE objeto
+      // mutado: el inverso existía y no servía. Medido: volvía `{b:999}` en vez
+      // de `{b:0}`.
       const hadKey = Object.prototype.hasOwnProperty.call(state, key);
+      const prevValue = hadKey ? snapshot(state[key]) : undefined;
 
       return ctx.effect(() => {
         state[key] = value;
