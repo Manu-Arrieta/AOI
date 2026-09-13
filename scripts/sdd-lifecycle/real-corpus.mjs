@@ -172,8 +172,14 @@ export function captureRealTestRun() {
 
   const run = (file) => {
     try {
+      // `cwd` FIJO en el directorio temporal, y es un arreglo medido: sin él el
+      // hijo hereda el cwd del padre y el reporter `spec` imprime las ubicaciones
+      // **relativas a ese cwd**. El mismo árbol medido desde otra profundidad
+      // producía `../../../../../private/...` en vez de `../...`, y con eso el
+      // payload cambiaba sin que cambiara un byte del árbol. `stripVolatile` no
+      // puede cubrirlo: no sabe cuántos niveles de `../` va a haber.
       return execFileSync(process.execPath, ['--test', '--test-reporter=spec', file], {
-        encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], env,
+        encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], env, cwd: dir,
       })
     } catch (err) {
       // A failing test exits non-zero; its diagnostics are exactly what we want.

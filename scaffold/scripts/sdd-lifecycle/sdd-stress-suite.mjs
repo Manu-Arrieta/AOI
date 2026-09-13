@@ -48,18 +48,33 @@ console.log('══════════════════════�
 // FASE 0: /sdd-frame — Pre-Flight & Grounding
 // ─────────────────────────────────────────────────────────────────────────────
 console.log('▶ [Fase 0: /sdd-frame] Testing Socratic Grounding in O(1)...')
-// Measured against the live ICM store: the deterministic grounding probe the
-// prompt actually runs, versus the semantic recall it replaces.
-const groundingProbe = [
-  tryCommand('icm', ['facts', 'list', WORKSPACE, '-p', 'service.', '--read-only']).stdout,
-  tryCommand('icm', ['facts', 'list', WORKSPACE, '-p', 'endpoint.', '--read-only']).stdout,
-  tryCommand('icm', ['wake-up']).stdout,
-].join('')
-const naiveRecall = tryCommand('icm', ['recall', 'project context stack conventions services', '--limit', '20']).stdout
+// `--hermetic`: no leer el store ICM vivo.
+//
+// Y no es una preferencia. Una verificación adversarial lo midió: agregar UN
+// hecho a ICM —con el árbol intacto, `git status` vacío— movía el payload de
+// 4.607 a 4.643, y `icm store` lo movía de 20.711 a 20.427. La Fase 0 mide el
+// store COMPARTIDO, que es mutable y que otros proyectos escriben, así que su
+// número no es una propiedad del árbol que se está auditando.
+//
+// Sin el flag se sigue midiendo —el ahorro de grounding O(1) contra recall
+// semántico es real y vale verlo—, pero **el payload deja de ser comparable
+// entre versiones**, que es justo lo que la Fase 6 del protocolo usa. Con el
+// flag, la fase se omite y el total vuelve a ser función del árbol.
+const HERMETIC = process.argv.includes('--hermetic')
+const groundingProbe = HERMETIC
+  ? ''
+  : [
+      tryCommand('icm', ['facts', 'list', WORKSPACE, '-p', 'service.', '--read-only']).stdout,
+      tryCommand('icm', ['facts', 'list', WORKSPACE, '-p', 'endpoint.', '--read-only']).stdout,
+      tryCommand('icm', ['wake-up']).stdout,
+    ].join('')
+const naiveRecall = HERMETIC
+  ? ''
+  : tryCommand('icm', ['recall', 'project context stack conventions services', '--limit', '20']).stdout
 
 if (groundingProbe.trim() && naiveRecall.trim()) {
-  const p0 = ledger.record('Phase_0_Frame', '/sdd-frame (Pre-Flight Intent)', {
-    raw: estimateTokens(naiveRecall), opt: estimateTokens(groundingProbe), provenance: MEASURED,
+  const p0 = ledger.record('Phase_0_Frame', HERMETIC ? '/sdd-frame (Pre-Flight Intent) [hermetic]' : '/sdd-frame (Pre-Flight Intent)', {
+    raw: estimateTokens(HERMETIC ? '' : naiveRecall), opt: estimateTokens(groundingProbe), provenance: MEASURED,
     source: 'live ICM store', details: 'O(1) deterministic grounding vs semantic recall',
   })
   console.log(`  ✓ Phase 0 complete: ${p0.rawTokens} tokens -> ${p0.optimizedTokens} tokens (${p0.percentSaved} saved) [real]\n`)
