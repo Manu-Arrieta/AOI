@@ -80,13 +80,25 @@ function isSkippable(line) {
 }
 
 /**
- * Positions inside a string or template literal, or a trailing line comment.
+ * Posiciones dentro de un string, un template literal, un comentario de linea,
+ * o un LITERAL DE REGEX.
  *
- * Without this the probe mutates the contents of strings, and a separator
- * like `'================='` contains `===`. Those mutants change a banner and
- * nothing else, so they survive every suite and inflate the survivor count
- * with findings that are not about the code's logic at all — the measurement
- * would be reporting on itself.
+ * Sin esto el probe muta el contenido de los strings, y un separador como
+ * `'================='` contiene `===`. Esos mutantes cambian un banner y nada
+ * mas, asi que sobreviven a toda suite e inflan el conteo de supervivientes con
+ * hallazgos que no son sobre la logica del codigo — la medicion estaria
+ * reportando sobre si misma.
+ *
+ * Los literales de regex entraron por una razon medida. El operador `and→or`
+ * declara su patron como `/ && /g`, y ese `&&` vive DENTRO de un literal. Sin
+ * taparlo el operador se muta a si mismo: `/ && /g` pasa a `/ || /g`. Y `/ || /`
+ * no significa "el texto ` || `": los `|` son alternancia, y la rama del medio
+ * esta VACIA, asi que el patron matchea la cadena vacia en cualquier posicion.
+ * Con flag `g` un match de longitud cero no avanza `lastIndex`, el `while` de
+ * `mutationsFor` no termina, `out.push` acumula sin freno y el proceso hijo
+ * aborta por OOM. Medido el 2026-09-13: 21 crash reports de `node` en un dia,
+ * todos `FatalProcessOutOfMemory`, con la presion de memoria suficiente para
+ * que el sistema operativo empiece a matar procesos ajenos al probe.
  */
 export function literalMask(line) {
   const mask = new Array(line.length).fill(false)
@@ -112,8 +124,52 @@ export function literalMask(line) {
       for (let j = i; j < line.length; j++) mask[j] = true
       break
     }
+    if (c === '/' && opensRegex(line, i)) {
+      const end = regexEnd(line, i)
+      if (end !== -1) {
+        for (let j = i; j <= end; j++) mask[j] = true
+        i = end
+        continue
+      }
+    }
   }
   return mask
+}
+
+/**
+ * Si el `/` de `i` abre un literal de regex en vez de ser una division.
+ *
+ * Es heuristica porque la respuesta no es lexica sin un parser completo: el
+ * mismo caracter es division o regex segun lo que venga antes. Alcanza con la
+ * regla que usan los tokenizadores —un `/` abre un literal si el caracter
+ * significativo anterior no puede terminar una expresion— y con exigir un
+ * cierre, para no tapar una division real.
+ */
+function opensRegex(line, i) {
+  let j = i - 1
+  while (j >= 0 && (line[j] === ' ' || line[j] === '\t')) j -= 1
+  if (j < 0) return true
+  if ('(,=:[!&|?{};'.includes(line[j])) return true
+  // `return /x/`, `case /x/`, `typeof /x/`...
+  return /(?:^|[^A-Za-z0-9_$])(?:return|typeof|case|in|of|do|else|yield|await|void|delete|instanceof|new)$/.test(
+    line.slice(0, j + 1)
+  )
+}
+
+/** El indice del `/` que cierra un literal abierto en `start`, o -1. */
+function regexEnd(line, start) {
+  let inClass = false
+  for (let i = start + 1; i < line.length; i++) {
+    const c = line[i]
+    if (c === '\\') {
+      i += 1
+      continue
+    }
+    if (c === '[') inClass = true
+    else if (c === ']') inClass = false
+    else if (c === '/' && !inClass) return i
+  }
+  return -1
 }
 
 /**
@@ -130,6 +186,20 @@ export function mutationsFor(source, operators = OPERATORS) {
       op.find.lastIndex = 0
       let m
       while ((m = op.find.exec(line)) !== null) {
+        // Un match de longitud cero NO avanza `lastIndex` con el flag `g`, asi
+        // que el `while` no termina nunca. El caso real: un patron con
+        // alternancia y una rama vacia. `/ || /` no busca el texto ` || `,
+        // matchea la cadena vacia en cualquier posicion. Sin este avance
+        // manual el probe acumula `out.push` sin freno hasta abortar por OOM,
+        // y el crash aparece como un fallo de `node` sin relacion aparente con
+        // el codigo que se estaba midiendo.
+        //
+        // Es el guardian que hace que la sonda sea robusta a lo que su propio
+        // conjunto de operadores contenga, y no solo al conjunto de hoy.
+        if (m[0].length === 0) {
+          op.find.lastIndex += 1
+          continue
+        }
         const at = m.index
         // A change inside a literal is a change to data, not to a decision.
         if (masked[at]) continue
@@ -222,6 +292,25 @@ export function suitePasses(cwd, glob, timeout = 180000, runner = null) {
   delete env.NODE_TEST_CONTEXT
   delete env.NODE_TEST_WORKER_ID
 
+  // Techo de heap, heredado por los nietos via NODE_OPTIONS porque `node --test`
+  // corre cada archivo en su propio proceso.
+  //
+  // Un mutante no necesita el heap entero para responder si el codigo sigue
+  // haciendo lo que dice: las suites reales de este repositorio no llegan ni a
+  // 300 MB. El default de V8 en una maquina de 16 GB ronda los 4 GB, y un
+  // mutante que gira sin freno los pide todos antes de abortar. Medido el
+  // 2026-09-13: 21 abortos por `FatalProcessOutOfMemory` en un dia, y la presion
+  // de memoria que generan es lo que hace que el sistema operativo empiece a
+  // matar procesos que no tienen nada que ver con el probe.
+  //
+  // El techo no cambia el veredicto —un mutante que no termina ya cuenta como
+  // muerto por el timeout— y convierte una asignacion que amenaza a la maquina
+  // en un fallo contenido y rapido. El margen es 3x sobre el uso real medido,
+  // para que no convierta un mutante legitimo en un falso muerto.
+  env.NODE_OPTIONS = [env.NODE_OPTIONS, `--max-old-space-size=${MUTANT_HEAP_MB}`]
+    .filter(Boolean)
+    .join(' ')
+
   return new Promise((resolve) => {
     const child = spawn(command, args, { ...opts, env, stdio: 'ignore', detached: true })
 
@@ -281,6 +370,15 @@ function linkDependencies(root, work, relativeDirs) {
 export function mutantTimeout(baselineMs) {
   return Math.min(120000, Math.max(15000, baselineMs * 10))
 }
+
+/**
+ * Techo de heap (MB) para los procesos que corre un mutante.
+ *
+ * Ver el comentario en `suitePasses`. El valor sale del uso real de las suites
+ * de este repositorio (<300 MB) con 3x de margen, para acotar el dano sin
+ * convertir un mutante legitimo en un falso muerto.
+ */
+export const MUTANT_HEAP_MB = 1024
 
 /** La marca que el fixture de `mutation-probe.test.mjs` le pone a su fantasma. */
 export const GHOST_MARK = 'aoi-probe-ghost-'

@@ -69,6 +69,31 @@ describe('mutations are generated only where a decision is made', () => {
     assert.equal(m[0].line, 2)
     assert.equal(m[0].before, 'if (b === c) {}')
   })
+
+  it('no muta dentro de un literal de regex', () => {
+    // El caso que causo 21 abortos por OOM el 2026-09-13. El operador `and→or`
+    // declara su patron como `/ && /g`, y ese `&&` vive dentro de un literal.
+    // Sin taparlo, el operador se mutaba a SI MISMO y el resultado era
+    // `/ || /g`.
+    assert.deepEqual(mutationsFor("  { find: / && /g, replace: ' || ' },"), [])
+  })
+
+  it('termina aunque un operador matchee la cadena vacia', () => {
+    // La regresion directa del OOM. `/ || /` NO busca el texto ` || `: los `|`
+    // son alternancia y la rama del medio esta vacia, asi que el patron matchea
+    // la cadena vacia en cualquier posicion. Con flag `g` un match de longitud
+    // cero no avanza `lastIndex`.
+    //
+    // Sin el guardian de `mutationsFor` este caso NO vuelve: acumula `out.push`
+    // hasta que el proceso aborta por `FatalProcessOutOfMemory`. Que este test
+    // termine es la asercion, y el tope de tamano es la segunda: la rama de
+    // espacio si matchea con longitud 1 y genera un mutante por espacio, pero
+    // nunca una cantidad que dependa de cuantas veces gire el bucle.
+    const emptyBranch = [{ name: 'rama-vacia', find: / || /g, replace: ' || ' }]
+    const r = mutationsFor('if (a === b) return 1', emptyBranch)
+    assert.ok(Array.isArray(r), 'no volvio: el while no termino')
+    assert.ok(r.length < 100, `genero ${r.length} mutantes y no esta acotado por la linea`)
+  })
 })
 
 /**
@@ -323,6 +348,34 @@ describe('literalMask', () => {
     const mask = literalMask('x = 1 // resto')
     assert.equal(mask[0], false)
     assert.equal(mask.at(-1), true)
+  })
+
+  it('tapa un literal de regex, para que un operador no se mute a si mismo', () => {
+    const line = "  { name: 'and→or', find: / && /g, replace: ' || ' },"
+    const mask = literalMask(line)
+    const at = line.indexOf(' && ')
+    assert.equal(mask[at], true, 'el && dentro de / && /g quedo expuesto a mutacion')
+    // El `/` que abre y el `g` que cierra tambien quedan dentro.
+    assert.equal(mask[line.indexOf('/ && /')], true, 'no tapo el delimitador de apertura')
+  })
+
+  it('no confunde una division con un literal de regex', () => {
+    // La direccion peligrosa de la heuristica: tapar una division esconderia
+    // un sitio real de mutacion y bajaria el conteo sin que nada lo diga.
+    const line = 'const ratio = total / count'
+    const mask = literalMask(line)
+    assert.equal(mask[line.indexOf('/')], false, 'tapo una division')
+  })
+
+  it('respeta una clase de caracteres con una barra adentro', () => {
+    // `/[/]/g`: la barra de adentro de `[...]` no cierra el literal. Sin
+    // respetar la clase el cierre quedaria en la barra equivocada, el `g`
+    // quedaria fuera del enmascarado y una mutacion podria caer ahi.
+    const line = 'const re = /[/]/g'
+    const mask = literalMask(line)
+    assert.equal(mask[line.indexOf('/[/]/')], true, 'no tapo la apertura')
+    assert.equal(mask[line.lastIndexOf('/')], true, 'no tapo la barra de cierre')
+    assert.equal(mask.at(-1), false, 'el flag quedo adentro del literal')
   })
 })
 
