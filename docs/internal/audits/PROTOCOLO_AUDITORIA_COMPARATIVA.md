@@ -2040,6 +2040,40 @@ Y sin embargo **el hallazgo era real**: lo había nombrado mal. No era un defect
 
 ---
 
+### A.19 Las afirmaciones que un módulo hace sobre sí mismo son el mejor blanco
+
+Cuarta pasada. Cuatro lentes adversariales sobre los subsistemas que el §12.6 había dejado fuera de alcance —`subagent-context`, `code-lens` y `memory-sync`— y **las cuatro refutaron su afirmación con contraejemplos ejecutados**. No leyendo: corriendo.
+
+**Lo que hace productiva a una lente no es el mandato de refutar en general, es la afirmación concreta.** Las cuatro anteriores recibieron *"refutá esto"* con la cita textual del encabezado del módulo. Una lente a la que se le pide *"encontrá problemas en X"* explora; una lente a la que se le da la frase exacta que el módulo dice de sí mismo **mide**. Y el lugar donde esas frases viven —el encabezado, los comentarios— es justamente donde nadie escribe un test, porque un comentario no se ejecuta.
+
+| Módulo | Lo que el módulo dice de sí mismo | Qué midió la lente |
+| :--- | :--- | :--- |
+| `ast-skeletonizer` | *"85-95% de ahorro **sin pérdida de comprensión de la API**"* | Rango real **0,0–94,0%, mediana 70,6%**, **199 de 239 archivos fuera** de la banda prometida. Y pierde miembros: un `export class … extends Error` sin su `constructor`, un objeto exportado reducido al marcador de pliegue |
+| `ast-skeletonizer` | (el nombre) *"**AST**-Lens"* | Cero parser. Importa `node:fs`, `node:path`, `node:process`. Es un plegador léxico de llaves con un contador manual de profundidad |
+| `ast-skeletonizer` | (el plegado) | **Emitía código roto**: un `}` dentro de una regex bajaba la profundidad, el cuerpo se cerraba antes de tiempo y el resto de la función quedaba huérfano AFUERA |
+| `context-tombstone` | *"same tool type **and target**"* | El código sólo miraba el tipo. La corrida de `a.test.ts` quedaba tumbada por la de `b.test.ts` y el diagnóstico de `a` se destruía |
+| `context-tombstone` | *"file read of same file"* | La rama nombra `read_file`, que **no existe** en ninguno de los dos árboles; el código usa `view_file`. Una rama que nunca corre se lee como cobertura |
+| `context-tombstone` | *"O(N²) → O(N)"* | Cierto **sólo** en el caso degenerado donde todos los turnos son `test`. Medido: `alternate` y `edit` siguen cuadráticos |
+| `subagent-fiber-runner` | *"exact byte-level recovery"* | 4 de 9 casos fallaban: binario corrupto (`ff00fe80` → `efbfbd…`), permisos no devueltos, directorios huérfanos, borrados no resucitados |
+| `sdd-stress-suite` | `// Testing exact byte-level recovery` | Ejercitaba **1 de 9**: el canario nuevo→borrar |
+| `memory-sync` (protocolo §9) | *"Rollback requires explicit `targetVersionId` **and reason**"* | `reason` **no existía como parámetro**. Se descartaba en silencio |
+| `memory-sync` (protocolo §9) | *"ONLY via managed lifecycle **scripts**"* | `activate-version.mjs` y `rollback-version.mjs` **no son CLIs**. `node` sobre ellos salía **0 sin mutar nada** |
+| `agent-delegation` (registro) | columna *"`runSubagent` Model Parameter"* | `runSubagent` **rechaza** esos valores en los 27 agentes: falta el sufijo ` (customendpoint)` |
+
+**El patrón, y es uno solo.** En los once casos el defecto es el mismo: **un valor documentado que no coincide con el valor que el sistema acepta.** Un comentario que describe una comparación que el código no hace; un nombre que promete un parser que no existe; un rango numérico que se repite como dato en tres documentos; un argumento que el protocolo exige y la función no tiene; un identificador de modelo que la API rechaza. Ninguno se ve leyendo: los once salieron de **ejecutar** y comparar lo que la cosa dice de sí misma contra lo que hace.
+
+> [!CAUTION]
+> **Un encabezado es una afirmación verificable, no una descripción.** Si un módulo dice *"85-95%"*, eso es un dato que alguien va a repetir en un informe —y en AOI ya estaba repetido en tres lugares—. Corregirlo no es cosmética: es la diferencia entre un número que se puede citar y uno que no. Y si el comentario describe una comparación que el código no hace, **el comentario es el bug** hasta que se decida cuál de los dos cambia.
+
+**Dos reglas que valen para el próximo ciclo.**
+
+1. **Enumerá las afirmaciones antes de elegir el blanco.** Un `rg` por el encabezado de cada módulo del subsistema da la lista de lo que el sistema promete. Elegí la más fuerte: la cuantitativa (*"85-95%"*), la universal (*"sin pérdida"*, *"exacto"*, *"ONLY"*) o la que tenga número. Las cualitativas con adjetivo absoluto son casi siempre las más fáciles de refutar.
+2. **Cuando la afirmación es cierta pero se sostiene por casualidad, el arreglo es una guardia, no una observación.** Ver A.18.
+
+Y una que no es sobre lentes sino sobre el propio auditor: **el gate de presupuesto del `icm-protocol` me frenó a mí.** Había agregado un bloque de advertencia de ~800 caracteres a un archivo que **se inyecta en cada operación**, y el test lo rechazó (`2.288 > 2.200` tokens). El gate tenía razón y la corrección es la regla: **el lugar más barato para ser verboso nunca es la superficie que se inyecta siempre** — la explicación larga va al documento de auditoría, que se lee cuando se audita.
+
+---
+
 ## Apéndice B — Adaptación por harness
 
 
@@ -2137,6 +2171,9 @@ Antes de dar la auditoría por terminada:
       omitidas.
 - [ ] **Todas** las lecturas de reloj del camino medido están enumeradas, y ninguna alimenta un
       número sin guardia de ancho (paso 7.4 + A.18).
+- [ ] Las lentes del §12.5 corrieron con **una afirmación textual citada** cada una —no con un
+      mandato general— y su veredicto quedó en el informe. Un subsistema sin lente es alcance
+      no cubierto y se declara (A.19).
 - [ ] La masa de prosa en disco está medida y contrastada contra el piso.
 - [ ] La masa que ningún instrumento cuenta está medida y reportada como alcance, **no sumada
       al piso** (paso 6.5).

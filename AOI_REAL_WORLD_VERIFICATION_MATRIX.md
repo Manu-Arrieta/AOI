@@ -396,15 +396,15 @@ corrido dos veces sobre el mismo destino: **1280 archivos antes y después, conj
 
 | Medición | Valor | Nota |
 | :--- | ---: | :--- |
-| **PISO** por ciclo | **86.875** | +2 tokens respecto de 86.873: el arreglo de `importance: high` → `critical` en dos agentes. Es un cambio de prosa **legítimo**, no una regresión: no se movió por otra cosa en tres versiones |
-| **TECHO** por ciclo | **103.384** | |
-| Banda ×6 universal | **54.348** | 62,6% del piso, 8 archivos |
-| Huella de masa repetida | **`8e7b013002e23b4a`** | idéntica a la del ciclo anterior: la auditoría tocó prosa de `docs/` y código, ninguna superficie inyectada |
-| Payload base → optimizado (`--hermetic`) | **18.282 → 4.466** | **13.816 ahorrados** · el modo hermético excluye la Fase 0, que lee el store ICM **vivo** y hacía que el número no fuera función del árbol |
-| Payload con la Fase 0 incluida | 20.691 → 4.607 | Se mide igual, pero **no es comparable entre versiones**: depende del store compartido |
+| **PISO** por ciclo | **88.897** | +2.022 respecto de 86.875. **La causa es masa que agregó esta misma auditoría**, no una regresión: un archivo gobernado nuevo (`scripts/memory-sync/library-only.mjs`) entra a la banda y varias cabeceras crecieron para declarar lo que los módulos hacían mal. Medido: el piso **no se mueve por el arreglo del instrumento** (las Fases 3 y 4 del payload dieron idénticas), sólo por prosa |
+| **TECHO recuperable por cache de prefijo** | **42.277** | no es una promesa: AOI no arma el request ni coloca los cortes, así que el reuso lo decide el harness. Lo que sí es incondicional es el multiplicador |
+| Banda ×6 universal | **56.370** | 8 archivos, 9.395 tok/fase · **el 63,4% del piso es masa repetida** |
+| Huella de masa repetida | **`0b9c49bb3a0cf440`** | cambió respecto de `8e7b013002e23b4a`: la cuarta pasada tocó **cuatro superficies de la banda** (`agent-delegation`, `icm-protocol`, y los dos módulos cuyas cabeceras se corrigieron). Es un cambio **esperado**, no un ruido |
+| Payload base → optimizado (`--hermetic`) | **18.282 → 4.711** | **13.571 ahorrados** · subió 245 tokens respecto de 4.466 y **la atribución está medida**: las Fases 3 y 4 dieron idénticas contra el commit anterior; el delta está entero en la Fase 1, que muestrea los primeros 30 archivos de `scripts/` y recibió comentarios nuevos |
+| Payload con la Fase 0 incluida | 20.691 → 4.852 | Se mide igual, pero **no es comparable entre versiones**: depende del store compartido |
 | Fidelidad del payload | **6 de 6 fases reales** | 0 fixtures, 0 omitidas |
-| Paridad en la instalación | **336/336** | repositorio: 334/334 — **diferencia de 2, explicada abajo** |
-| Suite en la instalación | **pasa · 0 fail · 4 skip** | repositorio: 875 pass · 0 fail · 0 skip |
+| Paridad en la instalación | **340/340** | repositorio: 338/338 — **diferencia de 2, explicada abajo** |
+| Suite en la instalación | **847 pass · 0 fail · 4 skip** | repositorio: **911 pass · 0 fail · 0 skip** (+13 casos nuevos: 6 del rollback byte-exacto, 4 del plegado de regex, 4 de la regla de superación y los guards de `memory-sync`) |
 | `aoi:doctor` | **11/11** | |
 | Compuertas con exit 0 | **14/14** | tres nuevas respecto del primer ciclo: `aoi:audit-protocol`, `aoi:importance` y el gate de mutación |
 | **Invariant Gate** | **✅ PASSED · 3/3** | entidad auto-resuelta `AOI TESTS`, contrato `BIC-2026-001`. **Primera auditoría real de ese contrato**: el alias moría con exit 2 antes del arreglo de S1 |
