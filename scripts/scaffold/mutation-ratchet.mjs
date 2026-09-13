@@ -59,9 +59,12 @@ export const MUTATION_FLOOR = {
   'scripts/multi-harness': 54,
   'scripts/scaffold': 61,
   'scripts/spatiotemporal-runtime': 59,
-  // 51 → 52. El plegador pasó de 41 a 66 mutantes porque se le agregó el
-  // reconocimiento de regex literales, y aun así mató proporcionalmente más.
-  'scripts/code-lens': 52,
+  // 51 → 52 → 67. El salto grande no viene de más tests sobre lo mismo: al
+  // extraer el escáner compartido (`code-scanner.mjs`) el área ganó un módulo
+  // con casos directos, y la compuerta de validez sintáctica mata mutantes que
+  // el barrido de ahorro no tocaba. Ver A.20: cinco archivos del repo producían
+  // un esqueleto que `node --check` rechazaba y NINGÚN test lo miraba.
+  'scripts/code-lens': 67,
   // Subió de 57 a 71 en la medición del 2026-09-12. El salto NO viene de un
   // cambio en este área: el gateway no se tocó. Es una mejora de suite que llevaba
   // tiempo sin medirse, y el trinquete la registra para que no se pierda.

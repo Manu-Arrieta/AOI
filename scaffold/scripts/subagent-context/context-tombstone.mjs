@@ -10,6 +10,30 @@
  */
 
 /**
+ * ¿Los dos turnos hablan del MISMO archivo?
+ *
+ * No alcanza con `older.target === newer.target`, y el motivo es el mismo
+ * defecto que ya estaba en la comparación de `id`: **`undefined === undefined`
+ * es verdadero**. Dos LECTURAS de archivos distintos, ninguna con `target`,
+ * quedaban declaradas iguales y la segunda tumbaba a la primera: el contenido
+ * del archivo `a` se reemplazaba por una tumba porque alguien leyó el `b`.
+ *
+ * La regla es la del lado conservador: sólo se puede PROBAR que el objetivo es
+ * el mismo cuando los dos lo declaran y coinciden. Un objetivo ausente no es
+ * evidencia de coincidencia.
+ *
+ * Y por qué `test` no usa esto: la rama de `test` sí supera cuando ninguno
+ * declara objetivo, y no es una inconsistencia. Ahí lo que se compara es el
+ * ESTADO de una suite, no la identidad de un archivo —un turno de test sin
+ * `target` sigue siendo "la corrida de tests"—, así que un objetivo ausente se
+ * lee como el mismo flujo lógico. En `view_file` la identidad ES el archivo: sin
+ * archivo no hay nada que comparar, y afirmar igualdad sería inventarla.
+ */
+function sameTarget(older, newer) {
+  return older.target != null && older.target === newer.target
+}
+
+/**
  * Evaluates whether a newer turn supersedes an older turn.
  * @param {object} older
  * @param {object} newer
@@ -37,11 +61,11 @@ export function isTurnSuperseded(older, newer) {
   // `view_file` y no `read_file`: el comentario nombraba una herramienta que
   // no existe en ninguno de los dos árboles, y una rama que nunca corre se lee
   // como cobertura.
-  if (older.tool === 'view_file' && (newer.tool === 'write_file' || newer.tool === 'edit_file') && older.target === newer.target) {
+  if (older.tool === 'view_file' && (newer.tool === 'write_file' || newer.tool === 'edit_file') && sameTarget(older, newer)) {
     return true
   }
 
-  if (older.tool === 'view_file' && newer.tool === 'view_file' && older.target === newer.target) {
+  if (older.tool === 'view_file' && newer.tool === 'view_file' && sameTarget(older, newer)) {
     return true
   }
 

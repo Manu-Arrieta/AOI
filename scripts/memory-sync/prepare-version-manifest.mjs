@@ -1,6 +1,7 @@
 import { access } from 'node:fs/promises'
 import { constants } from 'node:fs'
 
+import { refuseDirectExecution } from './library-only.mjs'
 import { validateMemoryVersionManifest } from './schema.mjs'
 import { resolveActiveVersion } from './resolve-active-version.mjs'
 import {
@@ -55,6 +56,17 @@ async function ensureManifestDoesNotExist(manifestPath) {
 function buildDynamicConstitutionPath(workspace, versionId) {
   return `.specify/memory/versions/constitutions/${workspace}/${versionId}.md`
 }
+
+// Tercer módulo con el guard, y el criterio importa: `prepareVersionManifest`
+// ESCRIBE un manifiesto candidato, así que es un camino de MUTACIÓN. Los tres
+// helpers puros del área (`schema`, `cli-args`, `store-utils`) no lo llevan
+// porque no pueden mutar nada: el guard es para lo que muta, no para todo módulo
+// que no sea una CLI. Ponerlo en todos diluiría el criterio; ponerlo sólo en los
+// que una lente nombró fue el gap que esto cierra.
+refuseDirectExecution(
+  import.meta.url,
+  "import { prepareVersionManifest } from './scripts/memory-sync/prepare-version-manifest.mjs'",
+)
 
 export async function prepareVersionManifest({
   workspace,

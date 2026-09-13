@@ -2074,6 +2074,87 @@ Y una que no es sobre lentes sino sobre el propio auditor: **el gate de presupue
 
 ---
 
+### A.20 Un compresor que nadie verifica que compile
+
+El hallazgo más severo de la cuarta pasada, y salió de buscar **la misma clase de
+defecto en los lugares donde el arreglo anterior no la había buscado**.
+
+El plegador de cuerpos tenía dos recorridos sobre el mismo texto: el externo, que
+decide qué es un bloque y salta comentarios, strings y regex; y el **contador
+interno**, que busca la llave de cierre de un cuerpo. Eran dos implementaciones del
+mismo escaneo, y divergieron: **el externo saltaba comentarios y el interno no.**
+
+Consecuencia medida: un apóstrofo en un comentario —`// A discovery item is the
+file's leading declaration block`— abría un "string" en el contador interno que se
+tragaba el resto del archivo. La profundidad se desalineaba, el pliegue cerraba
+donde no era, y **5 de 63 archivos `.mjs` del repo producían un esqueleto que
+`node --check` rechaza.**
+
+Uno era `coeffect-resolver.mjs`: el archivo que la Fase 3 del benchmark cita como
+su mayor ahorro, al 91,2%.
+
+```
+════ scripts/spatiotemporal-runtime/coeffect-resolver.mjs ════
+  error: SyntaxError: Illegal return statement
+  16: export function createCoeffectRegistry() { /* folded: 219 lines */ };
+ >18:   return registry;                          ← huérfano, sin función
+  19: }
+```
+
+**Por qué es peor que un ahorro bajo.** Una pérdida de contrato se nota cuando el
+agente escribe mal el import. Un esqueleto **roto** no se nota al leerlo: el agente
+lee un archivo *verosímil* que no es el archivo, y ése es el único modo de falla que
+el instrumento no puede permitirse. Es el mismo juicio que el comentario del propio
+archivo ya hacía —*"un esqueleto que descarta declaraciones en silencio es peor que
+no comprimir"*— sin que ninguna compuerta lo sostuviera.
+
+#### Lo que faltaba era la compuerta, y por eso hay dos
+
+La suite medía el ahorro (*"el esqueleto es más chico y conserva la firma"*) y los
+bordes del escáner. **Nadie verificaba que la salida fuera un programa válido.** Esa
+es la pregunta que hay que hacerle a todo instrumento de compresión, y se responde
+con el toolchain real y no con una segunda implementación del escaneo —que es
+exactamente el defecto que la causó:
+
+```bash
+# El gate permanente, en `skeletonizer-validity.test.mjs`:
+# recorre scripts/, esqueletoniza cada archivo y corre `node --check` sobre la salida.
+```
+
+Y la segunda compuerta no mira la salida sino el **código**: exige que las dos pasadas
+usen el escáner compartido. Es la lección de A.13 aplicada a un escáner —*si dos
+partes tienen que coincidir en cómo leen lo mismo, tienen que compartir el código que
+lo lee*— y la única forma de que no vuelvan a divergir.
+
+#### Cómo se encontró, que es lo transferible
+
+No salió de leer el código ni de una lente adversarial: salió de **repetir la pregunta
+del hallazgo anterior en los lugares donde no la había buscado**.
+
+| Paso | Qué se hizo |
+| :--- | :--- |
+| 1 | La lente encontró que **una** regex con `}` rompía el plegado. Se arregló |
+| 2 | Se preguntó: *¿qué otra entrada puede desalinear la profundidad?* |
+| 3 | Se enumeró con el toolchain: **esqueletonizar TODO el repo y correr `node --check`** |
+| 4 | Dieron **5 rotos**, y 4 se curaron neutralizando el apóstrofo de un comentario |
+| 5 | El control —dos archivos sanos, mismo experimento— **no cambió**: el experimento discrimina |
+
+**Y el paso 3 es el que vale.** El arreglo de un caso puntual dejó el barrido intacto;
+el barrido encontró un defecto cinco veces más grande. La regla: **cuando arreglés una
+entrada que rompía un instrumento, enumerá todas las demás de la misma familia con el
+instrumento mismo, no con la lectura.** Es el paso 7.4 aplicado a la corrección y no al
+reloj.
+
+> [!CAUTION]
+> **Un arreglo local a una rama deja vivo el mismo defecto en las otras.** En esta
+> misma pasada pasó dos veces, y las dos del mismo modo: el `undefined === undefined`
+> se arregló en la rama de `test` y siguió intacto en las dos ramas de `view_file`; y
+> el escáner se arregló en el recorrido externo y siguió roto en el interno. **Después
+> de arreglar un caso, buscá la misma forma en todo el archivo** —y si la forma es una
+> comparación o un escaneo, preguntate si debería existir una sola vez.
+
+---
+
 ## Apéndice B — Adaptación por harness
 
 

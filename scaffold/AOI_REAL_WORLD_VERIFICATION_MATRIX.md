@@ -400,11 +400,11 @@ corrido dos veces sobre el mismo destino: **1280 archivos antes y después, conj
 | **TECHO recuperable por cache de prefijo** | **42.277** | no es una promesa: AOI no arma el request ni coloca los cortes, así que el reuso lo decide el harness. Lo que sí es incondicional es el multiplicador |
 | Banda ×6 universal | **56.370** | 8 archivos, 9.395 tok/fase · **el 63,4% del piso es masa repetida** |
 | Huella de masa repetida | **`0b9c49bb3a0cf440`** | cambió respecto de `8e7b013002e23b4a`: la cuarta pasada tocó **cuatro superficies de la banda** (`agent-delegation`, `icm-protocol`, y los dos módulos cuyas cabeceras se corrigieron). Es un cambio **esperado**, no un ruido |
-| Payload base → optimizado (`--hermetic`) | **18.282 → 4.711** | **13.571 ahorrados** · subió 245 tokens respecto de 4.466 y **la atribución está medida**: las Fases 3 y 4 dieron idénticas contra el commit anterior; el delta está entero en la Fase 1, que muestrea los primeros 30 archivos de `scripts/` y recibió comentarios nuevos |
+| Payload base → optimizado (`--hermetic`) | **18.666 → 4.962** | **13.704 ahorrados (73,4%)** · subió respecto de 18.282 → 4.711 y **la atribución está medida**: comparado contra el commit anterior en un worktree, las Fases 2, 3 y 4 dieron idénticas y **la Fase 3 MEJORÓ** (1047 → 1041, porque el esqueleto de `coeffect-resolver` ahora es válido). El delta está entero en la Fase 1, que muestrea los primeros 30 archivos de `scripts/` y recibió la prosa nueva |
 | Payload con la Fase 0 incluida | 20.691 → 4.852 | Se mide igual, pero **no es comparable entre versiones**: depende del store compartido |
 | Fidelidad del payload | **6 de 6 fases reales** | 0 fixtures, 0 omitidas |
-| Paridad en la instalación | **340/340** | repositorio: 338/338 — **diferencia de 2, explicada abajo** |
-| Suite en la instalación | **847 pass · 0 fail · 4 skip** | repositorio: **911 pass · 0 fail · 0 skip** (+13 casos nuevos: 6 del rollback byte-exacto, 4 del plegado de regex, 4 de la regla de superación y los guards de `memory-sync`) |
+| Paridad en la instalación | **342/342** | repositorio: 340/340 |
+| Suite en la instalación | **860 pass · 0 fail · 4 skip** | repositorio: **924 pass · 0 fail · 0 skip** |
 | `aoi:doctor` | **11/11** | |
 | Compuertas con exit 0 | **14/14** | tres nuevas respecto del primer ciclo: `aoi:audit-protocol`, `aoi:importance` y el gate de mutación |
 | **Invariant Gate** | **✅ PASSED · 3/3** | entidad auto-resuelta `AOI TESTS`, contrato `BIC-2026-001`. **Primera auditoría real de ese contrato**: el alias moría con exit 2 antes del arreglo de S1 |

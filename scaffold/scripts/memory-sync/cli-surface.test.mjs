@@ -207,6 +207,12 @@ describe('un módulo sin runner no puede parecer un éxito', () => {
   const RUNNERLESS = [
     ['rollback-version', path.join(HERE, 'rollback-version.mjs')],
     ['activate-version', path.join(HERE, 'activate-version.mjs')],
+    // El tercero apareció al ENUMERAR los módulos del área en vez de quedarse
+    // con los que una lente había nombrado: `prepareVersionManifest` también
+    // escribe, y también salía 0 sin hacer nada. Los tres helpers puros
+    // —`schema`, `cli-args`, `store-utils`— no lo llevan a propósito: el guard
+    // es para lo que muta, no para todo módulo que no sea una CLI.
+    ['prepare-version-manifest', path.join(HERE, 'prepare-version-manifest.mjs')],
   ]
 
   for (const [name, script] of RUNNERLESS) {
