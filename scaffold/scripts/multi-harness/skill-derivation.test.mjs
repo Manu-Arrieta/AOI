@@ -148,36 +148,55 @@ describe('compile-rules DERIVES the antigravity copy instead of mirroring it', (
   // whether the compiler calls it, so this runs the compiler and reads what it
   // actually wrote.
   const registered = Object.keys(SKILL_FROM_INSTRUCTION)
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-derive-gate-'))
-  const written = new Map()
 
-  try {
-    for (const rel of ['.github/instructions', '.github/skills']) {
-      fs.cpSync(path.join(ROOT, rel), path.join(tmp, rel), { recursive: true })
+  // The compiler runs inside the first test that needs its output — NEVER in
+  // this body. Work done while a suite is being BUILT has a failure mode worse
+  // than a red test: on Node 22 the runner emits `not ok` for a describe body
+  // that throws but does not count it, so the suite reports `# fail 0` and
+  // exits 0. The failure is swallowed whole.
+  //
+  // That is not hypothetical here. This is the negative control, the test that
+  // exists to notice the derivation wiring being reverted. It ran 68 of 126
+  // mutants under Node 22 instead of 69: mutating `compile-rules.mjs:229`
+  // throws in this body, and the runner ate it. A control that can fail
+  // silently is the exact defect it was written to catch, pointed at itself.
+  let written = null
+  function compiledOutput() {
+    if (written) return written
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-derive-gate-'))
+    try {
+      for (const rel of ['.github/instructions', '.github/skills']) {
+        fs.cpSync(path.join(ROOT, rel), path.join(tmp, rel), { recursive: true })
+      }
+      compileHarnessRules(tmp, ['antigravity'], 'AOI')
+      written = new Map(
+        registered.map((name) => {
+          const out = path.join(tmp, '.agents', 'skills', name, 'SKILL.md')
+          return [name, fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : null]
+        })
+      )
+      return written
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true })
     }
-    compileHarnessRules(tmp, ['antigravity'], 'AOI')
-    for (const name of registered) {
-      const out = path.join(tmp, '.agents', 'skills', name, 'SKILL.md')
-      written.set(name, fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : null)
-    }
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true })
   }
 
   for (const name of registered) {
     it(`what the compiler writes for ${name} is the derived text`, () => {
-      assert.ok(written.get(name), `el compilador no escribió .agents/skills/${name}/SKILL.md`)
+      const texts = compiledOutput()
+      assert.ok(texts.get(name), `el compilador no escribió .agents/skills/${name}/SKILL.md`)
       assert.match(
-        written.get(name),
+        texts.get(name),
         /<!-- Derivado de .+ por aoi:sync-rules\. No editar a mano\. -->/,
         `el compilador copió la skill de ${name} en vez de derivarla: antigravity recibe el stub recortado`
       )
     })
 
     it(`what the compiler writes for ${name} carries the full instruction body`, () => {
+      const texts = compiledOutput()
       const shrunk = read(`.github/skills/${name}/SKILL.md`)
       assert.ok(
-        written.get(name).length > shrunk.length,
+        texts.get(name).length > shrunk.length,
         `la copia compilada de ${name} no es más grande que la skill recortada: el cableado de derivación se perdió`
       )
     })
