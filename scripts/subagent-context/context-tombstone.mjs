@@ -17,13 +17,26 @@
  */
 export function isTurnSuperseded(older, newer) {
   if (!older || !newer) return false
-  if (older.id === newer.id) return false
+  // Sólo es el MISMO turno si los dos declaran id. Con los dos en `undefined`
+  // —turnos que no lo traen— la comparación daba `undefined === undefined`,
+  // o sea verdadera, así que se los declaraba "el mismo turno" y NUNCA se
+  // tumbaban: un falso NEGATIVO que apagaba la compresión justo en el caso
+  // en que más turnos hay.
+  if (older.id != null && older.id === newer.id) return false
 
-  // Same tool type and target (e.g., test runner, file read of same file)
+  // Dos corridas de test se superan sólo si son sobre el MISMO objetivo.
+  // El comentario siempre dijo "same tool type and target"; el código sólo
+  // miraba el tipo, así que la corrida de `a.test.ts` quedaba tumbada por la
+  // de `b.test.ts` y el diagnóstico de `a` se destruía. Un `target` ausente no
+  // es evidencia de un objetivo distinto: sólo se puede PROBAR una diferencia
+  // cuando los dos lo declaran y difieren.
   if (older.tool === 'test' && newer.tool === 'test') {
-    return true
+    return older.target == null || newer.target == null || older.target === newer.target
   }
 
+  // `view_file` y no `read_file`: el comentario nombraba una herramienta que
+  // no existe en ninguno de los dos árboles, y una rama que nunca corre se lee
+  // como cobertura.
   if (older.tool === 'view_file' && (newer.tool === 'write_file' || newer.tool === 'edit_file') && older.target === newer.target) {
     return true
   }

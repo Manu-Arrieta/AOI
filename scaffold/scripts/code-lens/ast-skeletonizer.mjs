@@ -2,16 +2,100 @@
 /**
  * scripts/code-lens/ast-skeletonizer.mjs
  *
- * AOI AST-Lens: Structural Code Skeletonizer.
- * Extracts type contracts, exported symbols, interfaces, and function signatures
- * while collapsing function/method implementation bodies into high-density tokens.
- * Achieves 85-95% token savings on code inspection without loss of API comprehension.
+ * AOI AST-Lens: plegador LÉXICO de cuerpos de bloque.
+ *
+ * Conserva imports, tipos, interfaces, clases y las firmas que quedan fuera de
+ * un cuerpo plegado, y reemplaza el cuerpo de cada función o método por un
+ * marcador de una línea.
+ *
+ * No es un AST y el nombre lo sobrevendía: el archivo no importa ningún parser
+ * —ni acorn, ni ts, ni babel—, sólo `node:fs`, `node:path` y `node:process`, y lo
+ * que hace es recorrer caracteres contando profundidad de llaves. Eso alcanza
+ * para comprimir y no alcanza para GARANTIZAR nada, que es lo que el encabezado
+ * afirmaba:
+ *
+ *   "Achieves 85-95% token savings on code inspection without loss of API
+ *    comprehension."
+ *
+ * Las dos mitades eran falsas y se midieron (2026-09-12, 239 archivos `.mjs`,
+ * `.ts` y `.vue` del repo y del dashboard):
+ *
+ *   ahorro: mín 0,0% · mediana 70,6% · máx 94,0% · **199 de 239 fuera del rango
+ *   prometido**. Tres `.vue` dan 0,0% porque el plegador no toca su estructura.
+ *
+ *   comprensión: los MIEMBROS de un cuerpo plegado desaparecen. `export class
+ *   ResourceOperationError extends Error` pierde su `constructor(message,
+ *   readonly statusCode = 400)`; un `export const api = { fetch, save, list }`
+ *   queda reducido al marcador de pliegue sin ninguno de los cuatro. Un agente
+ *   que lea sólo el esqueleto no puede escribir el `new ResourceOperationError(msg, 404)`
+ *   que el contrato pide.
+ *
+ * Lo que sí sobrevive, verificado: las firmas fuera del pliegue, los campos de
+ * `interface` y `type`, `export { a, b }`, `export default`, las funciones
+ * flecha exportadas, y un cuerpo de hasta dos líneas, que no se pliega.
+ *
+ * La Fase 3 del benchmark reporta el ahorro como mérito y cita estos dos
+ * archivos: `coeffect-resolver.mjs` 91,2% (no pierde nada) y
+ * `resource-operations.ts` 70,4% (pierde el constructor de la clase de error).
+ * El número es correcto; leerlo como "sin costo" no lo es.
  */
 
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+
+const REGEX_PRECEDING_KEYWORDS = new Set([
+  'return', 'typeof', 'case', 'in', 'of', 'delete', 'void', 'instanceof',
+  'do', 'else', 'yield', 'await', 'new',
+])
+const REGEX_PRECEDING_PUNCT = '(,=:[!&|?{};+-*%~^<>'
+
+/**
+ * ¿La barra en `i` abre una regex o es una división?
+ *
+ * Hay que decidirlo léxicamente porque en JavaScript las llaves de una regex
+ * son TEXTO: `s.replace(/}/g, '')` tiene un `}` que no cierra nada. El plegador
+ * no conocía las regex, así que ese `}` le bajaba la profundidad y el bloque se
+ * cerraba antes de tiempo, dejando el resto de la función **huérfano fuera del
+ * cuerpo** — no una pérdida de contrato sino código sintácticamente roto.
+ *
+ * La heurística es la habitual: después de un operador o de una palabra clave
+ * que espera una expresión, una barra abre una regex; después de un nombre, un
+ * número, `)` o `]`, divide. `a++ /b/` quedaría mal clasificado —es ambiguo sin
+ * parsear— y está declarado como límite conocido en el test.
+ */
+function isRegexStart(code, i) {
+  let k = i - 1
+  while (k >= 0 && /\s/.test(code[k])) k--
+  if (k < 0) return true
+  if (REGEX_PRECEDING_PUNCT.includes(code[k])) return true
+  if (/[A-Za-z_$]/.test(code[k])) {
+    let start = k
+    while (start >= 0 && /[A-Za-z0-9_$]/.test(code[start])) start--
+    return REGEX_PRECEDING_KEYWORDS.has(code.slice(start + 1, k + 1))
+  }
+  return false
+}
+
+/** Consume una regex literal y devuelve el índice siguiente, o `null` si esa
+ * barra no abría una regex. `null` es la respuesta que deja todo como estaba. */
+function skipRegex(code, i) {
+  if (code[i] !== '/' || !isRegexStart(code, i)) return null
+  let j = i + 1
+  let inClass = false
+  while (j < code.length) {
+    const c = code[j]
+    if (c === '\\') { j += 2; continue }
+    if (c === '\n') return null // una regex no cruza de línea
+    if (c === '[') inClass = true
+    else if (c === ']') inClass = false
+    else if (c === '/' && !inClass) { j++; break }
+    j++
+  }
+  while (j < code.length && /[a-z]/i.test(code[j])) j++ // flags
+  return j
+}
 
 /**
  * Folds block bodies delimited by matching braces { ... }
@@ -62,6 +146,17 @@ export function foldBlockBodies(code) {
       continue
     }
 
+    // Las llaves de una regex son texto, y una `{` de una regex abría un bloque
+    // que no existía: el plegado se comía todo lo que viniera después.
+    if (code[i] === '/') {
+      const end = skipRegex(code, i)
+      if (end !== null) {
+        result += code.slice(i, end)
+        i = end
+        continue
+      }
+    }
+
     // Look for function / method / constructor definitions before an open brace
     if (code[i] === '{') {
       // Find matching closing brace
@@ -81,14 +176,31 @@ export function foldBlockBodies(code) {
       let inString = null
       while (j < len && depth > 0) {
         const c = code[j]
-        if (c === '\n') bodyLines++
 
         if (inString) {
-          if (c === '\\') j++
-          else if (c === inString) inString = null
-        } else if (c === '"' || c === "'" || c === '`') {
+          if (c === '\\') { j += 2; continue }
+          if (c === '\n') bodyLines++
+          if (c === inString) inString = null
+          j++
+          continue
+        }
+
+        if (c === '\n') { bodyLines++; j++; continue }
+
+        if (c === '"' || c === "'" || c === '`') {
           inString = c
-        } else if (c === '{') depth++
+          j++
+          continue
+        }
+
+        // Misma razón que en el pasada externa: el contador interno tampoco
+        // conocía las regex, así que un `}` dentro de una le cerraba el cuerpo.
+        if (c === '/') {
+          const end = skipRegex(code, j)
+          if (end !== null) { j = end; continue }
+        }
+
+        if (c === '{') depth++
         else if (c === '}') depth--
         j++
       }

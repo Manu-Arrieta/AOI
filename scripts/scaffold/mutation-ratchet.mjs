@@ -33,9 +33,15 @@ import { probe } from './mutation-probe.mjs'
  * verifier's exit-code line was the first one repaid.
  */
 export const MUTATION_FLOOR = {
-  'scripts/subagent-context': 68,
+  // 68 → 69 en la cuarta pasada. No es que el área haya mejorado sola: la
+  // lente adversarial midió que `isTurnSuperseded` tumbaba el diagnóstico de un
+  // archivo con la corrida de OTRO, y que dos turnos sin `id` no se tumbaban
+  // nunca. Los casos que fijan las dos correcciones matan más mutantes.
+  'scripts/subagent-context': 69,
   'scripts/sandbox': 86,
-  'scripts/memory-sync': 52,
+  // 52 → 53. `reason` pasó a ser obligatorio y se persiste: los casos que
+  // exigen su ausencia y su presencia son mutantes que antes sobrevivían.
+  'scripts/memory-sync': 53,
   'scripts/sdd-lifecycle': 67,
   // Shell. The installer machinery is where the most destructive defects of
   // the audit lived, so leaving it unmeasured left the worst code in the
@@ -50,7 +56,9 @@ export const MUTATION_FLOOR = {
   'scripts/multi-harness': 54,
   'scripts/scaffold': 61,
   'scripts/spatiotemporal-runtime': 59,
-  'scripts/code-lens': 51,
+  // 51 → 52. El plegador pasó de 41 a 66 mutantes porque se le agregó el
+  // reconocimiento de regex literales, y aun así mató proporcionalmente más.
+  'scripts/code-lens': 52,
   // Subió de 57 a 71 en la medición del 2026-09-12. El salto NO viene de un
   // cambio en este área: el gateway no se tocó. Es una mejora de suite que llevaba
   // tiempo sin medirse, y el trinquete la registra para que no se pierda.

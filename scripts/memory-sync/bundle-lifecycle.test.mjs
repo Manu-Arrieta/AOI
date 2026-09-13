@@ -77,6 +77,7 @@ test('bundle-sourced candidate preserves transport metadata through activation a
     await rollbackVersion({
       workspace: 'fixture-workspace',
       targetVersionId: 'fixture-v2',
+      reason: 'restaurar la version previa al bundle',
       versionsRoot,
       rolledBackAt: '2026-05-28T00:20:00.000Z',
     })

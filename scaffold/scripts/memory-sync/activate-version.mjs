@@ -1,4 +1,9 @@
 import { loadActiveIndex, getActiveIndexPath, getManifestPath, loadManifestAtPath, writeJsonFile, defaultVersionsRoot } from './store-utils.mjs'
+import { refuseDirectExecution } from './library-only.mjs'
+
+// Mismo motivo que en `rollback-version.mjs`: sin runner, `node` sobre este
+// archivo sale 0 sin mutar nada. Ver `library-only.mjs`.
+refuseDirectExecution(import.meta.url, "import { activateVersion } from './scripts/memory-sync/activate-version.mjs'")
 
 function assert(condition, message) {
   if (!condition) {

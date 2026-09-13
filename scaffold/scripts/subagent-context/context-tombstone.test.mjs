@@ -184,3 +184,55 @@ describe('buildTombstoneIcmRecord', () => {
     assert.match(record.content, /Turn later/)
   })
 })
+
+describe('la regla de superación dice lo que dice su comentario', () => {
+  // El comentario de `isTurnSuperseded` siempre dijo "same tool type **and
+  // target**", y el código sólo miraba el tipo. Una lente adversarial lo
+  // refutó con esto: la corrida de `a.test.ts` quedaba tumbada por la de
+  // `b.test.ts` y el diagnóstico de `a` se destruía. Y al revés, dos turnos sin
+  // `id` nunca se tumbaban, porque `undefined === undefined` los declaraba "el
+  // mismo turno" — un falso negativo que apagaba la compresión.
+  const test = (id, target) => ({ id, tool: 'test', target, summary: `run ${target}` })
+
+  it('NO se supera cuando el objetivo es distinto', () => {
+    assert.equal(
+      isTurnSuperseded(test('1', 'a.test.ts'), test('2', 'b.test.ts')),
+      false,
+      'tumbó el diagnóstico de un archivo con la corrida de OTRO archivo'
+    )
+  })
+
+  it('sí se supera cuando el objetivo es el mismo', () => {
+    assert.equal(isTurnSuperseded(test('1', 'a.test.ts'), test('2', 'a.test.ts')), true)
+  })
+
+  it('un objetivo ausente no es evidencia de un objetivo distinto', () => {
+    // El caso del propio benchmark: `buildDebuggingTurns` no les pone `target`
+    // a los turnos de test, así que exigir igualdad estricta habría apagado la
+    // compresión de la Fase 3. Sólo se puede PROBAR una diferencia cuando los
+    // dos declaran objetivo y difieren.
+    assert.equal(isTurnSuperseded(test('1', undefined), test('2', undefined)), true)
+    assert.equal(isTurnSuperseded(test('1', 'a.test.ts'), test('2', undefined)), true)
+  })
+
+  it('los turnos sin id se tumban igual', () => {
+    const older = { tool: 'test', summary: 'RED' }
+    const newer = { tool: 'test', summary: 'GREEN' }
+    assert.equal(
+      isTurnSuperseded(older, newer),
+      true,
+      'dos turnos sin id se declararon "el mismo turno" y no se tumbó ninguno'
+    )
+  })
+
+  it('sigue detectando el mismo turno declarado por id', () => {
+    assert.equal(isTurnSuperseded(test('7', 'a.test.ts'), test('7', 'a.test.ts')), false)
+  })
+
+  it('tumba una lectura reemplazada por una escritura del mismo archivo', () => {
+    const view = { id: '1', tool: 'view_file', target: 'x.ts' }
+    const edit = { id: '2', tool: 'edit_file', target: 'x.ts' }
+    assert.equal(isTurnSuperseded(view, edit), true)
+    assert.equal(isTurnSuperseded(view, { ...edit, target: 'otro.ts' }), false)
+  })
+})

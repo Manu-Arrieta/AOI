@@ -1,4 +1,9 @@
 import { defaultVersionsRoot, getActiveIndexPath, getManifestPath, loadActiveIndex, loadManifestAtPath, writeJsonFile } from './store-utils.mjs'
+import { refuseDirectExecution } from './library-only.mjs'
+
+// Sin esto el archivo sale 0 sin hacer nada y el protocolo dice que es la única
+// vía para mutar `active.json`. Ver `library-only.mjs`.
+refuseDirectExecution(import.meta.url, "import { rollbackVersion } from './scripts/memory-sync/rollback-version.mjs'")
 
 function assert(condition, message) {
   if (!condition) {
@@ -9,11 +14,18 @@ function assert(condition, message) {
 export async function rollbackVersion({
   workspace,
   targetVersionId,
+  reason,
   versionsRoot = defaultVersionsRoot(),
   rolledBackAt = new Date().toISOString(),
 }) {
   assert(typeof workspace === 'string' && workspace.trim().length > 0, 'workspace is required.')
   assert(typeof targetVersionId === 'string' && targetVersionId.trim().length > 0, 'targetVersionId is required.')
+  // El protocolo pide `reason` explícito desde siempre y la función no lo tenía:
+  // `rollbackVersion({..., reason: 'porque X'})` lo DESCARTABA en silencio, así
+  // que el rastro de auditoría que el protocolo promete no existía. Ahora es
+  // obligatorio —un rollback sin motivo escrito es indistinguible de un error—
+  // y queda persistido en el índice.
+  assert(typeof reason === 'string' && reason.trim().length > 0, 'reason is required.')
 
   const activeIndex = await loadActiveIndex(versionsRoot)
   const workspaceState = activeIndex.workspaceStates[workspace]
@@ -57,6 +69,7 @@ export async function rollbackVersion({
       [workspace]: {
         activeVersionId: targetVersionId,
         previousVersionId: currentActiveManifest.versionId,
+        rollbackReason: reason,
         updatedAt: rolledBackAt,
       },
     },
@@ -70,5 +83,6 @@ export async function rollbackVersion({
     restoredManifest,
     rolledBackManifest,
     nextActiveIndex,
+    reason,
   }
 }

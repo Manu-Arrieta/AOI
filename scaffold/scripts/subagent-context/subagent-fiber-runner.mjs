@@ -23,6 +23,9 @@ import { buildSubagentPayload } from './sanitize-subagent-payload.mjs';
 /**
  * Puts every tracked file back the way it was, and forgets them.
  *
+/**
+ * Puts every tracked file back the way it was, and forgets them.
+ *
  * `null` means the file did not exist when it was first tracked, so undoing
  * the subagent's work means removing it. Anything else is the original content
  * and has to be written back. Inverting that single comparison turns a rollback
@@ -30,17 +33,51 @@ import { buildSubagentPayload } from './sanitize-subagent-payload.mjs';
  * test suite asserts it directly instead of only reaching it through one of
  * its two callers.
  *
- * @param {Map<string, string|null>} trackedFiles mutated: cleared when done
+ * Los archivos se guardan como **Buffer**, no como texto UTF-8, y el cambio no
+ * es de estilo. La versión anterior leía con `'utf8'` y escribía con `'utf8'`,
+ * así que cualquier byte inválido se convertía en U+FFFD **de forma
+ * irreversible**: medido, `ff00fe80410042ff` volvía como
+ * `efbfbd00efbfbdefbfbd410042efbfbd`. El módulo prometía recuperación exacta y
+ * no podía cumplirla ni para un archivo binario ni para un PNG.
+ *
+ * Se restauran además los **permisos** y los **directorios** que el sandbox tuvo
+ * que crear: `writeFileSync` no toca el modo —medido, `755` volvía como `644`— y
+ * sin borrar los directorios el rollback dejaba un rastro de carpetas vacías.
+ *
+ * Lo que este rollback NO cubre, y está declarado: un borrado hecho por el
+ * subagente (`unlinkSync` no se trackea, no hay API para eso) no se resucita.
+ *
+ * @param {Map<string, {content: Buffer|null, mode: number, dirs: string[]}>} trackedFiles mutated: cleared when done
  */
 export function restoreTrackedFiles(trackedFiles) {
-  for (const [filePath, origContent] of trackedFiles.entries()) {
-    if (origContent === null) {
+  for (const [filePath, entry] of trackedFiles.entries()) {
+    if (entry.content === null) {
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     } else {
-      fs.writeFileSync(filePath, origContent, 'utf8');
+      fs.writeFileSync(filePath, entry.content);
+      fs.chmodSync(filePath, entry.mode);
+    }
+    // De adentro hacia afuera: sólo se puede borrar un directorio si quedó
+    // vacío. Si adentro vive un archivo preexistente, `rmdirSync` falla y eso
+    // es correcto — el sandbox no lo había creado.
+    for (const dir of [...entry.dirs].reverse()) {
+      try { fs.rmdirSync(dir); } catch { /* no está vacío: se queda */ }
     }
   }
   trackedFiles.clear();
+}
+
+/**
+ * Los ancestros de `dir` que todavía no existen, del más externo al más interno.
+ * Es la lista de lo que el sandbox va a crear y tiene que poder deshacer.
+ */
+function missingParents(dir) {
+  const missing = [];
+  for (let d = dir; !fs.existsSync(d); d = path.dirname(d)) {
+    missing.unshift(d);
+    if (path.dirname(d) === d) break;
+  }
+  return missing;
 }
 
 export function createSubagentSandbox({ role, taskDir, format = 'toon' }) {
@@ -92,7 +129,12 @@ export function createSubagentSandbox({ role, taskDir, format = 'toon' }) {
     trackFileWrite(filePath, content) {
       const fullPath = path.resolve(process.cwd(), filePath);
       if (!trackedFiles.has(fullPath)) {
-        trackedFiles.set(fullPath, fs.existsSync(fullPath) ? fs.readFileSync(fullPath, 'utf8') : null);
+        const existed = fs.existsSync(fullPath);
+        trackedFiles.set(fullPath, {
+          content: existed ? fs.readFileSync(fullPath) : null,
+          mode: existed ? fs.statSync(fullPath).mode & 0o7777 : 0o644,
+          dirs: missingParents(path.dirname(fullPath)),
+        });
       }
       fs.mkdirSync(path.dirname(fullPath), { recursive: true });
       fs.writeFileSync(fullPath, content, 'utf8');

@@ -73,6 +73,22 @@ After the subagent returns, verify:
 > verifica que el archivo exista, de modo que la garantía es la misma y no se paga en cada
 > inyección.
 
+> [!IMPORTANT]
+> **La columna `runSubagent Model Parameter` es lo que muestra el picker, NO el identificador
+> que acepta la API.** Medido el 2026-09-12: pasar `"Deepseek v4 pro - Provider - Deepseek"` a
+> `runSubagent` devuelve *"Requested model not found"*, y **falla para los 27 agentes de la
+> misma forma**, porque el identificador real lleva el sufijo del transporte:
+>
+> | En el picker (esta tabla) | Lo que acepta `runSubagent` |
+> | :--- | :--- |
+> | `Deepseek v4 pro - Provider - Deepseek` | `Deepseek v4 pro - Provider - Deepseek (customendpoint)` |
+> | `Glm5.2 - Provider - Zai` | `Glm5.2 - Provider - Zai (customendpoint)` |
+> | `Qwen 3.7 plus - Provider - Alibaba` | `Qwen 3.7 plus - Provider - Alibaba (customendpoint)` |
+>
+> Es la misma clase de defecto que la guardia de entry del `mcp-gateway` y los prompts del
+> protocolo: **un valor documentado que no coincide con el que el sistema acepta**. Si un
+> agente lee esta tabla y la pasa tal cual, la delegación falla en el primer intento.
+
 ### Domain Agents
 
 | Agent | `runSubagent` Model Parameter | Fallback (NVIDIA NIM) | Category |

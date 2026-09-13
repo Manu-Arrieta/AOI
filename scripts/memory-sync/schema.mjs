@@ -140,6 +140,12 @@ export function validateActiveVersionIndex(raw, options = {}) {
     assertString(state.activeVersionId, `${prefix}${workspace}.activeVersionId`)
     assertNullableString(state.previousVersionId, `${prefix}${workspace}.previousVersionId`)
     assertIsoDateString(state.updatedAt, `${prefix}${workspace}.updatedAt`)
+    // Optativo, pero validado cuando está: es el rastro de auditoría del
+    // rollback, y un campo que se persiste sin que nadie lo mire es un campo
+    // que se puede escribir mal para siempre sin que nada lo note.
+    if (state.rollbackReason !== undefined) {
+      assertString(state.rollbackReason, `${prefix}${workspace}.rollbackReason`)
+    }
   }
 
   return raw

@@ -195,3 +195,25 @@ describe('resolve-active-version', () => {
     fs.rmSync(root, { recursive: true, force: true })
   })
 })
+
+describe('un módulo sin runner no puede parecer un éxito', () => {
+  // Una lente adversarial lo midió: `node rollback-version.mjs ws target` salía
+  // **0 sin imprimir nada y sin mutar nada**, porque el archivo exporta una
+  // función y no tiene runner — Node lo carga, no ejecuta nada y termina bien.
+  // Y el `icm-protocol` dice que mutar `active.json` pasa *"ONLY via managed
+  // lifecycle scripts in scripts/memory-sync/"*. Un agente que siga esa
+  // instrucción cree que el rollback ocurrió: el peor final posible para un
+  // comando de mutación, un éxito silencioso sin efecto.
+  const RUNNERLESS = [
+    ['rollback-version', path.join(HERE, 'rollback-version.mjs')],
+    ['activate-version', path.join(HERE, 'activate-version.mjs')],
+  ]
+
+  for (const [name, script] of RUNNERLESS) {
+    it(`${name} sale 1 y explica por qué no hace nada`, () => {
+      const r = run(script, ['algun-workspace'])
+      assert.equal(r.code, 1, 'salió 0 sobre un comando de mutación que no mutó nada')
+      assert.match(r.stderr, /API del ciclo de vida/, 'no dijo que no es ejecutable')
+    })
+  }
+})

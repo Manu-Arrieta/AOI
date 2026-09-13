@@ -56,12 +56,15 @@ describe('restoreTrackedFiles: la operación que el Invariante 3 promete', () =>
   // través de uno de sus dos llamadores.
   const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-rb-'));
 
+  /** Un snapshot con la misma forma que produce `trackFileWrite`. */
+  const entry = (content, mode = 0o644, dirs = []) => ({ content, mode, dirs });
+
   it('restaura un archivo preexistente en vez de borrarlo', () => {
     const dir = tmp();
     const victim = path.join(dir, 'del-owner.ts');
     fs.writeFileSync(victim, 'CONTENIDO ORIGINAL');
 
-    const tracked = new Map([[victim, 'CONTENIDO ORIGINAL']]);
+    const tracked = new Map([[victim, entry(Buffer.from('CONTENIDO ORIGINAL'))]]);
     fs.writeFileSync(victim, 'lo que escribió el subagente');
     restoreTrackedFiles(tracked);
 
@@ -76,7 +79,7 @@ describe('restoreTrackedFiles: la operación que el Invariante 3 promete', () =>
     const created = path.join(dir, 'nuevo.ts');
     fs.writeFileSync(created, 'lo creó el subagente');
 
-    restoreTrackedFiles(new Map([[created, null]]));
+    restoreTrackedFiles(new Map([[created, entry(null)]]));
 
     assert.equal(fs.existsSync(created), false, 'sobrevivió un archivo que el subagente creó');
     fs.rmSync(dir, { recursive: true, force: true });
@@ -84,7 +87,67 @@ describe('restoreTrackedFiles: la operación que el Invariante 3 promete', () =>
 
   it('tolera que el archivo a borrar ya no esté', () => {
     const dir = tmp();
-    restoreTrackedFiles(new Map([[path.join(dir, 'fantasma.ts'), null]]));
+    restoreTrackedFiles(new Map([[path.join(dir, 'fantasma.ts'), entry(null)]]));
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('restaura BYTES, no texto: un binario vuelve idéntico', () => {
+    // La versión anterior leía y escribía con `'utf8'`, así que cada byte
+    // inválido se volvía U+FFFD de forma irreversible. El módulo prometía
+    // recuperación exacta y no podía cumplirla para ningún archivo binario.
+    const dir = tmp();
+    const bin = path.join(dir, 'blob.bin');
+    const original = Buffer.from([0xff, 0x00, 0xfe, 0x80, 0x41, 0x00, 0x42, 0xff]);
+    fs.writeFileSync(bin, original);
+
+    const tracked = new Map([[bin, entry(fs.readFileSync(bin), 0o644, [])]]);
+    fs.writeFileSync(bin, Buffer.from([0x41, 0x41]));
+    restoreTrackedFiles(tracked);
+
+    assert.deepEqual(fs.readFileSync(bin), original, 'el roundtrip por texto corrompió los bytes');
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('devuelve los permisos que el subagente cambió', () => {
+    // Premisa medida, porque la primera versión de este test la daba por
+    // sentada y era FALSA: `writeFileSync` NO cambia el modo de un archivo que
+    // ya existe (755 sigue 755). Lo que sí lo cambia es que el subagente
+    // rehaga el archivo o llame a `chmod` — y ahí el rollback anterior escribía
+    // el contenido y dejaba los permisos nuevos, que es la mitad de restaurar.
+    const dir = tmp();
+    const script = path.join(dir, 'x.sh');
+    fs.writeFileSync(script, '#!/bin/sh\n');
+    fs.chmodSync(script, 0o755);
+
+    const tracked = new Map([[script, entry(fs.readFileSync(script), 0o755, [])]]);
+    fs.chmodSync(script, 0o644);
+    assert.equal(fs.statSync(script).mode & 0o7777, 0o644, 'premisa: el subagente cambió el modo');
+
+    restoreTrackedFiles(tracked);
+
+    assert.equal(fs.statSync(script).mode & 0o7777, 0o755, 'el rollback no devolvió el modo');
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('borra los directorios que creó y deja los que ya existían', () => {
+    const dir = tmp();
+    const preexisting = path.join(dir, 'ya-estaba');
+    fs.mkdirSync(preexisting, { recursive: true });
+    const keeper = path.join(preexisting, 'guardado.txt');
+    fs.writeFileSync(keeper, 'sobrevive');
+
+    const deep = path.join(dir, 'nuevo', 'muy', 'adentro');
+    const created = path.join(deep, 'a.txt');
+    const dirs = [path.join(dir, 'nuevo'), path.join(dir, 'nuevo', 'muy'), deep];
+    const tracked = new Map([[created, entry(null, 0o644, dirs)]]);
+    fs.mkdirSync(deep, { recursive: true });
+    fs.writeFileSync(created, 'lo creó el subagente');
+
+    restoreTrackedFiles(tracked);
+
+    assert.equal(fs.existsSync(created), false);
+    assert.equal(fs.existsSync(path.join(dir, 'nuevo')), false, 'quedó un rastro de directorios vacíos');
+    assert.equal(fs.existsSync(keeper), true, 'el rollback se llevó un directorio que ya existía');
     fs.rmSync(dir, { recursive: true, force: true });
   });
 
@@ -103,7 +166,7 @@ describe('restoreTrackedFiles: la operación que el Invariante 3 promete', () =>
     const callers = source.match(/(?<!function )restoreTrackedFiles\(trackedFiles\)/g) ?? [];
     assert.equal(callers.length, 2, 'una de las dos rutas de rollback dejó de usar la función común');
     assert.equal(
-      (source.match(/origContent === null/g) ?? []).length,
+      (source.match(/entry\.content === null/g) ?? []).length,
       1,
       'la comparación de rollback volvió a duplicarse'
     );

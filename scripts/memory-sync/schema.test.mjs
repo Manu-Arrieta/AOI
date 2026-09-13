@@ -3,6 +3,7 @@ import assert from "node:assert";
 
 import {
   loadJsonFile,
+  validateActiveVersionIndex,
   validateBundleMetadata,
   validateMemoryBundle,
 } from "./schema.mjs";
@@ -214,5 +215,39 @@ describe("loadJsonFile", () => {
       () => loadJsonFile("/tmp/nonexistent-aoi-schema-test-2026-07-31.json"),
       /ENOENT/,
     );
+  });
+});
+
+describe("rollbackReason, el rastro de auditoría del rollback", () => {
+  const index = (state) => ({
+    formatVersion: 1,
+    workspaceStates: {
+      ws: {
+        activeVersionId: "v2",
+        previousVersionId: "v3",
+        updatedAt: "2026-09-12T00:00:00.000Z",
+        ...state,
+      },
+    },
+  });
+
+  it("acepta el índice sin el campo, que es optativo", () => {
+    assert.doesNotThrow(() => validateActiveVersionIndex(index({})));
+  });
+
+  it("acepta el motivo cuando está y es texto", () => {
+    assert.doesNotThrow(() => validateActiveVersionIndex(index({ rollbackReason: "rompió el piso" })));
+  });
+
+  it("rechaza un motivo que no es texto", () => {
+    // El campo se persiste, así que tiene que poder decir cuándo está mal:
+    // un dato que nadie mira se puede escribir mal para siempre.
+    for (const bad of [42, {}, [], true]) {
+      assert.throws(
+        () => validateActiveVersionIndex(index({ rollbackReason: bad })),
+        /rollbackReason/,
+        `aceptó ${JSON.stringify(bad)} como motivo`,
+      );
+    }
   });
 });

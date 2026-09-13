@@ -94,3 +94,62 @@ describe('the skeleton is smaller than the source, which is the entire point', (
     assert.doesNotMatch(out, /const v39/, 'conservó el cuerpo que debía descartar')
   })
 })
+
+describe('las llaves de una regex son texto, no estructura', () => {
+  // Éste es el defecto que una lente adversarial encontró EJECUTANDO el
+  // plegador: no conocía las regex, así que un `}` adentro le bajaba la
+  // profundidad y el cuerpo se cerraba antes de tiempo. La salida no era una
+  // pérdida de contrato sino **código roto**: el resto de la función quedaba
+  // huérfano fuera del cuerpo.
+  it('no corta el cuerpo en un `}` de una regex multlínea', () => {
+    const src = [
+      'export function strip(s) {',
+      '  const a = 1',
+      "  const b = s.replace(/}/g, '')",
+      '  const c = 3',
+      '  return c',
+      '}',
+      '',
+    ].join('\n')
+
+    const out = skeletonizeCode(src)
+
+    // Lo que rompía: `}/g, '')` y el resto sueltos FUERA del cuerpo plegado.
+    assert.doesNotMatch(out, /\/g, ''\)/, 'quedó código huérfano fuera del cuerpo')
+    assert.doesNotMatch(out, /return c/, 'se comió el cuerpo que debía plegar')
+    assert.match(out, /folded/, 'no plegó el cuerpo')
+  })
+
+  it('no abre un bloque con una `{` de una regex', () => {
+    const src = 'export const RE = /{2,3}/\nexport function f(a) {\n  return a\n}\n'
+
+    const out = skeletonizeCode(src)
+
+    assert.match(out, /\/\{2,3\}\//, 'desapareció el literal de la regex')
+    assert.match(out, /export function f\(a\)/, 'se comió la declaración siguiente')
+  })
+
+  it('distingue una división de una regex', () => {
+    // Control en la otra dirección: si toda barra abriera una regex, una
+    // división se comería el resto del archivo.
+    const src = [
+      'export function div(a, b) {',
+      '  const r = a / b',
+      '  const q = (a + b) / 2',
+      '  return r + q',
+      '}',
+      '',
+    ].join('\n')
+
+    const out = skeletonizeCode(src)
+
+    assert.match(out, /export function div\(a, b\)/, 'perdió la firma')
+    assert.doesNotMatch(out, /return r \+ q/, 'no plegó el cuerpo')
+  })
+
+  it('reconoce una regex después de return, donde una división sería inválida', () => {
+    const src = 'export function f(a) {\n  const x = 1\n  const y = 2\n  return /ab}/.test(a)\n}\n'
+    const out = skeletonizeCode(src)
+    assert.match(out, /export function f\(a\)/, 'perdió la firma por clasificar mal la barra')
+  })
+})

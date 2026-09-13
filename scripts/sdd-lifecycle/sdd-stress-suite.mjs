@@ -240,7 +240,8 @@ const fuserOutput = formatUnifiedVerificationReport(unified)
 const rawVerifyFuserTokens = estimateTokens(fuserInput) + estimateTokens(fuserOutput)
 const optVerifyFuserTokens = estimateTokens(fuserOutput)
 
-// Stress 4.3: Spatiotemporal Rollback Validation (Testing exact byte-level recovery)
+// Stress 4.3: rollback. Ejercita UN caso —nuevo→borrar— y no "exact byte-level
+// recovery": los otros ocho los afirma `subagent-fiber-runner.test.mjs`.
 const sandbox = createSubagentSandbox({ role: 'backend', taskDir: '.tasks/fiber-health/TASK-2026-003' })
 const canaryFile = 'aoi_apps/agentic-ops-dashboard/server/utils/canary-test.ts'
 sandbox.trackFileWrite(canaryFile, 'export const canary = "mutated";')
@@ -272,8 +273,7 @@ if (REAL_TASK_DIR) {
   const artifacts = ARCHIVE_ARTIFACTS
     .map((name) => readIfPresent(path.join(REAL_TASK_DIR, name)))
     .join('\n')
-  // La fecha del cierre se inyecta desde `real-corpus.mjs`, con guardia de ancho
-  // (paso 7.4): no es una lectura del reloj dentro de la medición.
+  // Fecha inyectada desde `real-corpus.mjs`, con guardia de ancho (paso 7.4).
   const closure = buildArchiveClosure({ taskId: path.basename(REAL_TASK_DIR), taskDirRel })
   const p5 = ledger.record('Phase_5_Archive', '/sdd-archive (Closure & Distillation)', {
     raw: estimateTokens(artifacts), opt: estimateTokens(closure), provenance: MEASURED,

@@ -151,8 +151,8 @@ Qué guardar con cada nivel: ver los disparadores de la sección 8.
 ## 9. Version-Aware Operational Resolution
 
 When operating in a versioned-memory workspace (pointer at `.specify/memory/versions/active.json`):
-1. Resolve active version before operational mutations using `node scripts/memory-sync/resolve-active-version.mjs "$WORKSPACE"`.
+1. Resolve active version before operational mutations using `node scripts/memory-sync/resolve-active-version.mjs "$WORKSPACE"` — único ejecutable del subsistema, y de sólo lectura.
 2. Treat canonical topics (`{WORKSPACE}-context`, `{WORKSPACE}-architecture`) as logical topics governed by the resolved version manifest.
-3. Sync/import operations require explicit `sourceWorkspace` and `sourceVersionId`.
-4. Rollback operations require explicit `targetVersionId` and reason.
-5. Mutate `active.json` and version manifests ONLY via managed lifecycle scripts in `scripts/memory-sync/`.
+3. Sync/import operations read `sourceWorkspace` and `sourceVersionId` **del bundle**, no de flags; el único argumento explícito que se exige es `--owner-context`.
+4. Rollback operations require explicit `targetVersionId` **and** `reason`, que se persiste como `rollbackReason`.
+5. Mutate `active.json` and version manifests ONLY via the lifecycle API in `scripts/memory-sync/`. **Convención, no enforcement**: nada detecta una mutación manual coherente, y `activate-version`/`rollback-version` no son CLIs —rechazan la ejecución directa con exit 1.

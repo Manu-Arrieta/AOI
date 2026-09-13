@@ -48,12 +48,18 @@ test('rollbackVersion restores the previous version and marks the reverted one',
     const rollback = await rollbackVersion({
       workspace: 'fixture-workspace',
       targetVersionId: 'fixture-v2',
+      reason: 'la version activa rompio el piso de tokens',
       versionsRoot,
       rolledBackAt: '2026-05-27T00:20:00.000Z',
     })
 
     assert.equal(rollback.nextActiveIndex.workspaceStates['fixture-workspace'].activeVersionId, 'fixture-v2')
     assert.equal(rollback.nextActiveIndex.workspaceStates['fixture-workspace'].previousVersionId, 'fixture-v3')
+    // El rastro que el protocolo prometia y el codigo descartaba en silencio.
+    assert.equal(
+      rollback.nextActiveIndex.workspaceStates['fixture-workspace'].rollbackReason,
+      'la version activa rompio el piso de tokens',
+    )
 
     const activeIndex = JSON.parse(await readFile(join(versionsRoot, 'active.json'), 'utf8'))
     const restoredManifest = JSON.parse(await readFile(join(versionsRoot, 'manifests', 'fixture-workspace', 'fixture-v2.json'), 'utf8'))
@@ -66,12 +72,23 @@ test('rollbackVersion restores the previous version and marks the reverted one',
   })
 })
 
-test('rollbackVersion rejects an invalid target version', async () => {
+test('rollbackVersion exige un motivo de rollback', async () => {
   await withFixture(async (versionsRoot) => {
     await activateCandidateVersion(versionsRoot)
 
     await assert.rejects(
       () => rollbackVersion({ workspace: 'fixture-workspace', targetVersionId: 'fixture-v1', versionsRoot }),
+      /reason is required/,
+    )
+  })
+})
+
+test('rollbackVersion rechaza un target invalido', async () => {
+  await withFixture(async (versionsRoot) => {
+    await activateCandidateVersion(versionsRoot)
+
+    await assert.rejects(
+      () => rollbackVersion({ workspace: 'fixture-workspace', targetVersionId: 'fixture-v1', reason: 'porque si', versionsRoot }),
       /not the registered previous version/,
     )
   })
@@ -85,7 +102,7 @@ test('rollbackVersion rejects workspaces without a registered previous version',
     await writeFile(activeIndexPath, `${JSON.stringify(activeIndex, null, 2)}\n`, 'utf8')
 
     await assert.rejects(
-      () => rollbackVersion({ workspace: 'fixture-workspace', targetVersionId: 'fixture-v1', versionsRoot }),
+      () => rollbackVersion({ workspace: 'fixture-workspace', targetVersionId: 'fixture-v1', reason: 'porque si', versionsRoot }),
       /No previous memory version registered/,
     )
   })
