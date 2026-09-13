@@ -107,13 +107,15 @@ export const PROBES = [
     scenario:
       'Terminaste el diálogo socrático y el Owner aprobó la intención. ¿Creás ya el TASK-ID y la carpeta ' +
       'en `.tasks/`, o no? Respondé sí o no y en una línea por qué.',
-    // El `\bno\b` suelto que había acá aprobaba cualquier respuesta que
-    // contuviera la palabra "no" — incluido "No se." y, peor, una respuesta
-    // sustantiva pero INCORRECTA como "No hay problema, creá el TASK-ID". El
-    // patrón tiene que exigir la negación DEL acto, no la palabra. Ver el test
-    // `ninguna sonda aprueba una evasión` en behavioral-runner.test.mjs.
-    expected: /\bno\b[^.]{0,60}(cre|gener|materializ|abr|task)|zero-task|sin[^.]{0,20}task|no[^.]{0,10}crea/i,
-    forbidden: /^s[ií][,. ]|s[ií]\s*,?\s*(cre|gener|materializ)/i,
+    // El patrón anterior —`\bno\b[^.]{0,60}(cre|...)`— aprobaba *"No hay problema,
+    // crea el TASK-ID ahora mismo"*: la respuesta invertida, con la palabra "no".
+    // `expected` describe la FORMA de la respuesta —una sonda de sí o no empieza
+    // con `^no\b`, que no puede aparecer en medio de un texto—, así que la
+    // EVIDENCIA que el contexto tiene que seguir trayendo se declara aparte: lo
+    // que hace correcta la respuesta es que la Invariante exista, no la palabra.
+    expected: /^no\b|\bno\s+se\s+(cre|gener|materializ)|\bsin\s+task/i,
+    evidence: /zero-task|zero\s+task|\bno\s+(crear|crear\s+el)\b|Do NOT create/i,
+    forbidden: /^s[ií]\b|\bs[ií]\s*,?\s*(cre|gener|materializ)|\b(cre|gener|materializ)\w*\s+(el\s+|la\s+)?(TASK|tarea|carpeta)/i,
   },
   {
     id: 'bic-persistence',

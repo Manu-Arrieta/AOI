@@ -58,8 +58,17 @@ describe('every probe has its evidence inside the context it is asked over', () 
   })()
 
   it('carries, for all 25, the pattern the answer must contain', () => {
-    const orphaned = PROBES.filter((p) => !p.expected.test(contextOf(p))).map(
-      (p) => `${p.id} (${p.phase}): ${p.expected} no aparece en el contexto de la fase`
+    // Se mira `evidence` y no `expected`, y la distinción es un arreglo de
+    // diseño, no una comodidad. `expected` describe la FORMA de una respuesta —y
+    // para una sonda de sí o no empieza con `^no\b`, que por definición no puede
+    // aparecer en medio de un texto—. Lo que hay que probar acá es otra cosa:
+    // que la DOCTRINA que hace correcta esa respuesta siga en el contexto.
+    //
+    // Confundir las dos era el mismo defecto que ya tenía `expected` con el
+    // juez: un campo haciendo dos trabajos que se contradicen. Cuando no se
+    // declara `evidence`, el criterio de respuesta es también la evidencia.
+    const orphaned = PROBES.filter((p) => !(p.evidence ?? p.expected).test(contextOf(p))).map(
+      (p) => `${p.id} (${p.phase}): ${p.evidence ?? p.expected} no aparece en el contexto de la fase`
     )
     assert.deepEqual(orphaned, [])
   })

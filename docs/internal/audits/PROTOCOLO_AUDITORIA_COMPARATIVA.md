@@ -1229,6 +1229,39 @@ suficiente, y el reporte lo dice por escrito para que nadie lea "25/25" como má
 **Si vas a reportar sondas, reportá el techo.** Un `pass` acota el espacio de respuestas
 incorrectas; no lo cierra.
 
+#### Cuando el criterio se vuelve el problema: la línea que carga la decisión
+
+La lente adversarial demolió la primera versión del juez con dos contraejemplos que **ningún patrón puede distinguir**:
+
+```
+"En vez de @triage-specialist, lo enruto a @functional-analyst."   ← enruta al PROHIBIDO
+"Sin dudarlo, enruto a @functional-analyst en vez de @triage-specialist."
+```
+
+Las dos caen en el agente prohibido. En la primera, *"en vez de"* niega la mención **anterior** y la guardia lo leía como si negara la posterior; en la segunda, *"sin dudarlo"* no niega nada pero matcheaba la lista de negaciones. **Atribuir una negación a la mención correcta es análisis sintáctico, y un regex no lo hace.**
+
+La salida no fue un patrón más listo. Fue **darle al juez una línea cuyo único trabajo sea cargar la decisión**:
+
+```
+DECISION: <la decisión, corta y afirmativa>
+MOTIVO: <el porqué>
+```
+
+Si la respuesta trae `DECISION:`, el criterio (`expected`/`forbidden`) se evalúa **ahí** —una línea corta donde las negaciones no juegan— y la evasión y la longitud se siguen mirando sobre el texto completo. Sin esa línea, todo se evalúa sobre el texto completo, como antes.
+
+Sigue sin ser una garantía: una `DECISION:` puede mentir. Pero mueve el ataque desde *"esquivar un regex"* hacia *"afirmar explícitamente lo incorrecto"*, que es un terreno mucho más chico **y auditable**.
+
+> [!IMPORTANT]
+> **Y un campo no puede hacer dos trabajos que se contradicen.** `expected` servía para dos cosas: describir la forma de una respuesta **y** probar que la doctrina sigue en el contexto de la fase. Para una sonda de sí o no la forma empieza con `^no\b`, que por definición no puede aparecer en medio de un texto — así que las dos obligaciones se peleaban. La evidencia que el contexto tiene que seguir trayendo se declara aparte, en `evidence`, y cuando no se la declara el criterio de respuesta hace de evidencia.
+
+#### La otra mitad: lo que el juez pide tiene que ser lo que la sonda pide
+
+Siete de las 25 sondas piden una respuesta **corta y explícita**: *"Respondé con una sola palabra"*, *"Respondé con el número"*, *"Respondé con el estado"*, *"solo con el nombre del agente"*. El juez les exigía **12 caracteres**, así que reprobaba `critical` (8), `300` (3) y `Archivado` (9).
+
+Es peor que un falso positivo: **es el instrumento contradiciendo a la sonda que dice juzgar.** Un juez que reprueba la respuesta que su propia pregunta pide no está midiendo conducta, está midiendo su propia rigidez.
+
+Las siete se declaran en `SHORT_PROBES`, un mapa revisado con la frase del escenario que lo justifica —el mismo criterio que `SKILL_SCOPE`: *"Applicability is written down HERE rather than inferred"*— y hay una compuerta que **falla si una sonda pide una respuesta corta y no está en la lista**. Sin esa compuerta, la próxima sonda que pida "el número" reintroduce la contradicción en silencio.
+
 #### La trampa que este paso ya cometió
 
 Dos de las 25 sondas tenían un criterio que aprobaba **la palabra "no"** en cualquier
