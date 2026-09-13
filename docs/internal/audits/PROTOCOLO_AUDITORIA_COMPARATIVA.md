@@ -745,6 +745,53 @@ de compresión. Anotá también la **fidelidad**: cuántas fases se midieron sob
 reales, cuántas sobre fixtures y cuántas se omitieron. Un porcentaje sobre fixtures es
 representativo en proporción pero no en volumen.
 
+#### 7.4 Y ninguna lectura de reloj dentro de un camino medido
+
+Tercera condición, y la más fácil de saltear porque **no se ve en el número**. El paso 7.2 pide
+que el payload sea función del árbol; el suite tenía, en la Fase 5, un
+`new Date().toISOString().slice(0, 10)` dentro de la plantilla que se mide.
+
+**Primero, la corrección: eso NO mueve el número, y yo había reportado que sí.** Medido con
+tres fechas sobre el mismo árbol —`2026-09-12`, `1999-01-01` y `0001-01-01`— las dos fases dan
+idénticas: `261 -> 32` en la Fase 5 y `20.941 -> 4.595` en el total. La razón es que
+`estimateTokens` es `Math.round(len / 4)` y `slice(0, 10)` tiene ancho fijo: **la invariancia se
+sostenía por aritmética, no por construcción.**
+
+**Segundo, la enumeración, que es el método que este paso agrega.** No alcanza con arreglar la
+lectura que encontraste: hay que contarlas todas.
+
+```bash
+rg -n 'new Date\(|Date\.now\(|performance\.now\(|toISOString\(|Date\.UTC\(|process\.hrtime' scripts/
+```
+
+Medido: **29 archivos leen el reloj en `scripts/`, y exactamente uno alimentaba una medición.**
+Los otros son comportamiento real y legítimo —`registry-sync.mjs` deriva el año de los IDs de
+tarea, `subagent-fiber-runner.mjs` construye un `realmId` único, `mutation-probe.mjs` mide un
+timeout, y los `timestamp` de `aoi-doctor` y `mechanical-verify-union` son metadatos de salida—.
+Los artefactos de instalación que refrescan `updated_at` ya están declarados como excepción
+legítima en A.13.
+
+**El arreglo.** La fecha pasó a ser un parámetro explícito de
+`buildArchiveClosure({ taskId, taskDirRel, date })` en `real-corpus.mjs`, con un guardia que
+**rechaza** cualquier fecha que no mida diez caracteres exactos:
+
+```js
+const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/
+if (!CALENDAR_DATE.test(date)) throw new Error('fecha fuera del formato ISO corto (10 chars)')
+```
+
+Con eso la masa **no puede** depender del valor del calendario, sea cual sea el estimador que se
+enchufe después. Y hay compuerta: cuatro casos en `real-corpus.test.mjs` que exigen masa igual
+entre siete fechas, ancho igual, rechazo de cinco formas mal formadas, y que el default siga
+siendo la fecha del reloj.
+
+> [!CAUTION]
+> **No alcanza con que el número no se mueva: eso puede ser una propiedad del ESTIMADOR.** Acá
+> se sostenía porque `estimateTokens` dividía por cuatro, y un estimador se cambia en una línea
+> —este apéndice tiene trampas enteras sobre esa clase de cambio—. La regla: si una entrada del
+> camino medido no es función del árbol, arreglala **por construcción**, con guardia y con test,
+> y no por observación.
+
 ---
 
 ## 8. Fase 7 — Instrumentación, compuertas y tests
@@ -1969,6 +2016,30 @@ Y la lección de método: **los seis caminos salieron de ejecutar el gate contra
 
 ---
 
+### A.18 Una lectura de reloj en un camino medido: invariante por aritmética, no por construcción
+
+Ésta nació de refutarme a mí mismo, y lo que vale es que **la afirmación original era falsa**.
+
+Yo había reportado que el `new Date()` de la Fase 5 del stress suite era *"una fuente de no-determinismo esperando su momento"*. Medido: **no mueve un solo número.** Tres fechas sobre el mismo árbol dan idénticas —`261 -> 32` en la Fase 5, `20.941 -> 4.595` en el total— porque `estimateTokens` es `Math.round(len / 4)` y `slice(0, 10)` tiene ancho fijo.
+
+Y sin embargo **el hallazgo era real**: lo había nombrado mal. No era un defecto de reproducibilidad, era una **contradicción entre lo que el protocolo afirma (paso 7.2: el payload es función del árbol) y lo que el instrumento hace (leer el reloj dentro de la plantilla que mide)**. Que las dos cosas convivieran sin conflicto visible era una casualidad aritmética.
+
+| | Qué decía | Qué es |
+| :--- | :--- | :--- |
+| Como lo reporté | *"fuente de no-determinismo latente"* | **Falso**: tres fechas, un solo número |
+| Lo que era | *"entrada no-árbol dentro de un camino medido"* | **Cierto**, y sostenido por casualidad |
+
+**Las dos lecciones.**
+
+**1. Enumerá TODAS las fuentes, no la que encontraste.** `stripVolatile` necesitó tres reglas porque la primera versión cubrió una sola; acá pasa lo mismo. El método es un `rg` por las seis formas de leer el reloj sobre todo `scripts/` (paso 7.4). Medido: **29 archivos, 1 en un camino medido.** Los otros 28 son comportamiento legítimo y quedaron clasificados, no arreglados.
+
+**2. Una invariante que se sostiene por aritmética no es una invariante.** El instrumento era correcto *porque* el estimador dividía por cuatro. Cambiar el estimador por un tokenizador real —una línea— habría metido el reloj dentro del número sin que nadie tocara la Fase 5. El arreglo no fue congelar la fecha: fue **inyectarla con guardia de ancho**, para que la masa no pueda depender del calendario con ningún estimador, y dejar cuatro casos de test que lo exijan.
+
+> [!CAUTION]
+> **"El número no se mueve" no es lo mismo que "el instrumento está bien".** Cuando una entrada viola lo que el instrumento declara medir, la pregunta no es si hoy se nota: es **qué la sostiene**. Si la respuesta es "una propiedad del estimador", no hay invariante.
+
+---
+
 ## Apéndice B — Adaptación por harness
 
 
@@ -2064,6 +2135,8 @@ Antes de dar la auditoría por terminada:
       árbol dan el mismo número (paso 7.1). Si no, el payload no se reporta.
 - [ ] La fidelidad del payload está declarada: cuántas fases reales, cuántas fixture, cuántas
       omitidas.
+- [ ] **Todas** las lecturas de reloj del camino medido están enumeradas, y ninguna alimenta un
+      número sin guardia de ancho (paso 7.4 + A.18).
 - [ ] La masa de prosa en disco está medida y contrastada contra el piso.
 - [ ] La masa que ningún instrumento cuenta está medida y reportada como alcance, **no sumada
       al piso** (paso 6.5).

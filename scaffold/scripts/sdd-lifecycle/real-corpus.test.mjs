@@ -4,6 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { describe, it } from 'node:test'
 import {
+  buildArchiveClosure,
   buildDebuggingTurns,
   buildDiscoveryCorpus,
   captureRealTestRun,
@@ -12,6 +13,7 @@ import {
   FALLBACK_CRASH,
   stripVolatile,
 } from './real-corpus.mjs'
+import { estimateTokens } from './token-accounting.mjs'
 
 /** Builds a throwaway source tree to sample. */
 function treeWith(files) {
@@ -161,5 +163,53 @@ describe('la captura es reproducible, o el benchmark no lo es', () => {
     const real = 'AssertionError: Expected values to be strictly equal:\n  + actual - expected'
     assert.equal(stripVolatile(real), real)
     assert.equal(stripVolatile('assert.equal(evaluate(2, 2), 5)'), 'assert.equal(evaluate(2, 2), 5)')
+  })
+})
+
+describe('el cierre de /sdd-archive no puede depender del calendario', () => {
+  // Nació de una corrección a mi propia afirmación. Yo había reportado que el
+  // `new Date()` de la Fase 5 era una fuente de no-determinismo latente.
+  // MEDIDO, es falso: tres fechas distintas —`2026-09-12`, `1999-01-01`,
+  // `0001-01-01`— dan el mismo número, `261 -> 32` en la Fase 5 y
+  // `20.941 -> 4.595` en el total, porque `estimateTokens` es
+  // `Math.round(len / 4)` y `slice(0, 10)` tiene ancho fijo.
+  //
+  // Pero la contradicción con el paso 7.2 era real: el instrumento leía el
+  // reloj dentro de un camino medido. Que el número no se mueva es una
+  // casualidad ARITMÉTICA, no una garantía. Estas compuertas la vuelven
+  // garantía, y no dependen de que el estimador siga siendo un largo dividido
+  // por cuatro.
+  const DATES = [
+    '2026-09-12', '1999-01-01', '0001-01-01',
+    '2100-12-31', '2024-02-29', '1970-01-01', '9999-12-31',
+  ]
+  const closure = (date) => buildArchiveClosure({
+    taskId: 'TASK-2026-101', taskDirRel: '.tasks/token-budget/TASK-2026-101', date,
+  })
+
+  it('mide la misma masa con cualquier fecha del calendario', () => {
+    const masses = DATES.map((d) => estimateTokens(closure(d)))
+    assert.equal(new Set(masses).size, 1, `la masa cambió según la fecha: ${masses.join(', ')}`)
+  })
+
+  it('la parte volátil tiene ancho FIJO, que es de lo que depende la medición', () => {
+    const widths = DATES.map((d) => closure(d).length)
+    assert.equal(new Set(widths).size, 1, `el ancho del cierre cambió: ${widths.join(', ')}`)
+  })
+
+  it('rechaza una fecha fuera de formato en vez de medirla', () => {
+    // `2026-1-1` mide ocho caracteres: sin el guardia, el instrumento mediría un
+    // cierre más corto y lo reportaría como un ahorro que no ocurrió.
+    for (const malformed of ['2026-1-1', 'hoy', '', '09/12/2026', '2026-09-12T00:00:00Z']) {
+      assert.throws(() => closure(malformed), /formato ISO corto/, `aceptó "${malformed}"`)
+    }
+  })
+
+  it('por defecto toma la fecha del reloj, y cumple el ancho', () => {
+    // Mismo `taskId` y mismo directorio: si el ancho cambia, el único culpable
+    // posible es la fecha.
+    const today = buildArchiveClosure({ taskId: 'TASK-2026-101', taskDirRel: '.tasks/token-budget/TASK-2026-101' })
+    assert.match(today, /\| \d{4}-\d{2}-\d{2} \|/)
+    assert.equal(today.length, closure('2000-01-01').length)
   })
 })

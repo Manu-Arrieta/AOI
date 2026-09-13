@@ -201,6 +201,44 @@ export function captureRealTestRun() {
 }
 
 /**
+ * Artefactos que `/sdd-archive` releería para redactar el cierre de una tarea.
+ * El orden es el del ciclo, y no es decorativo: define el texto crudo medido.
+ */
+export const ARCHIVE_ARTIFACTS = ['spec.md', 'design.md', 'tasks.md', 'verify-report.md', 'proposal.md']
+
+/** Fecha ISO corta: diez caracteres, siempre. Es la garantía, no una observación. */
+const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * Construye la línea de registro que `/sdd-archive` escribe al cerrar una tarea.
+ *
+ * `date` es un PARÁMETRO y no una lectura del reloj escondida en la plantilla, y
+ * la razón está medida. El protocolo afirma que el payload es función del árbol
+ * (paso 7.2); ésta era la única lectura de reloj dentro de un camino medido
+ * —se auditaron los 29 archivos de `scripts/` que leen el reloj y sólo uno
+ * alimentaba una medición—, así que la afirmación se sostenía **por accidente
+ * aritmético**: `slice(0, 10)` tiene ancho fijo y un largo fijo dividido por 4 no
+ * se mueve. Medido con tres fechas —`2026-09-12`, `1999-01-01`, `0001-01-01`— las
+ * dos fases dan idénticas: `261 -> 32` en la Fase 5, `20.941 -> 4.595` en el
+ * total. Cierto, pero no *garantizado*: si `estimateTokens` dejara de ser
+ * `Math.round(len / 4)`, el reloj entraría al número.
+ *
+ * El guardia cierra esa puerta: una fecha que no mida diez caracteres exactos se
+ * RECHAZA en vez de medirse, así la masa no puede depender del valor del
+ * calendario, sea cual sea el estimador que se enchufe después.
+ *
+ * @param {{ taskId: string, taskDirRel: string, date?: string }} opts
+ * @returns {string} la línea de registro, con el ancho de la fecha garantizado
+ */
+export function buildArchiveClosure({ taskId, taskDirRel, date = new Date().toISOString().slice(0, 10) }) {
+  if (!CALENDAR_DATE.test(date)) {
+    throw new Error(`buildArchiveClosure: fecha fuera del formato ISO corto (10 chars): ${date}`)
+  }
+  return `| ${taskId} | 📦 Archivado | ${date} |\n` +
+    `ARCHIVED: ${taskId}. See ${taskDirRel}/archive-report.md`
+}
+
+/**
  * Assembles a realistic RED -> fix -> RED -> fix -> GREEN debugging sequence
  * whose turn contents are the real runner outputs captured above. Context
  * tombstoning is then measured against traffic a real session would carry.

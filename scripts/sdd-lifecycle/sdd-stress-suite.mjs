@@ -30,6 +30,7 @@ import {
   tryCommand, FIXTURE, MEASURED, SKIPPED,
 } from './token-accounting.mjs'
 import {
+  ARCHIVE_ARTIFACTS, buildArchiveClosure,
   buildDebuggingTurns, buildDiscoveryCorpus, captureRealTestRun,
   fallbackDebuggingTurns, fallbackDiscoveryCorpus, FALLBACK_CRASH,
 } from './real-corpus.mjs'
@@ -267,16 +268,16 @@ console.log('▶ [Fase 5: /sdd-archive] Testing Archive & Registry Closure...')
 if (REAL_TASK_DIR) {
   // Raw: the closure the model would draft after re-reading every artifact.
   // AOI: an atomic registry line plus a dense ICM checkpoint.
-  const artifacts = ['spec.md', 'design.md', 'tasks.md', 'verify-report.md', 'proposal.md']
+  const taskDirRel = path.relative(process.cwd(), REAL_TASK_DIR)
+  const artifacts = ARCHIVE_ARTIFACTS
     .map((name) => readIfPresent(path.join(REAL_TASK_DIR, name)))
     .join('\n')
-  const taskId = path.basename(REAL_TASK_DIR)
-  const closure =
-    `| ${taskId} | 📦 Archivado | ${new Date().toISOString().slice(0, 10)} |\n` +
-    `ARCHIVED: ${taskId}. See ${path.relative(process.cwd(), REAL_TASK_DIR)}/archive-report.md`
+  // La fecha del cierre se inyecta desde `real-corpus.mjs`, con guardia de ancho
+  // (paso 7.4): no es una lectura del reloj dentro de la medición.
+  const closure = buildArchiveClosure({ taskId: path.basename(REAL_TASK_DIR), taskDirRel })
   const p5 = ledger.record('Phase_5_Archive', '/sdd-archive (Closure & Distillation)', {
     raw: estimateTokens(artifacts), opt: estimateTokens(closure), provenance: MEASURED,
-    source: path.relative(process.cwd(), REAL_TASK_DIR),
+    source: taskDirRel,
     details: 'Atomic registry update + dense ICM checkpoint vs re-reading every artifact',
   })
   console.log(`  ✓ Phase 5 complete: ${p5.rawTokens} tokens -> ${p5.optimizedTokens} tokens (${p5.percentSaved} saved) [real]\n`)
