@@ -60,7 +60,7 @@ export const MUTATION_FLOOR = {
   // quedan fuera por AREA_EXTENSIONS — ver el comentario allí.
   // Subió de 53 a 54 con la compuerta `aoi:audit-protocol` y su suite (13 casos),
   // que le dan a este área 26 mutantes más que antes mataba. Nunca baja.
-  'scripts/multi-harness': 54,
+  'scripts/multi-harness': 55,
   'scripts/scaffold': 61,
   'scripts/spatiotemporal-runtime': 59,
   // 51 → 64. El salto grande no viene de más tests sobre lo mismo: al extraer el
@@ -73,7 +73,7 @@ export const MUTATION_FLOOR = {
   // formas" agregó código cuyo valor no está atado del todo por los tests. Se
   // anota el piso medido y no el mejor visto — un piso que el área no alcanza
   // bloquea todo, y uno que se elige por conveniencia deja de ser un trinquete.
-  'scripts/code-lens': 64,
+  'scripts/code-lens': 65,
   // Subió de 57 a 71 en la medición del 2026-09-12. El salto NO viene de un
   // cambio en este área: el gateway no se tocó. Es una mejora de suite que llevaba
   // tiempo sin medirse, y el trinquete la registra para que no se pierda.
@@ -83,7 +83,7 @@ export const MUTATION_FLOOR = {
   // bajo `node --test`. La sonda acepta un runner distinto y enlaza
   // node_modules y .nuxt en la copia; sin .nuxt, tsconfig.json no resuelve y
   // los 23 archivos de test fallan antes de la primera aserción.
-  'aoi_apps/agentic-ops-dashboard/server/utils': 54,
+  'aoi_apps/agentic-ops-dashboard/server/utils': 58,
 }
 
 export const TEST_GLOB = (area) => `${area}/*.test.mjs`
