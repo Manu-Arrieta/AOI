@@ -42,7 +42,10 @@ export const MUTATION_FLOOR = {
   // 52 → 53. `reason` pasó a ser obligatorio y se persiste: los casos que
   // exigen su ausencia y su presencia son mutantes que antes sobrevivían.
   'scripts/memory-sync': 53,
-  'scripts/sdd-lifecycle': 67,
+  // 67 → 68. Los casos de la guardia de ancho de `buildArchiveClosure` (paso
+  // 7.4) matan mutantes que antes sobrevían. Los mutantes del área subieron de
+  // 229 a 249 por el código nuevo, y el score subió igual.
+  'scripts/sdd-lifecycle': 68,
   // Shell. The installer machinery is where the most destructive defects of
   // the audit lived, so leaving it unmeasured left the worst code in the
   // project outside the only check that asks whether its tests bind.
