@@ -24,6 +24,7 @@ import {
   mutationsFor,
   NO_PID,
   OPERATORS,
+  parseVmStat,
   reapGhosts,
   suitePasses,
 } from './mutation-probe.mjs'
@@ -271,6 +272,13 @@ describe('reapGhosts', () => {
   const GHOSTS = [
     ['una línea de ps normal', 900, GHOST_PATH, 900],
     ['el pid propio, que no se puede recoger solo', SELF, GHOST_PATH, NO_PID],
+    // El pid 1 es el proceso más destructivo que se puede matar, y es el único
+    // que distingue `pid <= 1` de `pid < 1`. Sin este caso, el mutante que
+    // afloja la guarda a `< 1` autoriza a `launchd`, y no hay nada más que lo
+    // note: en una corrida real `pid 1` nunca lleva la marca, así que el
+    // agujero quedaría latente hasta que alguien recogiera fantasmas con una
+    // tabla de procesos que sí lo tuviera marcado.
+    ['el pid 1, que es launchd', 1, GHOST_PATH, NO_PID],
     ['un pid cero', 0, GHOST_PATH, NO_PID],
     ['un pid negativo', -1, GHOST_PATH, NO_PID],
     ['un primer campo que no es un número', 'x', GHOST_PATH, NO_PID],
@@ -468,6 +476,103 @@ describe('precondición de memoria', () => {
     assert.ok(
       MUTANT_HEAP_MB >= 384,
       `el techo de ${MUTANT_HEAP_MB} MB queda demasiado cerca del pico medido (322 MB)`
+    )
+  })
+})
+
+/**
+ * El parseo de `vm_stat`, con valores EXACTOS y no "plausibles".
+ *
+ * Los tres mutantes de esta función —los dos `||` de los fallbacks y el `> 0`—
+ * sobrevivían cuando la lectura y el parseo vivían en la misma función, porque
+ * `vm_stat` siempre contesta bien en macOS y el camino de fallback nunca se
+ * recorría. Un test que sólo pide "un número plausible" no distingue un fallback
+ * bien puesto de uno roto.
+ *
+ * La fixture imita la salida real, con el tamaño de página declarado y los
+ * números terminados en punto como los emite macOS.
+ */
+describe('parseVmStat', () => {
+  const vmStat = (pageSize, free, inactive, speculative) =>
+    [
+      `Mach Virtual Memory Statistics: (page size of ${pageSize} bytes)`,
+      `Pages free:                          ${free}.`,
+      'Pages active:                       434628.',
+      `Pages inactive:                    ${inactive}.`,
+      `Pages speculative:                 ${speculative}.`,
+    ].join('\n')
+
+  it('usa el tamaño de página que declara la salida, no el de por defecto', () => {
+    // Distingue `|| 4096` de `&& 4096`: con `&&` el tamaño quedaría siempre en
+    // 4096 y el resultado sería distinto, porque acá la salida declara 16384.
+    // 3500 páginas × 16384 / 1 MiB = 54,7 -> 55
+    assert.equal(parseVmStat(vmStat(16384, 1000, 2000, 500)), 55)
+    // El mismo conteo con páginas de 4096 da 13,7 -> 14
+    assert.equal(parseVmStat(vmStat(4096, 1000, 2000, 500)), 14)
+  })
+
+  it('suma las tres bandas reclamables, no sólo la libre', () => {
+    // Distingue `|| 0` de `&& 0` en el contador: con `&&` cada banda daría 0 y
+    // el total sería 0, no 55. Y fija que `Pages free` sola no alcanza, que es
+    // el motivo por el que la función existe.
+    const libre = parseVmStat(vmStat(16384, 1000, 0, 0))
+    const todas = parseVmStat(vmStat(16384, 1000, 2000, 500))
+    assert.ok(todas > libre, `sumar las bandas no cambió el resultado: ${todas} vs ${libre}`)
+    assert.equal(todas, 55)
+  })
+
+  it('un contador ausente cuenta como cero, no como uno', () => {
+    // Con páginas de 1 MiB un solo contador mal sumado cambia el resultado en
+    // MB, que es lo que hace distinguible este caso. Con el tamaño real de
+    // macOS (16 KiB) una página de más se pierde en el redondeo y el mutante
+    // sobrevive: el caso tiene que elegir la escala donde la diferencia se ve.
+    const soloLibre = [
+      'Mach Virtual Memory Statistics: (page size of 1048576 bytes)',
+      'Pages free:                          1000.',
+    ].join('\n')
+    assert.equal(parseVmStat(soloLibre), 1000)
+    const conInactiva = [soloLibre, 'Pages inactive:                       250.'].join('\n')
+    assert.equal(parseVmStat(conInactiva), 1250)
+  })
+
+  it('cae al tamaño de página por defecto si la salida no lo declara', () => {
+    // 3500 × 4096 / 1 MiB = 13,7 -> 14. Si el default no se aplicara, el
+    // `undefined` daría NaN y el test lo vería.
+    const sinDeclarar = [
+      'Pages free:                          1000.',
+      'Pages inactive:                      2000.',
+      'Pages speculative:                    500.',
+    ].join('\n')
+    assert.equal(parseVmStat(sinDeclarar), 14)
+    assert.equal(parseVmStat(sinDeclarar, 16384), 55)
+  })
+
+  it('devuelve 0 cuando la salida no trae los contadores', () => {
+    assert.equal(parseVmStat(''), 0)
+    assert.equal(parseVmStat('algo que no es vm_stat'), 0)
+    assert.equal(parseVmStat('Mach Virtual Memory Statistics: (page size of 16384 bytes)'), 0)
+  })
+
+  it('sin contadores cae al dato de Node, no lo trata como medición válida', () => {
+    // Distingue `mb > 0` de `mb >= 0`. El cero significa "la salida no traía
+    // los contadores", no "hay cero memoria": tratarlo como medición válida
+    // haría que la precondición corte siempre, incluso en una máquina sana.
+    const deNode = Math.round(os.freemem() / 1048576)
+    assert.equal(availableMemoryMB(() => vmStat(16384, 0, 0, 0)), deNode)
+    assert.equal(availableMemoryMB(() => ''), deNode)
+  })
+
+  it('con contadores devuelve la medición, no el dato de Node', () => {
+    assert.equal(availableMemoryMB(() => vmStat(16384, 1000, 2000, 500)), 55)
+  })
+
+  it('si la sonda lanza, cae al dato de Node en vez de propagar', () => {
+    const deNode = Math.round(os.freemem() / 1048576)
+    assert.equal(
+      availableMemoryMB(() => {
+        throw new Error('vm_stat no existe')
+      }),
+      deNode
     )
   })
 })

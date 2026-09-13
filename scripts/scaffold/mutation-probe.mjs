@@ -424,21 +424,51 @@ export const MUTANT_HEAP_MB = 512
 export const MIN_FREE_MB = 2048
 
 /**
+ * Memoria reclamable en MB a partir de la salida cruda de `vm_stat`.
+ *
+ * Es una función PURA y separada de la ejecución por la misma razón que
+ * `assertEnoughMemory` recibe su sonda: la decisión se puede fijar con casos
+ * directos, el efecto no. Medido: con la lectura y el parseo en la misma
+ * función, sus tres mutantes —los dos `||` de los fallbacks y el `> 0`— no
+ * tenían ninguna entrada de test que los distinguiera, porque `vm_stat` siempre
+ * contesta bien en macOS y el camino de fallback nunca se recorre. Extraer el
+ * parseo permite darle la salida que el fallback existe para manejar.
+ *
+ * En macOS `Pages free` solo no sirve: el sistema usa la RAM libre como caché a
+ * propósito y reporta muy poco "libre" en una máquina sana. Lo que importa es
+ * lo reclamable —libre, inactiva y especulativa— que es el número que Activity
+ * Monitor muestra cerca de "disponible".
+ *
+ * @param {string} out salida de `vm_stat`
+ * @param {number} tamanoPaginaPorDefecto se usa si la salida no declara el tamaño
+ * @returns {number} MB reclamables, 0 si la salida no trae los contadores
+ */
+export function parseVmStat(out, tamanoPaginaPorDefecto = 4096) {
+  const declared = /page size of (\d+)/.exec(out)
+  const pageSize = declared ? Number(declared[1]) : tamanoPaginaPorDefecto
+  const pages = (label) => {
+    const m = new RegExp(`${label}:\\s+(\\d+)`).exec(out)
+    return m ? Number(m[1]) : 0
+  }
+  const reclaimable =
+    pages('Pages free') + pages('Pages inactive') + pages('Pages speculative')
+  return Math.round((reclaimable * pageSize) / 1048576)
+}
+
+/**
  * Memoria que el sistema puede reclamar ahora, en MB.
  *
- * En macOS `Pages free` solo no sirve: el sistema usa la RAM libre como caché
- * a propósito y reporta muy poco "libre" en una máquina sana. Lo que importa
- * es lo reclamable —libre, inactiva y especulativa— que es el número que
- * Activity Monitor muestra cerca de "disponible".
+ * @param {() => string} run inyectable para poder fijar el contrato sin
+ *   depender de la máquina donde corre el test
  */
-export function availableMemoryMB() {
+export function availableMemoryMB(run = () => execFileSync('vm_stat', { encoding: 'utf8' })) {
   try {
-    const out = execFileSync('vm_stat', { encoding: 'utf8' })
-    const pageSize = Number(/page size of (\d+)/.exec(out)?.[1]) || 4096
-    const pages = (label) => Number(new RegExp(`${label}:\\s+(\\d+)`).exec(out)?.[1]) || 0
-    const reclaimable =
-      pages('Pages free') + pages('Pages inactive') + pages('Pages speculative')
-    if (reclaimable > 0) return Math.round((reclaimable * pageSize) / 1048576)
+    const mb = parseVmStat(run())
+    // La única decisión de esta función, y por eso `> 0` y no `>= 0`: un cero
+    // acá significa que la salida no traía los contadores, así que hay que caer
+    // al dato de Node. Tratarlo como una medición válida haría que la
+    // precondición corte siempre.
+    if (mb > 0) return mb
   } catch {
     // No es macOS, o `vm_stat` no está: se cae al dato de Node.
   }
@@ -522,8 +552,14 @@ export function ghostPidToReap(line, marks, selfPid = process.pid) {
  * TODAS las líneas. El guardián se volvía incondicional y autorizaba 483 de 486
  * procesos. Con `continue`, cada mutación posible o bien es más restrictiva
  * —y el caso de test que exige recoger un fantasma real la mata— o bien lanza
- * excepción, que también mata al mutante. Ninguna puede autorizar de más.
- */
+ * excepción, que también mata al mutante. Ninguna puede autorizar de más. *
+ * UN EQUIVALENTE MEDIDO, no pasado por alto: `i < marks.length` mutado a
+ * `i <= marks.length` sobrevive. Se verificó por qué en vez de suponerlo: la
+ * vuelta de más lee `marks[length]`, que es `undefined`, y la guarda de tipo lo
+ * descarta con el mismo `continue`. Ejecutado sobre diez entradas —incluidos
+ * marca vacía, arreglo vacío, varias marcas y pid no numérico— el original y el
+ * mutante coinciden en las diez. No hay entrada que los distinga, así que se
+ * documenta en vez de perseguirlo, que es la regla para esta clase. */
 function ghostMarkIndex(line, marks) {
   if (!Array.isArray(marks)) return NO_PID
   if (marks.length === 0) return NO_PID
@@ -556,6 +592,11 @@ function ghostMarkIndex(line, marks) {
  *   fantasmas vivos, y eso se nota; al revés mataría procesos ajenos en
  *   silencio.
  * @returns {number} cuántos procesos se terminaron
+ *
+ * UN EQUIVALENTE MEDIDO: `pid < 0` mutado a `pid <= 0` sobrevive, y está bien
+ * que sobreviva. `ghostPidToReap` devuelve `-1` o un pid mayor que 1 —el cero
+ * es inalcanzable por su propia guarda— así que las dos formas son la misma
+ * función. Verificado sobre diez entradas, coinciden en las diez.
  */
 export function reapGhosts(marks = [GHOST_MARK]) {
   let out = ''
