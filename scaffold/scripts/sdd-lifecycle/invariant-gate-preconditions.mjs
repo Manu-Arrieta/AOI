@@ -120,9 +120,14 @@ export function acquireRules({ factsFile, entity, bicFilter }) {
     }
 
     if (allRules.length > 0 && rules.length === 0) {
+      // Los ids DISTINTOS, no uno por regla. El mensaje existe para decir qué
+      // valor de `--bic` sirve, y `map(bicId)` sobre un contrato con tres
+      // reglas de un solo BIC imprimía `BIC-2026-001, BIC-2026-001,
+      // BIC-2026-001`: se leía como si hubiera tres contratos distintos.
+      const disponibles = [...new Set(allRules.map((r) => r.bicId))]
       process.stderr.write(
-        `Invariant Gate BLOCKED: --bic "${bicFilter}" no coincide con ninguna regla del contrato, que tiene ${allRules.length}.\n` +
-          `Reglas disponibles: ${allRules.map((r) => r.bicId).join(', ')}\n`
+        `Invariant Gate BLOCKED: --bic "${bicFilter}" no coincide con ninguna regla del contrato, que tiene ${allRules.length} regla(s) de ${disponibles.length} contrato(s).\n` +
+          `Reglas disponibles: ${disponibles.join(', ')}\n`
       )
       process.exit(2)
     }

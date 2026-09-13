@@ -77,6 +77,18 @@ function exitCode(root, args) {
 const UNA_REGLA = 'bic.T1.never.1  El precio nunca baja\n'
 const SOLO_NO_BIC = 'key   value\n-----\ntask.X.status  archived\n'
 
+/** Como `exitCode`, pero devuelve el stderr: hay defectos que sólo se ven ahí. */
+function message(root, args) {
+  try {
+    execFileSync('node', [GATE, ...args, '--tests-dir', root, '--exit-code'], {
+      cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 60000,
+    })
+    return { code: 0, err: '' }
+  } catch (e) {
+    return { code: e.status ?? 1, err: String(e.stderr ?? '') }
+  }
+}
+
 describe('una entrada que no se pudo leer NO es un contrato vacío', () => {
   it('bloquea si la tabla viene separada por tabs', () => {
     const root = workspace({ 'tabs.txt': 'bic.T1.never.1\tEl precio nunca baja\n' })
@@ -114,6 +126,28 @@ describe('un filtro que no matchea nada NO es un contrato vacío', () => {
     const root = workspace({ 'good.txt': UNA_REGLA })
     assert.equal(exitCode(root, ['--facts-file', 'good.txt', '--bic', 'T1']), 1, 'un --bic válido debe llegar al juicio de cobertura')
     assert.equal(exitCode(root, ['--facts-file', 'good.txt', '--bic', 'TYPO']), 2, 'un --bic inválido debe bloquear')
+  })
+
+  it('el mensaje lista los BIC distintos, no una repetición por regla', () => {
+    // Medido en la cuarentena de 2026-09-12 sobre el contrato real de la
+    // instalación: un contrato con tres reglas de UN solo BIC imprimía
+    // `BIC-2026-001, BIC-2026-001, BIC-2026-001`. El mensaje existe para decir
+    // qué valor de `--bic` sirve, y así se leía como si hubiera tres contratos
+    // distintos — que es lo contrario de lo que quiere decir.
+    const tresReglasDeUnBic = [
+      'bic.BIC-X.never.1  nunca reportar ok',
+      'bic.BIC-X.never.2  nunca aceptar cero',
+      'bic.BIC-X.oracle   con used>limit el estado es exceeded',
+      '',
+    ].join('\n')
+    const root = workspace({ 'tres.txt': tresReglasDeUnBic })
+
+    const r = message(root, ['--facts-file', 'tres.txt', '--bic', 'TYPO'])
+
+    assert.equal(r.code, 2)
+    assert.match(r.err, /Reglas disponibles: BIC-X\b/, 'no listó el contrato disponible')
+    assert.doesNotMatch(r.err, /BIC-X, BIC-X/, 'repitió el mismo contrato una vez por regla')
+    assert.match(r.err, /3 regla\(s\) de 1 contrato\(s\)/, 'no distinguió reglas de contratos')
   })
 })
 
