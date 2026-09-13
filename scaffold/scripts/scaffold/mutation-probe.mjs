@@ -22,7 +22,7 @@
  * never mutated.
  */
 
-import { execFileSync } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -182,18 +182,45 @@ export function areaSources(root, area, extensions = DEFAULT_EXTENSIONS) {
  * the other two hundred put together, which is how a probe over a
  * one-second suite ends up taking an hour. A hang IS a killed mutant: the
  * suite did not pass.
+ *
+ * It kills the process GROUP, not the child, and that distinction was a real
+ * leak. The hang is usually inside a script the SUITE spawned rather than in
+ * the suite itself: a test that verifies a CLI runs it. `execFileSync` can only
+ * signal its direct child, so those grandchildren were reparented to PID 1 and
+ * kept spinning. Measured on 2026-09-13: thirteen of them, one to four and a
+ * half hours old, consuming 534% of CPU in shell compare loops and 590% in
+ * `source-reachability`. The probe reported every one of those mutants as killed
+ * — correctly — while the machine stayed saturated, and each later mutant
+ * competed for CPU with a zombie of an earlier one.
+ *
+ * `detached: true` gives the child its own process group, so `-pid` reaches
+ * every descendant and never the process that called us.
  */
 function suitePasses(cwd, glob, timeout = 180000, runner = null) {
-  try {
-    if (runner) {
-      execFileSync(runner.command, runner.args, { cwd: path.join(cwd, runner.cwd ?? '.'), stdio: 'ignore', timeout })
-    } else {
-      execFileSync('node', ['--test', ...expand(cwd, glob)], { cwd, stdio: 'ignore', timeout })
+  const [command, args, opts] = runner
+    ? [runner.command, runner.args, { cwd: path.join(cwd, runner.cwd ?? '.') }]
+    : ['node', ['--test', ...expand(cwd, glob)], { cwd }]
+
+  return new Promise((resolve) => {
+    const child = spawn(command, args, { ...opts, stdio: 'ignore', detached: true })
+    let settled = false
+    const finish = (passed) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      resolve(passed)
     }
-    return true
-  } catch {
-    return false
-  }
+    const timer = setTimeout(() => {
+      try {
+        process.kill(-child.pid, 'SIGKILL')
+      } catch {
+        // El grupo ya no existe: nada que matar.
+      }
+      finish(false)
+    }, timeout)
+    child.on('exit', (code) => finish(code === 0))
+    child.on('error', () => finish(false))
+  })
 }
 
 /**
@@ -265,7 +292,7 @@ export async function probe(root, area, testGlob, limit = Infinity, log = () => 
   if (runner) linkDependencies(root, work, ['.', runner.cwd ?? '.'])
 
   const startedAt = Date.now()
-  const baseline = suitePasses(work, testGlob, 180000, runner)
+  const baseline = await suitePasses(work, testGlob, 180000, runner)
   const timeout = mutantTimeout(Date.now() - startedAt)
   if (!baseline) {
     fs.rmSync(work, { recursive: true, force: true })
@@ -284,7 +311,7 @@ export async function probe(root, area, testGlob, limit = Infinity, log = () => 
       if (total >= limit) break
       total += 1
       fs.writeFileSync(target, mutation.mutated)
-      if (suitePasses(work, testGlob, timeout, runner)) {
+      if (await suitePasses(work, testGlob, timeout, runner)) {
         survivors.push({ file: rel, ...mutation, mutated: undefined })
       } else {
         killed += 1
