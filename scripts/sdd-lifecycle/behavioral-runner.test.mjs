@@ -16,7 +16,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { after, describe, it } from 'node:test'
 import { PROBES } from './behavioral-scenarios.mjs'
-import { emitProbes, formatRunReport, judgeAll, judgeAnswer } from './behavioral-runner.mjs'
+import { emitProbes, formatRunReport, judgeAll, judgeAnswer, NON_ANSWER } from './behavioral-runner.mjs'
 
 const SANDBOXES = []
 
@@ -44,12 +44,25 @@ describe('juzgar una respuesta', () => {
     assert.match(r.reason, /no cumple/)
   })
 
-  it('rechaza la que cae en lo prohibido, aunque también cumpla lo esperado', () => {
-    // El caso que hace útil al `forbidden`: una respuesta que dice lo correcto Y
-    // lo incorrecto no es una respuesta correcta.
-    const r = judgeAnswer(PROBE, 'Lo enruto a @triage-specialist y no a @functional-analyst.')
+  it('rechaza la que enruta TAMBIÉN al prohibido', () => {
+    // El fixture de este caso decía antes `... y no a @functional-analyst`, y
+    // esperaba FAIL. Estaba mal: eso es razonamiento correcto —nombrar la opción
+    // para descartarla— y el caso afirmaba lo contrario del defecto que decía
+    // cubrir. Lo encontró la corrida real contra un modelo, donde una respuesta
+    // correcta que escribió "así que no va a /sdd-frame" fue reprobada.
+    const r = judgeAnswer(PROBE, 'Lo enruto a @triage-specialist y también a @functional-analyst, los dos pueden mirarlo.')
     assert.equal(r.verdict, 'fail')
-    assert.match(r.reason, /prohibido/)
+    assert.match(r.reason, /sin negar/)
+  })
+
+  it('ACEPTA la que nombra lo prohibido para descartarlo', () => {
+    // Control en la otra dirección, y es el comportamiento que el juez tiene que
+    // tener: excluir explícitamente la opción equivocada es buena respuesta.
+    const ok = judgeAnswer(PROBE, 'Lo enruto a @triage-specialist, no a @functional-analyst, porque la regla ya existe.')
+    assert.equal(ok.verdict, 'pass', ok.reason)
+
+    const enMedio = judgeAnswer(PROBE, 'Lo enruto a @triage-specialist y ni se me ocurriría pasarlo a @functional-analyst.')
+    assert.equal(enMedio.verdict, 'pass', enMedio.reason)
   })
 
   it('rechaza una respuesta vacía o ausente', () => {
@@ -119,6 +132,7 @@ describe('ninguna sonda se conforma con menos que una respuesta', () => {
     '   ',
     'no',
     'No se.',
+    'No sé.',
     'No puedo.',
     'No estoy seguro.',
     'Tal vez.',
@@ -126,6 +140,25 @@ describe('ninguna sonda se conforma con menos que una respuesta', () => {
     'NO PUEDO DETERMINARLO CON ESTE CONTEXTO',
     'No tengo información suficiente en el contexto.',
   ]
+
+  it('NO confunde una oración en castellano con una evasión', () => {
+    // El bug que encontró la corrida real, y los tests de arriba no lo veían
+    // porque la batería usaba `"No se."` con punto —que igual cae por el piso de
+    // longitud— y nunca una oración que contuviera `no se` en el medio. `s[eé]`
+    // con el flag `i` matcheaba la palabra `se` normal: tres respuestas
+    // correctas y completas de un modelo quedaron marcadas como evasión.
+    //
+    // Una batería de no-respuestas prueba lo que a uno se le ocurrió escribir.
+    // Ésta es la contracara: oraciones legítimas que NO son evasiones.
+    const LEGITIMAS = [
+      'No, porque la Zero-Task Footprint Invariant exige que NO se genere un TASK-ID en esta fase.',
+      'No arranco la implementación: no se cumple la precondición de que design.md exista.',
+      'No podés saltarla: el Service Discovery Gate es obligatorio y no se puede omitir.',
+      'Se arranca con @integration-specialist, y no se delega a nadie más en esta fase.',
+    ]
+    const falsos = LEGITIMAS.filter((t) => NON_ANSWER.test(t))
+    assert.deepEqual(falsos, [], 'marcó como evasión una oración legítima en castellano')
+  })
 
   it('ninguna aprueba una evasión', () => {
     const laxas = []

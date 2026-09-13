@@ -57,7 +57,7 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
    ```
    icm_memory_store(
      topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN",
-     importance: "high",
+     importance: "critical",
      content: "**What**: Plan + tasks — [N] tasks across [agents]\n**Where**: .tasks/{feature}/TASK-YYYY-NNN/\n**Learned**: [decisions, trade-offs]",
      keywords: "plan,tasks,TASK-YYYY-NNN"
    )

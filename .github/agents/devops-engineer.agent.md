@@ -71,7 +71,7 @@ Rules:
 2. **Fit into existing patterns** — don't introduce new tools or patterns unless the task requires it
 3. **Update** memoir with infrastructure components:
    - `icm_memoir_add_concept(memoir: "{WORKSPACE}-architecture", name: "<infra-component>", description: "...", labels: "type:infrastructure")`
-4. **Store** infra decisions: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", content: "**What**: Infra completed — [phase]\n**Why**: [Enables deployment]\n**Where**: [Config paths]\n**Learned**: [Issues resolved, env gotchas]", importance: "high", keywords: "devops,infrastructure,TASK-YYYY-NNN")`
+4. **Store** infra decisions: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", content: "**What**: Infra completed — [phase]\n**Why**: [Enables deployment]\n**Where**: [Config paths]\n**Learned**: [Issues resolved, env gotchas]", importance: "critical", keywords: "devops,infrastructure,TASK-YYYY-NNN")`
 
 ### Phase 3: Verify
 

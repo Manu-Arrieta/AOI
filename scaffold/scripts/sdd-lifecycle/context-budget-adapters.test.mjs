@@ -101,6 +101,25 @@ describe('adaptadores de harness: lo que el piso no cuenta', () => {
     }
     const r = auditContextBudget(REPO)
     assert.ok(r.adapters.total > 0, 'los adaptadores de este repositorio pesan, y deben medirse')
-    assert.equal(r.floor, 86873, 'el piso histórico se movió: revisá si sumaste los adaptadores')
+
+    // El invariante, y NO un número mágico.
+    //
+    // Este test empezó afirmando `floor === 86873`, y eso lo volvía frágil a
+    // cualquier edición de prosa: al corregir `importance: "high"` →
+    // `"critical"` en dos agentes el piso subió 2 tokens —legítimamente— y el
+    // test falló por un cambio correcto. Una compuerta que da falsos positivos
+    // sobre cambios buenos se termina desactivando.
+    //
+    // Lo que de verdad hay que impedir es que los adaptadores se SUMEN al piso.
+    // Si eso pasara, `floor` dejaría de ser la suma de los pisos de las fases y
+    // pasaría a incluir masa que no le corresponde. Ese es el invariante, y no
+    // se rompe cuando la prosa cambia de tamaño.
+    const sumaDeFases = r.rows.reduce((n, x) => n + (x.floor || 0), 0)
+    assert.equal(
+      r.floor,
+      sumaDeFases,
+      'el piso dejó de ser la suma de los pisos por fase: ¿sumaste los adaptadores adentro de `floor`?'
+    )
+    assert.notEqual(r.floorWithAdapters, r.floor, '`floorWithAdapters` tiene que distinguirse del piso')
   })
 })

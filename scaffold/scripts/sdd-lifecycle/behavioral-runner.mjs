@@ -37,18 +37,68 @@ import { PROBES } from './behavioral-scenarios.mjs'
  * El prompt de la sonda le da al agente una salida explícita —"respondé NO
  * PUEDO DETERMINARLO CON ESTE CONTEXTO"— para que no invente cuando el contexto
  * no alcanza. Está bien que exista, y por eso hay que verla: contarla como
- * aprobada sería premiar al que se rinde. Una sonda mide una decisión que el
- * contexto DEBE sostener; rendirse es fallar la decisión, no acertarla.
+ * aprobada sería premiar al que se rinde.
+ *
+ * **`\bno\s+sé\b`, con acento y sin `[eé]`, y esto es un arreglo medido.** La
+ * primera versión usaba `s[eé]`, que con el flag `i` matchea también `se` — la
+ * palabra castellana normal, como en *"NO **se** genere un TASK-ID"*. Tres de las
+ * 25 respuestas reales de un modelo quedaron marcadas como evasión por escribir
+ * una oración correcta en castellano:
+ *
+ *   zero-task-footprint      -> "exige que NO se genere un TASK-YYYY-NNN"
+ *   missing-upstream-artifact -> "no se cumple la precondición"
+ *
+ * Las dos eran respuestas correctas y completas. Los 15 tests sintéticos no lo
+ * vieron porque la batería usaba `"No se."` con punto —que igual cae por el piso
+ * de longitud— y nunca una oración que contuviera `no se` en medio. **Lo encontró
+ * correr las sondas contra un modelo de verdad**, que es la lección: una batería
+ * de no-respuestas prueba lo que a uno se le ocurrió escribir.
  */
-export const NON_ANSWER = /NO PUEDO DETERMINARLO|\bno\s+s[eé]\b|^\s*no\s+puedo\b|\b(no\s+estoy\s+seguro|no\s+tengo\s+(informaci[oó]n|contexto)|sin\s+contexto)\b/i
+export const NON_ANSWER = /NO PUEDO DETERMINARLO|\bno\s+sé\b|^\s*no\s+puedo\b|\b(no\s+estoy\s+seguro|no\s+tengo\s+(informaci[oó]n|contexto)|sin\s+contexto)\b/i
 
 /**
  * Piso de longitud. Cada escenario pide la decisión **y su porqué** ("en una
  * línea por qué"), así que una respuesta de una palabra no puede contener el
  * porqué. No es una regla de estilo: es que el criterio de la sonda juzga una
  * justificación, y sin justificación no hay nada que juzgar.
+ *
+ * Es también lo que atrapa un `"No se."` pelado, que es por lo que la marca de
+ * evasión puede permitirse exigir el acento.
  */
 export const MIN_ANSWER_CHARS = 12
+
+/**
+ * Un `forbidden` NEGADO no es una violación.
+ *
+ * El segundo defecto que encontró la corrida real, y es la misma clase que ya
+ * tenía `expected`: el patrón mira texto, y el texto puede estar mencionando la
+ * opción equivocada **para descartarla**. `triage-routing` prohíbe `/sdd-frame/`,
+ * y una respuesta correcta —que enruta a `@triage-specialist`— escribió *"así que
+ * **no va a** `/sdd-frame`"*. El juez la reprobó por nombrar lo que estaba
+ * excluyendo: exactamente al revés de lo que el criterio quiere medir.
+ *
+ * La regla: se inspecciona lo que precede a cada coincidencia y, si hay una
+ * negación a mano, esa coincidencia no cuenta. Una mención sin negar sigue
+ * siendo violación.
+ */
+const NEGATED_BEFORE = /\b(no|ni|nunca|jamás|never|not|sin|tampoco|en vez de|instead of)\b[^.;:]{0,50}$/i
+
+/**
+ * ¿La respuesta cae en lo prohibido **de verdad**?
+ *
+ * @param {RegExp} forbidden
+ * @param {string} text
+ * @returns {string|null} la coincidencia que viola, o null
+ */
+export function findForbidden(forbidden, text) {
+  if (!forbidden) return null
+  const flags = forbidden.flags.includes('g') ? forbidden.flags : `${forbidden.flags}g`
+  for (const m of String(text).matchAll(new RegExp(forbidden.source, flags))) {
+    const before = String(text).slice(0, m.index)
+    if (!NEGATED_BEFORE.test(before)) return m[0]
+  }
+  return null
+}
 
 /**
  * Juzga una respuesta contra el criterio de su sonda.
@@ -74,8 +124,9 @@ export function judgeAnswer(probe, answer) {
   if (!probe.expected.test(text)) {
     return { id: probe.id, verdict: 'fail', reason: `no cumple /${probe.expected.source}/` }
   }
-  if (probe.forbidden && probe.forbidden.test(text)) {
-    return { id: probe.id, verdict: 'fail', reason: `cae en lo prohibido /${probe.forbidden.source}/` }
+  const violacion = findForbidden(probe.forbidden, text)
+  if (violacion) {
+    return { id: probe.id, verdict: 'fail', reason: `menciona sin negar lo prohibido: "${violacion}"` }
   }
   return { id: probe.id, verdict: 'pass', reason: 'ok' }
 }
