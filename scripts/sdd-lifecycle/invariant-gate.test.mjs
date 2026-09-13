@@ -12,6 +12,7 @@ import {
   parseFactTable,
   readFactsFromIcm,
 } from './invariant-gate.mjs'
+import { fakeIcm, removeFakeIcm } from '../scaffold/fake-icm.mjs'
 
 const FACT_TABLE = [
   'key                              value',
@@ -128,7 +129,23 @@ describe('invariant-gate unit tests', () => {
     //
     // `icm` no usa códigos de salida: contesta `no facts for <entity>` con exit
     // 0, y la única señal es ese texto.
-    const result = readFactsFromIcm('AOI-entity-that-does-not-exist-in-tests')
+    //
+    // Y por eso el stub: este test NECESITA que `icm` conteste, y el runner de CI
+    // no tiene el binario. Antes lo daba por sentado y fallaba ahí con
+    // `the \`icm\` binary is not on PATH` — el mismo defecto que dejó el CI rojo
+    // dos días. El stub va acá y no para todo el archivo porque es la única
+    // prueba que depende de `icm`: dejarlo global escondería a quién le importa.
+    const ICM = fakeIcm()
+    const PATH_REAL = process.env.PATH
+    process.env.PATH = ICM.path
+
+    let result
+    try {
+      result = readFactsFromIcm('AOI-entity-that-does-not-exist-in-tests')
+    } finally {
+      process.env.PATH = PATH_REAL
+      removeFakeIcm(ICM.dir)
+    }
 
     assert.equal(typeof result, 'object')
     assert.equal(typeof result.ok, 'boolean')

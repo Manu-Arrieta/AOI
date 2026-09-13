@@ -43,19 +43,24 @@ export const MUTATION_FLOOR = {
   // mutantes del guard que antes sobrevivían porque ningún test le daba la
   // entrada que el guard existe para atrapar.
   'scripts/sandbox': 88,
-  // 52 → 53 → 93. El salto grande no viene de más tests: viene de mirar POR QUÉ
-  // sobrevivían. 60 de los 78 eran de operador booleano —`and→or`, `gt→gte`,
-  // `or→and`— en guardias que se ejercitaban SÓLO con entrada válida, y cada una
-  // deja sobrevivir exactamente dos mutantes: `length >= 0` es siempre verdadero,
-  // y `||` deja de mirar el `typeof` y explota antes del assert. Ver A.23.
+  // 52 → 53 → 93 → **91**, y la última corrección es la más incómoda de las tres.
   //
-  // Y dos de los 78 no se arreglaban con tests: eran CÓDIGO MUERTO. Una guardia
-  // inalcanzable después de un ternario que garantiza un array no vacío, y tres
-  // ramas subsumidas por un `startsWith`. Se borraron, no se cubrieron.
+  // El salto grande no viene de más tests: viene de mirar POR QUÉ sobrevivían. 60
+  // de los 78 eran de operador booleano —`and→or`, `gt→gte`, `or→and`— en guardias
+  // que se ejercitaban SÓLO con entrada válida, y cada una deja sobrevivir
+  // exactamente dos mutantes. Ver A.23.
   //
-  // Quedan 11, y son de otra clase: el manejo de fallas del CLI de ICM, que
-  // necesita un `icm` que falle a demanda para poder ejercitarse.
-  'scripts/memory-sync': 93,
+  // Pero 93 NO ERA REPRODUCIBLE, y se midió así por accidente. Cuatro mutantes
+  // —`resolve-active-version.mjs:110` y `rollback-version.mjs:51`— morían por el
+  // estado del `icm` REAL de la máquina donde se medía: sus tests corren el CLI,
+  // el CLI filtra por lo que haya en la base, y con otros datos las mutaciones
+  // sobrevivían. Al poner el `icm` de mentira que el CI necesita (A.24) los dos
+  // entornos convergen: **91 en los dos, con los supervivientes idénticos**.
+  //
+  // O sea que el trinquete tenía un piso que el CI no podía alcanzar, por la misma
+  // causa que dejó el CI rojo dos días: una dependencia del entorno que se veía en
+  // un solo lugar. El piso es el valor REPRODUCIDO, no el mejor visto.
+  'scripts/memory-sync': 91,
   // Los 11 que quedan son el manejo de fallas del CLI de ICM (`ok`, `error.code`,
   // `allowFailure`): necesitan un `icm` que falle a demanda. Declarado, no
   // perseguido.

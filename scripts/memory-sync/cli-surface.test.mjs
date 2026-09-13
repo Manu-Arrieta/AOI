@@ -27,7 +27,10 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, it } from 'node:test'
+import { after, describe, it } from 'node:test'
+
+import { fakeIcm, removeFakeIcm } from '../scaffold/fake-icm.mjs'
+import { loadMemoryBundleAtPath } from './store-utils.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const EXPORT = path.join(HERE, 'export-memory-bundle.mjs')
@@ -35,13 +38,30 @@ const IMPORT = path.join(HERE, 'import-memory-bundle.mjs')
 const RESOLVE = path.join(HERE, 'resolve-active-version.mjs')
 const FIXTURE = path.join(HERE, 'fixtures/valid')
 
-/** Runs a CLI and returns exit code, stdout and stderr — never through a pipe. */
+/**
+ * El `icm` de mentira, con un topic del workspace del fixture y uno AJENO.
+ *
+ * El porqué completo está en `fake-icm.mjs`: estos dos tests son los únicos que
+ * corren el CLI de verdad, el CLI llama a `icm list`, y `icm` no está en CI.
+ * Faltaba en las dos direcciones, además: contra el `icm` real del desarrollador
+ * el resultado dependía de qué hubiera en su base, así que el test no podía
+ * afirmar QUÉ entró en el bundle. Con el ajeno en la lista, ahora sí.
+ */
+const ICM = fakeIcm({ topics: ['fixture-workspace-context', 'otro-workspace-context'] })
+after(() => removeFakeIcm(ICM.dir))
+
+/**
+ * Runs a CLI and returns exit code, stdout and stderr — never through a pipe.
+ * Corre siempre con el `icm` de mentira adelante, así el resultado no depende de
+ * lo que haya instalado la máquina.
+ */
 function run(script, args) {
   try {
     const stdout = execFileSync('node', [script, ...args], {
       encoding: 'utf8',
       timeout: 60000,
       stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, PATH: ICM.path },
     })
     return { code: 0, stdout, stderr: '' }
   } catch (e) {
@@ -92,9 +112,12 @@ describe('export-memory-bundle', () => {
     fs.rmSync(root, { recursive: true, force: true })
   })
 
-  it('writes the bundle and reports what it left out', () => {
+  it('writes the bundle and reports what it left out', async () => {
     const { root, exports } = workspace()
-    const r = run(EXPORT, ['fixture-workspace', 'fixture-v1', ARTIFACT, '--versions-root', root, '--exports-root', exports, '--scope', 'memories'])
+    const r = run(
+      EXPORT,
+      ['fixture-workspace', 'fixture-v1', ARTIFACT, '--versions-root', root, '--exports-root', exports, '--scope', 'memories'],
+    )
     assert.equal(r.code, 0, `${r.stdout}${r.stderr}`)
 
     const report = JSON.parse(r.stdout)
@@ -103,6 +126,15 @@ describe('export-memory-bundle', () => {
     // say it is partial is indistinguishable from a complete one.
     assert.ok(report.omittedScopes.length > 0, 'no declaró los scopes omitidos')
     assert.equal(fs.existsSync(report.bundlePath), true)
+
+    // Y esto es lo que el stub permite afirmar por primera vez: el filtro de
+    // aislamiento corrió de VERDAD y dejó afuera el topic del otro workspace.
+    // Contra el `icm` real del desarrollador el test no podía decir nada de qué
+    // entró, porque el resultado dependía de la memoria que hubiera en la base.
+    const bundle = await loadMemoryBundleAtPath(report.bundlePath)
+    assert.deepEqual(bundle.payload.memories.topics, ['fixture-workspace-context'])
+    assert.equal(bundle.payload.memories.matchedEntryCount, 1, 'el workspace ajeno se coló en el bundle')
+
     fs.rmSync(root, { recursive: true, force: true })
   })
 
@@ -144,7 +176,10 @@ describe('import-memory-bundle', () => {
     // The two halves are only useful together, and nothing exercised the pair
     // through the command line the operator actually types.
     const { root, exports } = workspace()
-    const exported = run(EXPORT, ['fixture-workspace', 'fixture-v1', ARTIFACT, '--versions-root', root, '--exports-root', exports, '--scope', 'memories'])
+    const exported = run(
+      EXPORT,
+      ['fixture-workspace', 'fixture-v1', ARTIFACT, '--versions-root', root, '--exports-root', exports, '--scope', 'memories'],
+    )
     assert.equal(exported.code, 0, `${exported.stdout}${exported.stderr}`)
 
     // Imported back into the same workspace as a new version: the importer

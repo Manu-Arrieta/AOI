@@ -2497,6 +2497,106 @@ veredicto.
 
 ---
 
+### A.24 Una suite verde local no prueba nada si el CI está rojo
+
+Séptima pasada, y arrancó con una frase del Owner que no era una pregunta técnica:
+*"la pipe de CI está sacando error"*. El CI llevaba **dos días rojo** y todas las
+verificaciones de esta auditoría lo habían ignorado, porque siempre corrieron local.
+
+**La cronología, que es el hallazgo.**
+
+| | |
+| :--- | :--- |
+| Último verde | **2026-09-09** (`67b962af`) |
+| Primer rojo | **2026-09-11** (`678b1204`) |
+| Suite de la que dependía | **2026-09-10** (`ae06c22`) |
+
+**La causa raíz, y es una clase de defecto.** Dos suites llamaban a `icm` de verdad
+—`memory-sync` para exportar un bundle, `sdd-lifecycle` para preguntar por una entidad—
+y **`icm` no está en el runner de CI**. Las dos pasaban en cualquier máquina que lo tenga
+instalado, o sea **la del que las escribió**, y fallaban en CI.
+
+**Y el daño mayor no fue el fallo: fue lo que tapó.** La cadena de `pnpm test` usa `&&`,
+así que la primera suite roja cortó las otras veintiuna. Medido re-corriendo la cadena
+bajo las condiciones de CI:
+
+| | Antes | Después |
+| :--- | ---: | ---: |
+| Pasos que corrieron | **22 de 28** | **28** |
+| Índice del corte | `test:memory-sync` | — |
+| Pasos que **nunca** corrieron en CI | `test:sdd-lifecycle` … `test:dashboard` | 0 |
+
+**Ninguna de esas veintidós correcciones nunca se verificó en CI.** Y el último paso,
+`aoi:mutation` —el trinquete— **tampoco**, que es el que el propio workflow documenta
+como *"un trinquete que nadie acciona no trinca"*. El comentario estaba en el archivo
+describiendo exactamente lo que le pasaba.
+
+#### El arreglo: un binario de mentira, no un skip
+
+La salida obvia era **saltear** los tests cuando falta `icm`. Se descartó, y por dos
+razones:
+
+1. **Son cobertura que importa.** El round-trip del CLI es lo que el operador teclea, y
+   el bloqueo por entidad desconocida es el falso verde que el Invariant Gate existe para
+   cazar. Un skip apaga las dos **en CI, para siempre**.
+2. **Contra el `icm` real el resultado dependía de la máquina.** El test del aislamiento
+   entre workspaces no podía afirmar **qué** entró en el bundle —dependía de la memoria
+   que hubiera en esa base— y el de la entidad desconocida fallaba si alguien tenía una
+   entidad con ese nombre. **Un stub fija las dos cosas.**
+
+Quedó en `scripts/scaffold/fake-icm.mjs`, que reproduce la salida del binario real
+—capturada de `icm list --all --no-embeddings`— para los dos subcomandos que el código
+usa, y **sale 1 en cualquier otro** en vez de inventar una respuesta.
+
+> [!CAUTION]
+> **Un stub es andamiaje cuya fidelidad es lo único que hace válidos a los tests que lo
+> usan.** Si deja de emitir el formato que el parser real espera, los tres tests que lo
+> consumen **siguen pasando y dejan de probar lo que dicen**. Por eso tiene su propio
+> test, y lo que afirma es la **compatibilidad con el parser de producción**: parte y lee
+> los bloques con las mismas expresiones que usa el productor, así que un cambio de
+> formato rompe ahí.
+
+#### Y un hallazgo de segundo orden que vale registrar
+
+Al agregar `fake-icm.mjs` a `scripts/scaffold`, **esa área bajó de 61% a 60% en el
+trinquete** —dos mutantes más sin tests que los aten— y el trinquete **rechazó la caída
+por un punto**. Escribirle el test la devolvió a 61%, exacto.
+
+Es el trinquete haciendo su trabajo sobre código escrito **para hacer pasar el CI**, que
+es la situación donde más tienta relajar. Y es un argumento empírico a favor de que el
+paso corre en CI: con el CI rojo llevaba **dos días sin ejecutarse**, y lo primero que
+hizo al volver a correr fue **rechazar el código de esta misma pasada**.
+
+#### El método, y es una pregunta que faltaba
+
+**Enumerá los binarios externos y comprobá que estén en el runner.** Se hace en dos
+comandos:
+
+```bash
+rg -o "execFileSync\('([a-z-]+)'|execFileAsync\('([a-z-]+)'|tryCommand\('([a-z-]+)'" -r '$1$2$3' scripts/
+# y después, el barrido: cada script de la cadena con y sin el binario
+for s in ${=scripts}; do
+  local=$(pnpm $s >/dev/null 2>&1; echo $?)
+  sin_bin=$(PATH="$PATH_SIN_BINARIO" pnpm $s >/dev/null 2>&1; echo $?)
+  [ "$local" = 0 ] && [ "$sin_bin" != 0 ] && echo "SOLO CI: $s"
+done
+```
+
+Medido en AOI: **un solo binario problemático**, `icm`, en **dos** archivos. Los otros
+—`git`, `node`, `bash`— están en el runner. **Pero el barrido es lo que lo prueba**, y
+encontró los dos de una sola pasada en vez de descubrirlos de a uno cada vez que el CI
+vuelve a correr.
+
+> [!CAUTION]
+> **Un CI rojo no es un fallo: es un silencio.** La suite local verde y el CI rojo
+> convivieron **dos días** sin que nadie lo notara, y la razón es que el fallo **no
+> bloqueaba nada** — ni el push, ni el trabajo, ni ninguna verificación. Un gate que falla
+> y no se mira es peor que un gate que no existe, porque **produce la confianza de tener
+> un gate**. La regla operativa es la de siempre y ahora está en el checklist: **antes de
+> decir que algo está verificado, se mira el estado del CI, no el resultado local.**
+
+---
+
 ## Apéndice B — Adaptación por harness
 
 
@@ -2598,6 +2698,10 @@ Antes de dar la auditoría por terminada:
       negativo no la hace fallar, todavía no sabés si sirve. Puede ser que el código esté
       doblemente protegido —entonces hay que revertir los **dos** mecanismos— o que la
       compuerta mida una propiedad distinta de la que el instrumento promete (A.20).
+- [ ] **El CI está verde, y es lo último que se mira antes de cerrar.** No alcanza con la
+      suite local: si el CI está rojo, nada de lo verificado localmente está verificado.
+      Y si el rojo viene de un binario ausente, **el barrido de binarios externos corrió**
+      — cada script de la cadena, con y sin el binario (A.24).
 - [ ] **Toda guardia de contención se prueba en las DOS direcciones**: que rechace lo de
       afuera —con `\`, con `/`, con symlink— y que **acepte** lo de adentro, incluido el
       `..` que resuelve adentro. Una guardia que rechaza de más se desactiva igual que una
