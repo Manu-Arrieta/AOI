@@ -9,12 +9,20 @@
  */
 
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { describe, it, after } from 'node:test'
-import { literalMask, mutationsFor, OPERATORS, suitePasses } from './mutation-probe.mjs'
+import {
+  GHOST_MARK,
+  isGhostToReap,
+  literalMask,
+  mutationsFor,
+  OPERATORS,
+  reapGhosts,
+  suitePasses,
+} from './mutation-probe.mjs'
 
 describe('mutations are generated only where a decision is made', () => {
   it('mutates a real comparison', () => {
@@ -90,7 +98,15 @@ describe('a suite leaves no process behind, by either exit', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-probe-ghost-'))
     SANDBOXES.push(dir)
     const mark = `ghost-${process.pid}-${Math.random().toString(36).slice(2, 8)}`
-    fs.writeFileSync(path.join(dir, `${mark}.mjs`), 'while (true) {}\n')
+    // El fantasma tiene que estar VIVO, no ocupado. Antes esto era
+    // `while (true) {}`, que lo mantiene vivo al precio de quemar un núcleo
+    // entero — y el único caso en que importa es justamente el que se fugó:
+    // medido con `ps`, un fantasma filtrado por una corrida de mutación se
+    // quedaba girando para siempre, seis de ellos a 594% de CPU en una máquina
+    // de 12 núcleos. Un intervalo referenciado mantiene el proceso vivo igual
+    // —que es lo único que el caso necesita— y cuesta 0.0% medido. Ocupar CPU
+    // nunca fue parte de lo que el caso verifica.
+    fs.writeFileSync(path.join(dir, `${mark}.mjs`), 'setInterval(() => {}, 1000)\n')
     fs.writeFileSync(
       path.join(dir, 'suite.test.mjs'),
       [
@@ -188,6 +204,108 @@ describe('a suite leaves no process behind, by either exit', () => {
 
     assert.equal(await suitePasses(green, '*.test.mjs', 10000), true, 'una suite verde no reportó pass')
     assert.equal(await suitePasses(red, '*.test.mjs', 10000), false, 'una suite roja no reportó fallo')
+  })
+})
+
+/**
+ * `reapGhosts` es la red que recoge lo que la ruta mutada deja suelto.
+ *
+ * El fixture lanza un proceso vivo y el test lo mata por grupo de procesos.
+ * Cuando el probe corta la suite mutada por timeout —que es lo que hace cuando
+ * el mutante rompe la limpieza— el `finally` no llega a correr y el fantasma
+ * sobrevive a su padre. Es inherente: lo que se muta es justamente la ruta que
+ * lo recoge.
+ *
+ * El fantasma ya no cuesta CPU —el fixture lo mantiene con un intervalo
+ * inactivo y no con un bucle ocupado, medido 0.0% contra 99.7%— pero un proceso
+ * por mutante que se acumule sigue siendo un problema, así que se recoge desde
+ * afuera del código mutado.
+ */
+describe('reapGhosts', () => {
+  const GHOST_DIRS = []
+  after(() => {
+    for (const d of GHOST_DIRS) fs.rmSync(d, { recursive: true, force: true })
+  })
+
+  /**
+   * La guarda, con una entrada por rama.
+   *
+   * Cada caso existe porque su mutante sobrevivía cuando la guarda estaba
+   * inline en el bucle: `isInteger(pid) && pid > 0` mutado a `||` sólo se
+   * distingue con un pid que sea entero Y cero, y `pid !== selfPid` mutado a
+   * `===` sólo con el pid propio. Sin estas entradas, el área medía 61 en vez
+   * de 62 y la compuerta tenía razón: la lógica estaba sin atar.
+   */
+  const SELF = 4242
+  const GHOST_PATH = `/tmp/${GHOST_MARK}abc/ghost-1.mjs`
+  const GHOSTS = [
+    ['una línea de ps normal', 900, GHOST_PATH, true],
+    ['el pid propio, que no se puede recoger solo', SELF, GHOST_PATH, false],
+    ['un pid cero', 0, GHOST_PATH, false],
+    ['un pid negativo', -1, GHOST_PATH, false],
+    ['un primer campo que no es un número', 'x', GHOST_PATH, false],
+    ['una línea sin la marca', 900, '/tmp/otra-cosa.mjs', false],
+  ]
+
+  for (const [what, pid, args, expected] of GHOSTS) {
+    it(`${expected ? 'recoge' : 'ignora'} ${what}`, () => {
+      assert.equal(isGhostToReap(`${pid} node ${args}`, SELF), expected)
+    })
+  }
+
+  it('la marca se busca en toda la línea, no solo al principio', () => {
+    // `ps` pone el pid primero, así que la marca nunca está al inicio de la
+    // línea. Un `startsWith` la perdería entera.
+    assert.equal(isGhostToReap(`900 node ${GHOST_PATH}`, SELF), true)
+  })
+
+  const countMark = (mark) =>
+    execFileSync('ps', ['-Ao', 'args'], { encoding: 'utf8' })
+      .split('\n')
+      .filter((l) => l.includes(mark)).length
+
+  const waitFor = async (fn, want, tries = 50) => {
+    for (let i = 0; i < tries; i++) {
+      if (fn() === want) return true
+      await new Promise((r) => setTimeout(r, 100))
+    }
+    return fn() === want
+  }
+
+  /** Un proceso vivo con un nombre elegido, para no depender del fixture. */
+  function liveProcess(prefix) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-probe-reap-'))
+    GHOST_DIRS.push(dir)
+    const mark = `${prefix}${process.pid}-${Math.random().toString(36).slice(2, 8)}`
+    const file = path.join(dir, `${mark}.mjs`)
+    // Inactivo a propósito: el caso mide si se lo recoge, no cuánta CPU quema.
+    fs.writeFileSync(file, 'setInterval(() => {}, 1000)\n')
+    const child = spawn(process.execPath, [file], { stdio: 'ignore' })
+    return { child, mark }
+  }
+
+  it('termina un proceso que lleva la marca del fixture', async () => {
+    const { child, mark } = liveProcess(GHOST_MARK)
+    try {
+      assert.ok(await waitFor(() => countMark(mark), 1), 'el proceso de prueba no llegó a arrancar')
+      assert.ok(reapGhosts() >= 1, 'no recogió un fantasma que estaba vivo')
+      assert.ok(await waitFor(() => countMark(mark), 0), 'el fantasma siguió vivo después de recogerlo')
+    } finally {
+      child.kill('SIGKILL')
+    }
+  })
+
+  it('no toca un proceso que no lleva la marca', async () => {
+    // La dirección peligrosa: un reaper que mata por parecido se lleva puestos
+    // procesos de otra corrida o de otro programa.
+    const { child, mark } = liveProcess('aoi-not-a-ghost-')
+    try {
+      assert.ok(await waitFor(() => countMark(mark), 1), 'el proceso de prueba no llegó a arrancar')
+      reapGhosts()
+      assert.equal(countMark(mark), 1, 'mató un proceso que no era un fantasma')
+    } finally {
+      child.kill('SIGKILL')
+    }
   })
 })
 

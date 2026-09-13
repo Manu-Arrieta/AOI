@@ -22,7 +22,7 @@
  * never mutated.
  */
 
-import { spawn } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -282,6 +282,66 @@ export function mutantTimeout(baselineMs) {
   return Math.min(120000, Math.max(15000, baselineMs * 10))
 }
 
+/** La marca que el fixture de `mutation-probe.test.mjs` le pone a su fantasma. */
+export const GHOST_MARK = 'aoi-probe-ghost-'
+
+/**
+ * Si una línea de `ps` es un fantasma que hay que recoger.
+ *
+ * Es una función aparte, y no un `if` dentro del bucle, por la misma razón por
+ * la que `suitePasses` se separó de su CLI: la decisión se puede fijar con
+ * casos directos, el efecto no. Medido el 2026-09-13: con la guarda inline, sus
+ * dos mutantes de operador booleano sobrevivían y bajaban el área de 62 a 61 —
+ * ninguna entrada del test llegaba a las ramas que la guarda existe para
+ * atrapar, que es la forma de superviviente más común del proyecto.
+ *
+ * @param {string} line una línea de `ps -Ao pid,args`
+ * @param {number} selfPid el pid del proceso que llama, para no recogerse solo
+ */
+export function isGhostToReap(line, selfPid) {
+  if (!line.includes(GHOST_MARK)) return false
+  const pid = Number(line.trim().split(/\s+/)[0])
+  return Number.isInteger(pid) && pid > 0 && pid !== selfPid
+}
+
+/**
+ * Recoge los fantasmas que una corrida mutada haya dejado atrás.
+ *
+ * El fixture de la suite lanza un proceso que tiene que seguir vivo para que
+ * el caso pruebe que la limpieza lo mata. Cuando el probe corta la suite mutada
+ * por timeout —que es exactamente lo que hace cuando el mutante rompe la ruta
+ * de limpieza— el `finally` del test no llega a correr, y el fantasma queda
+ * suelto. Es inherente a medir esa ruta: el código que lo recoge es el que se
+ * está mutando.
+ *
+ * El daño ya no es CPU —el fixture mantiene al fantasma con un intervalo
+ * inactivo y no con un bucle ocupado— pero un proceso por mutante que se
+ * acumule sigue siendo un problema, así que se recogen desde afuera del código
+ * mutado.
+ *
+ * @returns {number} cuántos procesos se terminaron
+ */
+export function reapGhosts() {
+  let out = ''
+  try {
+    out = execFileSync('ps', ['-Ao', 'pid,args'], { encoding: 'utf8' })
+  } catch {
+    return 0
+  }
+  let reaped = 0
+  for (const line of out.split('\n')) {
+    if (!isGhostToReap(line, process.pid)) continue
+    const pid = Number(line.trim().split(/\s+/)[0])
+    try {
+      process.kill(pid, 'SIGKILL')
+      reaped += 1
+    } catch {
+      // Ya no existe: nada que recoger.
+    }
+  }
+  return reaped
+}
+
 function expand(cwd, glob) {
   const dir = path.dirname(glob)
   const base = path.basename(glob).replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*')
@@ -341,11 +401,18 @@ export async function probe(root, area, testGlob, limit = Infinity, log = () => 
         killed += 1
       }
       fs.writeFileSync(target, original)
+      // Fuera del código mutado, y después de que el caso ya midió: un fantasma
+      // que sobrevivió a su suite no tiene por qué esperar al final del área.
+      reapGhosts()
       if (total % 25 === 0) log(`  ${total} mutantes · ${killed} muertos · ${survivors.length} sobreviven`)
     }
     if (total >= limit) break
   }
 
+  // El recorte dentro del bucle cubre todos los mutantes menos el último, así
+  // que sin esta línea el que deja el mutante final se queda vivo. Medido: una
+  // corrida completa dejaba uno suelto con el recorte sólo dentro del bucle.
+  reapGhosts()
   fs.rmSync(work, { recursive: true, force: true })
   return { area, total, killed, survivors }
 }
