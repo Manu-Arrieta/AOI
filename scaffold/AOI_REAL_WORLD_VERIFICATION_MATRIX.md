@@ -404,7 +404,7 @@ corrido dos veces sobre el mismo destino: **1280 archivos antes y después, conj
 | Payload con la Fase 0 incluida | 20.691 → 4.852 | Se mide igual, pero **no es comparable entre versiones**: depende del store compartido |
 | Fidelidad del payload | **6 de 6 fases reales** | 0 fixtures, 0 omitidas |
 | Paridad en la instalación | **342/342** | repositorio: 340/340 |
-| Suite en la instalación | **868 pass · 0 fail · 4 skip** | repositorio: **932 pass · 0 fail · 0 skip** |
+| Suite en la instalación | **869 pass · 0 fail · 4 skip** | repositorio: **933 pass · 0 fail · 0 skip** |
 | `aoi:doctor` | **11/11** | |
 | Compuertas con exit 0 | **14/14** | tres nuevas respecto del primer ciclo: `aoi:audit-protocol`, `aoi:importance` y el gate de mutación |
 | **Invariant Gate** | **✅ PASSED · 3/3** | entidad auto-resuelta `AOI TESTS`, contrato `BIC-2026-001`. **Primera auditoría real de ese contrato**: el alias moría con exit 2 antes del arreglo de S1 |

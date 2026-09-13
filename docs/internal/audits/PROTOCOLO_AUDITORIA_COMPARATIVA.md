@@ -2199,6 +2199,61 @@ roto.**
 > validación sintáctica, porque el `node` de esta máquina rechaza todo TypeScript
 > válido y el compilador del dashboard no es una dependencia del área.
 
+#### Y la compuerta de sintaxis verificaba la propiedad equivocada
+
+El paso 16.1 del protocolo exige que **toda compuerta tenga al menos un caso que la
+vio fallar**. Se fue a cumplir con la que acababa de escribir, y el control negativo
+**no la hizo fallar**. Tres intentos, y los tres pasaron. La investigación de por qué
+vale más que el hallazgo original:
+
+**Primeros dos intentos: la mutación no era un defecto.** Se quitó el salto de
+comentario del contador interno —la causa raíz que había roto cinco archivos— y la
+compuerta aprobó. La razón: **el arreglo tiene dos mecanismos independientes.** El
+`//` lo saltea `scanNonStructural` antes de llegar al escaneo de strings, y además un
+string de una línea corta en el `\n`. Cualquiera de los dos alcanza, así que sacar uno
+solo no reproduce nada. Eso es una propiedad **buena** del arreglo, y explica por qué
+el control no fallaba: no era la compuerta, era el código.
+
+**Tercer intento: revertir los dos mecanismos.** Se repuso el contador original
+—escaneo propio, sin comentarios, sin corte en el salto— y la compuerta **falló con
+tres casos**: la de sintaxis, y las dos que exigen que el escáner sea compartido.
+
+**Pero ahí apareció el defecto de la compuerta.** La pregunta que hacía era *"¿la
+salida compila?"*, y **la promesa del instrumento es otra**: *no descartar
+declaraciones*. Y las dos no son lo mismo. Medido con un contador que se pasa de
+largo: el pliegue se come todo lo que sigue al primer `{`, emite un marcador y el
+resultado es un módulo **más corto, balanceado y perfectamente válido**. Pasa
+`node --check`, y el agente lee un archivo verosímil al que le faltan la mitad de sus
+funciones. Es **exactamente** el modo de falla que el encabezado del plegador declara
+inaceptable:
+
+> *"un esqueleto que descarta declaraciones en silencio es peor que no comprimir: el
+> agente lee un archivo plausible que no es el archivo"*
+
+La compuerta citaba ese juicio y no lo verificaba.
+
+**La compuerta que faltaba, entonces, mira contenido y no sintaxis:** para cada
+archivo, el conjunto de **nombres de declaraciones de nivel superior** del esqueleto
+tiene que contener el de la fuente. Medido sobre los 64 archivos del área, con el
+escaneo compartido para no contar nombres dentro de comentarios o strings: **0 falsos
+positivos**, que es la condición para que sirva. Y el control negativo —un contador que
+nunca cierra— **la hace fallar a ella también**.
+
+| Propiedad | ¿La verifica una compuerta? | Qué deja pasar |
+| :--- | :--- | :--- |
+| La salida compila | Sí (`node --check`) | Un módulo válido al que le faltan declaraciones |
+| La salida **no perdió declaraciones** | Sí, agregada después | — |
+
+> [!CAUTION]
+> **Un instrumento y su compuerta tienen que medir lo mismo.** La compuerta de este
+> módulo verificaba una propiedad *relacionada* —la salida es un programa— y la
+> promesa era *no perder el contrato*. Casi todo instrumento de compresión declara la
+> segunda y se verifica con la primera, porque la segunda es más difícil de escribir.
+> **Escribila igual: es la que el instrumento promete.** Y el corolario: si un control
+> negativo no logra hacer fallar tu compuerta, la conclusión no es que la compuerta sea
+> inútil —puede ser que el código esté doblemente protegido—; la conclusión es que
+> **todavía no sabés si la compuerta sirve**, y hay que seguir hasta saberlo.
+
 ---
 
 ## Apéndice B — Adaptación por harness
@@ -2298,6 +2353,10 @@ Antes de dar la auditoría por terminada:
       omitidas.
 - [ ] **Todas** las lecturas de reloj del camino medido están enumeradas, y ninguna alimenta un
       número sin guardia de ancho (paso 7.4 + A.18).
+- [ ] **Toda compuerta nueva se vio fallar**, y antes de darla por buena: si el control
+      negativo no la hace fallar, todavía no sabés si sirve. Puede ser que el código esté
+      doblemente protegido —entonces hay que revertir los **dos** mecanismos— o que la
+      compuerta mida una propiedad distinta de la que el instrumento promete (A.20).
 - [ ] Las lentes del §12.5 corrieron con **una afirmación textual citada** cada una —no con un
       mandato general— y su veredicto quedó en el informe. Un subsistema sin lente es alcance
       no cubierto y se declara (A.19).
