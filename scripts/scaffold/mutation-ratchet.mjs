@@ -147,6 +147,40 @@ export const RUNNERS = {
 /** Areas whose sources are shell rather than JavaScript. */
 export const SHELL_AREAS = new Set(['scripts/conf'])
 
+/**
+ * El veredicto del trinquete a partir de los resultados por área.
+ *
+ * Es una función aparte, y exportada, porque `main()` no se puede fijar con
+ * casos directos: ejecuta el probe entero, que tarda cuarenta minutos. Hasta
+ * ahora la decisión de salir 0 o 1 vivía adentro de `main()`, así que sus cuatro
+ * mutantes sobrevivían — y son los cuatro más caros del área, porque el trinquete
+ * ES la compuerta que detecta que una suite dejó de restringir.
+ *
+ * Medido el 2026-09-13 con el probe sobre `scripts/scaffold`:
+ *
+ *   - `:182` y `:183` (`===` a `!==` en los filtros) sobrevivían: con `!==`, el
+ *     conjunto de regresadas incluye las que NO regresaron, y el mensaje acusa a
+ *     la suite equivocada.
+ *   - `:190` (`> 0` a `>= 0`) sobrevivía: `regressed.length >= 0` es SIEMPRE
+ *     verdadero, así que el proceso sale 1 en toda corrida, incluso cuando todo
+ *     está en su piso. Un trinquete que falla siempre es tan inútil como uno que
+ *     nunca falla: el operador aprende a ignorarlo.
+ *
+ * La dirección peligrosa de verdad es la otra mitad de `:182`: con `!==` y UNA
+ * sola área declarada, un área regresada deja el filtro en cero elementos y el
+ * trinquete **no reporta la regresión**. Por eso el `exitCode` se calcula acá y
+ * no en el `if` del llamador.
+ *
+ * @param {Array<{area: string, verdict: string, score?: number, expected?: number}>} results
+ * @returns {{ regressed: Array, improved: Array, exitCode: number }}
+ */
+export function ratchetVerdict(results) {
+  const lista = Array.isArray(results) ? results : []
+  const regressed = lista.filter((r) => r.verdict === 'regressed')
+  const improved = lista.filter((r) => r.verdict === 'improved')
+  return { regressed, improved, exitCode: regressed.length > 0 ? 1 : 0 }
+}
+
 /** Compares a measured score against its floor. */
 export function judge(area, killed, total, floor = MUTATION_FLOOR) {
   const score = total === 0 ? 0 : Math.round((killed / total) * 100)
@@ -179,21 +213,22 @@ async function main() {
     console.log(`${verdict.score}% (piso ${verdict.expected ?? '—'}) · ${r.total} mutantes · ${r.survivors.length} sobreviven`)
   }
 
-  const regressed = results.filter((r) => r.verdict === 'regressed')
-  const improved = results.filter((r) => r.verdict === 'improved')
+  // La decisión vive en `ratchetVerdict`, que es pura y tiene casos directos. Acá
+  // solo se la usa: `main()` ejecuta el probe y no se puede fijar con entradas.
+  const { regressed, improved, exitCode } = ratchetVerdict(results)
 
   if (improved.length > 0) {
     console.log('\nSubieron — actualizá MUTATION_FLOOR para que el trinquete no afloje:')
     for (const r of improved) console.log(`  ${r.area}: ${r.expected} → ${r.score}`)
   }
 
-  if (regressed.length > 0) {
+  if (exitCode !== 0) {
     console.error('')
     for (const r of regressed) {
       console.error(`❌ ${r.area}: ${r.score}% está por debajo del piso ${r.expected}%`)
     }
     console.error('\nUna suite que restringe menos que ayer pasa igual de verde. Ese es el punto.')
-    process.exit(1)
+    process.exit(exitCode)
   }
 
   console.log('\n✅ Ninguna suite restringe menos que en su última medición.')

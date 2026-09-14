@@ -117,6 +117,33 @@ export function auditReachability(root, budget = UNREACHED_BUDGET, dir = 'script
   }
 }
 
+/**
+ * Las fallas de la auditoría, a partir de su resultado.
+ *
+ * Función aparte y exportada por la misma razón que `ratchetVerdict`: la
+ * decisión de salir 0 o 1 vivía adentro de `main()`, que no se puede fijar con
+ * casos directos, así que su mutante `failures.length > 0` a `>= 0` sobrevivía.
+ * Con `>=` la condición es siempre verdadera y la compuerta falla en TODA
+ * corrida, incluso cuando todo se alcanza.
+ *
+ * Una compuerta que falla siempre es peor que una que no corre: el operador
+ * aprende a ignorarla, y ahí deja de ser una compuerta.
+ *
+ * @param {{ added: string[], stale: string[] }} audit
+ * @returns {string[]}
+ */
+export function reachabilityFailures(resultado) {
+  // `?? {}` y no `= {}`: el default de un parámetro solo cubre `undefined`, no
+  // `null`. Medido al escribir el caso: con `= {}` un `null` explotaba con
+  // "Cannot read properties of null", que es un stack trace en vez del
+  // veredicto — peor modo de falla que una lista vacía.
+  const { added = [], stale = [] } = resultado ?? {}
+  const failures = []
+  for (const f of added) failures.push(`SIN ALCANZAR   ${f} — ningún test lo carga ni lo ejecuta`)
+  for (const f of stale) failures.push(`PRESUPUESTO VIEJO  ${f} ya está alcanzado — sacálo de UNREACHED_BUDGET`)
+  return failures
+}
+
 function main() {
   const root = process.cwd()
   const { scanned, unreached, added, stale } = auditReachability(root)
@@ -124,9 +151,7 @@ function main() {
   console.log('=== AOI Source Reachability ===')
   console.log(`Scanned: ${scanned} source file(s) · ${scanned - unreached.length} alcanzadas`)
 
-  const failures = []
-  for (const f of added) failures.push(`SIN ALCANZAR   ${f} — ningún test lo carga ni lo ejecuta`)
-  for (const f of stale) failures.push(`PRESUPUESTO VIEJO  ${f} ya está alcanzado — sacálo de UNREACHED_BUDGET`)
+  const failures = reachabilityFailures({ added, stale })
 
   if (failures.length > 0) {
     console.error('')

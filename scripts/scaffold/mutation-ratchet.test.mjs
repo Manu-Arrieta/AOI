@@ -14,9 +14,96 @@
 
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { judge, MUTATION_FLOOR, RUNNERS, SHELL_AREAS, TEST_GLOB } from './mutation-ratchet.mjs'
+import { judge, MUTATION_FLOOR, ratchetVerdict, RUNNERS, SHELL_AREAS, TEST_GLOB } from './mutation-ratchet.mjs'
 
 const FLOOR = { 'scripts/demo': 60 }
+
+/**
+ * `ratchetVerdict`: la decisión de salir 0 o 1.
+ *
+ * `judge()` compara UNA medición con su piso y estaba bien cubierto. Lo que no
+ * tenía un solo caso era la pieza que decide el código de salida a partir del
+ * conjunto — y sus cuatro mutantes sobrevivían, que son los cuatro más caros del
+ * área: el trinquete ES la compuerta que detecta que una suite dejó de
+ * restringir, así que una decisión sin atar deja la compuerta inútil.
+ *
+ * Los casos exigen las DOS direcciones en cada filtro, porque las dos son
+ * silenciosas de maneras distintas: con `!==` el conjunto incluye veredictos que
+ * no corresponden —acusa a la suite equivocada— y con una sola área el filtro
+ * puede quedar vacío y NO reportar una regresión real.
+ */
+describe('ratchetVerdict decide el código de salida', () => {
+  const R = (area, verdict, score = 50, expected = 60) => ({ area, verdict, score, expected })
+
+  it('una sola área regresada alcanza para salir 1', () => {
+    // La dirección peligrosa: con una única área en la lista, un filtro que no
+    // matchee exacto deja `regressed` vacío y la regresión no se reporta.
+    const v = ratchetVerdict([R('scripts/a', 'regressed')])
+    assert.equal(v.regressed.length, 1)
+    assert.equal(v.exitCode, 1, 'no reportó la regresión')
+  })
+
+  it('todo en su piso sale 0 y no reporta nada', () => {
+    // Este caso mata `> 0` mutado a `>= 0`: con `>=` el código de salida es 1
+    // SIEMPRE, incluso acá. Un trinquete que falla siempre es tan inútil como
+    // uno que nunca falla: el operador aprende a ignorarlo.
+    const v = ratchetVerdict([R('scripts/a', 'held'), R('scripts/b', 'held')])
+    assert.equal(v.exitCode, 0, 'falló sin ninguna regresión')
+    assert.deepEqual(v.regressed, [])
+    assert.deepEqual(v.improved, [])
+  })
+
+  it('las mejoras no cuentan como regresiones', () => {
+    // `===` mutado a `!==` en el filtro de `regressed` mete acá las mejoras y
+    // las que se mantienen, y el mensaje acusa a la suite equivocada.
+    const v = ratchetVerdict([R('scripts/a', 'improved', 90), R('scripts/b', 'held')])
+    assert.equal(v.exitCode, 0, 'una mejora no puede bloquear')
+    assert.deepEqual(v.regressed, [], 'el conjunto de regresadas incluye las que no regresaron')
+    assert.equal(v.improved.length, 1, 'no reconoció la mejora')
+    assert.equal(v.improved[0].area, 'scripts/a')
+  })
+
+  it('separá las dos listas cuando hay mezcla', () => {
+    // El caso que distingue los dos filtros en una sola corrida: con cualquiera
+    // de los dos invertido, una de las dos listas queda con el elemento
+    // equivocado y la otra vacía.
+    const v = ratchetVerdict([
+      R('scripts/reg', 'regressed', 40),
+      R('scripts/imp', 'improved', 80),
+      R('scripts/ok', 'held'),
+      R('scripts/sin', 'undeclared'),
+    ])
+    assert.deepEqual(v.regressed.map((r) => r.area), ['scripts/reg'])
+    assert.deepEqual(v.improved.map((r) => r.area), ['scripts/imp'])
+    assert.equal(v.exitCode, 1, 'una regresión entre cuatro áreas no bloqueó')
+  })
+
+  it('una regresión bloquea aunque haya mejoras', () => {
+    // La dirección que importa: un trinquete no se compensa. Que un área suba no
+    // autoriza a que otra baje.
+    const v = ratchetVerdict([R('scripts/imp', 'improved', 95), R('scripts/reg', 'regressed', 10)])
+    assert.equal(v.exitCode, 1, 'la mejora compensó la regresión')
+  })
+
+  it('una lista vacía sale 0', () => {
+    // Correr sin áreas es distinto de correr con áreas sanas, pero ninguno de
+    // los dos puede bloquear: no hay nada que haya empeorado.
+    const v = ratchetVerdict([])
+    assert.equal(v.exitCode, 0)
+    assert.deepEqual(v.regressed, [])
+  })
+
+  it('una entrada que no es lista no explota', () => {
+    // La guarda de forma: `main()` arma la lista, y un `undefined` que llegue
+    // por un cambio futuro no puede tumbar la corrida con un TypeError en vez
+    // del veredicto.
+    for (const entrada of [undefined, null, 'no-es-lista', 42]) {
+      const v = ratchetVerdict(entrada)
+      assert.equal(v.exitCode, 0, `explotó o bloqueó con: ${String(entrada)}`)
+      assert.deepEqual(v.regressed, [])
+    }
+  })
+})
 
 describe('judge compares a measurement against its floor', () => {
   it('holds when the score equals the floor exactly', () => {

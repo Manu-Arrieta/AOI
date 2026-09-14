@@ -10,12 +10,18 @@
  */
 
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
-import { auditReachability, reachableFromTests, UNREACHED_BUDGET } from './source-reachability.mjs'
+import {
+  auditReachability,
+  reachabilityFailures,
+  reachableFromTests,
+  UNREACHED_BUDGET,
+} from './source-reachability.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
@@ -139,5 +145,106 @@ describe('the ratchet', () => {
     assert.ok(audit.scanned > 40, `sólo escaneó ${audit.scanned} fuentes`)
     assert.deepEqual(audit.added, [])
     assert.deepEqual(audit.stale, [])
+  })
+
+  it('no cuenta un archivo de test como fuente a alcanzar', () => {
+    // El filtro de fuentes es `EXTS.includes(ext) && !n.endsWith('.test.mjs')`.
+    // Con `||` la condición es siempre verdadera para un `.mjs`, así que los
+    // tests entran al conjunto de fuentes — y como un test no se importa a sí
+    // mismo, quedan "sin alcanzar" y la compuerta acusa a los tests de no estar
+    // cubiertos. Medido el 2026-09-13: ese mutante sobrevivía.
+    const dir = tree({
+      'scripts/a/lib.mjs': 'export const x = 1\n',
+      'scripts/a/lib.test.mjs': "import { x } from './lib.mjs'\n",
+      'scripts/a/huerfano.test.mjs': "import assert from 'node:assert/strict'\n",
+    })
+    const audit = auditReachability(dir)
+    const tests = audit.unreached.filter((f) => f.endsWith('.test.mjs'))
+    assert.deepEqual(tests, [], `reportó tests como fuentes sin alcanzar: ${tests.join(', ')}`)
+  })
+})
+
+/**
+ * `reachabilityFailures`: la decisión de salir 0 o 1.
+ *
+ * Vivía adentro de `main()`, así que su mutante `failures.length > 0` a `>= 0`
+ * sobrevivía: con `>=` la condición es siempre verdadera y la compuerta falla en
+ * toda corrida. Es el mismo patrón que `ratchetVerdict` y el mismo daño — una
+ * compuerta que falla siempre deja de leerse.
+ */
+describe('reachabilityFailures decide el código de salida', () => {
+  it('una fuente sin alcanzar produce una falla', () => {
+    const f = reachabilityFailures({ added: ['scripts/a/suelto.mjs'], stale: [] })
+    assert.equal(f.length, 1)
+    assert.match(f[0], /SIN ALCANZAR/)
+    assert.match(f[0], /suelto\.mjs/)
+  })
+
+  it('un presupuesto vencido produce una falla distinta', () => {
+    // Las dos listas tienen que dar mensajes distinguibles: el operador actúa
+    // distinto según si tiene que cubrir un archivo o sacarlo de la exención.
+    const f = reachabilityFailures({ added: [], stale: ['scripts/a/viejo.mjs'] })
+    assert.equal(f.length, 1)
+    assert.match(f[0], /PRESUPUESTO VIEJO/)
+  })
+
+  it('sin nada que reportar la lista está vacía', () => {
+    // Este caso mata `> 0` mutado a `>= 0`: con una lista vacía y `>=`, la
+    // condición es verdadera y el proceso sale 1 sin ninguna falla que mostrar.
+    assert.deepEqual(reachabilityFailures({ added: [], stale: [] }), [])
+  })
+
+  it('suma las dos clases de falla, no una sola', () => {
+    // Una implementación que se quede con `added` y pierda `stale` deja la mitad
+    // de la auditoría sin reportar, y el presupuesto se pudre sin que nadie lo
+    // vea.
+    const f = reachabilityFailures({ added: ['a.mjs'], stale: ['b.mjs'] })
+    assert.equal(f.length, 2)
+    assert.match(f.join('\n'), /a\.mjs/)
+    assert.match(f.join('\n'), /b\.mjs/)
+  })
+
+  it('un resultado sin las listas no explota', () => {
+    // La guarda de forma: `main()` arma el objeto, y un `undefined` que llegue
+    // por un cambio futuro no puede cambiar el veredicto por un TypeError.
+    for (const entrada of [undefined, null, {}, { added: undefined, stale: undefined }]) {
+      assert.deepEqual(reachabilityFailures(entrada), [], `explotó con: ${String(entrada)}`)
+    }
+  })
+})
+
+/**
+ * La guarda de CLI, por spawn.
+ *
+ * `if (process.argv[1] && path.resolve(...) === path.resolve(...))` es invisible
+ * importando el módulo: `main()` no corre, así que ninguna aserción sobre las
+ * funciones exportadas la toca. Un `and→or` la desactiva y el módulo ejecuta la
+ * auditoría al importarse.
+ */
+describe('la guarda de CLI de source-reachability', () => {
+  const corre = (args) =>
+    spawnSync(process.execPath, args, { encoding: 'utf8', timeout: 30000, cwd: REPO })
+
+  it('importar el módulo NO corre la auditoría', () => {
+    // La aserción tiene DOS partes y la segunda es la que faltaba. Verificar
+    // sólo que no imprime la cabecera deja pasar un import que CRASHEA: con la
+    // guarda mutada a `||`, `path.resolve(process.argv[1])` recibe `undefined`
+    // bajo `node -e`, tira un TypeError, y el módulo no llega a imprimir nada.
+    // La primera versión de este caso pasaba por esa razón. Medido el
+    // 2026-09-13: el mutante sobrevivía a una aserción que sólo miraba la
+    // ausencia de la cabecera.
+    const r = corre(['-e', "import('./scripts/scaffold/source-reachability.mjs')"])
+    const out = `${r.stdout ?? ''}${r.stderr ?? ''}`
+    assert.doesNotMatch(out, /AOI Source Reachability/, `el import ejecutó main(): ${out.slice(0, 200)}`)
+    assert.equal(r.status, 0, `el import falló con status ${r.status}: ${out.slice(0, 300)}`)
+    assert.doesNotMatch(out, /TypeError|validateString/, 'el import crasheó en vez de sólo no ejecutar')
+  })
+
+  it('correrlo como script SÍ la corre y sale 0 en el repo real', () => {
+    const r = corre(['scripts/scaffold/source-reachability.mjs'])
+    const out = `${r.stdout ?? ''}${r.stderr ?? ''}`
+    assert.match(out, /AOI Source Reachability/, `no ejecutó la auditoría: ${out.slice(0, 200)}`)
+    assert.equal(r.status, 0, `salió ${r.status} en el repo real: ${out.slice(0, 300)}`)
+    assert.match(out, /Toda fuente se alcanza/, 'no trajo el veredicto verde')
   })
 })
