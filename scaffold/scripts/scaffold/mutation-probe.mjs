@@ -570,9 +570,45 @@ function recordSuite(pid, quitar = false) {
     const siguientes = quitar
       ? previos.filter((l) => Number(l) !== pid)
       : [...new Set([...previos, String(pid)])]
-    fs.writeFileSync(file, siguientes.join('\n') + (siguientes.length > 0 ? '\n' : ''))
+    // Si no queda ninguna suite viva, el archivo se BORRA en vez de quedar
+    // vacío: un archivo vacío por corrida se acumula en el temporal y no aporta
+    // nada —no hay nada que recoger—, mientras que su ausencia es informativa.
+    if (siguientes.length === 0) {
+      fs.rmSync(file, { force: true })
+      return
+    }
+    fs.writeFileSync(file, siguientes.join('\n') + '\n')
   } catch {
     // El pidfile es una red de seguridad, no un requisito para medir.
+  }
+}
+
+/**
+ * Si el pid es de verdad una suite del probe, mirando su línea de `ps`.
+ *
+ * Esta verificación es OBLIGATORIA antes de matar, y no es una precaución
+ * teórica: **los pids se reciclan**. `reapStaleSuites` lee pids de un archivo
+ * escrito por una corrida anterior, y entre aquella corrida y ésta el sistema
+ * pudo reasignar ese número a cualquier proceso. Matar por grupo un pid
+ * reciclado puede llevarse un grupo de procesos ajeno.
+ *
+ * Medido el 2026-09-14: el CI pasó de rojo a `failure` con el ratchet en
+ * `in_progress`, sin ningún paso marcado como fallido y con los logs vacíos —
+ * la firma de un runner que murió, no de una compuerta que falló. Y en el
+ * camino del ratchet, el test de este módulo corre cientos de veces, cada una
+ * fabricando pids muertos y llamando a `reapStaleSuites`. Es exactamente el
+ * escenario donde el reciclado ocurre.
+ *
+ * La identificación por argumentos es la que acota el daño: un pid reciclado
+ * tendría que estar corriendo además un `suite.test.mjs` para pasar el filtro.
+ */
+function looksLikeOurSuite(pid) {
+  try {
+    const out = execFileSync('ps', ['-o', 'args=', '-p', String(pid)], { encoding: 'utf8' })
+    return /suite\.test\.mjs/.test(out)
+  } catch {
+    // El proceso no existe, o `ps` no está: en los dos casos no se mata.
+    return false
   }
 }
 
@@ -580,8 +616,10 @@ function recordSuite(pid, quitar = false) {
  * Recoge las suites que quedaron de corridas ANTERIORES ya muertas.
  *
  * Lee los pidfiles de este directorio temporal, y para cada uno comprueba si su
- * probe dueño sigue vivo. Sólo si ya no está, mata el grupo de las suites
- * anotadas: un proceso vivo no se toca por estar anotado por otro.
+ * probe dueño sigue vivo. Sólo si ya no está, y **sólo si el pid se identifica
+ * como una suite del probe**, mata el grupo: un proceso vivo no se toca por
+ * estar anotado por otro, y un pid reciclado no se toca porque no pasa la
+ * verificación de argumentos.
  *
  * @returns {number} cuántos grupos se terminaron
  */
@@ -612,6 +650,9 @@ export function reapStaleSuites() {
     }
     for (const pid of pids) {
       if (!Number.isInteger(pid) || pid <= 1) continue
+      // La verificación que evita matar un pid reciclado. Sin esto, el archivo
+      // es una lista de números que envejeció, y matar por él es una apuesta.
+      if (!looksLikeOurSuite(pid)) continue
       try {
         process.kill(-pid, 'SIGKILL')
         reaped += 1

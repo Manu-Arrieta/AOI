@@ -675,9 +675,24 @@ ${varias}
 
 describe('reapStaleSuites recoge lo que dejó una corrida muerta', () => {
   const FILES = []
+  const DIRS = []
   after(() => {
     for (const f of FILES) fs.rmSync(f, { force: true })
+    for (const d of DIRS) fs.rmSync(d, { recursive: true, force: true })
   })
+
+  /** Espera a que un pid deje de existir. `kill` retorna antes de eso. */
+  const esperarQueDesaparezca = async (pid, intentos = 50) => {
+    for (let i = 0; i < intentos; i++) {
+      try {
+        process.kill(pid, 0)
+      } catch {
+        return true
+      }
+      await new Promise((r) => setTimeout(r, 40))
+    }
+    return false
+  }
 
   const anota = (dueno, pids) => {
     const file = suitesPidFile(dueno)
@@ -746,6 +761,52 @@ describe('reapStaleSuites recoge lo que dejó una corrida muerta', () => {
     // recogería las suites de la primera, que está viva y midiendo.
     assert.match(suitesPidFile(1234), /aoi-probe-suites\.1234$/)
     assert.notEqual(suitesPidFile(1), suitesPidFile(2))
+  })
+
+  it('NO mata un pid que no se identifica como una suite del probe', async () => {
+    // La propiedad de seguridad, y la razón por la que existe la verificación
+    // por argumentos: los pids se RECICLAN. Un pid leído de un archivo viejo
+    // puede pertenecer a cualquier cosa, y matarlo por grupo se lleva un grupo
+    // ajeno.
+    //
+    // El caso anota el pid de un proceso VIVO pero ajeno —uno de `sleep`— con un
+    // dueño muerto. La dirección peligrosa sería matarlo; el contrato es que no
+    // lo toque, porque su línea de `ps` no nombra `suite.test.mjs`.
+    const ajeno = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' })
+    try {
+      await new Promise((r) => setTimeout(r, 200))
+      anota(await pidMuerto(), [ajeno.pid])
+      reapStaleSuites()
+      // Sigue vivo: `kill(pid, 0)` no lanza.
+      assert.doesNotThrow(() => process.kill(ajeno.pid, 0), 'mató un proceso que no era una suite')
+    } finally {
+      ajeno.kill('SIGKILL')
+    }
+  })
+
+  it('SÍ mata una suite real anotada por un dueño muerto', async () => {
+    // La dirección útil, con un proceso de verdad y no un pid fabricado: es la
+    // única forma de probar el recogido sin depender de que un pid no se
+    // recicle. Se simula la estructura real —un `suite.test.mjs` que se queda
+    // vivo— anotado por un dueño que ya no existe.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-stale-'))
+    DIRS.push(dir)
+    fs.writeFileSync(path.join(dir, 'suite.test.mjs'), 'setInterval(() => {}, 1000)\n')
+    const suite = spawn(process.execPath, ['suite.test.mjs'], { cwd: dir, stdio: 'ignore', detached: true })
+    suite.unref()
+    try {
+      await new Promise((r) => setTimeout(r, 400))
+      anota(await pidMuerto(), [suite.pid])
+      assert.ok(reapStaleSuites() >= 1, 'no recogió una suite real con dueño muerto')
+      const murio = await esperarQueDesaparezca(suite.pid)
+      assert.ok(murio, 'la suite siguió viva después de recogerla')
+    } finally {
+      try {
+        process.kill(suite.pid, 'SIGKILL')
+      } catch {
+        // Ya estaba muerta: es el resultado esperado.
+      }
+    }
   })
 })
 
