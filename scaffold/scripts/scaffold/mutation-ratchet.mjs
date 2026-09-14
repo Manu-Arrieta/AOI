@@ -97,7 +97,11 @@ export const MUTATION_FLOOR = {
   // invisible para `validate-srp`: `SKIP_DIRS` saltea por NOMBRE en cualquier
   // profundidad, así que `scripts/scaffold/` entero queda fuera del conteo de
   // 300 LOC. Este archivo lo pasa. Ver el comentario en `validate-srp.mjs`.
-  'scripts/scaffold': 62,
+  // 62 → 74 en la corrida del 2026-09-14. El salto no viene de código nuevo
+  // mejor probado: `archify-checks.mjs` entró a las rutas gobernadas, y la
+  // compuerta de paridad mata mutantes de esa lista que antes no existían. El
+  // trinquete registra la mejora para que no se pierda.
+  'scripts/scaffold': 74,
   'scripts/spatiotemporal-runtime': 59,
   // 51 → 64. El salto grande no viene de más tests sobre lo mismo: al extraer el
   // escáner compartido (`code-scanner.mjs`) el área ganó un módulo con casos
@@ -114,7 +118,20 @@ export const MUTATION_FLOOR = {
   // cambio en este área: el gateway no se tocó. Es una mejora de suite que llevaba
   // tiempo sin medirse, y el trinquete la registra para que no se pierda.
   'scripts/mcp-gateway': 71,
-  'scripts': 81,
+  // 81 → 100. El área estaba POR DEBAJO de su piso —78%— desde antes de esta
+  // medición, y el trinquete lo cazó recién en la primera corrida completa:
+  // nunca se había medido esta área después de sumarle los chequeos de Archify
+  // al doctor. Los 8 supervivientes eran contratos reales sin test —el ternario
+  // de `which`/`where`, los `details` de las dos ramas limpias, el filtro de
+  // filas de tabla, el `mandatory: false` del chequeo opcional, y el mapeo de
+  // símbolo por status, que vivía dentro del bloque `isDirectRun`, donde ningún
+  // test podía alcanzarlo. Los casos que los fijan llevan el área a 37/37.
+  //
+  // El de los símbolos necesitó una función pura, no un test más: un mapeo
+  // inalcanzable para cualquier test no es un detalle de estilo, es una rama
+  // sin cubrir. Mientras siga adentro del bloque de impresión, vuelve a
+  // sobrevivir.
+  'scripts': 100,
   // El dashboard, que no tenía ninguna medición porque corre bajo vitest y no
   // bajo `node --test`. La sonda acepta un runner distinto y enlaza
   // node_modules y .nuxt en la copia; sin .nuxt, tsconfig.json no resuelve y

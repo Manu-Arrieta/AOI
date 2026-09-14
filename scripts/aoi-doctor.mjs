@@ -42,6 +42,24 @@ export {
   RECOMMENDED_BINARIES,
 }
 
+/**
+ * El símbolo con el que el doctor reporta cada veredicto.
+ *
+ * Es una función, y exportada, porque vivía como dos `if` dentro del bloque de
+ * impresión —el que corre sólo cuando este archivo es el programa principal—,
+ * donde no se puede fijar con entradas. Por eso esas dos ramas sobrevivían a la
+ * mutación mientras el resto del archivo estaba cubierto: el mapeo era
+ * inalcanzable para cualquier test. Acá es una tabla que se puede afirmar.
+ *
+ * @param {string} status
+ * @returns {string}
+ */
+export function statusSymbol(status) {
+  if (status === 'WARNING') return '⚠️ '
+  if (status === 'FAILED') return '❌'
+  return '✅'
+}
+
 export async function runAoiDoctor(options = {}) {
   const repoRoot = options.repoRoot || process.cwd()
   // Passed through as-is: each check declares its own `execFileAsync`
@@ -171,10 +189,7 @@ if (
     const report = await runAoiDoctor()
 
     for (const check of report.checks) {
-      let symbol = '✅'
-      if (check.status === 'WARNING') symbol = '⚠️ '
-      if (check.status === 'FAILED') symbol = '❌'
-
+        const symbol = statusSymbol(check.status)
       console.log(
         `  ${symbol} [${check.category}] ${check.name}: ${check.details}`
       )
