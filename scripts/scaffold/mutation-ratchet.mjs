@@ -77,8 +77,15 @@ export const MUTATION_FLOOR = {
   // los seis chequeos. Los cinco helpers de shell que viven en esa misma raíz
   // quedan fuera por AREA_EXTENSIONS — ver el comentario allí.
   // Subió de 53 a 54 con la compuerta `aoi:audit-protocol` y su suite (13 casos),
-  // que le dan a este área 26 mutantes más que antes mataba. Nunca baja.
-  'scripts/multi-harness': 55,
+  // que le dan a este área 26 mutantes más que antes mataba.
+  //
+  // 55 → 57. La dirección inversa de `reference-integrity` agregó
+  // `undocumented-commands.mjs` y su suite (9 casos). Los dos puntos NO vienen
+  // de código nuevo mejor cubierto —vienen de los casos que fijan el contrato:
+  // "no acepta nombrar el ARCHIVO como documentar el COMANDO" mata el mutante
+  // que buscaría el nombre suelto, y "no exige nada en un workspace instalado"
+  // mata el que sacaría el marcador de modo. Nunca baja.
+  'scripts/multi-harness': 57,
   // 61 → 62. El arreglo de la fuga de procesos de `mutation-probe` agregó 4
   // mutantes (137 → 141) y al principio NO estaba cubierto: el área cayó a 59.
   // Bajarlo a 59 habría sido registrar un bug como baseline. Los casos que fijan
