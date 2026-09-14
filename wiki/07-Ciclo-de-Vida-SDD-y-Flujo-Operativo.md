@@ -26,7 +26,35 @@ En el desarrollo de software agéntico con AOI, el **ciclo SDD (Spec-Driven Deve
 
 ---
 
-## 📋 Las 6 Fases Explicadas una por una
+## 📋 Las fases explicadas una por una
+
+### 🏛️ Fase -2: Génesis Arquitectónica (`/sdd-genesis`)
+
+> Esta fase es **opcional y anterior a todo**. Solo entra si lo que tienes es una **idea** y
+> todavía no existe arquitectura que la contenga.
+
+* **¿Qué se hace en cristiano?**  
+  Le cuentas al asistente qué quieres construir (*"un sistema de cobros para creadores"*)
+  y él **no toma notas: te discute**. Te propone dos o tres formas distintas de armar el
+  sistema, con lo que cuesta cada una, y te desafía cuando pides algo más grande de lo que
+  el primer paso justifica.
+* **El detalle importante:**  
+  El asistente define en qué **pedazos** se parte el sistema (*bounded contexts*), qué
+  **reglas globales** nadie puede romper (*"nunca guardar datos personales en los logs"*),
+  y cuál es la **primera rebanada vertical** que atraviesa todo para probar que la
+  arquitectura se sostiene.
+* **El resultado:**  
+  Un **SBC** (*System Blueprint Contract*). De un SBC salen **varios** BICs, no uno.
+* **La compuerta (Genesis Gate):**  
+  Tú apruebas y aquí hay que ser exactos: **apruebas coherencia, no correctitud**. Dices
+  *"esta es una hipótesis coherente que vale la pena probar"*, no *"esta arquitectura es
+  la correcta"*. Lo segundo lo dirá la primera rebanada vertical, cuando exista código.
+* **¿Y los diagramas?**  
+  Si el SBC declara que dos componentes se hablan, eso genera una **obligación de
+  diagrama**. Los diagramas se producen en `/sdd-apply` y se revisan en `/sdd-verify`.
+  **La prosa es la verdad; el diagrama es la foto derivada.**
+
+---
 
 ### 🛫 Fase 0: Pre-Flight Frame (`/sdd-frame`)
 * **¿Qué se hace en cristiano?**  

@@ -63,6 +63,16 @@ icm facts list "{WORKSPACE}" -p "service."
 icm facts list "{WORKSPACE}" -p "endpoint."
 ```
 
+**If a System Blueprint Contract (SBC) exists, its GLOBAL invariants already rule this BIC.** Read them before proposing anything — a capability that would violate one is not a candidate:
+
+```bash
+icm facts list "{WORKSPACE}" -p "sbc."
+```
+
+The `sbc.{SBC_ID}.never.{N}` facts are the system-wide "Never Rules" calibrated in `/sdd-genesis`. They are **not** re-derived here and they are **not** negotiable in this phase: the BIC inherits them. Its own Never Rules sit *below* those, so one can never contradict the other. Cite the global ones by tag when they apply, and if the intent asks for something a global invariant forbids, say so plainly and stop — that is a genesis-level conflict, not a framing one.
+
+The `sbc.{SBC_ID}.crossing.{N}` facts name the boundary crossings this work belongs to; use them to place the capability in the existing topology instead of inventing a new one. If there is no SBC, this step is a no-op and the phase proceeds exactly as before.
+
 ```
 icm_memory_recall(query: "{keywords from intent}", topic: "{WORKSPACE}-services-catalog")
 ```

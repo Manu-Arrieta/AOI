@@ -40,6 +40,8 @@
     "aoi:reachability": "node scripts/scaffold/source-reachability.mjs",
     "aoi:routing": "node scripts/multi-harness/validate-agent-routing.mjs",
     "aoi:invariant-gate": "node scripts/sdd-lifecycle/invariant-gate.mjs --exit-code",
+    "aoi:blueprint-gate": "node scripts/sdd-lifecycle/blueprint-gate.mjs",
+    "aoi:archify": "node scripts/archify-path.mjs",
     "aoi:stress-sdd": "node scripts/sdd-lifecycle/sdd-stress-suite.mjs",
     "aoi:context": "node scripts/sdd-lifecycle/assemble-phase-context.mjs",
     "aoi:probes": "node scripts/sdd-lifecycle/behavioral-runner.mjs --emit",

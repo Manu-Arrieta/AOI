@@ -31,6 +31,18 @@ export const DEFAULT_SYNC_PATHS = [
   'scripts/multi-harness',
   'scripts/aoi-doctor.mjs',
   'scripts/aoi-doctor.test.mjs',
+  // `doctor-checks.mjs` se enviaba a toda instalación vía scaffold/ pero no
+  // estaba gobernado, y eso ya cobró su precio: se le agregó un export que
+  // `aoi-doctor.mjs` —gobernado— importa, y la copia del scaffold quedó vieja.
+  // Root y espejo derivaron sin que nada fallara acá, y el que rompía era la
+  // instalación, lejos de la causa. Es la misma forma del protocolo duplicado
+  // que esta lista ya corrigió una vez para scripts/{code-lens,memory-sync,...}.
+  'scripts/doctor-checks.mjs',
+  // Mismo caso que `doctor-checks.mjs`: se envía a toda instalación vía
+  // scaffold/ y una fase lo invoca, así que la copia del espejo tiene que ser
+  // verificada o root y espejo derivan sin que nada falle acá.
+  'scripts/archify-path.mjs',
+  'scripts/archify-path.test.mjs',
   'LICENSE',
   'package.json',
   'pnpm-workspace.yaml',

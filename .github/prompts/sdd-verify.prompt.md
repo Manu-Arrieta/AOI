@@ -89,7 +89,7 @@ If NO evidence of service discovery → **automatic FAIL** with note:
 
 ### Step 4b: Invariant Gate — BIC Contract Enforcement (0 Tokens)
 
-Verify that every business invariant ("Never Rule") and the Business Oracle calibrated during `/sdd-frame` is actually asserted by a test. The check is a mechanical tag match against ICM facts — it consumes **zero LLM inference tokens**:
+Verify that every business invariant ("Never Rule") and the Business Oracle calibrated during `/sdd-frame` is actually asserted by a test. The check is a mechanical tag match against the facts `/sdd-frame` persisted as `bic.{BIC_ID}.never.{N}` and `bic.{BIC_ID}.oracle` — it consumes **zero LLM inference tokens**:
 
 ```bash
 node scripts/sdd-lifecycle/invariant-gate.mjs --entity "{WORKSPACE}" --tests-dir . --exit-code
@@ -101,6 +101,23 @@ node scripts/sdd-lifecycle/invariant-gate.mjs --entity "{WORKSPACE}" --tests-dir
 - **Exit 2 → BLOCKED, also a FAIL.** The contract could not be read (broken ICM toolchain). Absence of evidence is never evidence of compliance: repair the toolchain and re-run. Do NOT interpret an unreadable contract as a clean pass.
 
 Add `--bic {BIC-ID}` to narrow the audit to the contract under verification.
+
+### Step 4c: Blueprint Gate — SBC Closure & Diagram Obligation (0 Tokens)
+
+If the task descends from a System Blueprint Contract, verify the architectural chain too. Same mechanical pattern as the Invariant Gate, **zero LLM inference tokens**:
+
+```bash
+node scripts/sdd-lifecycle/blueprint-gate.mjs "{WORKSPACE}" --workspace "{WORKSPACE_PATH}"
+```
+
+- **Exit 0 → continue.** `SKIPPED` means the task never passed through `/sdd-genesis` (no `sbc.*` facts) and is not a failure.
+- **Exit 1 → automatic FAIL gate.** Two distinct causes, and the report names which:
+  - **Closure failed** — a boundary crossing with no named flow, a dangling endpoint, a duplicated/polarized invariant, or no Tracer Bullet. This is a broken contract.
+  - **`required` but no artifacts** — crossings declared, Archify present, and `.blueprints/{SBC_ID}/diagrams/` empty. Produce the diagram in `/sdd-apply`, or return to `/sdd-genesis`.
+- **`unmet` is NOT a failure.** It means crossings exist and Archify is not installed. Report it verbatim, do **not** block, and do **not** let it be resolved by deleting the crossing. Record it in the Verify Report as pending architectural debt.
+- **Without `--workspace` the gate cannot affirm compliance** — it runs in the repo and the blueprint lives in the workspace. Never read the absence of artifacts as a pass.
+
+> **The prose is the source of truth; the diagram is derived.** The gate verifies that every crossing has a named flow — that obligation is enforced on O(1) facts and does not depend on Archify at all. What Archify adds is the rendered artifact.
 
 ### Step 5: Sandbox Manifest Gate (active sandbox only)
 
@@ -173,6 +190,7 @@ Write `.tasks/{feature-name}/TASK-YYYY-NNN/verify-report.md`:
 
 - [ ] Service Discovery completed (mandatory)
 - [ ] Invariant Gate — `invariant-gate.mjs` exit 0 (every BIC Never Rule & Oracle has a test)
+- [ ] Blueprint Gate — `blueprint-gate.mjs` exit 0 (SBC closure holds; diagram artifacts present when crossings were declared and Archify is available)
 - [ ] Sandbox manifest valid — `validate-manifest.mjs` exit 0 (if active sandbox)
 - [ ] ICM Memory Health OK
 - [ ] No orphan tasks in `tasks.md`

@@ -18,6 +18,7 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { validateScaffoldParity } from './scaffold/validate-scaffold-parity.mjs'
 import {
+  checkArchifySkill,
   checkBinaries,
   checkIcmHealth,
   checkMemoryGovernance,
@@ -52,6 +53,8 @@ export async function runAoiDoctor(options = {}) {
 
   const binaryChecks = await checkBinaries(undefined, execFn)
   const icmCheck = await checkIcmHealth(execFn)
+  // No es un binario de PATH: se chequea aparte, por la ruta del renderizador.
+  const archifyCheck = checkArchifySkill()
   const registryCheck = checkTaskRegistry(repoRoot)
   const governanceCheck = checkMemoryGovernance(repoRoot)
   const resourcesCheck = checkResourcesStructure(repoRoot)
@@ -62,7 +65,9 @@ export async function runAoiDoctor(options = {}) {
     const parity = validateScaffoldParity(repoRoot)
     parityCheck = {
       status: parity.valid ? 'PASSED' : 'FAILED',
-      details: parity.valid ? `${parity.checkedFilesCount} governed files verified byte-for-byte` : `${parity.errors.length} parity mismatch(es)`,
+      details: parity.valid
+        ? `${parity.checkedFilesCount} governed files verified byte-for-byte`
+        : `${parity.errors.length} parity mismatch(es)`,
       errors: parity.errors,
     }
   } catch (err) {
@@ -80,15 +85,64 @@ export async function runAoiDoctor(options = {}) {
       details: b.details,
       mandatory: b.mandatory,
     })),
-    { category: 'Memory Engine', name: 'ICM Doctor & DB Integrity', status: icmCheck.status, details: icmCheck.details, mandatory: true },
-    { category: 'SDD Lifecycle', name: 'Task Registry (.tasks/registry.md)', status: registryCheck.status, details: registryCheck.details, mandatory: true },
-    { category: 'Governance', name: 'Memory Versioning (active.json)', status: governanceCheck.status, details: governanceCheck.details, mandatory: true },
-    { category: 'Multi-Harness', name: 'AI Assistant Rules & Adapters', status: harnessCheck.status, details: harnessCheck.details, mandatory: false },
-    { category: 'Scaffold Mirror', name: 'Root <-> Scaffold Parity', status: parityCheck.status, details: parityCheck.details, mandatory: true },
-    { category: 'Resources', name: '.resources/ Subtree', status: resourcesCheck.status, details: resourcesCheck.details, mandatory: false },
+    {
+      category: 'Memory Engine',
+      name: 'ICM Doctor & DB Integrity',
+      status: icmCheck.status,
+      details: icmCheck.details,
+      mandatory: true,
+    },
+    {
+      category: 'Tooling',
+      name: 'Archify Skill (Phase -2 diagram gate)',
+      status: archifyCheck.status,
+      details: archifyCheck.details,
+      // Opcional, como Headroom: es una skill de terceros que se baja de
+      // upstream, así que su ausencia degrada una compuerta opcional en vez de
+      // romper el sistema. Marcarlo obligatorio hacía que el doctor fallara por
+      // no tener una herramienta que el setup ya no exige.
+      mandatory: false,
+    },
+    {
+      category: 'SDD Lifecycle',
+      name: 'Task Registry (.tasks/registry.md)',
+      status: registryCheck.status,
+      details: registryCheck.details,
+      mandatory: true,
+    },
+    {
+      category: 'Governance',
+      name: 'Memory Versioning (active.json)',
+      status: governanceCheck.status,
+      details: governanceCheck.details,
+      mandatory: true,
+    },
+    {
+      category: 'Multi-Harness',
+      name: 'AI Assistant Rules & Adapters',
+      status: harnessCheck.status,
+      details: harnessCheck.details,
+      mandatory: false,
+    },
+    {
+      category: 'Scaffold Mirror',
+      name: 'Root <-> Scaffold Parity',
+      status: parityCheck.status,
+      details: parityCheck.details,
+      mandatory: true,
+    },
+    {
+      category: 'Resources',
+      name: '.resources/ Subtree',
+      status: resourcesCheck.status,
+      details: resourcesCheck.details,
+      mandatory: false,
+    },
   ]
 
-  const hasMandatoryFailure = allChecks.some((c) => c.mandatory && c.status === 'FAILED')
+  const hasMandatoryFailure = allChecks.some(
+    (c) => c.mandatory && c.status === 'FAILED'
+  )
   const totalPassed = allChecks.filter((c) => c.status === 'PASSED').length
   const totalWarnings = allChecks.filter((c) => c.status === 'WARNING').length
   const totalFailed = allChecks.filter((c) => c.status === 'FAILED').length
@@ -97,13 +151,21 @@ export async function runAoiDoctor(options = {}) {
     ok: !hasMandatoryFailure,
     timestamp: new Date().toISOString(),
     repoRoot,
-    summary: { total: allChecks.length, passed: totalPassed, warnings: totalWarnings, failed: totalFailed },
+    summary: {
+      total: allChecks.length,
+      passed: totalPassed,
+      warnings: totalWarnings,
+      failed: totalFailed,
+    },
     checks: allChecks,
   }
 }
 
 // Direct CLI Execution
-if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+if (
+  process.argv[1] &&
+  fileURLToPath(import.meta.url) === path.resolve(process.argv[1])
+) {
   ;(async () => {
     console.log('\n🩺 Running AOI 360° Workspace Health Diagnostic...\n')
     const report = await runAoiDoctor()
@@ -113,10 +175,14 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
       if (check.status === 'WARNING') symbol = '⚠️ '
       if (check.status === 'FAILED') symbol = '❌'
 
-      console.log(`  ${symbol} [${check.category}] ${check.name}: ${check.details}`)
+      console.log(
+        `  ${symbol} [${check.category}] ${check.name}: ${check.details}`
+      )
     }
 
-    console.log(`\nDiagnostic Summary: ${report.summary.passed} Passed, ${report.summary.warnings} Warnings, ${report.summary.failed} Failed\n`)
+    console.log(
+      `\nDiagnostic Summary: ${report.summary.passed} Passed, ${report.summary.warnings} Warnings, ${report.summary.failed} Failed\n`
+    )
 
     if (!report.ok) {
       console.error('❌ AOI Doctor detected mandatory integrity failures.\n')

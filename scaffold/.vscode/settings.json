@@ -1,4 +1,5 @@
 {
+  "editor.formatOnSave": false,
   "terminal.integrated.env.osx": {
     "PATH": "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:__LOCAL_BIN__:/usr/bin:/bin:/usr/sbin:/sbin"
   },

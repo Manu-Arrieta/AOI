@@ -84,11 +84,16 @@ describe('every probe has its evidence inside the context it is asked over', () 
   })
 
   it('declares which probes remain answer-shaped and therefore un-gated', () => {
-    // Six probes forbid a wrong answer rather than requiring a right one.
-    // Naming them here keeps the limit visible instead of letting a green
-    // suite imply coverage it does not have.
+    // Nueve sondas prohíben una respuesta equivocada en vez de exigir una
+    // correcta. Nombrar el número acá mantiene el límite visible en vez de
+    // dejar que una suite verde implique una cobertura que no tiene.
+    //
+    // El conteo es un TRIPWIRE deliberado y por eso está hardcodeado: sube
+    // cuando alguien agrega una sonda de este tipo, y obliga a reconocer que la
+    // cobertura conductual creció en la dirección débil (prohibir) y no en la
+    // fuerte (exigir). Pasó de 6 a 9 al sumar las tres de la Fase -2.
     const answerOnly = PROBES.filter((p) => p.forbidden).map((p) => p.id)
-    assert.equal(answerOnly.length, 6, 'cambió el conjunto de sondas solo verificables con un modelo')
+    assert.equal(answerOnly.length, 9, 'cambió el conjunto de sondas solo verificables con un modelo')
   })
 })
 
@@ -139,10 +144,16 @@ describe('behavioral probes are well formed', () => {
   it('probes every phase of the lifecycle, not only the ones that were edited', () => {
     // La primera version solo defendia los cortes de una rama, que es el mismo
     // error que auditar un diff: solo encuentra lo que alguien ya toco.
+    //
+    // Y la segunda hardcodeaba la lista de fases, que es peor: una fase nueva
+    // quedaba fuera del bucle Y del inventario, así que podía existir con CERO
+    // cobertura conductual sin que nada lo dijera. Se deriva de `SDD_PHASES`
+    // —la lista que el presupuesto ya mantiene— para que agregar una fase rompa
+    // este test en vez de esquivarlo.
     const phases = new Set(PROBES.map((p) => p.phase))
-    for (const expected of ['Phase_0_Frame', 'Phase_1_New', 'Phase_2_FF', 'Phase_3_Apply', 'Phase_4_Verify', 'Phase_5_Archive']) {
-      assert.ok(phases.has(expected), `ninguna sonda cubre ${expected}`)
-      assert.ok(coverageFor(expected).length > 0, `el inventario no declara ninguna decisión para ${expected}`)
+    for (const [key] of SDD_PHASES) {
+      assert.ok(phases.has(key), `ninguna sonda cubre ${key}`)
+      assert.ok(coverageFor(key).length > 0, `el inventario no declara ninguna decisión para ${key}`)
     }
   })
 

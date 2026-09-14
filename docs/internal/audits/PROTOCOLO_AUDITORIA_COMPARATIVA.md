@@ -909,6 +909,7 @@ estos nombres:
 | Fuera del bucle | Por qué |
 | :--- | :--- |
 | `pnpm aoi:mutation` | Es lento a propósito (corre cada área una vez por mutante). Va en la **Fase 8**, no acá. |
+| `pnpm aoi:blueprint-gate` | Compuerta de la Fase -2 (`/sdd-genesis`). Sin hechos `sbc.*` sale **SKIPPED** y no audita nada; se corre en el ciclo SDD, no en esta auditoría. Su rama de diagrama es condicional (cruces + Archify) y vive en el WORKSPACE. |
 | `pnpm aoi:stress-sdd` | Payload variable: se mide en la **Fase 6**, y casi nunca es comparable. |
 | `pnpm aoi:probes` | Genera sondas; se juzga en el **13.3**. |
 | `pnpm aoi:context`, `pnpm aoi:cache-prefix` (modo reporte) | Instrumentos de medición, no compuertas. Ya se usaron en las Fases 2–5. |

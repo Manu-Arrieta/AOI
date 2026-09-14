@@ -3,7 +3,7 @@
  * scripts/sdd-lifecycle/sdd-stress-suite.mjs
  *
  * Comprehensive End-to-End Stress Test & Token Accounting Suite for AOI SDD Lifecycle.
- * Evaluates token expenditure and savings across ALL 6 phases:
+ * Evaluates token expenditure and savings across ALL phases of the cycle:
  * Phase 0: /sdd-frame (Pre-Flight & O(1) Fact Grounding)
  * Phase 1: /sdd-new (Explore & Calibrated Relevance-Contrast)
  * Phase 2: /sdd-ff (Specify/Plan & TOON Subagent Serialization)
@@ -18,13 +18,12 @@ import { skeletonizeCode } from '../code-lens/ast-skeletonizer.mjs'
 import { scaffoldTaskFromSpecs } from './synthesize-stubs.mjs'
 import { shrinkTurns } from '../subagent-context/context-tombstone.mjs'
 import { distillTestOutput, distillTscOutput } from './diagnostic-distiller.mjs'
-import { unifyVerificationReports } from './mechanical-verify-union.mjs'
+import { unifyVerificationReports, formatUnifiedVerificationReport } from './mechanical-verify-union.mjs'
 import { arrangeContext } from './context-arranger.mjs'
 import { buildSubagentPayload } from '../subagent-context/sanitize-subagent-payload.mjs'
 import { createSubagentSandbox } from '../subagent-context/subagent-fiber-runner.mjs'
 import { auditPromptsDirectory } from '../multi-harness/cache-guard.mjs'
 import { printExecutiveSummary } from './stress-report.mjs'
-import { formatUnifiedVerificationReport } from './mechanical-verify-union.mjs'
 import {
   createLedger, estimateTokens, findRealTaskDir, readIfPresent,
   tryCommand, FIXTURE, MEASURED, SKIPPED,
@@ -34,6 +33,7 @@ import {
   buildDebuggingTurns, buildDiscoveryCorpus, captureRealTestRun,
   fallbackDebuggingTurns, fallbackDiscoveryCorpus, FALLBACK_CRASH,
 } from './real-corpus.mjs'
+import { runGenesisPhase } from './blueprint-gate.mjs'
 
 const ledger = createLedger()
 const WORKSPACE = path.basename(process.cwd())
@@ -44,7 +44,7 @@ const REAL_TASK_DIR = findRealTaskDir(process.cwd())
 console.log('═══════════════════════════════════════════════════════════════════════════════')
 console.log('   AOI SDD LIFECYCLE END-TO-END STRESS TEST & TOKEN TELEMETRY CERTIFICATION   ')
 console.log('═══════════════════════════════════════════════════════════════════════════════\n')
-
+if (!runGenesisPhase(ledger).ok) process.exitCode = 1   // Fase -2, ver genesis-phase.mjs
 // ─────────────────────────────────────────────────────────────────────────────
 // FASE 0: /sdd-frame — Pre-Flight & Grounding
 // ─────────────────────────────────────────────────────────────────────────────

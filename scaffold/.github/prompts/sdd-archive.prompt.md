@@ -127,6 +127,15 @@ Write `.tasks/{feature-name}/TASK-YYYY-NNN/archive-report.md`:
 ## What Was Deliberately Excluded
 - {item}: {reason}
 
+## Outstanding Architectural Debt
+- {diagram obligation in `unmet` state, or `none`}
+
+> Si el SBC declaró cruces y Archify no está instalado, el Blueprint Gate reportó
+> `unmet` y **no bloqueó**. Esa obligación no se salda sola: registrala acá con el
+> estado que quedó en `sbc.{SBC_ID}.diagram-obligation`, para que el próximo ciclo
+> la vea en vez de redescubrirla. Una obligación que sólo se imprimió una vez se
+> disuelve en el scroll, y una deuda invisible no es deuda — es una omisión.
+
 ## Reusable Patterns Extracted (DRY)
 - {pattern}: {location} — {when to reuse}
 

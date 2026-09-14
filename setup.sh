@@ -606,6 +606,64 @@ require_mcp_compressor() {
   exit 1
 }
 
+# Archify es OPCIONAL, como Headroom, y por una razón que no comparte con ninguna
+# otra herramienta: no ahorra un solo token y NO es un binario de PATH — es una
+# skill que se baja de upstream. Lo que compra es determinismo: un renderizador
+# local que valida un JSON-IR tipado, y `Architecture Delta`, que es lo que
+# detecta deriva cuando un SBC acoplado cambia bajo otro.
+#
+# Bloquear el setup por su ausencia acoplaba TODO AOI al repo de un tercero. Se
+# instaló bloqueante una vez y se corrigió el mismo día: el riesgo real es que
+# upstream mueva `bin/archify.mjs` y entonces ninguna instalación complete.
+# Instalación best-effort, y la exigencia vive donde corresponde — en la compuerta
+# de la Fase -2, que sólo se activa cuando el blueprint declara cruces.
+#
+# Se instala GLOBAL (~/.agents/skills), nunca dentro del repo: `.agents/skills`
+# es una ruta gobernada, y meter ahí un skill de terceros obligaría a espejar
+# copia byte a byte de upstream dentro del scaffold.
+get_archify_path() {
+  local candidate
+  for candidate in \
+    "$HOME/.agents/skills/archify/bin/archify.mjs" \
+    "$HOME/.claude/skills/archify/bin/archify.mjs" \
+    "$HOME/.agents/skills/archify/archify/bin/archify.mjs"; do
+    if [[ -f "$candidate" ]]; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+install_archify() {
+  if [[ ! -f "$SCRIPT_DIR/scripts/install-archify.sh" ]]; then
+    err "scripts/install-archify.sh no encontrado junto a setup.sh."
+    return 1
+  fi
+  bash "$SCRIPT_DIR/scripts/install-archify.sh" --yes
+}
+
+# Verificado por la RUTA DEL RENDERIZADOR, no por el código de salida del
+# instalador: el CLI `skills` sale 0 en los comandos que acepta, haya escrito o
+# no un destino que este repositorio pueda alcanzar.
+#
+# Advierte en vez de bloquear. La ausencia se reporta como WARNING, igual que
+# Headroom: una instalación puede terminar sin Archify y seguir siendo correcta,
+# porque la exigencia de diagrama pertenece a una fase que puede no ejecutarse
+# nunca.
+require_archify() {
+  local archify_path
+  archify_path="$(get_archify_path || true)"
+  if [[ -n "$archify_path" ]]; then
+    ok "Archify present ($archify_path)"
+    return 0
+  fi
+
+  warn "Archify no está instalado — la compuerta de diagrama de la Fase -2 quedará inactiva."
+  warn "Para habilitarla: bash scripts/install-archify.sh --yes"
+  return 0
+}
+
 get_codebase_memory_path() {
   local resolved_path
 
@@ -722,13 +780,16 @@ ensure_dashboard_runtime() {
   fi
 }
 
-# Install order: RTK → ICM → uv → Specify
+# Install order: RTK → ICM → uv → compressor → Archify (opcional) → Specify
 #
-# Every token-saving tool is mandatory. Headroom is the one exception, and it
-# stays optional in Phase 1.6. RTK used to be installed best-effort and the run
-# continued on failure with a warning, which meant an installation could end up
-# advertising 60-90% savings on shell output while running every command
-# unfiltered. A saving the product cannot guarantee is not a saving.
+# Every token-saving tool is mandatory. Headroom is the declared exception, and
+# Archify joins it — not because it saves tokens (it does not) but because it is
+# a third-party skill fetched from upstream at install time. RTK used to be
+# installed best-effort and the run continued on failure with a warning, which
+# meant an installation could end up advertising 60-90% savings on shell output
+# while running every command unfiltered. A saving the product cannot guarantee
+# is not a saving. Archify is the opposite case: it guarantees nothing about
+# cost, and its absence degrades one optional gate rather than the whole tool.
 if ! install_rtk; then
   err "RTK is mandatory: it is the proxy that keeps command output out of the context."
   err "Install it manually (brew install rtk-ai/tap/rtk) and rerun setup.sh."
@@ -746,6 +807,12 @@ if ! install_mcp_compressor; then
   exit 1
 fi
 require_mcp_compressor
+# Archify: best-effort, como Headroom. Su ausencia advierte y el setup continúa.
+if ! install_archify; then
+  warn "install-archify.sh falló — el setup continúa sin Archify."
+  warn "Reintentar luego: bash scripts/install-archify.sh --yes"
+fi
+require_archify
 install_specify || true
 
 # ── Phase 1.5: Optional NVIDIA customendpoint helper (non-blocking) ────────

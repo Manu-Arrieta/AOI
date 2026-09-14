@@ -28,6 +28,7 @@ Every task gets a unique ID: `TASK-{year}-{sequential}`
 
 | Gate                | From → To            | Who Approves | What Must Exist                                           |
 | ------------------- | -------------------- | ------------ | --------------------------------------------------------- |
+| Genesis Gate        | Genesis → Pre-Flight | Owner        | SBC closed per `blueprint-gate.mjs` (0 tokens); global invariants + boundary crossings persisted as O(1) facts |
 | Intent Gate         | Pre-Flight → Explore | Owner        | BIC calibrated; invariants + oracle persisted as O(1) facts |
 | Proposal Gate       | Explore → Specify    | Owner        | `proposal.md` with acceptance criteria                    |
 | Design Gate         | Specify → Plan     | Owner        | `spec.md` approved, no ambiguity                          |
@@ -42,6 +43,8 @@ Every task gets a unique ID: `TASK-{year}-{sequential}`
 
 ## Entrada al ciclo
 
+`/sdd-genesis` cuando lo que hay es una **idea abstracta** y todavía no existe arquitectura que la contenga
+(produce un SBC, y de él salen varios BIC);
 `/sdd-frame` cuando la intención llega en lenguaje natural y hay que destilar invariantes;
 `/sdd-new` cuando el requerimiento ya está acotado. Detalle en la skill `sdd-entry`.
 
@@ -53,6 +56,7 @@ Lo que se necesita en cualquier fase es saber a dónde enrutar:
 
 ### Decision Rule
 - *Broken behavior against existing rules?* ➔ `@triage-specialist` (diagnosis & TDD fix).
+- *Abstract idea, no architecture yet?* ➔ `/sdd-genesis` (co-design down to a System Blueprint Contract).
 - *Need to add or modify a business rule/invariant?* ➔ `/sdd-frame` (calibrate intent in natural language).
 - *Parameter, static copy, or trivial tweak?* ➔ Direct fix with test / ICM Fact (zero overhead).
 

@@ -28,6 +28,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
+import { SDD_PHASES } from './context-budget.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const UNION = path.join(HERE, 'mechanical-verify-union.mjs')
@@ -240,11 +241,13 @@ describe('cache-prefix guards the always-injected surface', () => {
     assert.match(r.stdout, /La masa repetida no muta/)
   })
 
-  it('reports the multiplier band, which is what makes a cut worth six', () => {
-    // A token cut in the universal band is paid in all six phases. Losing
-    // this table is how someone optimises the cheap half of the cycle.
+  it('reports the multiplier band, which is what makes a cut there compound', () => {
+    // Un token recortado en la banda universal se paga en TODAS las fases, así
+    // que el multiplicador ES el conteo de fases. Perder esta tabla es cómo
+    // alguien optimiza la mitad barata del ciclo. Se deriva en vez de fijarse:
+    // una fase nueva no debe invalidar la guarda en silencio.
     const r = run(CACHE_PREFIX, [], REPO)
-    assert.match(r.stdout, /x6\s+\d+/)
+    assert.match(r.stdout, new RegExp(`x${SDD_PHASES.length}\\s+\\d+`))
     assert.match(r.stdout, /PISO/)
   })
 })

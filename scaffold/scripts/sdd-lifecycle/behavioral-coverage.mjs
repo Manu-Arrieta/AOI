@@ -18,6 +18,11 @@
 
 /** Every load-bearing decision, grouped by the phase that owns it. */
 export const COVERAGE = [
+  // ── Phase -2 — Architectural Genesis ─────────────────────────────────────
+  { phase: 'Phase_-2_Genesis', decision: 'genesis-approval-meaning', why: 'Qué aprueba el Owner: coherencia, no correctitud' },
+  { phase: 'Phase_-2_Genesis', decision: 'genesis-zero-footprint', why: 'La fase NO debe crear TASK-ID, BIC ni carpetas' },
+  { phase: 'Phase_-2_Genesis', decision: 'genesis-diagram-deferred', why: 'Declara la obligación de diagrama; NO la produce' },
+
   // ── Phase 0 — Pre-Flight ─────────────────────────────────────────────────
   { phase: 'Phase_0_Frame', decision: 'entry-command', why: 'Elegir entre los dos comandos de entrada' },
   { phase: 'Phase_0_Frame', decision: 'zero-task-footprint', why: 'La fase NO debe crear TASK-ID ni carpetas' },

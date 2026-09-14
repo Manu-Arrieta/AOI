@@ -21,7 +21,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
-import { formatHarnessBands, harnessSkillBands } from './context-budget.mjs'
+import { SDD_PHASES, formatHarnessBands, harnessSkillBands } from './context-budget.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
@@ -42,8 +42,10 @@ describe('harnessSkillBands', () => {
   })
 
   it('cuenta cada fase en la que la skill se carga, no el archivo una vez', () => {
-    // Una skill de alcance universal se paga en las seis fases. Contarla una
-    // sola vez es exactamente cómo 21.572 tokens pasaron años sin medirse.
+    // Una skill de alcance universal se paga en TODAS las fases del ciclo.
+    // Contarla una sola vez es exactamente cómo 21.572 tokens pasaron años sin
+    // medirse. El multiplicador se DERIVA de la lista de fases: escribirlo a
+    // mano convierte "agregué una fase" en "el test miente".
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-bandas-'))
     const cuerpo = 'x'.repeat(400)
     for (const dir of ['.github/skills/icm', '.agents/skills/icm']) {
@@ -53,7 +55,11 @@ describe('harnessSkillBands', () => {
     const b = harnessSkillBands(root)
 
     assert.equal(b.github, b.agents)
-    assert.equal(b.github, Math.ceil(cuerpo.length / 4) * 6, 'no aplicó el multiplicador de las seis fases')
+    assert.equal(
+      b.github,
+      Math.ceil(cuerpo.length / 4) * SDD_PHASES.length,
+      `no aplicó el multiplicador de las ${SDD_PHASES.length} fases`,
+    )
   })
 })
 
