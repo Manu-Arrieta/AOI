@@ -17,9 +17,14 @@
 
 import { execFile } from 'node:child_process'
 import fs from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
+import { checkArchifySkill, findArchifyRenderer } from './archify-checks.mjs'
+
+// El split no cambia la superficie pública: se re-exporta lo que se movió, así
+// que `archify-path.mjs`, `aoi-doctor.mjs` y `blueprint-gate.mjs` siguen
+// importando de acá sin enterarse. Mismo precedente que `test-reachability.mjs`.
+export { checkArchifySkill, findArchifyRenderer }
 
 const execFileAsync = promisify(execFile)
 
@@ -65,57 +70,6 @@ export async function checkBinaries(binaries = [...MANDATORY_BINARIES, ...RECOMM
   }
 
   return results
-}
-
-/**
- * Localiza el renderizador de Archify y devuelve su ruta, o `''` si no está.
- *
- * Fuente ÚNICA de la detección: la usan el doctor y la compuerta de blueprint.
- * Duplicar la lista de candidatos garantizaría que las dos respuestas divergan,
- * y el síntoma sería una compuerta que cree que Archify no está mientras el
- * doctor dice que sí.
- *
- * Las rutas son las raíces globales de skills de los harnesses de AOI: `codex`
- * resuelve a `~/.agents/skills` y `claude-code` a `~/.claude/skills`.
- *
- * @param {string} [homeDir]
- * @returns {string} Ruta absoluta al renderizador, o '' si no existe.
- */
-export function findArchifyRenderer(homeDir = os.homedir()) {
-  const candidates = [
-    path.join(homeDir, '.agents/skills/archify/bin/archify.mjs'),
-    path.join(homeDir, '.claude/skills/archify/bin/archify.mjs'),
-    path.join(homeDir, '.agents/skills/archify/archify/bin/archify.mjs'),
-    path.join(homeDir, '.claude/skills/archify/archify/bin/archify.mjs'),
-  ]
-  return candidates.find((candidate) => fs.existsSync(candidate)) || ''
-}
-
-/**
- * Verifica la skill de Archify por la RUTA DEL RENDERIZADOR.
- *
- * No es un binario de PATH y no debe tratarse como uno: `which archify` no
- * encuentra nada aunque la skill esté perfectamente instalada, así que meterlo
- * en la lista de binarios produciría un falso negativo permanente. Lo que
- * importa es que el renderizador exista: es lo único que puede satisfacer la
- * obligación de diagrama de la Fase -2.
- *
- * Ausente es WARNING, no FAILED. Archify no ahorra tokens y no es un binario de
- * AOI: es una skill de terceros que se baja de upstream, así que su ausencia
- * degrada una compuerta opcional en vez de romper el sistema — el mismo trato
- * que Headroom, el otro caso declarado de dependencia no bloqueante.
- *
- * @param {string} [homeDir]
- * @returns {{ status: 'PASSED'|'WARNING', details: string }}
- */
-export function checkArchifySkill(homeDir = os.homedir()) {
-  const found = findArchifyRenderer(homeDir)
-  if (found) return { status: 'PASSED', details: found }
-
-  return {
-    status: 'WARNING',
-    details: 'renderer not found — la compuerta de diagrama de la Fase -2 queda inactiva (instalar: bash scripts/install-archify.sh --yes)',
-  }
 }
 
 /**

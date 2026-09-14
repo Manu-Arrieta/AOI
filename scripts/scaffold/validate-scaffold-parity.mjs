@@ -43,6 +43,11 @@ export const DEFAULT_SYNC_PATHS = [
   // verificada o root y espejo derivan sin que nada falle acá.
   'scripts/archify-path.mjs',
   'scripts/archify-path.test.mjs',
+  // `doctor-checks.mjs` lo importa y re-exporta, y el doctor de una instalación
+  // resuelve por acá la ruta del renderizador. Sin gobernar, la copia del espejo
+  // quedaría vieja y `aoi:doctor` rompería lejos de la causa — el mismo
+  // accidente que ya pasó dos veces con `doctor-checks.mjs`.
+  'scripts/archify-checks.mjs',
   'LICENSE',
   'package.json',
   'pnpm-workspace.yaml',
