@@ -289,14 +289,48 @@ flowchart LR
 
 ### Paso 1.2: `/sdd-frame` — Pre-Flight e Invariantes Globales (Fase 0)
 
-1. **Sin contrato BIC, el Invariant Gate se declara SKIPPED.** Igual que la génesis, la fase
-   es opcional y su ausencia no es un fallo.
+1. **Sin contrato BIC para auditar, el Invariant Gate se declara SKIPPED.** Igual que la
+   génesis, la fase es opcional y su ausencia no es un fallo. Se usa `--facts-file` con una
+   tabla capturada para que el resultado NO dependa del estado del store compartido.
    ```bash
-   node scripts/sdd-lifecycle/invariant-gate.mjs --entity "AOI TESTS" --tests-dir . ; echo "exit=$?"
-   # esperado: status SKIPPED  ·  exit=0
+   F="$(mktemp -t aoi-facts-XXXXXX.txt)"
+   # una tabla con hechos que no son `bic.*`: la entidad existe y no tiene contrato
+   printf 'key                              value\n%s\nsbc.SBC-2026-001.never.1          NUNCA registrar PII\n' \
+     '------------------------------------------------------------' > "$F"
+   node scripts/sdd-lifecycle/invariant-gate.mjs --entity "AOI TESTS" --tests-dir . --facts-file "$F"
+   # esperado: ## Invariant Gate: ⏭️ SKIPPED   ·   exit 0
+   rm -f "$F"
    ```
 
-2. **`/sdd-frame` LEE los invariantes globales del SBC.** Es el handoff que faltaba: el SBC
+2. **Y con un contrato sin tests, FALLA.** La otra mitad: un gate que nunca falla tampoco
+   sirve. Se verifica con la misma tabla capturada, para no depender de la suite real.
+   ```bash
+   F="$(mktemp -t aoi-facts-XXXXXX.txt)"
+   printf 'key                              value\n%s\nbic.BIC-2099-999.never.1          NUNCA algo que ningun test cita\n' \
+     '------------------------------------------------------------' > "$F"
+   node scripts/sdd-lifecycle/invariant-gate.mjs --entity "AOI TESTS" --tests-dir . --facts-file "$F" --exit-code
+   # esperado: ## Invariant Gate: 🛑 FAILED  ·  1 rule, 0 covered   ·   exit 1
+   rm -f "$F"
+   ```
+
+> [!WARNING]
+> **Una instalación limpia HEREDA el contrato del ciclo anterior, y el gate falla por eso.**
+> Los hechos `bic.*` viven en el store COMPARTIDO de ICM y la limpieza del Paso 0.1 NO los
+> toca: borra el workspace, no la memoria. Medido en esta auditoría: el contrato
+> `BIC-2026-001` de la corrida anterior seguía ahí y el gate reportó
+> **`FAILED · 3 rules · 0 covered`** contra una instalación recién creada, porque los tests
+> que lo citaban se habían ido con el workspace.
+>
+> **El gate tiene razón** —un contrato declarado sin test es un contrato sin enforcear— pero
+> el mensaje no distingue "el agente no escribió los tests" de "los tests ya no existen en
+> este workspace". Antes de leer ese FAIL como un defecto de la instalación, comprobá qué
+> contratos hay: `icm facts list "AOI TESTS" -p "bic."`. Un contrato de un ciclo ya archivado
+> se retira con `icm facts forget`, y entonces el gate vuelve a SKIPPED.
+>
+> Por eso este paso afirma con `--facts-file` y no contra el store vivo: un paso de auditoría
+> que cambia de resultado según lo que quedó de la corrida anterior no es un paso.
+
+3. **`/sdd-frame` LEE los invariantes globales del SBC.** Es el handoff que faltaba: el SBC
    los persistía y ningún prompt los leía, así que el propósito central de la génesis moría
    en ICM. El comando que el prompt prescribe tiene que devolverlos.
    ```bash
@@ -305,11 +339,12 @@ flowchart LR
    icm facts set --db "$DB" "AOI TESTS" "sbc.SBC-2026-001.crossing.1" "gateway -> billing: charge-request"
    icm facts list --db "$DB" "AOI TESTS" -p "sbc."
    # esperado: los dos hechos. Es el paso 3 del prompt de /sdd-frame.
-   grep -c 'facts list "{WORKSPACE}" -p "sbc\."' .github/prompts/sdd-frame.prompt.md
+   grep -c 'facts list "{WORKSPACE}" -p "sbc."' .github/prompts/sdd-frame.prompt.md
    # esperado: 1  (el prompt lo prescribe; sin esta línea el handoff no existe)
+   rm -f "$DB"
    ```
 
-3. **La cadena de traspaso cierra en las siete fases.** Un artefacto que una fase produce y
+4. **La cadena de traspaso cierra en las siete fases.** Un artefacto que una fase produce y
    ninguna posterior pide es la dirección que el checker no miraba.
    ```bash
    node scripts/sdd-lifecycle/phase-handoffs.mjs
@@ -318,9 +353,8 @@ flowchart LR
    #           (documentos vivos o terminales, leídos por humanos)
    ```
 
-4. **Limpieza.**
+5. **Limpieza.**
    ```bash
-   rm -f "$DB"
    icm facts list "AOI TESTS" -p "sbc."   # esperado: no facts for AOI TESTS
    ```
 

@@ -1447,10 +1447,35 @@ EOF
     done < <(printf '%s\n' "$FRESH_KEPT")
 
     if [ -n "$FRESH_SOLO_DEL_USUARIO" ]; then
+      # No todos los "intactos" son iguales, y decirlo importa. Un archivo que
+      # difiere del scaffold no es sólo un archivo preservado: es un archivo
+      # que se quedó con una versión vieja y que NO va a recibir las mejoras.
+      # Medido en la auditoría de v2.5.0: la matriz de verificación del
+      # workspace quedó 167 líneas atrás del repo, así que el runbook que se
+      # ejecuta no tenía ni el respaldo previo a la limpieza ni la cobertura de
+      # las siete fases — mejoras hechas, precisamente, al runbook.
+      FRESH_DIFIEREN=""
+      while IFS= read -r kept; do
+        [ -n "$kept" ] || continue
+        if [ -f "$SCAFFOLD_DIR/$kept" ] && ! cmp -s "$PROJECT_PATH/$kept" "$SCAFFOLD_DIR/$kept"; then
+          FRESH_DIFIEREN="${FRESH_DIFIEREN}${kept}"$'\n'
+        fi
+      done < <(printf '%s' "$FRESH_SOLO_DEL_USUARIO")
+
       warn "Estos archivos ya existían y NO se tocaron:"
       while IFS= read -r kept; do
-        [ -n "$kept" ] && printf '     %s\n' "$kept"
+        [ -n "$kept" ] || continue
+        if [ -n "$FRESH_DIFIEREN" ] && grep -qxF "$kept" < <(printf '%s' "$FRESH_DIFIEREN"); then
+          printf '     %s   ← DIFIERE de la versión de AOI\n' "$kept"
+        else
+          printf '     %s\n' "$kept"
+        fi
       done < <(printf '%s' "$FRESH_SOLO_DEL_USUARIO")
+
+      if [ -n "$FRESH_DIFIEREN" ]; then
+        warn "Los marcados con ← DIFIERE conservan tu versión y NO reciben las mejoras de AOI."
+        warn "Si el archivo es un runbook o un documento, comparalo: cp del scaffold arriba."
+      fi
       warn "Si querés la versión de AOI de alguno, copiala vos desde el scaffold."
     fi
   fi
