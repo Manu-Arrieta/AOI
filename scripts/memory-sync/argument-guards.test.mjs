@@ -35,7 +35,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { describe, it } from 'node:test'
+import { describe, it, after } from 'node:test'
 
 import { activateVersion } from './activate-version.mjs'
 import { exportMemoryBundle } from './export-memory-bundle.mjs'
@@ -51,6 +51,9 @@ import { resolveActiveVersion } from './resolve-active-version.mjs'
 const REJECTED = { vacio: '', enBlanco: '   ', noString: 42 }
 
 const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-guards-'))
+// Es un directorio de módulo —compartido por todos los casos— así que se limpia
+// con un `after` de módulo. Medido: 2 directorios por corrida sin esto.
+after(() => fs.rmSync(raiz, { recursive: true, force: true }))
 
 /**
  * Argumentos que PASAN todas las guardias, para romper exactamente una.

@@ -3,15 +3,26 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, it } from 'node:test'
+import { describe, it, after } from 'node:test'
 import { skillsFor, SKILL_SCOPE } from './instruction-scope.mjs'
 import { secondOrderAgents, SECOND_ORDER } from './phase-references.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
+/**
+ * Directorios descartables, borrados al cerrar el módulo.
+ *
+ * Medido: 3 directorios por corrida quedaban en `$TMPDIR` para siempre.
+ */
+const temporales = []
+after(() => {
+  for (const dir of temporales) fs.rmSync(dir, { recursive: true, force: true })
+})
+
 /** Builds a throwaway workspace with skills of exact sizes. */
 function workspace(skills) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-skills-'))
+  temporales.push(root)
   for (const [name, chars] of Object.entries(skills)) {
     const dir = path.join(root, '.github/skills', name)
     fs.mkdirSync(dir, { recursive: true })

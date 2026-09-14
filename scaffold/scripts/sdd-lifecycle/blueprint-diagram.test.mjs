@@ -93,8 +93,18 @@ describe('diagramObligation — tres estados, no un booleano', () => {
 })
 
 describe('auditDiagramArtifacts — sin workspace no hay cumplimiento que afirmar', () => {
-  const workspace = (files) => {
+  /**
+   * Workspace descartable que se limpia SOLO.
+   *
+   * Registra el borrado con `t.after`, no al final del test. La diferencia no es
+   * cosmética: un `rmSync` en la última línea no corre si un assert falla antes,
+   * y un test que falla es justo cuando más se acumula basura. Medido antes de
+   * este cambio: **15 directorios por corrida**, uno por cada test de este
+   * bloque, que quedaban en `$TMPDIR` para siempre.
+   */
+  const workspace = (t, files) => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-dias-'))
+    t.after(() => fs.rmSync(root, { recursive: true, force: true }))
     for (const rel of files) {
       const full = path.join(root, rel)
       fs.mkdirSync(path.dirname(full), { recursive: true })
@@ -103,36 +113,36 @@ describe('auditDiagramArtifacts — sin workspace no hay cumplimiento que afirma
     return root
   }
 
-  it('encuentra los diagramas en la ruta que fija el prompt', () => {
-    const root = workspace([`${BLUEPRINT_DIR}/SBC-1/diagrams/flow.sequence.html`])
+  it('encuentra los diagramas en la ruta que fija el prompt', (t) => {
+    const root = workspace(t, [`${BLUEPRINT_DIR}/SBC-1/diagrams/flow.sequence.html`])
     const audit = auditDiagramArtifacts(root, 'SBC-1')
     assert.equal(audit.present, true)
     assert.deepEqual(audit.files, ['flow.sequence.html'])
   })
 
-  it('un IR sin render cuenta como trabajo hecho', () => {
+  it('un IR sin render cuenta como trabajo hecho', (t) => {
     // Reportar "cero diagramas" sobre un JSON-IR presente sería falso: el
     // trabajo está, sólo falta el render.
-    const root = workspace([`${BLUEPRINT_DIR}/SBC-1/diagrams/flow.sequence.json`])
+    const root = workspace(t, [`${BLUEPRINT_DIR}/SBC-1/diagrams/flow.sequence.json`])
     assert.equal(auditDiagramArtifacts(root, 'SBC-1').present, true)
   })
 
-  it('directorio vacío no es cumplimiento', () => {
-    const root = workspace([`${BLUEPRINT_DIR}/SBC-1/diagrams/.keep`])
+  it('directorio vacío no es cumplimiento', (t) => {
+    const root = workspace(t, [`${BLUEPRINT_DIR}/SBC-1/diagrams/.keep`])
     // `.keep` no es html ni json: el directorio existe pero no hay artefacto.
     assert.equal(auditDiagramArtifacts(root, 'SBC-1').present, false)
   })
 
-  it('ignora archivos que no son diagramas', () => {
-    const root = workspace([
+  it('ignora archivos que no son diagramas', (t) => {
+    const root = workspace(t, [
       `${BLUEPRINT_DIR}/SBC-1/diagrams/notas.md`,
       `${BLUEPRINT_DIR}/SBC-1/diagrams/flow.html`,
     ])
     assert.deepEqual(auditDiagramArtifacts(root, 'SBC-1').files, ['flow.html'])
   })
 
-  it('no confunde el blueprint de otro con el propio', () => {
-    const root = workspace([`${BLUEPRINT_DIR}/SBC-2/diagrams/otro.html`])
+  it('no confunde el blueprint de otro con el propio', (t) => {
+    const root = workspace(t, [`${BLUEPRINT_DIR}/SBC-2/diagrams/otro.html`])
     assert.equal(auditDiagramArtifacts(root, 'SBC-1').present, false)
     assert.equal(auditDiagramArtifacts(root, 'SBC-2').present, true)
   })

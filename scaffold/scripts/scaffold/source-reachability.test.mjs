@@ -15,7 +15,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, it } from 'node:test'
+import { describe, it, after } from 'node:test'
 import {
   auditReachability,
   reachabilityFailures,
@@ -25,9 +25,20 @@ import {
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
+/**
+ * Árboles descartables, borrados al cerrar el módulo.
+ *
+ * Medido: 3 directorios por corrida quedaban en `$TMPDIR` para siempre.
+ */
+const temporales = []
+after(() => {
+  for (const dir of temporales) fs.rmSync(dir, { recursive: true, force: true })
+})
+
 /** A throwaway tree of sources and tests under `scripts/`. */
 function tree(files) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-reach-'))
+  temporales.push(root)
   for (const [rel, body] of Object.entries(files)) {
     const full = path.join(root, rel)
     fs.mkdirSync(path.dirname(full), { recursive: true })

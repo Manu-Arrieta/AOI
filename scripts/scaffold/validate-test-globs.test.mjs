@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, it } from 'node:test'
+import { describe, it, after } from 'node:test'
 import {
   auditTestGlobs,
   collectTestGlobs,
@@ -16,9 +16,22 @@ import {
 /** La raíz del repositorio, para los casos que corren el CLI en un hijo. */
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 
+/**
+ * Directorios descartables, borrados al cerrar el módulo.
+ *
+ * Acumulados y no limpiados caso por caso porque el helper se invoca inline y
+ * no hay variable por test donde borrar. Medido: 9 directorios por corrida
+ * quedaban en `$TMPDIR` para siempre.
+ */
+const temporales = []
+after(() => {
+  for (const dir of temporales) fs.rmSync(dir, { recursive: true, force: true })
+})
+
 /** Builds a throwaway workspace with a package.json and optional test files. */
 function workspace({ scripts, files = [], devRepo = false }) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-globs-'))
+  temporales.push(root)
   fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ scripts }))
   if (devRepo) fs.writeFileSync(path.join(root, 'setup.sh'), '#!/usr/bin/env bash\n')
   for (const rel of files) {

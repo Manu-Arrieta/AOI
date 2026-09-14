@@ -22,7 +22,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, it } from 'node:test'
+import { describe, it, after } from 'node:test'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const PROTOCOL = 'AOI_REAL_WORLD_VERIFICATION_MATRIX.md'
@@ -89,10 +89,23 @@ describe('todo enlace al protocolo resuelve', () => {
 })
 
 describe('control negativo — la compuerta reconoce el defecto que la motivó', () => {
+  /**
+   * Directorios descartables, borrados al cerrar el describe.
+   *
+   * Acumulados y no limpiados caso por caso porque el helper se invoca inline y
+   * no hay variable por test donde borrar. Medido: 6 directorios por corrida
+   * quedaban en `$TMPDIR` para siempre.
+   */
+  const temporales = []
+  after(() => {
+    for (const dir of temporales) fs.rmSync(dir, { recursive: true, force: true })
+  })
+
   // Sin esto no habría forma de distinguir una compuerta que verifica de una
   // que sale 0 porque no miró nada, que es media auditoría de este proyecto.
   function arbolConTerceraCopia() {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-protocolo-'))
+    temporales.push(dir)
     fs.mkdirSync(path.join(dir, 'scaffold'), { recursive: true })
     fs.mkdirSync(path.join(dir, 'docs/internal/verification'), { recursive: true })
     fs.writeFileSync(path.join(dir, PROTOCOL), 'vigente\n')
@@ -110,6 +123,7 @@ describe('control negativo — la compuerta reconoce el defecto que la motivó',
 
   it('detecta un enlace que apunta a una ruta que no existe', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-protocolo-'))
+    temporales.push(dir)
     fs.writeFileSync(path.join(dir, PROTOCOL), 'vigente\n')
     fs.writeFileSync(path.join(dir, 'README.md'), `[Protocolo](docs/internal/verification/${PROTOCOL})\n`)
 

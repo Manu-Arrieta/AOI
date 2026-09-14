@@ -36,7 +36,7 @@ describe('the installer does not run what the operator typed', () => {
     assert.match(SETUP, /case "\$PROJECT_PATH" in\n\s*"~"\)/)
   })
 
-  it('the replacement expands ~ and executes nothing', () => {
+  it('the replacement expands ~ and executes nothing', (t) => {
     // Exercised through bash so the claim is about the shell, not the regex.
     const script = `
       PROJECT_PATH="$1"
@@ -51,7 +51,12 @@ describe('the installer does not run what the operator typed', () => {
     assert.equal(run('~'), '/casa')
     assert.equal(run('~/proyecto'), '/casa/proyecto')
 
-    const marker = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-eval-')), 'pwned')
+    const markerDir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-eval-'))
+    // El marcador tiene que sobrevivir al assert para poder comprobar que NO se
+    // creó, así que el directorio se borra recién al cerrar el test. Medido: 3
+    // directorios por corrida sin esto.
+    t.after(() => fs.rmSync(markerDir, { recursive: true, force: true }))
+    const marker = path.join(markerDir, 'pwned')
     const hostile = `/tmp/$(touch ${marker})x`
     assert.equal(run(hostile), hostile, 'la ruta se transformó, así que algo la expandió')
     assert.equal(fs.existsSync(marker), false, 'se ejecutó el comando embebido en la ruta')

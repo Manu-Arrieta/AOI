@@ -18,7 +18,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { describe, it } from 'node:test'
+import { describe, it, after } from 'node:test'
 import { auditServerWrapping, generateCompactSignature, validateGatewayConfig } from './setup-mcp-gateway.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
@@ -107,8 +107,20 @@ describe('ningún flag puede saltear la auditoría del Invariante 1', () => {
   const CLI = path.join(REPO, 'scripts/mcp-gateway/setup-mcp-gateway.mjs')
 
   /** Workspace mínimo: la config que el CLI busca, más un mcp.json elegido. */
+  //
+  // Los directorios se acumulan y se borran en un `after` del describe, no al
+  // final de cada caso. El helper se invoca inline —`cwd: workspaceWith(...)`—
+  // así que no hay una variable por test donde limpiar, y un borrado al final
+  // no correría igual si un assert falla antes. Medido: **18 directorios por
+  // corrida** quedaban en `$TMPDIR` para siempre.
+  const temporales = []
+  after(() => {
+    for (const dir of temporales) fs.rmSync(dir, { recursive: true, force: true })
+  })
+
   function workspaceWith(servers) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-gateway-'))
+    temporales.push(dir)
     fs.mkdirSync(path.join(dir, 'scripts/mcp-gateway'), { recursive: true })
     fs.mkdirSync(path.join(dir, '.vscode'), { recursive: true })
     fs.copyFileSync(
