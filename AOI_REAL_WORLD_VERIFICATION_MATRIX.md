@@ -66,7 +66,7 @@ comprobado nada.
 ```bash
 pnpm aoi:test-globs    # todo glob declarado resuelve, y ningún test queda fuera de todos los runners
 pnpm aoi:srp           # Invariante 5, en modo trinquete
-pnpm aoi:cache-prefix  # la masa que se recarga en las 6 fases no muta ni es volátil
+pnpm aoi:cache-prefix  # la masa que se recarga en TODAS las fases no muta ni es volátil
 pnpm aoi:tools         # cada herramienta de ahorro obligatoria está exigida Y se invoca en el ciclo
 pnpm aoi:hooks         # cada hook declarado llega a un harness y su script existe y es ejecutable
 pnpm aoi:registry      # el registry y el disco declaran las mismas tareas
@@ -77,7 +77,7 @@ pnpm aoi:invariant-gate -- --entity "AOI TESTS" --tests-dir . --exit-code
 | :--- | :--- |
 | `aoi:test-globs` | `node --test` sale 0 cuando el glob no matchea nada. Un directorio de tests vaciado, o nunca instalado, dejaba la cadena en verde sobre cero aserciones. En el repo exige que **todo** glob resuelva; en un workspace instalado tolera lo que legítimamente no se instala, pero sigue fallando si un directorio existe y quedó sin tests. |
 | `aoi:srp` | El límite de 300 LOC solo se miraba por tarea y como WARNING, así que tres archivos se pasaron sin que nadie lo notara. El trinquete falla ante un archivo nuevo por encima del límite, ante deuda vieja que **crece**, y ante una entrada del presupuesto que ya no viola — la lista no puede pudrirse. Solo se mueve hacia abajo. |
-| `aoi:cache-prefix` | Ocho archivos se recargan en las seis fases. Si uno adquiere contenido volátil, o si una fase reescribe una superficie que otra vuelve a leer, no hay cache de prefijo que sobreviva y el costo se paga seis veces sin que nada falle. `aoi:cache-guard` no lo veía: lee los primeros 1.500 caracteres de cada prompt, y por eso el `$(date +%Y)` del offset 7.223 de `sdd-frame.prompt.md` le pasa limpio. |
+| `aoi:cache-prefix` | Ocho archivos se recargan en TODAS las fases del ciclo. Si uno adquiere contenido volátil, o si una fase reescribe una superficie que otra vuelve a leer, no hay cache de prefijo que sobreviva y el costo se paga una vez por fase sin que nada falle. `aoi:cache-guard` no lo veía: lee los primeros 1.500 caracteres de cada prompt, y por eso el `$(date +%Y)` del offset 7.223 de `sdd-frame.prompt.md` le pasa limpio. |
 | `aoi:tools` | Una herramienta de ahorro puede estar instalada, tener tests verdes y no participar del flujo real. Pasó dos veces: `context-tombstone` funcionaba y solo el benchmark lo invocaba, y el proxy `mcp-compressor` que el Invariante 1 declara como SU mecanismo no era ni dependencia. Verifica las dos mitades — que el instalador la exija y que alguien la invoque en el ciclo real, nunca en el benchmark — y distingue lo que comprime la comunicación entre componentes de lo que optimiza una fase. Todas obligatorias salvo Headroom. |
 | `aoi:hooks` | Cinco declaraciones en `.github/hooks/` que ningún harness cargaba, mientras una skill de la banda ×6 le decía al agente que la regla se aplicaba sola. Una declaración cableada a medias se reporta huérfana: media cadena de hooks es una regla que dispara a veces, peor que una que no dispara nunca. También falla si el `.sh` que invoca no existe o no es ejecutable. |
 | `aoi:registry` | `/sdd-new` lee el registry para asignar el próximo TASK-ID. Un ciclo real lo encontró declarando **cero** tareas con dos en disco, así que habría entregado un id ya tomado y la colisión habría sido silenciosa. Compara ambos lados y calcula el próximo id sobre el máximo de los dos. |
@@ -384,9 +384,26 @@ EOF
 
 ## 5.0 Línea Base de Benchmark — Ciclo 2026-09-12 · `v2.3.0` + cambios sin commitear de `v2.4.0` (ejecutado en AOI TESTS)
 
+> [!WARNING]
+> **DRIFT REGISTRADO el 2026-09-14: los números de esta sección ya no describen el sistema.**
+>
+> Se agregó la **Fase -2 (`/sdd-genesis`)**, así que el ciclo pasó de **6 a 7 fases**. Eso mueve
+> todo lo que dependa del conteo: el **piso del repositorio es hoy 105.378** (era 88.897), la
+> **banda universal pasó a ×7** y la masa repetida a **64,0%** sobre 8 archivos.
+>
+> **La sección se conserva sin editar a propósito.** Es el registro de lo que se midió en
+> `v2.3.0`, y reescribirla borraría la evidencia del salto. Lo que cambia es su vigencia.
+>
+> **La nueva línea base de INSTALACIÓN todavía no existe**: estos 105.378 son del **repositorio**,
+> medidos con `auditContextBudget`, no de un `setup.sh` sobre `AOI TESTS`. No se inventa un
+> número de instalación — se mide en el próximo ciclo, que es lo que esta matriz certifica.
+>
+> Estado del repositorio en `v2.5.0` (taggeado, árbol limpio): **PISO 105.378 · TECHO 124.078 ·
+> 7 fases · 28 sondas · 1221 tests / 267 suites · paridad 361 archivos · huella de masa repetida
+> `f6358ced3ce51ee0`**.
+
 > [!IMPORTANT]
-> **Ésta es la línea base vigente.** El próximo ciclo se compara contra estos números.
-> Versión instalada: **`v2.3.0` más los cambios sin commitear de la auditoría de protocolo**.
+> **Ésta era la línea base vigente al 2026-09-12.** Versión instalada: **`v2.3.0` más los cambios sin commitear de la auditoría de protocolo**.
 > **No es reproducible desde un tag** y así queda etiquetada: un install desde un árbol sucio
 > no se puede reconstruir desde el historial. Anotá siempre el `git describe --tags` **y** si
 > el árbol estaba limpio.
