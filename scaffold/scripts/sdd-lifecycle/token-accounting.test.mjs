@@ -60,7 +60,11 @@ describe('provenance reporting', () => {
     ledger.record('b', 'b', { raw: 10, opt: 1, provenance: FIXTURE })
     ledger.record('c', 'c', { raw: 0, opt: 0, provenance: SKIPPED })
 
-    assert.deepEqual(provenanceBreakdown(ledger), { measured: 1, fixture: 1, skipped: 1 })
+    assert.deepEqual(provenanceBreakdown(ledger), {
+      measured: 1,
+      fixture: 1,
+      skipped: 1,
+    })
   })
 
   it('exposes provenance in every table row so no number looks unearned', () => {
@@ -105,7 +109,8 @@ describe('provenance reporting', () => {
 
   it('sí lo encabeza como completo cuando las seis fases son reales', () => {
     const ledger = createLedger()
-    for (let i = 0; i < 6; i++) ledger.record(`p${i}`, `p${i}`, { raw: 10, opt: 1, provenance: MEASURED })
+    for (let i = 0; i < 6; i++)
+      ledger.record(`p${i}`, `p${i}`, { raw: 10, opt: 1, provenance: MEASURED })
     const out = formatTotals(ledger)
     assert.match(out, /CICLO SDD COMPLETO/)
     assert.doesNotMatch(out, /NO es un ciclo completo/)
@@ -119,7 +124,8 @@ describe('findRealTaskDir', () => {
     const partial = path.join(root, '.tasks/feature-b/TASK-2026-002')
     fs.mkdirSync(complete, { recursive: true })
     fs.mkdirSync(partial, { recursive: true })
-    for (const f of ['spec.md', 'design.md', 'tasks.md']) fs.writeFileSync(path.join(complete, f), 'x')
+    for (const f of ['spec.md', 'design.md', 'tasks.md'])
+      fs.writeFileSync(path.join(complete, f), 'x')
     fs.writeFileSync(path.join(partial, 'spec.md'), 'x')
 
     assert.equal(findRealTaskDir(root), complete)

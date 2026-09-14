@@ -33,7 +33,10 @@ export function tryCommand(bin, args = []) {
   try {
     return {
       ok: true,
-      stdout: execFileSync(bin, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }),
+      stdout: execFileSync(bin, args, {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }),
     }
   } catch {
     return { ok: false, stdout: '' }
@@ -89,14 +92,29 @@ export function createLedger() {
      */
     record(key, name, { raw, opt, provenance, details = '', source = '' }) {
       if (provenance === SKIPPED) {
-        this.phases[key] = { name, provenance, details, source, rawTokens: 0, optimizedTokens: 0, savedTokens: 0, percentSaved: 'n/a' }
+        this.phases[key] = {
+          name,
+          provenance,
+          details,
+          source,
+          rawTokens: 0,
+          optimizedTokens: 0,
+          savedTokens: 0,
+          percentSaved: 'n/a',
+        }
         return this.phases[key]
       }
       const saved = Math.max(0, raw - opt)
       const pct = raw > 0 ? `${((saved / raw) * 100).toFixed(1)}%` : '0.0%'
       this.phases[key] = {
-        name, provenance, details, source,
-        rawTokens: raw, optimizedTokens: opt, savedTokens: saved, percentSaved: pct,
+        name,
+        provenance,
+        details,
+        source,
+        rawTokens: raw,
+        optimizedTokens: opt,
+        savedTokens: saved,
+        percentSaved: pct,
       }
       this.totals.rawTokens += raw
       this.totals.optimizedTokens += opt
@@ -109,11 +127,16 @@ export function createLedger() {
 /** Counts phases by provenance. */
 export function provenanceBreakdown(ledger) {
   const counts = { [MEASURED]: 0, [FIXTURE]: 0, [SKIPPED]: 0 }
-  for (const p of Object.values(ledger.phases)) counts[p.provenance] = (counts[p.provenance] || 0) + 1
+  for (const p of Object.values(ledger.phases))
+    counts[p.provenance] = (counts[p.provenance] || 0) + 1
   return counts
 }
 
-const BADGE = { [MEASURED]: '● real', [FIXTURE]: '○ fixture', [SKIPPED]: '– skipped' }
+const BADGE = {
+  [MEASURED]: '● real',
+  [FIXTURE]: '○ fixture',
+  [SKIPPED]: '– skipped',
+}
 
 /** Renders the ledger as rows suitable for console.table. */
 export function toTableRows(ledger) {
@@ -123,7 +146,7 @@ export function toTableRows(ledger) {
     Origen: BADGE[p.provenance] || p.provenance,
     'Tokens Base': p.rawTokens,
     'Tokens AOI': p.optimizedTokens,
-    'Ahorro': p.savedTokens,
+    Ahorro: p.savedTokens,
     '% Reducción': p.percentSaved,
   }))
 }
@@ -131,7 +154,8 @@ export function toTableRows(ledger) {
 /** Renders the totals block, including an explicit fidelity verdict. */
 export function formatTotals(ledger) {
   const { rawTokens, optimizedTokens, savedTokens } = ledger.totals
-  const pct = rawTokens > 0 ? ((savedTokens / rawTokens) * 100).toFixed(1) : '0.0'
+  const pct =
+    rawTokens > 0 ? ((savedTokens / rawTokens) * 100).toFixed(1) : '0.0'
   const counts = provenanceBreakdown(ledger)
   const total = counts[MEASURED] + counts[FIXTURE] + counts[SKIPPED]
   // El titular tiene que decir lo mismo que la línea de fidelidad de abajo.
@@ -156,7 +180,9 @@ export function formatTotals(ledger) {
       `${counts[FIXTURE]} sobre fixtures · ${counts[SKIPPED]} omitidas.`,
   ]
   if (counts[FIXTURE] > 0) {
-    lines.push('Las fases marcadas "fixture" ejercitan el mecanismo real con entrada sintética:')
+    lines.push(
+      'Las fases marcadas "fixture" ejercitan el mecanismo real con entrada sintética:'
+    )
     lines.push('su porcentaje es representativo, su volumen absoluto no.')
   }
   return lines.join('\n')
