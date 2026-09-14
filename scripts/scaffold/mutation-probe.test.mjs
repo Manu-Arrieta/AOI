@@ -15,12 +15,18 @@ import os from 'node:os'
 import path from 'node:path'
 import { describe, it, after } from 'node:test'
 import {
+  assertEnoughMemory,
+  availableMemoryMB,
   GHOST_MARK,
-  isGhostToReap,
+  ghostPidToReap,
   literalMask,
+  MUTANT_HEAP_MB,
   mutationsFor,
+  NO_PID,
   OPERATORS,
+  parseVmStat,
   reapGhosts,
+  suiteFailureTail,
   suitePasses,
 } from './mutation-probe.mjs'
 
@@ -68,6 +74,31 @@ describe('mutations are generated only where a decision is made', () => {
     const m = mutationsFor('const a = 1\nif (b === c) {}')
     assert.equal(m[0].line, 2)
     assert.equal(m[0].before, 'if (b === c) {}')
+  })
+
+  it('no muta dentro de un literal de regex', () => {
+    // El caso que causo 21 abortos por OOM el 2026-09-13. El operador `and→or`
+    // declara su patron como `/ && /g`, y ese `&&` vive dentro de un literal.
+    // Sin taparlo, el operador se mutaba a SI MISMO y el resultado era
+    // `/ || /g`.
+    assert.deepEqual(mutationsFor("  { find: / && /g, replace: ' || ' },"), [])
+  })
+
+  it('termina aunque un operador matchee la cadena vacia', () => {
+    // La regresion directa del OOM. `/ || /` NO busca el texto ` || `: los `|`
+    // son alternancia y la rama del medio esta vacia, asi que el patron matchea
+    // la cadena vacia en cualquier posicion. Con flag `g` un match de longitud
+    // cero no avanza `lastIndex`.
+    //
+    // Sin el guardian de `mutationsFor` este caso NO vuelve: acumula `out.push`
+    // hasta que el proceso aborta por `FatalProcessOutOfMemory`. Que este test
+    // termine es la asercion, y el tope de tamano es la segunda: la rama de
+    // espacio si matchea con longitud 1 y genera un mutante por espacio, pero
+    // nunca una cantidad que dependa de cuantas veces gire el bucle.
+    const emptyBranch = [{ name: 'rama-vacia', find: / || /g, replace: ' || ' }]
+    const r = mutationsFor('if (a === b) return 1', emptyBranch)
+    assert.ok(Array.isArray(r), 'no volvio: el while no termino')
+    assert.ok(r.length < 100, `genero ${r.length} mutantes y no esta acotado por la linea`)
   })
 })
 
@@ -237,26 +268,66 @@ describe('reapGhosts', () => {
    * de 62 y la compuerta tenía razón: la lógica estaba sin atar.
    */
   const SELF = 4242
+  const MARKS = [GHOST_MARK]
   const GHOST_PATH = `/tmp/${GHOST_MARK}abc/ghost-1.mjs`
   const GHOSTS = [
-    ['una línea de ps normal', 900, GHOST_PATH, true],
-    ['el pid propio, que no se puede recoger solo', SELF, GHOST_PATH, false],
-    ['un pid cero', 0, GHOST_PATH, false],
-    ['un pid negativo', -1, GHOST_PATH, false],
-    ['un primer campo que no es un número', 'x', GHOST_PATH, false],
-    ['una línea sin la marca', 900, '/tmp/otra-cosa.mjs', false],
+    ['una línea de ps normal', 900, GHOST_PATH, 900],
+    ['el pid propio, que no se puede recoger solo', SELF, GHOST_PATH, NO_PID],
+    // El pid 1 es el proceso más destructivo que se puede matar, y es el único
+    // que distingue `pid <= 1` de `pid < 1`. Sin este caso, el mutante que
+    // afloja la guarda a `< 1` autoriza a `launchd`, y no hay nada más que lo
+    // note: en una corrida real `pid 1` nunca lleva la marca, así que el
+    // agujero quedaría latente hasta que alguien recogiera fantasmas con una
+    // tabla de procesos que sí lo tuviera marcado.
+    ['el pid 1, que es launchd', 1, GHOST_PATH, NO_PID],
+    ['un pid cero', 0, GHOST_PATH, NO_PID],
+    ['un pid negativo', -1, GHOST_PATH, NO_PID],
+    ['un primer campo que no es un número', 'x', GHOST_PATH, NO_PID],
+    ['una línea sin la marca', 900, '/tmp/otra-cosa.mjs', NO_PID],
   ]
 
   for (const [what, pid, args, expected] of GHOSTS) {
-    it(`${expected ? 'recoge' : 'ignora'} ${what}`, () => {
-      assert.equal(isGhostToReap(`${pid} node ${args}`, SELF), expected)
+    it(`${expected === NO_PID ? 'ignora' : 'recoge'} ${what}`, () => {
+      assert.equal(ghostPidToReap(`${pid} node ${args}`, MARKS, SELF), expected)
     })
   }
 
   it('la marca se busca en toda la línea, no solo al principio', () => {
     // `ps` pone el pid primero, así que la marca nunca está al inicio de la
     // línea. Un `startsWith` la perdería entera.
-    assert.equal(isGhostToReap(`900 node ${GHOST_PATH}`, SELF), true)
+    assert.equal(ghostPidToReap(`900 node ${GHOST_PATH}`, MARKS, SELF), 900)
+  })
+
+  it('sin marcas declaradas no autoriza ningún pid', () => {
+    // La dirección segura: un llamador que se olvide del argumento deja
+    // fantasmas vivos, y eso se nota; al revés mataría procesos ajenos en
+    // silencio. Es el caso que hace que `marks` vacío no sea "matar todo".
+    assert.equal(ghostPidToReap(`900 node ${GHOST_PATH}`, [], SELF), NO_PID)
+    assert.equal(ghostPidToReap(`900 node ${GHOST_PATH}`, undefined, SELF), NO_PID)
+  })
+
+  it('el número de procesos que autoriza es acotado, no la tabla entera', () => {
+    // El caso que falla si el predicado se vuelve peligroso, y el que faltaba
+    // cuando esto mató aplicaciones del Owner.
+    //
+    // El probe se mide a sí mismo, así que este predicado recibe mutantes
+    // `true→false` y `&&→||`. En su versión booleana, el mutante que convierte
+    // su `return false` en `return true` lo hacía matchear 492 de 492 líneas
+    // de `ps`, incluido `pid 1`, y `reapGhosts` recorría la tabla de procesos
+    // mandándole SIGKILL a cada uno.
+    //
+    // Un predicado que devuelve un PID sólo puede autorizar UNO por línea. Si
+    // alguna mutación volviera esto "todo", acá se ve: la cantidad de pids
+    // autorizados no puede superar la de líneas que llevan la marca.
+    const ps = execFileSync('ps', ['-Ao', 'pid,args'], { encoding: 'utf8' })
+    const lines = ps.split('\n').filter(Boolean)
+    const marked = lines.filter((l) => l.includes(GHOST_MARK)).length
+    const authorized = lines.filter((l) => ghostPidToReap(l, MARKS, SELF) !== NO_PID).length
+    assert.equal(
+      authorized,
+      marked,
+      `autorizó ${authorized} de ${lines.length} líneas contra ${marked} con la marca`
+    )
   })
 
   const countMark = (mark) =>
@@ -323,6 +394,280 @@ describe('literalMask', () => {
     const mask = literalMask('x = 1 // resto')
     assert.equal(mask[0], false)
     assert.equal(mask.at(-1), true)
+  })
+
+  it('tapa un literal de regex, para que un operador no se mute a si mismo', () => {
+    const line = "  { name: 'and→or', find: / && /g, replace: ' || ' },"
+    const mask = literalMask(line)
+    const at = line.indexOf(' && ')
+    assert.equal(mask[at], true, 'el && dentro de / && /g quedo expuesto a mutacion')
+    // El `/` que abre y el `g` que cierra tambien quedan dentro.
+    assert.equal(mask[line.indexOf('/ && /')], true, 'no tapo el delimitador de apertura')
+  })
+
+  it('no confunde una division con un literal de regex', () => {
+    // La direccion peligrosa de la heuristica: tapar una division esconderia
+    // un sitio real de mutacion y bajaria el conteo sin que nada lo diga.
+    const line = 'const ratio = total / count'
+    const mask = literalMask(line)
+    assert.equal(mask[line.indexOf('/')], false, 'tapo una division')
+  })
+
+  it('respeta una clase de caracteres con una barra adentro', () => {
+    // `/[/]/g`: la barra de adentro de `[...]` no cierra el literal. Sin
+    // respetar la clase el cierre quedaria en la barra equivocada, el `g`
+    // quedaria fuera del enmascarado y una mutacion podria caer ahi.
+    const line = 'const re = /[/]/g'
+    const mask = literalMask(line)
+    assert.equal(mask[line.indexOf('/[/]/')], true, 'no tapo la apertura')
+    assert.equal(mask[line.lastIndexOf('/')], true, 'no tapo la barra de cierre')
+    assert.equal(mask.at(-1), false, 'el flag quedo adentro del literal')
+  })
+})
+
+/**
+ * La precondición de memoria.
+ *
+ * El probe corre en la máquina del operador y sus mutantes pueden asignar sin
+ * freno. Medido el 2026-09-13: con la máquina al 91% de uso, el pico de memoria
+ * de una corrida alcanzó para que el sistema empiece a terminar procesos
+ * ajenos —el Owner lo vio como "se cerraron todas las aplicaciones"— mientras
+ * el probe seguía midiendo como si nada. Un instrumento que daña el entorno
+ * donde mide no es un instrumento, y la única defensa que tiene el probe sobre
+ * eso es negarse a arrancar cuando sabe que no hay lugar.
+ *
+ * `assertEnoughMemory` y `availableMemoryMB` se fijan con casos directos por la
+ * misma razón que `suitePasses`: la decisión se puede atar, el efecto no.
+ */
+describe('precondición de memoria', () => {
+  it('corta cuando hay menos que el mínimo', () => {
+    assert.throws(
+      () => assertEnoughMemory(2048, () => 300),
+      /Memoria reclamable insuficiente/,
+      'no cortó con 300 MB contra un mínimo de 2048'
+    )
+  })
+
+  it('deja pasar cuando alcanza, y devuelve lo que midió', () => {
+    assert.equal(assertEnoughMemory(2048, () => 9000), 9000)
+  })
+
+  it('el borde exacto pasa', () => {
+    // La dirección peligrosa de un `<` mal puesto: cortar una corrida que sí
+    // entraba deja al operador sin medición y sin saber por qué.
+    assert.equal(assertEnoughMemory(2048, () => 2048), 2048)
+  })
+
+  it('en esta máquina mide algo plausible', () => {
+    const mb = availableMemoryMB()
+    assert.ok(Number.isFinite(mb), `no devolvió un número: ${mb}`)
+    assert.ok(mb > 0, `devolvió ${mb} MB, que no puede ser`)
+    // Cota superior: la RAM física. Un error de unidades (páginas contra
+    // bytes) daría un número enorme y la precondición dejaría de cortar nunca.
+    const totalMB = Math.round(os.totalmem() / 1048576)
+    assert.ok(mb <= totalMB, `devolvió ${mb} MB y la máquina tiene ${totalMB} MB`)
+  })
+
+  it('el techo de heap deja margen sobre el uso real medido', () => {
+    // Medido: la suma de TODOS los procesos de `node --test` de una corrida
+    // normal pico en 322 MB, así que uno solo queda muy por debajo. El techo
+    // tiene que estar cómodo por arriba de eso: uno demasiado bajo haría morir
+    // mutantes legítimos por memoria y los contaría como muertos, que infla el
+    // score en la dirección peligrosa.
+    assert.ok(
+      MUTANT_HEAP_MB >= 384,
+      `el techo de ${MUTANT_HEAP_MB} MB queda demasiado cerca del pico medido (322 MB)`
+    )
+  })
+})
+
+/**
+ * El parseo de `vm_stat`, con valores EXACTOS y no "plausibles".
+ *
+ * Los tres mutantes de esta función —los dos `||` de los fallbacks y el `> 0`—
+ * sobrevivían cuando la lectura y el parseo vivían en la misma función, porque
+ * `vm_stat` siempre contesta bien en macOS y el camino de fallback nunca se
+ * recorría. Un test que sólo pide "un número plausible" no distingue un fallback
+ * bien puesto de uno roto.
+ *
+ * La fixture imita la salida real, con el tamaño de página declarado y los
+ * números terminados en punto como los emite macOS.
+ */
+describe('parseVmStat', () => {
+  const vmStat = (pageSize, free, inactive, speculative) =>
+    [
+      `Mach Virtual Memory Statistics: (page size of ${pageSize} bytes)`,
+      `Pages free:                          ${free}.`,
+      'Pages active:                       434628.',
+      `Pages inactive:                    ${inactive}.`,
+      `Pages speculative:                 ${speculative}.`,
+    ].join('\n')
+
+  it('usa el tamaño de página que declara la salida, no el de por defecto', () => {
+    // Distingue `|| 4096` de `&& 4096`: con `&&` el tamaño quedaría siempre en
+    // 4096 y el resultado sería distinto, porque acá la salida declara 16384.
+    // 3500 páginas × 16384 / 1 MiB = 54,7 -> 55
+    assert.equal(parseVmStat(vmStat(16384, 1000, 2000, 500)), 55)
+    // El mismo conteo con páginas de 4096 da 13,7 -> 14
+    assert.equal(parseVmStat(vmStat(4096, 1000, 2000, 500)), 14)
+  })
+
+  it('suma las tres bandas reclamables, no sólo la libre', () => {
+    // Distingue `|| 0` de `&& 0` en el contador: con `&&` cada banda daría 0 y
+    // el total sería 0, no 55. Y fija que `Pages free` sola no alcanza, que es
+    // el motivo por el que la función existe.
+    const libre = parseVmStat(vmStat(16384, 1000, 0, 0))
+    const todas = parseVmStat(vmStat(16384, 1000, 2000, 500))
+    assert.ok(todas > libre, `sumar las bandas no cambió el resultado: ${todas} vs ${libre}`)
+    assert.equal(todas, 55)
+  })
+
+  it('un contador ausente cuenta como cero, no como uno', () => {
+    // Con páginas de 1 MiB un solo contador mal sumado cambia el resultado en
+    // MB, que es lo que hace distinguible este caso. Con el tamaño real de
+    // macOS (16 KiB) una página de más se pierde en el redondeo y el mutante
+    // sobrevive: el caso tiene que elegir la escala donde la diferencia se ve.
+    const soloLibre = [
+      'Mach Virtual Memory Statistics: (page size of 1048576 bytes)',
+      'Pages free:                          1000.',
+    ].join('\n')
+    assert.equal(parseVmStat(soloLibre), 1000)
+    const conInactiva = [soloLibre, 'Pages inactive:                       250.'].join('\n')
+    assert.equal(parseVmStat(conInactiva), 1250)
+  })
+
+  it('cae al tamaño de página por defecto si la salida no lo declara', () => {
+    // 3500 × 4096 / 1 MiB = 13,7 -> 14. Si el default no se aplicara, el
+    // `undefined` daría NaN y el test lo vería.
+    const sinDeclarar = [
+      'Pages free:                          1000.',
+      'Pages inactive:                      2000.',
+      'Pages speculative:                    500.',
+    ].join('\n')
+    assert.equal(parseVmStat(sinDeclarar), 14)
+    assert.equal(parseVmStat(sinDeclarar, 16384), 55)
+  })
+
+  it('devuelve 0 cuando la salida no trae los contadores', () => {
+    assert.equal(parseVmStat(''), 0)
+    assert.equal(parseVmStat('algo que no es vm_stat'), 0)
+    assert.equal(parseVmStat('Mach Virtual Memory Statistics: (page size of 16384 bytes)'), 0)
+  })
+
+  it('sin contadores cae al fallback, no lo trata como medición válida', () => {
+    // Distingue `mb > 0` de `mb >= 0`. El cero significa "la salida no traía
+    // los contadores", no "hay cero memoria": tratarlo como medición válida
+    // haría que la precondición corte siempre, incluso en una máquina sana.
+    //
+    // El fallback se INYECTA. La versión anterior comparaba contra una lectura
+    // de `os.freemem()` hecha por el test, o sea contra OTRA lectura de una
+    // métrica viva. En macOS `os.freemem()` está cacheado y las dos coincidían;
+    // en Linux lee en cada llamada y la aserción es flaky. Medido el
+    // 2026-09-13: `pnpm test` pasaba local y el trinquete fallaba en CI.
+    assert.equal(availableMemoryMB(() => vmStat(16384, 0, 0, 0), () => 1234), 1234)
+    assert.equal(availableMemoryMB(() => '', () => 4321), 4321)
+    assert.equal(availableMemoryMB(() => 'nada', () => 0), 0)
+  })
+
+  it('con contadores devuelve la medición, no el fallback', () => {
+    assert.equal(availableMemoryMB(() => vmStat(16384, 1000, 2000, 500), () => 9999), 55)
+  })
+
+  it('si la sonda lanza, cae al fallback en vez de propagar', () => {
+    // Sin inyectar el fallback esto también compara una lectura viva contra
+    // otra, y es flaky por la misma razón que el caso de arriba.
+    assert.equal(
+      availableMemoryMB(() => {
+        throw new Error('vm_stat no existe')
+      }, () => 777),
+      777
+    )
+  })
+})
+
+/**
+ * `suiteFailureTail`: el diagnóstico que faltaba cuando el baseline falla.
+ *
+ * `suitePasses` corre los hijos con `stdio: 'ignore'`, así que el único mensaje
+ * de un baseline roto era "la suite ya falla sin mutar". Medido el 2026-09-13:
+ * un commit pasó `pnpm test` en macOS y rompió el trinquete en Linux, y el log
+ * de CI no alcanzaba para saber cuál de los diez archivos del área falló.
+ */
+describe('suiteFailureTail', () => {
+  const TAILS = []
+  after(() => {
+    for (const d of TAILS) fs.rmSync(d, { recursive: true, force: true })
+  })
+
+  const area = (archivos) => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-tail-'))
+    TAILS.push(dir)
+    for (const [nombre, cuerpo] of Object.entries(archivos)) {
+      fs.writeFileSync(path.join(dir, nombre), cuerpo)
+    }
+    return dir
+  }
+
+  const ROJO = `import { test } from 'node:test'
+import assert from 'node:assert/strict'
+test('falla a proposito', () => assert.equal(1, 2, 'mensaje unico del test'))
+`
+  const VERDE = `import { test } from 'node:test'
+import assert from 'node:assert/strict'
+test('pasa', () => assert.equal(1, 1))
+`
+
+  it('trae la falla con su mensaje, que es lo que el log de CI no mostraba', () => {
+    const tail = suiteFailureTail(area({ 'rojo.test.mjs': ROJO }), '*.test.mjs', 60000)
+    assert.match(tail, /mensaje unico del test/, `no nombró la falla: ${tail.slice(0, 200)}`)
+    assert.match(tail, /# fail 1/, `no trajo el resumen: ${tail.slice(0, 200)}`)
+  })
+
+  it('conserva el mensaje del bloque YAML, que un filtro por líneas destruye', () => {
+    // La regresión más fina: `error: |-` es una cabecera de bloque y el mensaje
+    // está en la línea SIGUIENTE, sin ningún patrón que lo delate. Un filtro
+    // línea por línea deja la cabecera huérfana y pierde el contenido.
+    const tail = suiteFailureTail(area({ 'rojo.test.mjs': ROJO }), '*.test.mjs', 60000)
+    assert.match(tail, /error: \|-/, 'no trajo la cabecera del bloque')
+    assert.match(tail, /mensaje unico del test/, 'trajo la cabecera pero perdió el contenido')
+  })
+
+  it('una suite verde devuelve su resumen sin fallas', () => {
+    const tail = suiteFailureTail(area({ 'verde.test.mjs': VERDE }), '*.test.mjs', 60000)
+    assert.match(tail, /# pass 1/, `no trajo el resumen: ${tail.slice(0, 200)}`)
+    assert.doesNotMatch(tail, /mensaje unico/, 'reportó una falla en una suite verde')
+  })
+
+  it('avisa en vez de devolver vacío cuando no hay tests', () => {
+    // Un glob que no matchea nada hace que `node --test` salga 0 sin correr
+    // nada: la dirección peligrosa es reportar eso como "sin fallas".
+    const tail = suiteFailureTail(area({}), '*.test.mjs', 60000)
+    assert.ok(tail.length > 0, 'devolvió vacío')
+    assert.match(tail, /no imprimió nada|# tests 0/, `no avisó: ${tail.slice(0, 200)}`)
+  })
+
+  it('respeta el tope de tamaño sin perder la falla', () => {
+    // El fixture tiene VARIAS fallas para que la salida sea bastante más larga
+    // que el tope: con una sola el contraste es de 700 contra 640 chars y el
+    // caso no probaría nada. El tope elegido (600) es el menor que alcanza el
+    // mensaje de la primera falla, que cae alrededor del 40% de la salida.
+    const varias = Array.from(
+      { length: 6 },
+      (_, i) => `test('falla ${i}', () => assert.equal(1, 2, 'mensaje unico ${i}'))`
+    ).join('\n')
+    const fixture = `import { test } from 'node:test'
+import assert from 'node:assert/strict'
+${varias}
+`
+    const completo = suiteFailureTail(area({ 'rojo.test.mjs': fixture }), '*.test.mjs', 60000)
+    const corto = suiteFailureTail(area({ 'rojo.test.mjs': fixture }), '*.test.mjs', 60000, null, 600)
+    assert.ok(corto.length <= 700, `no respetó el tope: ${corto.length} chars`)
+    assert.ok(
+      corto.length < completo.length / 2,
+      `el tope no recortó lo suficiente: ${corto.length} vs ${completo.length}`
+    )
+    assert.match(corto, /mensaje unico 0/, 'el recorte se llevó la primera falla')
+    assert.match(corto, /# fail 6/, 'el recorte se llevó el resumen')
   })
 })
 
