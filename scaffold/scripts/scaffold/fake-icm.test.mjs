@@ -23,6 +23,7 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { describe, it } from 'node:test'
 
@@ -112,5 +113,27 @@ describe('el icm de mentira responde como el real', () => {
     assert.equal(fs.existsSync(icm.dir), true)
     removeFakeIcm(icm.dir)
     assert.equal(fs.existsSync(icm.dir), false)
+  })
+
+  it('removeFakeIcm se puede llamar dos veces sin lanzar', () => {
+    // Un `after()` que limpia dos veces —o un caso que falla y su `after` corre
+    // igual— pasa por acá. Con `{ force: false }` la segunda llamada tira
+    // ENOENT, porque el directorio ya no está: el cleanup `force: true` existe
+    // justamente para que sea idempotente.
+    //
+    // Medido el 2026-09-13: ese mutante sobrevivía porque ningún test llamaba a
+    // la función sobre un directorio ya borrado, así que la rama del `force`
+    // nunca se ejercitaba con el directorio ausente.
+    const icm = fakeIcm({ topics: ['x'] })
+    removeFakeIcm(icm.dir)
+    assert.doesNotThrow(() => removeFakeIcm(icm.dir), 'la segunda limpieza lanzó')
+  })
+
+  it('removeFakeIcm tolera un directorio que nunca existió', () => {
+    // La misma rama por el otro camino: un `after()` puede correr sobre un
+    // `fakeIcm()` que no llegó a crear nada.
+    const inexistente = path.join(os.tmpdir(), `aoi-fake-icm-inexistente-${process.pid}`)
+    assert.equal(fs.existsSync(inexistente), false)
+    assert.doesNotThrow(() => removeFakeIcm(inexistente), 'lanzó sobre un directorio ausente')
   })
 })

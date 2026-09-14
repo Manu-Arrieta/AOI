@@ -1,9 +1,14 @@
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
 import { auditSrp, listSourceFiles, LEGACY_BUDGET, MAX_LOC } from './validate-srp.mjs'
+
+/** La raiz del repositorio, para el caso que corre el CLI en un hijo. */
+const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
 /**
  * Builds a throwaway tree whose files have exact line counts. `setup.sh` marks
@@ -158,5 +163,39 @@ describe('a link is a path to code, not a way around the rule', () => {
     fs.symlinkSync(path.join(root, 'no-existe'), path.join(root, 'scripts/roto.mjs'))
 
     assert.deepEqual(listSourceFiles(root), [])
+  })
+})
+
+/**
+ * La guarda de CLI, por spawn.
+ *
+ * `if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(...))`
+ * es invisible importando el modulo: `main()` no corre, asi que ninguna
+ * asercion sobre las funciones exportadas la toca. Un `and->or` la desactiva.
+ *
+ * La asercion tiene dos partes y la segunda es la que importa: verificar solo
+ * que no imprime la cabecera deja pasar un import que CRASHEA. Con la guarda
+ * mutada a `||`, `path.resolve(process.argv[1])` recibe `undefined` bajo
+ * `node -e`, tira un TypeError, y el modulo no llega a imprimir nada — asi que
+ * una asercion que solo mira la ausencia de la cabecera pasa por la razon
+ * equivocada. Medido el 2026-09-13 en el mismo caso de `source-reachability`.
+ */
+describe('la guarda de CLI de validate-srp', () => {
+  const corre = (args) => spawnSync(process.execPath, args, { encoding: 'utf8', timeout: 30000, cwd: REPO })
+
+  it('importar el modulo NO corre la auditoria ni crashea', () => {
+    const r = corre(['-e', "import('./scripts/scaffold/validate-srp.mjs')"])
+    const out = `${r.stdout ?? ''}${r.stderr ?? ''}`
+    assert.doesNotMatch(out, /AOI SRP Ratchet/, `el import ejecuto main(): ${out.slice(0, 200)}`)
+    assert.equal(r.status, 0, `el import fallo con status ${r.status}: ${out.slice(0, 300)}`)
+    assert.doesNotMatch(out, /TypeError/, 'el import crasheo en vez de solo no ejecutar')
+  })
+
+  it('correrlo como script SI la corre y sale 0 en el repo real', () => {
+    const r = corre(['scripts/scaffold/validate-srp.mjs'])
+    const out = `${r.stdout ?? ''}${r.stderr ?? ''}`
+    assert.match(out, /AOI SRP Ratchet/, `no ejecuto la auditoria: ${out.slice(0, 200)}`)
+    assert.equal(r.status, 0, `salio ${r.status}: ${out.slice(0, 300)}`)
+    assert.match(out, /No new SRP violations/, 'no trajo el veredicto verde')
   })
 })

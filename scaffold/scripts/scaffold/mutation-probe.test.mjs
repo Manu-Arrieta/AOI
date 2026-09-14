@@ -26,8 +26,10 @@ import {
   OPERATORS,
   parseVmStat,
   reapGhosts,
+  reapStaleSuites,
   suiteFailureTail,
   suitePasses,
+  suitesPidFile,
 } from './mutation-probe.mjs'
 
 describe('mutations are generated only where a decision is made', () => {
@@ -668,6 +670,82 @@ ${varias}
     )
     assert.match(corto, /mensaje unico 0/, 'el recorte se llevó la primera falla')
     assert.match(corto, /# fail 6/, 'el recorte se llevó el resumen')
+  })
+})
+
+describe('reapStaleSuites recoge lo que dejó una corrida muerta', () => {
+  const FILES = []
+  after(() => {
+    for (const f of FILES) fs.rmSync(f, { force: true })
+  })
+
+  const anota = (dueno, pids) => {
+    const file = suitesPidFile(dueno)
+    FILES.push(file)
+    fs.writeFileSync(file, pids.join('\n') + '\n')
+    return file
+  }
+
+  /**
+   * Un pid que con certeza NO existe, y se espera a que deje de existir.
+   *
+   * La primera versión lanzaba el proceso, lo mataba y devolvía el pid. Fallaba
+   * por una carrera: `kill` retorna antes de que el proceso desaparezca, así que
+   * `process.kill(pid, 0)` todavía contestaba que sí y `reapStaleSuites` lo veía
+   * vivo — correctamente, según lo que le decían. El test era el racy, no el
+   * código.
+   */
+  const pidMuerto = async () => {
+    const p = spawn(process.execPath, ['-e', ''], { stdio: 'ignore' })
+    const n = p.pid
+    p.kill('SIGKILL')
+    for (let i = 0; i < 100; i++) {
+      try {
+        process.kill(n, 0)
+      } catch {
+        return n
+      }
+      await new Promise((r) => setTimeout(r, 20))
+    }
+    return n
+  }
+
+  it('un dueño muerto con un pid inexistente no explota y no rompe nada', async () => {
+    // El caso central, y sin depender del timing de procesos: el dueño no existe,
+    // el pid anotado tampoco, y la función tiene que devolver 0 en vez de tirar.
+    anota(await pidMuerto(), [await pidMuerto()])
+    assert.equal(typeof reapStaleSuites(), 'number')
+  })
+
+  it('no toca el archivo de un dueño que sigue vivo', async () => {
+    // La dirección peligrosa: matar por estar anotado por otro. El archivo de
+    // este proceso —que está vivo— tiene que quedar intacto.
+    const file = anota(process.pid, [await pidMuerto()])
+    const antes = fs.readFileSync(file, 'utf8')
+    reapStaleSuites()
+    assert.equal(fs.readFileSync(file, 'utf8'), antes, 'borró el pidfile de un dueño vivo')
+  })
+
+  it('borra el pidfile de un dueño muerto, para no reintentar en cada corrida', async () => {
+    const file = anota(await pidMuerto(), [await pidMuerto()])
+    reapStaleSuites()
+    assert.ok(!fs.existsSync(file), 'dejó el pidfile de un dueño muerto')
+  })
+
+  it('ignora un pidfile con contenido que no son números', async () => {
+    // Un archivo corrupto no puede tumbar la corrida ni, peor, hacer que se
+    // mate un pid por accidente.
+    const file = suitesPidFile(await pidMuerto())
+    FILES.push(file)
+    fs.writeFileSync(file, 'basura\n\n-1\n0\n')
+    assert.equal(typeof reapStaleSuites(), 'number')
+  })
+
+  it('el nombre del pidfile lleva el pid del dueño', () => {
+    // Dos corridas en paralelo no pueden compartir archivo: la segunda
+    // recogería las suites de la primera, que está viva y midiendo.
+    assert.match(suitesPidFile(1234), /aoi-probe-suites\.1234$/)
+    assert.notEqual(suitesPidFile(1), suitesPidFile(2))
   })
 })
 

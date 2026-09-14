@@ -320,7 +320,14 @@ export function suitePasses(cwd, glob, timeout = 180000, runner = null) {
   return new Promise((resolve) => {
     const child = spawn(command, args, { ...opts, env, stdio: 'ignore', detached: true })
 
+    // Registrada mientras vive: en memoria para el camino normal, y en disco
+    // para el caso en que maten a este proceso y la suite quede huérfana.
+    LIVE_SUITES.add(child.pid)
+    recordSuite(child.pid)
+
     const killGroup = () => {
+      LIVE_SUITES.delete(child.pid)
+      recordSuite(child.pid, true)
       try {
         process.kill(-child.pid, 'SIGKILL')
       } catch {
@@ -512,8 +519,141 @@ export function assertEnoughMemory(minMB = MIN_FREE_MB, probeFn = availableMemor
   return have
 }
 
+/**
+ * Los pids de las suites que ESTE proceso lanzó y todavía no cerró.
+ *
+ * Es un registro y no una inferencia, y la diferencia es la que cierra la fuga.
+ * `reapGhosts` matcheaba por la línea de `ps`, y el proceso que de verdad había
+ * que recoger —el `node --test suite.test.mjs`— **no lleva ninguna marca en sus
+ * argumentos**: la marca está en su directorio de trabajo, y `ps -Ao args` no
+ * muestra el cwd. Medido el 2026-09-13: un huérfano de 49 minutos con `cwd` en
+ * `aoi-probe-ghost-7IuozJ` y la línea `node --test-concurrency=2 suite.test.mjs`,
+ * que ningún patrón de `args` podía atrapar.
+ *
+ * Tampoco alcanza con matar al padre del fantasma: la jerarquía real es
+ * `node --test` (detached, propio grupo) -> runner por archivo -> fantasma, y el
+ * abuelo queda sin marca y vivo.
+ *
+ * Registrar el pid en el momento en que se lanza es exacto: no hay que adivinar
+ * cuál es, ya se sabe.
+ */
+const LIVE_SUITES = new Set()
+
+/**
+ * El archivo donde se anotan los pids de las suites vivas.
+ *
+ * El registro en memoria no sobrevive a que maten al probe. Y esa es
+ * exactamente la forma en que se produce la fuga: medido el 2026-09-13, el
+ * operador corre `pkill -9 -f mutation-probe` —o el probe se cae por OOM— y sus
+ * suites, lanzadas con `detached: true`, sobreviven al padre porque nadie llega
+ * a matar su grupo. Un huérfano de 49 minutos, con su fantasma como hijo.
+ *
+ * El archivo no se limpia solo si el proceso muere de golpe, así que se guarda
+ * el pid DEL PROBE junto al de la suite: una corrida posterior sólo recoge las
+ * suites cuyo probe ya no existe. Un proceso vivo no se mata por estar anotado
+ * por otro.
+ *
+ * El nombre lleva el pid del dueño para que dos corridas en paralelo no
+ * compartan archivo.
+ */
+export function suitesPidFile(ownerPid = process.pid) {
+  return path.join(os.tmpdir(), `aoi-probe-suites.${ownerPid}`)
+}
+
+/** Anota (o quita) una suite del archivo. Los errores no interrumpen la medición. */
+function recordSuite(pid, quitar = false) {
+  const file = suitesPidFile()
+  try {
+    const previos = fs.existsSync(file)
+      ? fs.readFileSync(file, 'utf8').split('\n').filter((l) => l.trim() !== '')
+      : []
+    const siguientes = quitar
+      ? previos.filter((l) => Number(l) !== pid)
+      : [...new Set([...previos, String(pid)])]
+    fs.writeFileSync(file, siguientes.join('\n') + (siguientes.length > 0 ? '\n' : ''))
+  } catch {
+    // El pidfile es una red de seguridad, no un requisito para medir.
+  }
+}
+
+/**
+ * Recoge las suites que quedaron de corridas ANTERIORES ya muertas.
+ *
+ * Lee los pidfiles de este directorio temporal, y para cada uno comprueba si su
+ * probe dueño sigue vivo. Sólo si ya no está, mata el grupo de las suites
+ * anotadas: un proceso vivo no se toca por estar anotado por otro.
+ *
+ * @returns {number} cuántos grupos se terminaron
+ */
+export function reapStaleSuites() {
+  let reaped = 0
+  let archivos = []
+  try {
+    archivos = fs.readdirSync(os.tmpdir()).filter((n) => n.startsWith('aoi-probe-suites.'))
+  } catch {
+    return 0
+  }
+  for (const nombre of archivos) {
+    const dueno = Number(nombre.slice('aoi-probe-suites.'.length))
+    if (!Number.isInteger(dueno) || dueno === process.pid) continue
+    let vivo = true
+    try {
+      process.kill(dueno, 0)
+    } catch {
+      vivo = false
+    }
+    if (vivo) continue
+    const file = path.join(os.tmpdir(), nombre)
+    let pids = []
+    try {
+      pids = fs.readFileSync(file, 'utf8').split('\n').filter((l) => l.trim() !== '').map(Number)
+    } catch {
+      pids = []
+    }
+    for (const pid of pids) {
+      if (!Number.isInteger(pid) || pid <= 1) continue
+      try {
+        process.kill(-pid, 'SIGKILL')
+        reaped += 1
+      } catch {
+        try {
+          process.kill(pid, 'SIGKILL')
+          reaped += 1
+        } catch {
+          // Ya no existe.
+        }
+      }
+    }
+    try {
+      fs.rmSync(file, { force: true })
+    } catch {
+      // Si no se puede borrar, la próxima corrida lo reintenta.
+    }
+  }
+  return reaped
+}
+
+/** Sólo para los tests: cuántas suites cree tener vivas este módulo. */
+export function liveSuiteCount() {
+  return LIVE_SUITES.size
+}
+
 /** La marca que el fixture de `mutation-probe.test.mjs` le pone a su fantasma. */
 export const GHOST_MARK = 'aoi-probe-ghost-'
+
+/**
+ * La marca del DIRECTORIO donde el fixture del test deja su suite y su fantasma.
+ *
+ * Es distinta de `GHOST_MARK` a propósito y las dos hacen falta: el fantasma es
+ * el proceso `ghost-*.mjs`, y el contaminante de verdad es el `suite.test.mjs`
+ * que lo lanza — el que sobrevive y gira. Medido el 2026-09-13: un
+ * `suite.test.mjs` huérfano con 49 minutos de vida, cwd en
+ * `aoi-probe-ghost-7IuozJ`, con el fantasma como hijo.
+ *
+ * `reapGhosts` mataba SÓLO el fantasma, porque su marca coincide con la del
+ * archivo. Esto es el directorio que contiene a los dos.
+ */
+export const GHOST_DIR_MARK = 'aoi-probe-ghost-'
 
 /** Nada que recoger. Un centinela numérico, no un booleano: ver `ghostPidToReap`. */
 export const NO_PID = -1
@@ -612,22 +752,71 @@ function ghostMarkIndex(line, marks) {
  * es inalcanzable por su propia guarda— así que las dos formas son la misma
  * función. Verificado sobre diez entradas, coinciden en las diez.
  */
-export function reapGhosts(marks = [GHOST_MARK]) {
+export function reapGhosts(marks = [GHOST_MARK, GHOST_DIR_MARK]) {
+  let reaped = 0
+
+  // Primero las suites que ESTE módulo lanzó y no cerró: es la parte exacta, y
+  // la que atrapa al proceso que ninguna marca de `args` alcanza.
+  for (const pid of [...LIVE_SUITES]) {
+    try {
+      process.kill(-pid, 'SIGKILL')
+      reaped += 1
+    } catch {
+      try {
+        process.kill(pid, 'SIGKILL')
+        reaped += 1
+      } catch {
+        // Ya no existe.
+      }
+    }
+    LIVE_SUITES.delete(pid)
+  }
+
   let out = ''
   try {
-    out = execFileSync('ps', ['-Ao', 'pid,args'], { encoding: 'utf8' })
+    // `ppid` y no sólo `pid,args`: el padre del fantasma es el runner, y esa
+    // línea tampoco lleva la marca.
+    out = execFileSync('ps', ['-Ao', 'pid,ppid,args'], { encoding: 'utf8' })
   } catch {
-    return 0
+    return reaped
   }
-  let reaped = 0
+  const padres = new Set()
   for (const line of out.split('\n')) {
     const pid = ghostPidToReap(line, marks, process.pid)
     if (pid < 0) continue
+
+    // El padre del fantasma es el runner que lo lanzó. Su línea de `ps` es
+    // `node --test-concurrency=2 suite.test.mjs`, sin ninguna marca. Se mata
+    // SÓLO si es el padre de un fantasma: nunca se elige un proceso por su
+    // nombre, que es la lección del reaper booleano.
+    const campos = line.trim().split(/\s+/)
+    const ppid = Number(campos[1])
+    if (Number.isInteger(ppid) && ppid > 1 && ppid !== process.pid) padres.add(ppid)
+
     try {
-      process.kill(pid, 'SIGKILL')
+      process.kill(-pid, 'SIGKILL')
       reaped += 1
     } catch {
-      // Ya no existe: nada que recoger.
+      try {
+        process.kill(pid, 'SIGKILL')
+        reaped += 1
+      } catch {
+        // Ya no existe: nada que recoger.
+      }
+    }
+  }
+
+  for (const ppid of padres) {
+    try {
+      process.kill(-ppid, 'SIGKILL')
+      reaped += 1
+    } catch {
+      try {
+        process.kill(ppid, 'SIGKILL')
+        reaped += 1
+      } catch {
+        // Ya no existe.
+      }
     }
   }
   return reaped
@@ -733,6 +922,10 @@ export async function probe(root, area, testGlob, limit = Infinity, log = () => 
   // Antes de plantar nada: si la máquina no tiene memoria para sostener esto,
   // se corta acá y no a mitad de camino con el sistema reaccionando.
   assertEnoughMemory()
+
+  // Y las suites que dejó una corrida anterior que murió sin limpiar: las suyas
+  // seguirían girando sin dueño, y una de ellas llevaba 49 minutos.
+  reapStaleSuites()
 
   const startedAt = Date.now()
   const baseline = await suitePasses(work, testGlob, 180000, runner)
