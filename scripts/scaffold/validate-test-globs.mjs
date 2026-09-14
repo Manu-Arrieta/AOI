@@ -107,8 +107,14 @@ export function collectTestFiles(root, dir = '.') {
  *
  * Length is preserved so any offset computed against the result still lines
  * up with the original text.
+ *
+ * Exportada para poder fijar su contrato con casos directos, que es lo que le
+ * faltaba: sus doce mutantes sobrevivían porque el único consumidor es
+ * `collectVitestIncludes`, y las mutaciones que no cambian el GLOB parseado no
+ * cambian el comportamiento aguas abajo. Sin casos propios, ramas enteras del
+ * escáner no tenían ninguna entrada que las distinguiera.
  */
-function stripComments(text) {
+export function stripComments(text) {
   // A regex pass is not enough, and getting that wrong is instructive: the
   // first version blanked `/**/` inside the glob `test/**/*.test.ts` itself,
   // turning the pristine config into `test    *.test.ts` and reporting every
@@ -140,7 +146,16 @@ function stripComments(text) {
         out += ' '
         i++
       }
-      out += '\n'
+      // El `\n` se emite SOLO si el bucle paró en uno.
+      //
+      // Antes se emitía siempre, y eso rompía la invariante de longitud que
+      // este contrato declara: un comentario de línea al final del texto, sin
+      // salto, agregaba un carácter. Medido: `x = 1 // c` de 10 pasaba a 11.
+      // Ninguna prueba lo veía porque el único consumidor es
+      // `collectVitestIncludes`, a quien un carácter de más le da igual — el
+      // caso clásico de una invariante documentada que el código violaba en el
+      // borde y cuyo consumidor toleraba.
+      if (i < text.length) out += '\n'
       continue
     }
 
@@ -261,7 +276,7 @@ export function findOrphanTests(root, searchDirs) {
 }
 
 /** The nearest ancestor directory holding a package.json. */
-function findOwningPackage(root, file) {
+export function findOwningPackage(root, file) {
   let dir = path.dirname(file)
   while (dir !== '.' && dir !== path.sep) {
     if (fs.existsSync(path.join(root, dir, 'package.json'))) return dir

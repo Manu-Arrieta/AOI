@@ -20,6 +20,7 @@
 
 import { auditContextBudget, formatBudgetSummary, formatHarnessBands, harnessSkillBands, toBudgetRows } from './context-budget.mjs'
 import { formatCacheReport, partitionSurface, surfaceDigest, surfaceLoadMap } from './cache-prefix.mjs'
+import { formatComparability } from './benchmark-inputs.mjs'
 import { formatHandoffChain } from './phase-handoffs.mjs'
 import { formatTotals, toTableRows } from './token-accounting.mjs'
 
@@ -46,6 +47,13 @@ export function printExecutiveSummary(root, ledger) {
   const surface = partitionSurface(surfaceLoadMap(root))
   console.log(formatCacheReport(surface))
   console.log(`\nHuella de la masa repetida: ${surfaceDigest(root, surface.universal)}`)
+
+  // Va justo después de la telemetría de tokens porque es su letra chica: el
+  // ahorro absoluto de las fases que miden archivos fijos escala con el tamaño
+  // de esos archivos, así que un delta no se puede leer sin saber si el insumo
+  // cambió. Sin esto, un archivo que crece parece una regresión del mecanismo.
+  console.log(`\n${THIN}`)
+  console.log(formatComparability(root))
 
   console.log('\nCADENA DE TRASPASO ENTRE FASES (verificada por pnpm aoi:handoffs):')
   console.log(formatHandoffChain())
