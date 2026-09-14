@@ -1064,14 +1064,38 @@ header "Phase 2: Spec-Kit"
 
 cd "$PROJECT_PATH"
 
+# ── Foto previa: qué archivos existían ANTES de que spec-kit tocara nada ────
+#
+# `--ignore-existing` (Fase 3) protege lo del usuario, pero no distingue "el
+# usuario ya lo tenía" de "spec-kit lo escribió hace dos minutos". Medido en una
+# instalación limpia: `specify init` crea 69 archivos bajo .github/ y .specify/
+# que el scaffold TAMBIÉN trae, en versiones peores — las de spec-kit no tienen
+# los bloques `## Model Requirement` que el Model Selection Protocol exige para
+# poder elegir modelo. Como `rsync --ignore-existing` encuentra los 69 ya
+# presentes, saltea las versiones de AOI y la instalación se queda con las de
+# spec-kit. Se perdieron 14 agentes, todos los `speckit.*`.
+#
+# La foto previa restaura la distinción: lo que existía antes es del usuario y
+# no se toca; lo que apareció DURANTE la instalación es de una herramienta y se
+# reemplaza por la de AOI.
+FRESH_SNAPSHOT=""
+if [ "$IS_REINSTALL" -eq 0 ]; then
+  FRESH_SNAPSHOT="$(mktemp "${TMPDIR:-/tmp}/aoi-preinstalacion.XXXXXX")"
+  ( cd "$PROJECT_PATH" && find . -type f 2>/dev/null | LC_ALL=C sort ) > "$FRESH_SNAPSHOT" 2>/dev/null || true
+fi
+
 if [ "$IS_REINSTALL" -eq 1 ]; then
-  # `specify init --force` overwrites .github/ and .specify/ wholesale. On a
-  # first install that is exactly what we want. On a reinstall it is pure
-  # destruction: AOI's scaffold already owns every artifact spec-kit writes
-  # (28 speckit files under .github/, 41 under .specify/), so the smart merge
-  # below reinstates them anyway — but only AFTER spec-kit has already
-  # flattened whatever the workspace had, which destroys the very information
-  # the three-way merge needs to tell an AOI update apart from a user edit.
+  # `specify init --force` overwrites .github/ and .specify/ wholesale. It is
+  # destruction on BOTH paths, not just this one: AOI's scaffold already owns
+  # every artifact spec-kit writes (28 speckit files under .github/, 41 under
+  # .specify/), so spec-kit's versions are strictly worse — they lack the model
+  # blocks. This branch skips it entirely.
+  #
+  # On a first install it used to run because "that is exactly what we want",
+  # which was wrong for the same reason. It now runs, because `.specify/
+  # init-options.json` is spec-kit's own config (two speckit agents read it) and
+  # the scaffold does not ship it — but its damage is repaired in Phase 3 with
+  # the snapshot above.
   info "Reinstall detected — skipping 'specify init --force' (AOI's scaffold owns these artifacts)"
 elif command -v specify &>/dev/null; then
   info "Initializing spec-kit for Copilot..."
@@ -1369,6 +1393,35 @@ EOF
     ok "Scaffold merged (cp, sin pisar lo existente)"
   fi
 
+  # ── Reparar lo que una herramienta escribió durante la instalación ────────
+  #
+  # El merge de arriba ya cubrió lo que faltaba, salvo lo que `specify init`
+  # creó minutos antes: para `--ignore-existing` esos archivos "ya existían", así
+  # que las versiones de AOI nunca llegaron. Este paso los repone SIN tocar nada
+  # del usuario, porque solo copia lo que NO estaba en la foto previa.
+  #
+  # Medido antes de este fix: 14 de 27 agentes quedaban sin su bloque
+  # `## Model Requirement` en una instalación limpia, o sea que el Model
+  # Selection Protocol no tenía qué modelo declarar. El repo no lo veía porque
+  # `.github/agents/` del repo sí tiene los bloques.
+  FRESH_RESTORE=""
+  if [ -n "$FRESH_SNAPSHOT" ] && [ -s "$FRESH_SNAPSHOT" ] && command -v rsync &>/dev/null; then
+    FRESH_RESTORE="$(mktemp "${TMPDIR:-/tmp}/aoi-restaurar.XXXXXX")"
+    (
+      cd "$SCAFFOLD_DIR" && find . -type f 2>/dev/null | sed 's|^\./||' | LC_ALL=C sort
+    ) | while IFS= read -r rel; do
+      [ -n "$rel" ] || continue
+      grep -qxF "./$rel" "$FRESH_SNAPSHOT" || printf '%s\n' "$rel"
+    done > "$FRESH_RESTORE"
+
+    if [ -s "$FRESH_RESTORE" ]; then
+      rsync -a --files-from="$FRESH_RESTORE" "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
+      ok "Scaffold restored over files created during install ($(wc -l < "$FRESH_RESTORE" | tr -d ' ') file(s))"
+    fi
+    # No se borra acá: la advertencia de más abajo lo necesita para no listar
+    # como "intacto" un archivo que este paso acaba de reemplazar.
+  fi
+
   # AOI needs its own npm scripts to exist, and a project that already has a
   # package.json just had its copy protected above — so the scripts are merged
   # in rather than the file being replaced.
@@ -1380,14 +1433,32 @@ EOF
   fi
 
   if [ -n "$FRESH_KEPT" ]; then
-    warn "Estos archivos ya existían y NO se tocaron:"
-    printf '%s\n' "$FRESH_KEPT" | while IFS= read -r kept; do
-      [ -n "$kept" ] && printf '     %s\n' "$kept"
-    done
-    warn "Si querés la versión de AOI de alguno, copiala vos desde el scaffold."
+    # La lista se calculó ANTES de reponer el scaffold, así que incluye archivos
+    # que el paso de reparación acaba de reemplazar. Reportarlos como "no se
+    # tocaron" sería falso, y peor: el consejo de copiarlos a mano le pediría al
+    # usuario arreglar lo que el instalador ya arregló.
+    FRESH_SOLO_DEL_USUARIO=""
+    while IFS= read -r kept; do
+      [ -n "$kept" ] || continue
+      if [ -n "$FRESH_RESTORE" ] && [ -s "$FRESH_RESTORE" ] && grep -qxF "$kept" "$FRESH_RESTORE"; then
+        continue
+      fi
+      FRESH_SOLO_DEL_USUARIO="${FRESH_SOLO_DEL_USUARIO}${kept}"$'\n'
+    done < <(printf '%s\n' "$FRESH_KEPT")
+
+    if [ -n "$FRESH_SOLO_DEL_USUARIO" ]; then
+      warn "Estos archivos ya existían y NO se tocaron:"
+      while IFS= read -r kept; do
+        [ -n "$kept" ] && printf '     %s\n' "$kept"
+      done < <(printf '%s' "$FRESH_SOLO_DEL_USUARIO")
+      warn "Si querés la versión de AOI de alguno, copiala vos desde el scaffold."
+    fi
   fi
 
   prune_unselected_harness_files "$PROJECT_PATH" "$SELECTED_HARNESS"
+
+  rm -f "$FRESH_SNAPSHOT"
+  [ -n "$FRESH_RESTORE" ] && rm -f "$FRESH_RESTORE"
 fi
 
 # ── Rebuild the scaffold mirror inside the target ───────────────────────────
@@ -1899,7 +1970,10 @@ echo "  Next steps:"
 echo "    1. cd $PROJECT_PATH && code ."
 echo "    2. Run /init in Copilot Chat (bootstrap ICM, directories, base-project map)"
 echo "    3. (optional) Run /speckit.constitution to customize project rules"
-echo "    4. Start your first cycle: /sdd-new"
+echo "    4. Start a cycle. Three independent entries, pick by what you have:"
+echo "         /sdd-genesis  an idea, and no architecture yet  -> System Blueprint Contract"
+echo "         /sdd-frame    an intent in natural language     -> Behavioral Intent Contract"
+echo "         /sdd-new      a requirement already scoped       -> proposal + TASK-YYYY-NNN"
 if [ -f "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/package.json" ]; then
   echo "    5. Start the dashboard runtime: pnpm --dir aoi_apps/agentic-ops-dashboard dev"
 fi
