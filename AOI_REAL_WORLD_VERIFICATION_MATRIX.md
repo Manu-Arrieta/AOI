@@ -238,7 +238,7 @@ flowchart LR
    DESCARTABLE (`--db`): escribir estos hechos en el store compartido contamina datos de
    otros proyectos, y `ICM_DB` no aísla en este build.
    ```bash
-   DB="$(mktemp -t aoi-genesis-XXXXXX.db)"; rm -f "$DB"
+   DB="$(mktemp -t aoi-genesis-XXXXXX.db)"; rm -rf "$DB"*
    icm facts set --db "$DB" "AOI TESTS" "sbc.SBC-2026-001.contexts" "gateway, billing, ledger"
    icm facts set --db "$DB" "AOI TESTS" "sbc.SBC-2026-001.crossing.1" "gateway -> billing: charge-request"
    icm facts set --db "$DB" "AOI TESTS" "sbc.SBC-2026-001.crossing.2" "billing -> ledger: post-entry"
@@ -281,7 +281,10 @@ flowchart LR
 
 6. **Limpieza.** La base y el workspace son descartables por diseño.
    ```bash
-   rm -rf "$DB" "$WS"
+   # `rm -f "$DB"` NO alcanza: `icm facts set` deja hermanos — `.db-shm`,
+   # `.db-wal` y un `.db.backup-<fecha>` por escritura. Medido: 4 residuos de
+   # 316 KB por corrida de estos pasos. El glob los cubre a todos.
+   rm -rf "$DB"* "$WS"
    icm facts list "AOI TESTS" -p "sbc."   # esperado: no facts for AOI TESTS
    ```
 
@@ -334,14 +337,14 @@ flowchart LR
    los persistía y ningún prompt los leía, así que el propósito central de la génesis moría
    en ICM. El comando que el prompt prescribe tiene que devolverlos.
    ```bash
-   DB="$(mktemp -t aoi-frame-XXXXXX.db)"; rm -f "$DB"
+   DB="$(mktemp -t aoi-frame-XXXXXX.db)"; rm -rf "$DB"*
    icm facts set --db "$DB" "AOI TESTS" "sbc.SBC-2026-001.never.1" "NUNCA registrar PII en logs"
    icm facts set --db "$DB" "AOI TESTS" "sbc.SBC-2026-001.crossing.1" "gateway -> billing: charge-request"
    icm facts list --db "$DB" "AOI TESTS" -p "sbc."
    # esperado: los dos hechos. Es el paso 3 del prompt de /sdd-frame.
    grep -c 'facts list "{WORKSPACE}" -p "sbc."' .github/prompts/sdd-frame.prompt.md
    # esperado: 1  (el prompt lo prescribe; sin esta línea el handoff no existe)
-   rm -f "$DB"
+   rm -rf "$DB"*   # el glob cubre los hermanos `.db-shm`, `.db-wal` y `.db.backup-<fecha>`
    ```
 
 4. **La cadena de traspaso cierra en las siete fases.** Un artefacto que una fase produce y
