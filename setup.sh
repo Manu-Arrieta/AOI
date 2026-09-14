@@ -277,8 +277,14 @@ invoke_windows_powershell() {
             err "Could not convert sanitized setup.ps1 path for Windows PowerShell: $tmp_posix"
             return 1
           fi
-          "$bin" -NoProfile -ExecutionPolicy Bypass -File "$tmp_windows" -ProjectPath "$windows_project_path" "${extra_args[@]}"
-          local rc=$?
+          # La invocación va en una lista `||` y no como comando suelto. Como
+          # comando suelto, `set -euo pipefail` aborta el script cuando
+          # PowerShell sale distinto de cero, y el `rm` de la línea siguiente
+          # nunca corre: el temporal queda en el DIRECTORIO DEL REPOSITORIO,
+          # porque `mktemp` lo crea en `$source_dir` y no en `$TMPDIR`. Con `||`
+          # se conserva el código de salida Y la limpieza corre siempre.
+          local rc=0
+          "$bin" -NoProfile -ExecutionPolicy Bypass -File "$tmp_windows" -ProjectPath "$windows_project_path" "${extra_args[@]}" || rc=$?
           rm -f "$tmp_posix"
           return $rc
           ;;
@@ -1099,8 +1105,24 @@ if [ "$IS_REINSTALL" -eq 1 ]; then
   info "Reinstall detected — skipping 'specify init --force' (AOI's scaffold owns these artifacts)"
 elif command -v specify &>/dev/null; then
   info "Initializing spec-kit for Copilot..."
-  specify init . --ai copilot --force 2>/dev/null && ok "Spec-kit → Copilot" || warn "Spec-kit Copilot init skipped (may need manual setup)"
-
+  # `2>/dev/null` tapa la salida de error, NO la entrada. Con stdin heredado de
+  # un proceso sin terminal, el prompt de `specify init` espera para siempre:
+  # medido, 6:44 colgado en una corrida desatendida, con el prompt escribiendo
+  # en /dev/ttys012 — fuera del log, así que el cuelgue era invisible hasta
+  # mirar el terminal. Un instalador que se declara autónomo y se cuelga
+  # esperando una respuesta que nadie puede dar no es autónomo.
+  #
+  # Cerrar stdin da EOF inmediato: con `--force` no hay nada que confirmar, y
+  # si igual pregunta, el EOF la termina en vez de colgarla, cayendo en el
+  # `|| warn` que ya estaba. Con terminal presente se la deja preguntar —
+  # cerrar stdin en una corrida interactiva convertiría una confirmación en un
+  # error silencioso.
+  if [ -t 0 ]; then
+    SPECIFY_STDIN=/dev/tty
+  else
+    SPECIFY_STDIN=/dev/null
+  fi
+  specify init . --ai copilot --force 2>/dev/null <"$SPECIFY_STDIN" && ok "Spec-kit → Copilot" || warn "Spec-kit Copilot init skipped (may need manual setup)"
 else
   warn "Specify CLI not found — skipping spec-kit init"
   warn "Run manually after installing: specify init . --ai copilot --force"

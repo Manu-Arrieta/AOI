@@ -18,6 +18,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { auditUndocumentedCommands, formatUndocumented } from './undocumented-commands.mjs'
 
 /**
  * MCP tools exposed by the ICM server. A name in prose that is absent here is
@@ -196,6 +197,10 @@ export function auditReferenceIntegrity(root, dirs = PROSE_DIRS, narrativeDirs =
   return {
     status: problems.length === 0 ? 'PASSED' : 'FAILED',
     filesScanned: executable.length + narrative.length,
+    // Expuestas para que la compuerta pueda preguntar la dirección inversa sin
+    // volver a recorrer el árbol. El `main()` hace eso mismo con `PROSE_DIRS`,
+    // pero `auditFile` ya camina esta lista.
+    narrativeFiles: narrative,
     problems,
   }
 }
@@ -218,7 +223,13 @@ export function formatReport(audit) {
 export async function main() {
   const root = process.argv[2] || process.cwd()
   const audit = auditReferenceIntegrity(root)
+  // La otra dirección: `auditFile` exige que lo NOMBRADO exista; esto exige que
+  // lo que EXISTE esté nombrado. Sin esto, un prompt puede entrar al repositorio
+  // sin que ninguna superficie lo mencione y el linter no tiene con qué verlo.
+  const undocumented = auditUndocumentedCommands(root, audit.narrativeFiles)
+
   process.stdout.write(formatReport(audit) + '\n')
+  process.stdout.write(formatUndocumented(undocumented) + '\n')
 
   // "Every reference resolves" over zero files scanned is not a pass; it is a
   // gate that found nothing to check and said everything is fine. A wrong
@@ -230,7 +241,7 @@ export async function main() {
     process.exit(1)
   }
 
-  if (audit.status !== 'PASSED') process.exit(1)
+  if (audit.status !== 'PASSED' || undocumented.undocumented.length > 0) process.exit(1)
 }
 
 const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
