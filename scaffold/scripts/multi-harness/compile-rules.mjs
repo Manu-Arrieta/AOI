@@ -12,7 +12,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { deriveSkillFromInstruction, prunePathIfPristine, readStoreTriggers, renderStoreTriggers } from './protocol-source.mjs'
+import { fallbackStoreTriggers, prunePathIfPristine, readMcpActivation, readStoreTriggers, renderMcpActivation, renderStoreTriggers, syncAntigravitySkills } from './protocol-source.mjs'
 
 export const SUPPORTED_HARNESSES = ['copilot', 'claude', 'cursor', 'antigravity', 'cline', 'all']
 
@@ -35,12 +35,7 @@ icm recall "query" -t "${workspace}-context"        # Filter by project topic
 icm facts list "${workspace}"             # O(1) exact project facts
 \`\`\`
 
-${derived || `### Store Triggers (MANDATORY)
-1. **Error resolved** → \\\`icm store -t errors-resolved -c "description" -i high -k "keyword1,keyword2"\\\`
-2. **Architecture / Design decision** → \\\`icm store -t decisions-${workspace} -c "description" -i critical\\\`
-3. **User preference discovered** → \\\`icm store -t preferences -c "description" -i critical\\\`
-4. **Task completed** → \\\`icm store -t context-${workspace} -c "summary" -i high\\\`
-5. **Exact configuration / endpoint / service** → \\\`icm facts set "${workspace}" "key" "value"\\\``}
+${derived || fallbackStoreTriggers(workspace).claude}
 
 ### Workspace Health Diagnostic (0 Tokens)
 \`\`\`bash
@@ -105,12 +100,16 @@ export function generateCopilotInstructions({ workspace = 'AOI', repoRoot = proc
   // Same derivation as CLAUDE.md, and for the same reason: this surface also
   // carried `-i high` for an architecture decision the protocol calls critical.
   const derived = renderStoreTriggers(readStoreTriggers(repoRoot), workspace)
+  // Derived, not inlined: see readMcpActivation for why.
+  const mcp = renderMcpActivation(readMcpActivation(repoRoot))
   return `<!-- AOI / .github/copilot-instructions.md — Auto-compiled by aoi:sync-rules -->
 <!-- icm:start -->
 ## Persistent memory (ICM) — MANDATORY
 
 This project uses [ICM](https://github.com/rtk-ai/icm) for persistent memory across sessions.
 You MUST use it actively. Not optional.
+
+${mcp}
 
 ### Recall (before starting work)
 \`\`\`bash
@@ -119,11 +118,7 @@ icm recall "query" -t "topic-name"        # filter by topic
 icm recall-context "query" --limit 5      # formatted for prompt injection
 \`\`\`
 
-${derived || `### Store — MANDATORY triggers
-1. **Error resolved** → \\\`icm store -t errors-resolved -c "description" -i high\\\`
-2. **Architecture/design decision** → \\\`icm store -t decisions-${workspace} -c "description" -i critical\\\`
-3. **User preference discovered** → \\\`icm store -t preferences -c "description" -i critical\\\`
-4. **Significant task completed** → \\\`icm store -t context-${workspace} -c "summary" -i high\\\``}
+${derived || fallbackStoreTriggers(workspace).copilot}
 
 Además: si la conversación pasa ~20 llamadas a herramientas sin un store, guardá un resumen de progreso.
 
@@ -133,7 +128,7 @@ Do NOT store: trivial details, info already in CLAUDE.md, ephemeral state (build
 
 ### Other commands
 \`\`\`bash
-icm facts set "{project}" "key" "value"  # deterministic exact fact (O(1))
+icm facts set "${workspace}" "key" "value"  # deterministic exact fact (O(1))
 icm wake-up                              # instant critical facts pack
 icm update <id> -c "updated content"     # edit memory in-place
 icm health                                # topic hygiene audit
@@ -225,30 +220,7 @@ export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = '
     writeTargetFile('AGENTS.md', content)
 
     // Sync canonical skills from .github/skills/ into .agents/skills/
-    const githubSkillsDir = path.join(repoRoot, '.github', 'skills')
-    if (fs.existsSync(githubSkillsDir)) {
-      const skills = fs.readdirSync(githubSkillsDir, { withFileTypes: true })
-      for (const s of skills) {
-        if (s.isDirectory()) {
-          const skillFilePath = path.join(githubSkillsDir, s.name, 'SKILL.md')
-          if (fs.existsSync(skillFilePath)) {
-            // A skill whose canonical text lives in .github/instructions/ is
-            // DERIVED here rather than mirrored. Antigravity cannot read that
-            // directory, which is the whole reason the duplicate existed: the
-            // orchestrator was paying for a second full copy of a rule it
-            // already receives — 502 tokens in all six phases — purely so a
-            // harness that reads neither could get it from somewhere.
-            // Deriving lets the skill shrink to its trigger without leaving
-            // antigravity behind.
-            const derived = deriveSkillFromInstruction(repoRoot, s.name)
-            writeTargetFile(
-              path.join('.agents', 'skills', s.name, 'SKILL.md'),
-              derived ?? fs.readFileSync(skillFilePath, 'utf8')
-            )
-          }
-        }
-      }
-    }
+    syncAntigravitySkills(repoRoot, writeTargetFile)
   }
 
   // 4. Cline / Roo Code
@@ -272,17 +244,26 @@ export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = '
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const args = process.argv.slice(2)
   let harnessArg = 'all'
-  let workspaceArg = 'AOI'
+  let workspaceArg = ''
   let pruneArg = false
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--harness' && args[i + 1]) harnessArg = args[++i]
     else if (args[i] === '--workspace' && args[i + 1]) workspaceArg = args[++i]
     else if (args[i] === '--prune') pruneArg = true
+    else if (args[i].startsWith('-')) {
+      // Silently ignoring these ran a full compile: `--help` is not accepted.
+      console.error(`Unknown flag: ${args[i]}`)
+      process.exit(2)
+    }
   }
 
   const harnesses = harnessArg.split(',').map((h) => h.trim().toLowerCase())
   const repoRoot = process.cwd()
+  // Never 'AOI': that is the PRODUCT's name. `aoi:sync-rules` passes no
+  // --workspace, so the old default renamed every harness file in an
+  // installed project to AOI. The directory is what the protocol falls back to.
+  if (!workspaceArg) workspaceArg = path.basename(repoRoot)
 
   console.log(`\n⚙️  Compiling AOI Multi-Harness Rules (harness: ${harnessArg}, workspace: ${workspaceArg})...\n`)
   const result = compileHarnessRules(repoRoot, harnesses, workspaceArg, { prune: pruneArg })

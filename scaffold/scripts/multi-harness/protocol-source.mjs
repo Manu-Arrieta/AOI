@@ -176,3 +176,108 @@ export function renderStoreTriggers(levels, workspace) {
     `Configuración exacta como hecho O(1): \`icm facts set "${workspace}" "key" "value"\`.`,
   ].join('\n')
 }
+/**
+ * The MCP tool groups a session must activate before its first recall.
+ *
+ * Derived for the same reason the store triggers are: the surface that carries
+ * this is generated, so an embedded copy drifts from the protocol it claims to
+ * summarize with nothing to fail. Inlining it also cost 13 LOC in a generator
+ * already at 296/300 as the SRP ratchet counts LOC.
+ *
+ * Only bare `activate_*` lines count. The section also mentions `activate_*`
+ * inside a sentence, and that mention is prose about the convention, not a
+ * seventh-and-a-half tool.
+ *
+ * @returns {string[]} tool names in protocol order; [] when unreadable
+ */
+export function readMcpActivation(repoRoot) {
+  let text = ''
+  try {
+    text = fs.readFileSync(path.join(repoRoot, ICM_PROTOCOL), 'utf8')
+  } catch {
+    return []
+  }
+
+  const names = [...text.matchAll(/^\s*(activate_[a-z_]+)\s*$/gm)].map((m) => m[1])
+  return [...new Set(names)]
+}
+
+/**
+ * Renders the activation block, which must precede the first recall.
+ *
+ * @param {string[]} tools from readMcpActivation
+ * @returns {string} '' when the protocol could not be read
+ */
+export function renderMcpActivation(tools) {
+  if (tools.length === 0) return ''
+
+  return [
+    '### MCP tool activation — do this FIRST',
+    'Activate the ICM tool groups before the first recall; re-run the group if',
+    'any ICM or Codebase MCP tool reports as disabled mid-session.',
+    '',
+    '```text',
+    ...tools,
+    '```',
+  ].join('\n')
+}
+
+/**
+ * The legacy wording a dialect falls back to when the protocol is unreadable.
+ *
+ * These literals used to live inside the two generators that need them, which
+ * is the drift this module exists to end: dialect files carrying their own copy
+ * of rules the protocol owns. They were also WRONG. Nested inside a template
+ * literal a backtick needed three backslashes, and the backslash survived into
+ * the generated file — the fallback told agents to run a command wrapped in
+ * literal backslashes, which is not a command. Stated once, escaped once.
+ *
+ * Reached only when `.github/instructions/` cannot be read, so it is a safety
+ * net rather than a path anyone exercises.
+ *
+ * @param {string} workspace
+ * @returns {{claude: string, copilot: string}}
+ */
+export function fallbackStoreTriggers(workspace) {
+  return {
+    claude: `### Store Triggers (MANDATORY)
+1. **Error resolved** → \`icm store -t errors-resolved -c "description" -i high -k "keyword1,keyword2"\`
+2. **Architecture / Design decision** → \`icm store -t decisions-${workspace} -c "description" -i critical\`
+3. **User preference discovered** → \`icm store -t preferences -c "description" -i critical\`
+4. **Task completed** → \`icm store -t context-${workspace} -c "summary" -i high\`
+5. **Exact configuration / endpoint / service** → \`icm facts set "${workspace}" "key" "value"\``,
+    copilot: `### Store — MANDATORY triggers
+1. **Error resolved** → \`icm store -t errors-resolved -c "description" -i high\`
+2. **Architecture/design decision** → \`icm store -t decisions-${workspace} -c "description" -i critical\`
+3. **User preference discovered** → \`icm store -t preferences -c "description" -i critical\`
+4. **Significant task completed** → \`icm store -t context-${workspace} -c "summary" -i high\``,
+  }
+}
+
+/**
+ * Mirrors `.github/skills/` into `.agents/skills/` for the antigravity harness.
+ *
+ * A skill whose canonical text is an instruction file is DERIVED, not copied:
+ * antigravity reads neither that directory nor the body sourced from it, and
+ * the duplicate cost the orchestrator a second full copy of a rule it already
+ * receives — 502 tokens in all six phases.
+ *
+ * @param {string} repoRoot
+ * @param {(relPath: string, content: string) => void} write one call per skill
+ * @returns {number} skills written
+ */
+export function syncAntigravitySkills(repoRoot, write) {
+  const dir = path.join(repoRoot, '.github', 'skills')
+  if (!fs.existsSync(dir)) return 0
+
+  let written = 0
+  for (const s of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (!s.isDirectory()) continue
+    const skillFile = path.join(dir, s.name, 'SKILL.md')
+    if (!fs.existsSync(skillFile)) continue
+    const derived = deriveSkillFromInstruction(repoRoot, s.name)
+    write(path.join('.agents', 'skills', s.name, 'SKILL.md'), derived ?? fs.readFileSync(skillFile, 'utf8'))
+    written++
+  }
+  return written
+}

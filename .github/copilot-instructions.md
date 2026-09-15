@@ -5,6 +5,20 @@
 This project uses [ICM](https://github.com/rtk-ai/icm) for persistent memory across sessions.
 You MUST use it actively. Not optional.
 
+### MCP tool activation — do this FIRST
+Activate the ICM tool groups before the first recall; re-run the group if
+any ICM or Codebase MCP tool reports as disabled mid-session.
+
+```text
+activate_knowledge_graph_management_tools
+activate_long_term_memory_management_tools
+activate_project_management_tools
+activate_feedback_management_tools
+activate_transcript_management_tools
+activate_memory_consolidation_tools
+activate_code_analysis_and_search_tools
+```
+
 ### Recall (before starting work)
 ```bash
 icm recall "query"                        # search memories
@@ -32,7 +46,7 @@ Do NOT store: trivial details, info already in CLAUDE.md, ephemeral state (build
 
 ### Other commands
 ```bash
-icm facts set "{project}" "key" "value"  # deterministic exact fact (O(1))
+icm facts set "AOI" "key" "value"  # deterministic exact fact (O(1))
 icm wake-up                              # instant critical facts pack
 icm update <id> -c "updated content"     # edit memory in-place
 icm health                                # topic hygiene audit

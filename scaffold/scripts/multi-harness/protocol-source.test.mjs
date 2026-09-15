@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
-import { ICM_PROTOCOL, prunePathIfPristine, readStoreTriggers, renderStoreTriggers } from './protocol-source.mjs'
+import { ICM_PROTOCOL, prunePathIfPristine, readMcpActivation, readStoreTriggers, renderMcpActivation, renderStoreTriggers } from './protocol-source.mjs'
 import { generateClaudeMd, generateCopilotInstructions } from './compile-rules.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
@@ -140,5 +140,33 @@ describe('el prune de harness no borra lo que el Owner escribió', () => {
     assert.equal(fs.existsSync(path.join(root, 'AGENTS.md')), true)
     assert.equal(kept.length, 1)
     fs.rmSync(root, { recursive: true, force: true })
+  })
+})
+
+describe('la activación MCP se deriva del protocolo y llega a la superficie generada', () => {
+  it('lee los siete grupos que declara el protocolo, y sólo ésos', () => {
+    const tools = readMcpActivation(REPO)
+    assert.equal(tools.length, 7, `el protocolo declara siete grupos, el lector vio ${tools.length}`)
+    for (const t of tools) assert.match(t, /^activate_[a-z_]+$/, `${t} no es un nombre de herramienta`)
+    // La misma sección menciona `activate_*` en prosa. No es una octava
+    // herramienta, y colarla acá haría que el bloque generado la anunciara.
+    assert.ok(!tools.some((t) => t.includes('*')), 'la mención en prosa se coló como herramienta')
+  })
+
+  it('el bloque generado nombra cada grupo, para que ningún harness lo pierda', () => {
+    const copilot = generateCopilotInstructions({ workspace: 'AOI', repoRoot: REPO })
+    for (const t of readMcpActivation(REPO)) {
+      assert.ok(copilot.includes(t), `copilot-instructions omitió ${t}`)
+    }
+  })
+
+  it('degrada a la nada cuando el protocolo no se puede leer', () => {
+    // Emitir un bloque a medias sería peor que no emitirlo: un agente que
+    // activa tres grupos de siete no sabe que le faltan cuatro.
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-mcp-'))
+    assert.deepEqual(readMcpActivation(empty), [])
+    assert.equal(renderMcpActivation([]), '')
+    assert.doesNotMatch(generateCopilotInstructions({ workspace: 'AOI', repoRoot: empty }), /activate_knowledge/)
+    fs.rmSync(empty, { recursive: true, force: true })
   })
 })
