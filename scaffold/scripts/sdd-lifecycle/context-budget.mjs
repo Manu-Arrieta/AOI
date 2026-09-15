@@ -112,6 +112,7 @@ export function phaseContextCost(root, promptRel, phase = '') {
 
 /** Phase key -> prompt file, in lifecycle order. */
 export const SDD_PHASES = [
+  ['Phase_-2_Genesis', '.github/prompts/sdd-genesis.prompt.md'],
   ['Phase_0_Frame', '.github/prompts/sdd-frame.prompt.md'],
   ['Phase_1_New', '.github/prompts/sdd-new.prompt.md'],
   ['Phase_2_FF', '.github/prompts/sdd-ff.prompt.md'],

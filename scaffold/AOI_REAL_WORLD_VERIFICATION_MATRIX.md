@@ -25,18 +25,56 @@ Ejecuta estos pasos en orden para aprovisionar el entorno completo en `/Users/eq
 
 ### Paso 0.1: Limpieza Profunda e Instalación Oficial de AOI vía `setup.sh`
 ```bash
-# 1. Limpieza total de cualquier rastro o artefacto previo en la carpeta de pruebas
+# 0. Respaldo ANTES de destruir. La limpieza borra `.git` de este workspace, y
+#    esa historia es el único mecanismo de rollback que existe: son los commits
+#    "punto de restauración antes de instalar vX" que NO están en el repo de AOI
+#    (verificado: `git cat-file -t <sha>` en AOI da "Not a valid object name").
+#    Medido: 1,5 MB. Sin esto, el paso 1 es irreversible.
 cd "/Users/equinox/Desktop/AOI TESTS"
-find . -mindepth 1 ! -name 'AOI_REAL_WORLD_VERIFICATION_MATRIX.md' -exec rm -rf {} + 2>/dev/null || true
+BK="$HOME/.aoi-audit-work/aoi-tests-pre-instalacion-backup"
+mkdir -p "$BK"
+tar czf "$BK/git-history.tgz" .git 2>/dev/null || true
+for d in .tasks .resources .sandboxes; do
+  [ -e "$d" ] && tar czf "$BK/${d#.}.tgz" "$d" 2>/dev/null || true
+done
+cp -a *.mjs "$BK/" 2>/dev/null || true
+cp -a VERIFICATION_AUDIT_REPORT.md "$BK/" 2>/dev/null || true
 
-# 2. Ejecutar el instalador oficial de AOI (setup.sh) desde el proyecto base
+# 1. Limpieza total de cualquier rastro o artefacto previo en la carpeta de pruebas
+#
+# `find . -mindepth 1 ! -name '...' -exec rm -rf {} +` NO sirve acá, aunque sea
+# la forma obvia: `find` enumera el árbol ANTES de borrar, así que borra un padre
+# y después falla con sus hijos. Medido: dejaba 12 MB y 47 entradas intactas, y
+# el `2>/dev/null || true` escondía exactamente ese fallo parcial.
+for entry in .[!.]* *; do
+  [ "$entry" = "AOI_REAL_WORLD_VERIFICATION_MATRIX.md" ] && continue
+  [ -e "$entry" ] || continue
+  rm -rf "$entry"
+done
+
+# 2. Verificar que la limpieza limpió. Sin esto, "ejecutada" no significa nada.
+test "$(find . -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')" = "1" || {
+  echo "❌ la limpieza dejó $(find . -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ') entradas:"
+  find . -mindepth 1 -maxdepth 1
+  exit 1
+}
+
+# 3. Ejecutar el instalador oficial de AOI (setup.sh) desde el proyecto base
 #    AOI_REPO_ROOT debe apuntar al clon local del repositorio AOI.
 bash "${AOI_REPO_ROOT:?define AOI_REPO_ROOT con la ruta del repo AOI}/setup.sh" "/Users/equinox/Desktop/AOI TESTS"
 
-# 3. Entrar a la carpeta de pruebas e instalar dependencias del workspace
+# 4. Entrar a la carpeta de pruebas e instalar dependencias del workspace
 cd "/Users/equinox/Desktop/AOI TESTS"
 pnpm install
 ```
+
+> [!WARNING]
+> **`specify init` pide confirmación por TTY y NO es autónomo.** Corre en la Fase 2 de
+> `setup.sh` con su salida redirigida, así que su prompt no aparece en el log: el proceso
+> queda colgado indefinidamente. Medido: 6:44 minutos esperando, con `stdin` y `stdout`
+> apuntando a `/dev/ttys012`. Si la instalación se estanca sin output, mirá la terminal
+> —no el log— y respondé `y`. Una corrida verdaderamente desatendida necesita
+> `yes | bash setup.sh ...` o un `specify` no interactivo.
 
 ### Paso 0.2: Validación Inmediata del Entorno Instalado
 Ejecuta la certificación inicial para asegurar que el ambiente está listo:
@@ -66,7 +104,7 @@ comprobado nada.
 ```bash
 pnpm aoi:test-globs    # todo glob declarado resuelve, y ningún test queda fuera de todos los runners
 pnpm aoi:srp           # Invariante 5, en modo trinquete
-pnpm aoi:cache-prefix  # la masa que se recarga en las 6 fases no muta ni es volátil
+pnpm aoi:cache-prefix  # la masa que se recarga en TODAS las fases no muta ni es volátil
 pnpm aoi:tools         # cada herramienta de ahorro obligatoria está exigida Y se invoca en el ciclo
 pnpm aoi:hooks         # cada hook declarado llega a un harness y su script existe y es ejecutable
 pnpm aoi:registry      # el registry y el disco declaran las mismas tareas
@@ -77,7 +115,7 @@ pnpm aoi:invariant-gate -- --entity "AOI TESTS" --tests-dir . --exit-code
 | :--- | :--- |
 | `aoi:test-globs` | `node --test` sale 0 cuando el glob no matchea nada. Un directorio de tests vaciado, o nunca instalado, dejaba la cadena en verde sobre cero aserciones. En el repo exige que **todo** glob resuelva; en un workspace instalado tolera lo que legítimamente no se instala, pero sigue fallando si un directorio existe y quedó sin tests. |
 | `aoi:srp` | El límite de 300 LOC solo se miraba por tarea y como WARNING, así que tres archivos se pasaron sin que nadie lo notara. El trinquete falla ante un archivo nuevo por encima del límite, ante deuda vieja que **crece**, y ante una entrada del presupuesto que ya no viola — la lista no puede pudrirse. Solo se mueve hacia abajo. |
-| `aoi:cache-prefix` | Ocho archivos se recargan en las seis fases. Si uno adquiere contenido volátil, o si una fase reescribe una superficie que otra vuelve a leer, no hay cache de prefijo que sobreviva y el costo se paga seis veces sin que nada falle. `aoi:cache-guard` no lo veía: lee los primeros 1.500 caracteres de cada prompt, y por eso el `$(date +%Y)` del offset 7.223 de `sdd-frame.prompt.md` le pasa limpio. |
+| `aoi:cache-prefix` | Ocho archivos se recargan en TODAS las fases del ciclo. Si uno adquiere contenido volátil, o si una fase reescribe una superficie que otra vuelve a leer, no hay cache de prefijo que sobreviva y el costo se paga una vez por fase sin que nada falle. `aoi:cache-guard` no lo veía: lee los primeros 1.500 caracteres de cada prompt, y por eso el `$(date +%Y)` del offset 7.223 de `sdd-frame.prompt.md` le pasa limpio. |
 | `aoi:tools` | Una herramienta de ahorro puede estar instalada, tener tests verdes y no participar del flujo real. Pasó dos veces: `context-tombstone` funcionaba y solo el benchmark lo invocaba, y el proxy `mcp-compressor` que el Invariante 1 declara como SU mecanismo no era ni dependencia. Verifica las dos mitades — que el instalador la exija y que alguien la invoque en el ciclo real, nunca en el benchmark — y distingue lo que comprime la comunicación entre componentes de lo que optimiza una fase. Todas obligatorias salvo Headroom. |
 | `aoi:hooks` | Cinco declaraciones en `.github/hooks/` que ningún harness cargaba, mientras una skill de la banda ×6 le decía al agente que la regla se aplicaba sola. Una declaración cableada a medias se reporta huérfana: media cadena de hooks es una regla que dispara a veces, peor que una que no dispara nunca. También falla si el `.sh` que invoca no existe o no es ejecutable. |
 | `aoi:registry` | `/sdd-new` lee el registry para asignar el próximo TASK-ID. Un ciclo real lo encontró declarando **cero** tareas con dos en disco, así que habría entregado un id ya tomado y la colisión habría sido silenciosa. Compara ambos lados y calcula el próximo id sobre el máximo de los dos. |
@@ -171,12 +209,161 @@ flowchart LR
 
 ## 3. Fase 1: Ciclo SDD Completo con Tarea Ligera (TASK-2026-003)
 
+> **Esta fase cubre las SIETE fases del ciclo**, desde `/sdd-genesis` (Fase -2) hasta
+> `/sdd-archive`. Antes arrancaba en `/sdd-new`: cinco de siete, y las dos que faltaban eran
+> justo las que producen los contratos que el Invariant Gate después exige.
+
 **Tarea Ligera a Implementar:**  
 > *"Crear una función utilitaria pura `evaluateFiberHealth(activeFibers, failedFibers)` en el Dashboard que calcule el Ratio de Salud de Fibras y determine el estado operativo (`stable` | `degraded` | `critical`)."*
 
+> [!IMPORTANT]
+> **Los pasos 1.1 y 1.2 ejercitan el SUSTRATO MECÁNICO, no el diálogo.** La génesis y el
+> pre-flight son conversaciones con un LLM: lo que se verifica acá son sus compuertas —el
+> auditor de clausura, los estados de la obligación de diagrama, y el cruce de hechos O(1)—
+> porque eso es lo que corre sin humano. El diálogo en sí se cubre con las sondas
+> conductuales (`pnpm aoi:probes`), que sí necesitan un modelo.
+
 ---
 
-### Paso 1.1: `/sdd-new` — Service Discovery & Contraste de Relevancia
+### Paso 1.1: `/sdd-genesis` — Génesis Arquitectónica (Fase -2)
+
+1. **Sin blueprint, la compuerta se declara SKIPPED y no falla.** Un ciclo que no pasó por
+   la génesis no es un error: la fase es opcional.
+   ```bash
+   node scripts/sdd-lifecycle/blueprint-gate.mjs "AOI TESTS"
+   # esperado: ## Blueprint Gate: ⏭️ SKIPPED   ·   exit 0
+   ```
+
+2. **Con un blueprint cerrado, la compuerta aprueba en 5 aserciones.** Se usa una base
+   DESCARTABLE (`--db`): escribir estos hechos en el store compartido contamina datos de
+   otros proyectos, y `ICM_DB` no aísla en este build.
+   ```bash
+   DB="$(mktemp -t aoi-genesis-XXXXXX.db)"; rm -rf "$DB"*
+   icm facts set --db "$DB" "AOI TESTS" "sbc.SBC-2026-001.contexts" "gateway, billing, ledger"
+   icm facts set --db "$DB" "AOI TESTS" "sbc.SBC-2026-001.crossing.1" "gateway -> billing: charge-request"
+   icm facts set --db "$DB" "AOI TESTS" "sbc.SBC-2026-001.crossing.2" "billing -> ledger: post-entry"
+   icm facts set --db "$DB" "AOI TESTS" "sbc.SBC-2026-001.never.1" "NUNCA registrar PII en logs"
+   icm facts set --db "$DB" "AOI TESTS" "sbc.SBC-2026-001.tracer" "gateway -> billing -> ledger"
+   node scripts/sdd-lifecycle/blueprint-gate.mjs "AOI TESTS" --db "$DB"
+   # esperado: ✅ PASSED + las 5 aserciones en verde   ·   exit 0
+   ```
+
+3. **La obligación de diagrama tiene que nombrar su estado, no un booleano.** Con cruces
+   declarados y sin `--workspace`, la obligación se DECLARA y no se audita.
+   ```bash
+   node scripts/sdd-lifecycle/blueprint-gate.mjs "AOI TESTS" --db "$DB" --record | grep -A 2 "Diagrama (SBC-2026-001)"
+   # esperado: 📐 REQUIRED  (Archify está instalado, así que se exige)
+   #           y la línea "↳ registrado: sbc.SBC-2026-001.diagram-obligation = required"
+   icm facts get --db "$DB" "AOI TESTS" "sbc.SBC-2026-001.diagram-obligation"
+   # esperado: required
+   ```
+
+4. **Sin `--workspace` la compuerta NO puede afirmar cumplimiento.** Y con `--workspace`
+   apuntando a un directorio sin diagramas, SÍ falla: ahí producir el artefacto es barato y
+   el camino correcto es el que menos cuesta.
+   ```bash
+   WS="$(mktemp -d -t aoi-blueprint-XXXXXX)"
+   node scripts/sdd-lifecycle/blueprint-gate.mjs "AOI TESTS" --db "$DB" --workspace "$WS" | grep "Artefactos:"
+   # esperado: "Artefactos: NINGUNO en ..."   ·   y exit 1
+   mkdir -p "$WS/.blueprints/SBC-2026-001/diagrams"
+   echo '{}' > "$WS/.blueprints/SBC-2026-001/diagrams/charge-request.sequence.json"
+   node scripts/sdd-lifecycle/blueprint-gate.mjs "AOI TESTS" --db "$DB" --workspace "$WS"
+   # esperado: exit 0
+   ```
+
+5. **Un flag desconocido falla (exit 2), no se ignora.** Un typo como `--workspac`
+   degradaría a una corrida "sin workspace", y sin workspace la compuerta no afirma
+   cumplimiento: el typo se leería como "no hay nada pendiente".
+   ```bash
+   node scripts/sdd-lifecycle/blueprint-gate.mjs "AOI TESTS" --typox; echo "exit=$?"
+   # esperado: "❌ flag desconocido: --typox"  ·  exit=2
+   ```
+
+6. **Limpieza.** La base y el workspace son descartables por diseño.
+   ```bash
+   # `rm -f "$DB"` NO alcanza: `icm facts set` deja hermanos — `.db-shm`,
+   # `.db-wal` y un `.db.backup-<fecha>` por escritura. Medido: 4 residuos de
+   # 316 KB por corrida de estos pasos. El glob los cubre a todos.
+   rm -rf "$DB"* "$WS"
+   icm facts list "AOI TESTS" -p "sbc."   # esperado: no facts for AOI TESTS
+   ```
+
+---
+
+### Paso 1.2: `/sdd-frame` — Pre-Flight e Invariantes Globales (Fase 0)
+
+1. **Sin contrato BIC para auditar, el Invariant Gate se declara SKIPPED.** Igual que la
+   génesis, la fase es opcional y su ausencia no es un fallo. Se usa `--facts-file` con una
+   tabla capturada para que el resultado NO dependa del estado del store compartido.
+   ```bash
+   F="$(mktemp -t aoi-facts-XXXXXX.txt)"
+   # una tabla con hechos que no son `bic.*`: la entidad existe y no tiene contrato
+   printf 'key                              value\n%s\nsbc.SBC-2026-001.never.1          NUNCA registrar PII\n' \
+     '------------------------------------------------------------' > "$F"
+   node scripts/sdd-lifecycle/invariant-gate.mjs --entity "AOI TESTS" --tests-dir . --facts-file "$F"
+   # esperado: ## Invariant Gate: ⏭️ SKIPPED   ·   exit 0
+   rm -f "$F"
+   ```
+
+2. **Y con un contrato sin tests, FALLA.** La otra mitad: un gate que nunca falla tampoco
+   sirve. Se verifica con la misma tabla capturada, para no depender de la suite real.
+   ```bash
+   F="$(mktemp -t aoi-facts-XXXXXX.txt)"
+   printf 'key                              value\n%s\nbic.BIC-2099-999.never.1          NUNCA algo que ningun test cita\n' \
+     '------------------------------------------------------------' > "$F"
+   node scripts/sdd-lifecycle/invariant-gate.mjs --entity "AOI TESTS" --tests-dir . --facts-file "$F" --exit-code
+   # esperado: ## Invariant Gate: 🛑 FAILED  ·  1 rule, 0 covered   ·   exit 1
+   rm -f "$F"
+   ```
+
+> [!WARNING]
+> **Una instalación limpia HEREDA el contrato del ciclo anterior, y el gate falla por eso.**
+> Los hechos `bic.*` viven en el store COMPARTIDO de ICM y la limpieza del Paso 0.1 NO los
+> toca: borra el workspace, no la memoria. Medido en esta auditoría: el contrato
+> `BIC-2026-001` de la corrida anterior seguía ahí y el gate reportó
+> **`FAILED · 3 rules · 0 covered`** contra una instalación recién creada, porque los tests
+> que lo citaban se habían ido con el workspace.
+>
+> **El gate tiene razón** —un contrato declarado sin test es un contrato sin enforcear— pero
+> el mensaje no distingue "el agente no escribió los tests" de "los tests ya no existen en
+> este workspace". Antes de leer ese FAIL como un defecto de la instalación, comprobá qué
+> contratos hay: `icm facts list "AOI TESTS" -p "bic."`. Un contrato de un ciclo ya archivado
+> se retira con `icm facts forget`, y entonces el gate vuelve a SKIPPED.
+>
+> Por eso este paso afirma con `--facts-file` y no contra el store vivo: un paso de auditoría
+> que cambia de resultado según lo que quedó de la corrida anterior no es un paso.
+
+3. **`/sdd-frame` LEE los invariantes globales del SBC.** Es el handoff que faltaba: el SBC
+   los persistía y ningún prompt los leía, así que el propósito central de la génesis moría
+   en ICM. El comando que el prompt prescribe tiene que devolverlos.
+   ```bash
+   DB="$(mktemp -t aoi-frame-XXXXXX.db)"; rm -rf "$DB"*
+   icm facts set --db "$DB" "AOI TESTS" "sbc.SBC-2026-001.never.1" "NUNCA registrar PII en logs"
+   icm facts set --db "$DB" "AOI TESTS" "sbc.SBC-2026-001.crossing.1" "gateway -> billing: charge-request"
+   icm facts list --db "$DB" "AOI TESTS" -p "sbc."
+   # esperado: los dos hechos. Es el paso 3 del prompt de /sdd-frame.
+   grep -c 'facts list "{WORKSPACE}" -p "sbc."' .github/prompts/sdd-frame.prompt.md
+   # esperado: 1  (el prompt lo prescribe; sin esta línea el handoff no existe)
+   rm -rf "$DB"*   # el glob cubre los hermanos `.db-shm`, `.db-wal` y `.db.backup-<fecha>`
+   ```
+
+4. **La cadena de traspaso cierra en las siete fases.** Un artefacto que una fase produce y
+   ninguna posterior pide es la dirección que el checker no miraba.
+   ```bash
+   node scripts/sdd-lifecycle/phase-handoffs.mjs
+   # esperado: ✅ + la cadena con Phase_-2_Genesis incluida
+   #           y ⚠️ solo para registry.md / archive-report.md / functional-docs.md
+   #           (documentos vivos o terminales, leídos por humanos)
+   ```
+
+5. **Limpieza.**
+   ```bash
+   icm facts list "AOI TESTS" -p "sbc."   # esperado: no facts for AOI TESTS
+   ```
+
+---
+
+### Paso 1.3: `/sdd-new` — Service Discovery & Contraste de Relevancia
 1. Registrar la nueva tarea en `.tasks/registry.md`: `TASK-2026-003` en estado `📋 Propuesto`.
 2. Crear el directorio `.tasks/fiber-health/TASK-2026-003/`.
 3. **Compuerta Service Discovery**:
@@ -191,7 +378,7 @@ flowchart LR
 
 ---
 
-### Paso 1.2: `/sdd-ff` — Contratos Tipados y Tareas TDD
+### Paso 1.4: `/sdd-ff` — Contratos Tipados y Tareas TDD
 1. Crear `.tasks/fiber-health/TASK-2026-003/spec.md` con criterios de aceptación Gherkin.
 2. Crear `.tasks/fiber-health/TASK-2026-003/design.md` con el contrato:
    ```typescript
@@ -206,7 +393,7 @@ flowchart LR
 
 ---
 
-### Paso 1.3: `/sdd-apply` — Aislamiento TOON, Fiber Sandbox & TDD en Acción
+### Paso 1.5: `/sdd-apply` — Aislamiento TOON, Fiber Sandbox & TDD en Acción
 1. **Generar Payload Sanitizado TOON & Ejecutar en Fiber Sandbox**:
    ```bash
    node scripts/subagent-context/sanitize-subagent-payload.mjs --role backend --task-dir .tasks/fiber-health/TASK-2026-003 --format toon
@@ -267,7 +454,7 @@ flowchart LR
 
 4. Espejar en `scaffold/` **ambos** archivos nuevos. `aoi_apps/agentic-ops-dashboard/server`
    y `.../test` están los dos gobernados por el Invariante 7, así que espejar solo la
-   implementación deja el test huérfano y la paridad falla en el Paso 1.4:
+   implementación deja el test huérfano y la paridad falla en el Paso 1.6:
    ```bash
    cp aoi_apps/agentic-ops-dashboard/server/utils/fiber-health-evaluator.ts scaffold/aoi_apps/agentic-ops-dashboard/server/utils/fiber-health-evaluator.ts
    cp aoi_apps/agentic-ops-dashboard/test/server/fiber-health-evaluator.test.ts scaffold/aoi_apps/agentic-ops-dashboard/test/server/fiber-health-evaluator.test.ts
@@ -276,7 +463,7 @@ flowchart LR
 
 ---
 
-### Paso 1.4: `/sdd-verify` — Fusión Mecánica & Validación de Compuertas
+### Paso 1.6: `/sdd-verify` — Fusión Mecánica & Validación de Compuertas
 1. Ejecutar la suite completa de AOI:
    ```bash
    pnpm test
@@ -290,12 +477,12 @@ flowchart LR
 
 ---
 
-### Paso 1.5: `/sdd-archive`
+### Paso 1.7: `/sdd-archive`
 1. Actualizar estado en `.tasks/registry.md` a `📦 Archivado`.
 
 ---
 
-### Paso 1.6: Invariante 8 — Invariant Gate (Contrato Conductual Exigible)
+### Paso 1.8: Invariante 8 — Invariant Gate (Contrato Conductual Exigible)
 
 Verifica que una regla "NUNCA" declarada no pueda pasar sin un test que la afirme:
 
@@ -384,9 +571,26 @@ EOF
 
 ## 5.0 Línea Base de Benchmark — Ciclo 2026-09-12 · `v2.3.0` + cambios sin commitear de `v2.4.0` (ejecutado en AOI TESTS)
 
+> [!WARNING]
+> **DRIFT REGISTRADO el 2026-09-14: los números de esta sección ya no describen el sistema.**
+>
+> Se agregó la **Fase -2 (`/sdd-genesis`)**, así que el ciclo pasó de **6 a 7 fases**. Eso mueve
+> todo lo que dependa del conteo: el **piso del repositorio es hoy 105.378** (era 88.897), la
+> **banda universal pasó a ×7** y la masa repetida a **64,0%** sobre 8 archivos.
+>
+> **La sección se conserva sin editar a propósito.** Es el registro de lo que se midió en
+> `v2.3.0`, y reescribirla borraría la evidencia del salto. Lo que cambia es su vigencia.
+>
+> **La nueva línea base de INSTALACIÓN todavía no existe**: estos 105.378 son del **repositorio**,
+> medidos con `auditContextBudget`, no de un `setup.sh` sobre `AOI TESTS`. No se inventa un
+> número de instalación — se mide en el próximo ciclo, que es lo que esta matriz certifica.
+>
+> Estado del repositorio en `v2.5.0` (taggeado, árbol limpio): **PISO 105.378 · TECHO 124.078 ·
+> 7 fases · 28 sondas · 1221 tests / 267 suites · paridad 361 archivos · huella de masa repetida
+> `f6358ced3ce51ee0`**.
+
 > [!IMPORTANT]
-> **Ésta es la línea base vigente.** El próximo ciclo se compara contra estos números.
-> Versión instalada: **`v2.3.0` más los cambios sin commitear de la auditoría de protocolo**.
+> **Ésta era la línea base vigente al 2026-09-12.** Versión instalada: **`v2.3.0` más los cambios sin commitear de la auditoría de protocolo**.
 > **No es reproducible desde un tag** y así queda etiquetada: un install desde un árbol sucio
 > no se puede reconstruir desde el historial. Anotá siempre el `git describe --tags` **y** si
 > el árbol estaba limpio.

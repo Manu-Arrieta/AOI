@@ -19,6 +19,12 @@ import { execFile } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { promisify } from 'node:util'
+import { checkArchifySkill, findArchifyRenderer } from './archify-checks.mjs'
+
+// El split no cambia la superficie pública: se re-exporta lo que se movió, así
+// que `archify-path.mjs`, `aoi-doctor.mjs` y `blueprint-gate.mjs` siguen
+// importando de acá sin enterarse. Mismo precedente que `test-reachability.mjs`.
+export { checkArchifySkill, findArchifyRenderer }
 
 const execFileAsync = promisify(execFile)
 

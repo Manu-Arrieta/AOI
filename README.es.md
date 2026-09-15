@@ -74,9 +74,10 @@ bash "/c/path/to/AOI/setup.sh" "/c/ruta/a/mi-proyecto"
 Una vez instalado en tu proyecto, abrí el chat de tu asistente favorito (ej. Copilot Chat o Claude Code) y ejecutá:
 
 ```text
-/init       # Configura el stack tecnológico, las reglas y la constitución del proyecto
-/sdd-frame  # (Pre-Flight) Diálogo socrático en lenguaje natural y cristalización del Behavioral Intent Contract (BIC)
-/sdd-new    # Propone y especifica la funcionalidad técnica formal (feature)
+/init         # Configura el stack tecnológico, las reglas y la constitución del proyecto
+/sdd-genesis  # (Fase -2) Co-diseño de una idea abstracta hasta un System Blueprint Contract (SBC)
+/sdd-frame    # (Pre-Flight) Diálogo socrático en lenguaje natural y cristalización del Behavioral Intent Contract (BIC)
+/sdd-new      # Propone y especifica la funcionalidad técnica formal (feature)
 ```
 
 ---
@@ -108,9 +109,13 @@ Integración nativa con [ICM](https://github.com/rtk-ai/icm) a través de **5 m�
 
 El software no se improvisa: se expresa en lenguaje natural, se cristaliza en contratos matemáticamente rigurosos, se planifica, se implementa bajo TDD y se verifica mecánicamente.
 
-AOI evoluciona sobre el Scrum tradicional: **reemplaza la clásica "Historia de Usuario" por el Behavioral Intent Contract (BIC)** y añade la fase **Pre-Flight (`/sdd-frame`)**:
+AOI evoluciona sobre el Scrum tradicional: **reemplaza la clásica "Historia de Usuario" por el Behavioral Intent Contract (BIC)**, añade la pre-fase de **Génesis Arquitectónica (`/sdd-genesis`)** y la fase **Pre-Flight (`/sdd-frame`)**:
 
 ```text
+[Idea Abstracta: "¿Qué quiero construir?"]
+       ↓
+   /sdd-genesis → Fase -2: Co-diseño Arquitectónico, Bounded Contexts e Invariantes Globales (SBC)
+       ↓ (Genesis Gate: se aprueba COHERENCIA, no correctitud — eso lo dirá la primera rebanada vertical)
 [Intención Humana en Lenguaje Natural]
        ↓
    /sdd-frame   → Pre-Flight: Diálogo Socrático, Sonda ICM O(1) y Contrato Conductual (BIC)
@@ -126,7 +131,8 @@ AOI evoluciona sobre el Scrum tradicional: **reemplaza la clásica "Historia de 
    /sdd-archive → Documentación Viva, Distilación a Memoirs y Cierre (@documentation-analyst)
 ```
 
-- **Zero-Task Footprint**: En `/sdd-frame`, dialogás con el agente en lenguaje cotidiano (voz o texto) para auditar hechos en $O(1)$ y fijar las reglas "NUNCA" (invariantes) sin contaminar el registro de tareas.
+- **Las tres entradas son independientes**: `/sdd-genesis` si lo que tenés es una idea y todavía no existe arquitectura que la contenga (de un SBC salen **varios** BICs); `/sdd-frame` si la arquitectura existe y falta destilar las reglas de un flujo; `/sdd-new` si el requerimiento ya está acotado.
+- **Zero-Task Footprint**: En `/sdd-genesis` y `/sdd-frame`, dialogás con el agente en lenguaje cotidiano (voz o texto) para auditar hechos en $O(1)$ y fijar las reglas "NUNCA" (invariantes) sin contaminar el registro de tareas.
 - **Las 4 Dimensiones del BIC**: Todo requerimiento se decanta en Delta de Estado ($\Delta S = S_0 \to S_1$), Invariantes Inquebrantables, Topología de Actores y un Oráculo Observable de Negocio.
 - **Total Desacople**: Podés iniciar con `/sdd-frame` si la necesidad requiere decantación o entrar directo a `/sdd-new` si ya tenés el requerimiento técnico 100% maduro.
 

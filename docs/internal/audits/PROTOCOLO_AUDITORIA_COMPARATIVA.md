@@ -313,7 +313,7 @@ console.table(phases.map((p) => {
   }
 }))
 
-console.log('\n=== POR CATEGORÍA (suma de las 6 fases) ===')
+console.log('\n=== POR CATEGORÍA (suma de todas las fases) ===')
 const sum = (b, c) => b.rows.reduce((n, r) => n + (r[c] || 0), 0)
 console.table(['prompt','agents','speckit','instructions','skills','conditional'].map((c) => ({
   Categoria: c, base: sum(base, c), head: sum(head, c),
@@ -487,10 +487,18 @@ una vez con un «83,9%» fabricado.
 
 ---
 
-## 6. Fase 5 — La banda ×6 y el contraste con la masa en disco
+## 6. Fase 5 — La banda universal y el contraste con la masa en disco
 
-Un token recortado en un archivo que se carga en las seis fases vale seis. Uno recortado en
-un prompt de fase vale uno. **La banda ×6 es donde el trabajo rinde.**
+Un token recortado en un archivo que se carga en **todas** las fases del ciclo vale N veces, donde
+**N es el número de fases** — no una constante. Uno recortado en un prompt de fase vale una sola.
+**La banda universal es donde el trabajo rinde.**
+
+> **Por qué el título dejó de decir `×6`.** Este documento decía "banda ×6" en seis lugares, y el
+> número dejó de ser cierto cuando el ciclo pasó de 6 a 7 fases con `/sdd-genesis`. Poner `×7`
+> habría repetido el defecto: el valor se rompe con la próxima fase. El multiplicador se **deriva**
+> de `SDD_PHASES.length` en `cache-prefix.mjs`, y la prosa ahora dice "universal" en vez de un
+> número que hay que acordarse de actualizar. Los registros de ciclos anteriores **conservan su
+> `×6`**: ahí el número es el dato medido, no el nombre del concepto.
 
 ### 6.1 Medir la banda en ambos árboles
 
@@ -909,6 +917,7 @@ estos nombres:
 | Fuera del bucle | Por qué |
 | :--- | :--- |
 | `pnpm aoi:mutation` | Es lento a propósito (corre cada área una vez por mutante). Va en la **Fase 8**, no acá. |
+| `pnpm aoi:blueprint-gate` | Compuerta de la Fase -2 (`/sdd-genesis`). Sin hechos `sbc.*` sale **SKIPPED** y no audita nada; se corre en el ciclo SDD, no en esta auditoría. Su rama de diagrama es condicional (cruces + Archify) y vive en el WORKSPACE. |
 | `pnpm aoi:stress-sdd` | Payload variable: se mide en la **Fase 6**, y casi nunca es comparable. |
 | `pnpm aoi:probes` | Genera sondas; se juzga en el **13.3**. |
 | `pnpm aoi:context`, `pnpm aoi:cache-prefix` (modo reporte) | Instrumentos de medición, no compuertas. Ya se usaron en las Fases 2–5. |
@@ -1474,7 +1483,7 @@ rm -f /tmp/aoi-before.txt /tmp/aoi-after.txt
 | Comparación | Qué significa si difieren |
 | :--- | :--- |
 | Piso por ciclo | **Deben coincidir.** Si no, la instalación no refleja el código auditado |
-| Huella de masa repetida | **Debe coincidir.** Es la prueba byte a byte de que la banda ×6 es la misma |
+| Huella de masa repetida | **Debe coincidir.** Es la prueba byte a byte de que la banda universal es la misma |
 | Cantidad de tests | Puede diferir legítimamente: hay tests que sólo prueban al instalador y no se envían. **Explicá la diferencia con nombres, no la ignores** |
 | Fidelidad del payload | La instalación suele tener artefactos reales que el repositorio no. Fases que allá eran `fixture` o `skipped` acá se miden de verdad |
 | **Conjunto de archivos gobernados** | **Es la fila que nadie hacía, y la más importante.** Ver 14.3.1 |
@@ -1571,7 +1580,7 @@ El resultado de esta corrida **es la línea base contra la cual se compara el ci
 Anotala en el protocolo de verificación del repositorio con:
 
 - el `git describe --tags` de lo instalado;
-- piso, techo, banda ×6 y huella;
+- piso, techo, banda universal y huella;
 - payload base → optimizado, con la fidelidad por fase;
 - paridad, suite, doctor y compuertas;
 - **el diff de conjuntos de archivos de 14.3.1 y el veredicto de los skips nombrados**;
@@ -1594,7 +1603,7 @@ completos y sus fechas. Si el tag no apunta al commit auditado, **decilo explíc
 3. La descomposición de cuatro términos, con la suma de control visible.
 4. El renglón [C] abierto: qué es contabilidad y qué es conducta.
 5. La comparación honesta, con los dos números.
-6. La banda ×6 contra la masa en disco, con la tolerancia del 10% declarada explícitamente.
+6. La banda universal contra la masa en disco, con la tolerancia del 10% declarada explícitamente.
 7. La masa que ningún instrumento cuenta (paso 6.5), como renglón de alcance — **nunca
    sumada al piso**.
 8. Instrumentación: qué no existía en la versión vieja, y qué corrió el bucle de 8.2 contra
@@ -2687,7 +2696,7 @@ Antes de dar la auditoría por terminada:
       arreglos (§16.1).
 - [ ] La suma de control de la descomposición cierra exactamente.
 - [ ] Cada archivo del renglón [C] fue abierto y clasificado como contabilidad o conducta.
-- [ ] El delta de la banda ×6 converge con el término [A] dentro del 10% declarado (paso 6.3).
+- [ ] El delta de la banda universal converge con el término [A] dentro del 10% declarado (paso 6.3).
 - [ ] **El instrumento del payload se reproduce contra sí mismo**: dos corridas sobre el mismo
       árbol dan el mismo número (paso 7.1). Si no, el payload no se reporta.
 - [ ] La fidelidad del payload está declarada: cuántas fases reales, cuántas fixture, cuántas

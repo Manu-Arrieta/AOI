@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, it } from 'node:test'
+import { describe, it, after } from 'node:test'
 import {
   auditTestGlobs,
   collectTestGlobs,
@@ -16,9 +16,22 @@ import {
 /** La raíz del repositorio, para los casos que corren el CLI en un hijo. */
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 
+/**
+ * Directorios descartables, borrados al cerrar el módulo.
+ *
+ * Acumulados y no limpiados caso por caso porque el helper se invoca inline y
+ * no hay variable por test donde borrar. Medido: 9 directorios por corrida
+ * quedaban en `$TMPDIR` para siempre.
+ */
+const temporales = []
+after(() => {
+  for (const dir of temporales) fs.rmSync(dir, { recursive: true, force: true })
+})
+
 /** Builds a throwaway workspace with a package.json and optional test files. */
 function workspace({ scripts, files = [], devRepo = false }) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-globs-'))
+  temporales.push(root)
   fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ scripts }))
   if (devRepo) fs.writeFileSync(path.join(root, 'setup.sh'), '#!/usr/bin/env bash\n')
   for (const rel of files) {
@@ -253,6 +266,9 @@ describe('stripComments', () => {
  * defecto que la guarda existe para evitar.
  */
 describe('la guarda de CLI', () => {
+  /** Misma señal que usa el script: `setup.sh` en la raíz = repo de desarrollo. */
+  const ES_REPO = fs.existsSync(path.join(REPO, 'setup.sh'))
+
   const CORRER = (args) => {
     const r = spawnSync(process.execPath, args, { encoding: 'utf8', timeout: 30000, cwd: REPO })
     return `${r.stdout ?? ''}${r.stderr ?? ''}`
@@ -270,14 +286,37 @@ describe('la guarda de CLI', () => {
     // el script deja de hacer su trabajo.
     const out = CORRER(['scripts/scaffold/validate-test-globs.mjs'])
     assert.match(out, /AOI Test Glob Coverage/, `no ejecutó la auditoría: ${out.slice(0, 200)}`)
-    assert.match(out, /Every declared test glob resolves/, 'no trajo el resumen de modo estricto')
+
+    // El resumen tiene que decir lo mismo que las líneas de arriba: si listó
+    // globs ausentes, no puede cerrar afirmando que todos resuelven.
+    //
+    // Se afirma sobre lo que la propia salida lista y no sobre el modo, porque
+    // el resumen depende de `absent.length`, no de `strict`: una instalación
+    // donde todos los globs llegaron imprime el mismo texto que el repo. La
+    // versión anterior exigía el estricto a secas, y por eso pasaba en el repo y
+    // fallaba en toda instalación con un glob legítimamente ausente.
+    const hayAusentes = /not installed here:/.test(out)
+    assert.match(
+      out,
+      hayAusentes ? /globs resuelven/ : /Every declared test glob resolves/,
+      'el resumen contradice la lista de globs ausentes que la misma salida imprimió',
+    )
   })
 
-  it('en el repo de desarrollo el resumen es el de modo estricto, no el tolerante', () => {
+  it('en el repo de desarrollo el resumen es el de modo estricto, no el tolerante', (t) => {
     // Distingue `absent.length > 0` de `>= 0`: con `>=` la condición es siempre
     // verdadera y el resumen cambia al de modo lenient aunque no haya ningún
     // glob ausente. El repo tiene `setup.sh`, así que es estricto y no hay
     // ausentes.
+    //
+    // Sólo corre en el repo, porque fuera de él el resumen tolerante es el
+    // CORRECTO y asertar el estricto convertía este test en un fallo garantizado
+    // en cada instalación. La cobertura de la mutación no se pierde: el
+    // trinquete de mutación corre en el repo de desarrollo.
+    if (!ES_REPO) {
+      t.skip('no es el repo de desarrollo: no hay setup.sh en la raíz')
+      return
+    }
     const out = CORRER(['scripts/scaffold/validate-test-globs.mjs'])
     assert.match(out, /strict \(development repository\)/)
     assert.doesNotMatch(out, /de 15 globs resuelven/, 'dio el resumen tolerante sin globs ausentes')

@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, it } from 'node:test'
+import { describe, it, after } from 'node:test'
 import { auditSrp, listSourceFiles, LEGACY_BUDGET, MAX_LOC } from './validate-srp.mjs'
 
 /** La raiz del repositorio, para el caso que corre el CLI en un hijo. */
@@ -15,8 +15,18 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
  * it as the development repository, which is where the full audit applies;
  * pass devRepo:false to model an installed workspace.
  */
+//
+// Los árboles se acumulan y se borran en un `after` del módulo: el helper se
+// invoca inline y no hay variable por test donde limpiar. Medido: 15
+// directorios por corrida quedaban en `$TMPDIR` para siempre.
+const temporales = []
+after(() => {
+  for (const dir of temporales) fs.rmSync(dir, { recursive: true, force: true })
+})
+
 function treeWith(sizes, { devRepo = true } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-srp-'))
+  temporales.push(root)
   if (devRepo && !sizes['setup.sh']) fs.writeFileSync(path.join(root, 'setup.sh'), '#!/usr/bin/env bash\n')
   for (const [rel, lines] of Object.entries(sizes)) {
     const full = path.join(root, rel)
@@ -118,7 +128,9 @@ describe('a link is a path to code, not a way around the rule', () => {
   /** A tree whose `scripts/linked` is a symlink to a directory living elsewhere. */
   function treeWithLinkedDir(sizes) {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-srp-link-'))
+    temporales.push(root)
     const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-srp-out-'))
+    temporales.push(outside)
     fs.writeFileSync(path.join(root, 'setup.sh'), '#!/usr/bin/env bash\n')
     fs.mkdirSync(path.join(root, 'scripts'), { recursive: true })
     for (const [name, lines] of Object.entries(sizes)) {
@@ -144,7 +156,9 @@ describe('a link is a path to code, not a way around the rule', () => {
 
   it('measures a symlinked file too', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-srp-linkf-'))
+    temporales.push(root)
     const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-srp-outf-'))
+    temporales.push(outside)
     fs.writeFileSync(path.join(root, 'setup.sh'), '#!/usr/bin/env bash\n')
     fs.mkdirSync(path.join(root, 'scripts'), { recursive: true })
     fs.writeFileSync(path.join(outside, 'gordo.mjs'), 'x\n'.repeat(400))
@@ -158,6 +172,7 @@ describe('a link is a path to code, not a way around the rule', () => {
     // A dangling link has nothing to measure, but `statSync` throws on it and
     // an exception here would take the whole gate down.
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-srp-dead-'))
+    temporales.push(root)
     fs.writeFileSync(path.join(root, 'setup.sh'), '#!/usr/bin/env bash\n')
     fs.mkdirSync(path.join(root, 'scripts'), { recursive: true })
     fs.symlinkSync(path.join(root, 'no-existe'), path.join(root, 'scripts/roto.mjs'))

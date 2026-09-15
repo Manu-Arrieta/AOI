@@ -24,6 +24,7 @@ import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { before, describe, it } from 'node:test'
+import { SDD_PHASES } from './context-budget.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(HERE, '../..')
@@ -52,8 +53,11 @@ before(() => {
 
 /** One row per phase, as the per-phase lines report it. */
 function phases() {
+  // El signo es significativo: la fase más temprana del ciclo es `-2`. Un patrón
+  // que sólo acepte dígitos la saltea en silencio, y el conteo de fases de abajo
+  // seguiría cerrando contra un número que ya no coincide con la realidad.
   const rows = []
-  for (const m of output.matchAll(/Phase (\d) complete: (\d+) tokens -> (\d+) tokens \(([\d.]+)% saved\) \[(\w+)\]/g)) {
+  for (const m of output.matchAll(/Phase (-?\d+) complete: (\d+) tokens -> (\d+) tokens \(([\d.]+)% saved\) \[(\w+)\]/g)) {
     rows.push({ phase: Number(m[1]), base: Number(m[2]), aoi: Number(m[3]), pct: Number(m[4]), origin: m[5] })
   }
   return rows
@@ -64,14 +68,20 @@ describe('the benchmark runs and accounts for every phase', () => {
     assert.equal(code, 0, output.slice(-800))
   })
 
-  it('accounts for all six phases, whatever it managed to measure', () => {
+  it('accounts for every phase of the cycle, whatever it managed to measure', () => {
     // The fidelity line is the report's own statement about how much of the
-    // product it actually exercised. It has to add up to six: a phase that
-    // vanishes from the accounting is a phase nobody knows went unmeasured.
+    // product it actually exercised. It has to add up to the number of phases
+    // the lifecycle declares: a phase that vanishes from the accounting is a
+    // phase nobody knows went unmeasured. Se deriva de `SDD_PHASES` y no se
+    // escribe a mano — agregar una fase debe romper este test, no esquivarlo.
     const m = output.match(/Fidelidad: (\d+) fase\(s\) medidas sobre artefactos reales · (\d+) sobre fixtures · (\d+) omitidas/)
     assert.ok(m, 'el reporte no declara su fidelidad')
     const [real, fixture, omitted] = [Number(m[1]), Number(m[2]), Number(m[3])]
-    assert.equal(real + fixture + omitted, 6, `la fidelidad suma ${real + fixture + omitted}, no seis`)
+    assert.equal(
+      real + fixture + omitted,
+      SDD_PHASES.length,
+      `la fidelidad suma ${real + fixture + omitted}, no ${SDD_PHASES.length}`,
+    )
     fidelity = { real, fixture, omitted }
   })
 

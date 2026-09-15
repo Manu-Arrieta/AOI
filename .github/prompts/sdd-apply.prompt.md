@@ -101,6 +101,44 @@ icm facts set "{WORKSPACE}" "config.{key}" "{value}"
 
 On errors/discoveries, store immediately in ICM with `importance: "high"`.
 
+### Step 4b: Diagram Artifacts for Touched Boundary Crossings (MANDATORY when applicable)
+
+The approved SBC declared boundary crossings and persisted them as O(1) facts (`sbc.{SBC_ID}.crossing.{n}`). **This is the phase that produces the diagrams those crossings imply** — `/sdd-genesis` only declares the obligation, it does not render.
+
+```bash
+icm facts list "{WORKSPACE}" -p "sbc."
+```
+
+If the facts exist **and the implementation touched a crossing**, produce its `sequence` diagram with Archify into the WORKSPACE (never into AOI):
+
+```
+{WORKSPACE}/.blueprints/{SBC_ID}/diagrams/{flow}.sequence.json   ← typed IR
+{WORKSPACE}/.blueprints/{SBC_ID}/diagrams/{flow}.sequence.html   ← rendered artifact
+```
+
+Resolve the renderer first — **do not hardcode its path**, it can live in four different locations:
+
+```bash
+ARCHIFY="$(pnpm --silent aoi:archify)" || ARCHIFY=""
+```
+
+If `ARCHIFY` is empty, Archify is not installed: record the obligation and continue (see below). If it resolves, validate before considering the diagram done — one that fails validation is not an artifact:
+
+```bash
+node "$ARCHIFY" validate sequence <candidate.json> --quality showcase --json
+node "$ARCHIFY" deliver sequence <candidate.json> <output.html> --quality showcase --json
+```
+
+**[conditional]** If the *architecture* of the blueprint changed — a context added or removed, a crossing rerouted — produce an **Architecture Delta** comparing the previous and current blueprint snapshots:
+
+```bash
+node "$ARCHIFY" compare architecture <base.json> <head.json> <delta.html> --json
+```
+
+> **`compare` exists only for `architecture`.** There is no per-crossing delta: `compare sequence` is rejected by the CLI (verified by running it). Per-crossing drift is caught by re-validating the `sequence` artifacts, not by a delta on them. Do not document or promise a `sequence` delta.
+
+> **Archify is optional.** If the renderer is absent (`node scripts/aoi-doctor.mjs` reports it as a WARNING), record the obligation in ICM and continue. Do **not** block the task, and do **not** delete the crossing to make the gate pass — the crossing is the architectural fact, the diagram is its derived artifact.
+
 ### Step 5: Implementation Checkpoint
 
 After all tasks are complete:

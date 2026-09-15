@@ -277,8 +277,14 @@ invoke_windows_powershell() {
             err "Could not convert sanitized setup.ps1 path for Windows PowerShell: $tmp_posix"
             return 1
           fi
-          "$bin" -NoProfile -ExecutionPolicy Bypass -File "$tmp_windows" -ProjectPath "$windows_project_path" "${extra_args[@]}"
-          local rc=$?
+          # La invocación va en una lista `||` y no como comando suelto. Como
+          # comando suelto, `set -euo pipefail` aborta el script cuando
+          # PowerShell sale distinto de cero, y el `rm` de la línea siguiente
+          # nunca corre: el temporal queda en el DIRECTORIO DEL REPOSITORIO,
+          # porque `mktemp` lo crea en `$source_dir` y no en `$TMPDIR`. Con `||`
+          # se conserva el código de salida Y la limpieza corre siempre.
+          local rc=0
+          "$bin" -NoProfile -ExecutionPolicy Bypass -File "$tmp_windows" -ProjectPath "$windows_project_path" "${extra_args[@]}" || rc=$?
           rm -f "$tmp_posix"
           return $rc
           ;;
@@ -606,6 +612,64 @@ require_mcp_compressor() {
   exit 1
 }
 
+# Archify es OPCIONAL, como Headroom, y por una razón que no comparte con ninguna
+# otra herramienta: no ahorra un solo token y NO es un binario de PATH — es una
+# skill que se baja de upstream. Lo que compra es determinismo: un renderizador
+# local que valida un JSON-IR tipado, y `Architecture Delta`, que es lo que
+# detecta deriva cuando un SBC acoplado cambia bajo otro.
+#
+# Bloquear el setup por su ausencia acoplaba TODO AOI al repo de un tercero. Se
+# instaló bloqueante una vez y se corrigió el mismo día: el riesgo real es que
+# upstream mueva `bin/archify.mjs` y entonces ninguna instalación complete.
+# Instalación best-effort, y la exigencia vive donde corresponde — en la compuerta
+# de la Fase -2, que sólo se activa cuando el blueprint declara cruces.
+#
+# Se instala GLOBAL (~/.agents/skills), nunca dentro del repo: `.agents/skills`
+# es una ruta gobernada, y meter ahí un skill de terceros obligaría a espejar
+# copia byte a byte de upstream dentro del scaffold.
+get_archify_path() {
+  local candidate
+  for candidate in \
+    "$HOME/.agents/skills/archify/bin/archify.mjs" \
+    "$HOME/.claude/skills/archify/bin/archify.mjs" \
+    "$HOME/.agents/skills/archify/archify/bin/archify.mjs"; do
+    if [[ -f "$candidate" ]]; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+install_archify() {
+  if [[ ! -f "$SCRIPT_DIR/scripts/install-archify.sh" ]]; then
+    err "scripts/install-archify.sh no encontrado junto a setup.sh."
+    return 1
+  fi
+  bash "$SCRIPT_DIR/scripts/install-archify.sh" --yes
+}
+
+# Verificado por la RUTA DEL RENDERIZADOR, no por el código de salida del
+# instalador: el CLI `skills` sale 0 en los comandos que acepta, haya escrito o
+# no un destino que este repositorio pueda alcanzar.
+#
+# Advierte en vez de bloquear. La ausencia se reporta como WARNING, igual que
+# Headroom: una instalación puede terminar sin Archify y seguir siendo correcta,
+# porque la exigencia de diagrama pertenece a una fase que puede no ejecutarse
+# nunca.
+require_archify() {
+  local archify_path
+  archify_path="$(get_archify_path || true)"
+  if [[ -n "$archify_path" ]]; then
+    ok "Archify present ($archify_path)"
+    return 0
+  fi
+
+  warn "Archify no está instalado — la compuerta de diagrama de la Fase -2 quedará inactiva."
+  warn "Para habilitarla: bash scripts/install-archify.sh --yes"
+  return 0
+}
+
 get_codebase_memory_path() {
   local resolved_path
 
@@ -722,13 +786,16 @@ ensure_dashboard_runtime() {
   fi
 }
 
-# Install order: RTK → ICM → uv → Specify
+# Install order: RTK → ICM → uv → compressor → Archify (opcional) → Specify
 #
-# Every token-saving tool is mandatory. Headroom is the one exception, and it
-# stays optional in Phase 1.6. RTK used to be installed best-effort and the run
-# continued on failure with a warning, which meant an installation could end up
-# advertising 60-90% savings on shell output while running every command
-# unfiltered. A saving the product cannot guarantee is not a saving.
+# Every token-saving tool is mandatory. Headroom is the declared exception, and
+# Archify joins it — not because it saves tokens (it does not) but because it is
+# a third-party skill fetched from upstream at install time. RTK used to be
+# installed best-effort and the run continued on failure with a warning, which
+# meant an installation could end up advertising 60-90% savings on shell output
+# while running every command unfiltered. A saving the product cannot guarantee
+# is not a saving. Archify is the opposite case: it guarantees nothing about
+# cost, and its absence degrades one optional gate rather than the whole tool.
 if ! install_rtk; then
   err "RTK is mandatory: it is the proxy that keeps command output out of the context."
   err "Install it manually (brew install rtk-ai/tap/rtk) and rerun setup.sh."
@@ -746,6 +813,12 @@ if ! install_mcp_compressor; then
   exit 1
 fi
 require_mcp_compressor
+# Archify: best-effort, como Headroom. Su ausencia advierte y el setup continúa.
+if ! install_archify; then
+  warn "install-archify.sh falló — el setup continúa sin Archify."
+  warn "Reintentar luego: bash scripts/install-archify.sh --yes"
+fi
+require_archify
 install_specify || true
 
 # ── Phase 1.5: Optional NVIDIA customendpoint helper (non-blocking) ────────
@@ -997,19 +1070,59 @@ header "Phase 2: Spec-Kit"
 
 cd "$PROJECT_PATH"
 
+# ── Foto previa: qué archivos existían ANTES de que spec-kit tocara nada ────
+#
+# `--ignore-existing` (Fase 3) protege lo del usuario, pero no distingue "el
+# usuario ya lo tenía" de "spec-kit lo escribió hace dos minutos". Medido en una
+# instalación limpia: `specify init` crea 69 archivos bajo .github/ y .specify/
+# que el scaffold TAMBIÉN trae, en versiones peores — las de spec-kit no tienen
+# los bloques `## Model Requirement` que el Model Selection Protocol exige para
+# poder elegir modelo. Como `rsync --ignore-existing` encuentra los 69 ya
+# presentes, saltea las versiones de AOI y la instalación se queda con las de
+# spec-kit. Se perdieron 14 agentes, todos los `speckit.*`.
+#
+# La foto previa restaura la distinción: lo que existía antes es del usuario y
+# no se toca; lo que apareció DURANTE la instalación es de una herramienta y se
+# reemplaza por la de AOI.
+FRESH_SNAPSHOT=""
+if [ "$IS_REINSTALL" -eq 0 ]; then
+  FRESH_SNAPSHOT="$(mktemp "${TMPDIR:-/tmp}/aoi-preinstalacion.XXXXXX")"
+  ( cd "$PROJECT_PATH" && find . -type f 2>/dev/null | LC_ALL=C sort ) > "$FRESH_SNAPSHOT" 2>/dev/null || true
+fi
+
 if [ "$IS_REINSTALL" -eq 1 ]; then
-  # `specify init --force` overwrites .github/ and .specify/ wholesale. On a
-  # first install that is exactly what we want. On a reinstall it is pure
-  # destruction: AOI's scaffold already owns every artifact spec-kit writes
-  # (28 speckit files under .github/, 41 under .specify/), so the smart merge
-  # below reinstates them anyway — but only AFTER spec-kit has already
-  # flattened whatever the workspace had, which destroys the very information
-  # the three-way merge needs to tell an AOI update apart from a user edit.
+  # `specify init --force` overwrites .github/ and .specify/ wholesale. It is
+  # destruction on BOTH paths, not just this one: AOI's scaffold already owns
+  # every artifact spec-kit writes (28 speckit files under .github/, 41 under
+  # .specify/), so spec-kit's versions are strictly worse — they lack the model
+  # blocks. This branch skips it entirely.
+  #
+  # On a first install it used to run because "that is exactly what we want",
+  # which was wrong for the same reason. It now runs, because `.specify/
+  # init-options.json` is spec-kit's own config (two speckit agents read it) and
+  # the scaffold does not ship it — but its damage is repaired in Phase 3 with
+  # the snapshot above.
   info "Reinstall detected — skipping 'specify init --force' (AOI's scaffold owns these artifacts)"
 elif command -v specify &>/dev/null; then
   info "Initializing spec-kit for Copilot..."
-  specify init . --ai copilot --force 2>/dev/null && ok "Spec-kit → Copilot" || warn "Spec-kit Copilot init skipped (may need manual setup)"
-
+  # `2>/dev/null` tapa la salida de error, NO la entrada. Con stdin heredado de
+  # un proceso sin terminal, el prompt de `specify init` espera para siempre:
+  # medido, 6:44 colgado en una corrida desatendida, con el prompt escribiendo
+  # en /dev/ttys012 — fuera del log, así que el cuelgue era invisible hasta
+  # mirar el terminal. Un instalador que se declara autónomo y se cuelga
+  # esperando una respuesta que nadie puede dar no es autónomo.
+  #
+  # Cerrar stdin da EOF inmediato: con `--force` no hay nada que confirmar, y
+  # si igual pregunta, el EOF la termina en vez de colgarla, cayendo en el
+  # `|| warn` que ya estaba. Con terminal presente se la deja preguntar —
+  # cerrar stdin en una corrida interactiva convertiría una confirmación en un
+  # error silencioso.
+  if [ -t 0 ]; then
+    SPECIFY_STDIN=/dev/tty
+  else
+    SPECIFY_STDIN=/dev/null
+  fi
+  specify init . --ai copilot --force 2>/dev/null <"$SPECIFY_STDIN" && ok "Spec-kit → Copilot" || warn "Spec-kit Copilot init skipped (may need manual setup)"
 else
   warn "Specify CLI not found — skipping spec-kit init"
   warn "Run manually after installing: specify init . --ai copilot --force"
@@ -1302,6 +1415,35 @@ EOF
     ok "Scaffold merged (cp, sin pisar lo existente)"
   fi
 
+  # ── Reparar lo que una herramienta escribió durante la instalación ────────
+  #
+  # El merge de arriba ya cubrió lo que faltaba, salvo lo que `specify init`
+  # creó minutos antes: para `--ignore-existing` esos archivos "ya existían", así
+  # que las versiones de AOI nunca llegaron. Este paso los repone SIN tocar nada
+  # del usuario, porque solo copia lo que NO estaba en la foto previa.
+  #
+  # Medido antes de este fix: 14 de 27 agentes quedaban sin su bloque
+  # `## Model Requirement` en una instalación limpia, o sea que el Model
+  # Selection Protocol no tenía qué modelo declarar. El repo no lo veía porque
+  # `.github/agents/` del repo sí tiene los bloques.
+  FRESH_RESTORE=""
+  if [ -n "$FRESH_SNAPSHOT" ] && [ -s "$FRESH_SNAPSHOT" ] && command -v rsync &>/dev/null; then
+    FRESH_RESTORE="$(mktemp "${TMPDIR:-/tmp}/aoi-restaurar.XXXXXX")"
+    (
+      cd "$SCAFFOLD_DIR" && find . -type f 2>/dev/null | sed 's|^\./||' | LC_ALL=C sort
+    ) | while IFS= read -r rel; do
+      [ -n "$rel" ] || continue
+      grep -qxF "./$rel" "$FRESH_SNAPSHOT" || printf '%s\n' "$rel"
+    done > "$FRESH_RESTORE"
+
+    if [ -s "$FRESH_RESTORE" ]; then
+      rsync -a --files-from="$FRESH_RESTORE" "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
+      ok "Scaffold restored over files created during install ($(wc -l < "$FRESH_RESTORE" | tr -d ' ') file(s))"
+    fi
+    # No se borra acá: la advertencia de más abajo lo necesita para no listar
+    # como "intacto" un archivo que este paso acaba de reemplazar.
+  fi
+
   # AOI needs its own npm scripts to exist, and a project that already has a
   # package.json just had its copy protected above — so the scripts are merged
   # in rather than the file being replaced.
@@ -1313,14 +1455,57 @@ EOF
   fi
 
   if [ -n "$FRESH_KEPT" ]; then
-    warn "Estos archivos ya existían y NO se tocaron:"
-    printf '%s\n' "$FRESH_KEPT" | while IFS= read -r kept; do
-      [ -n "$kept" ] && printf '     %s\n' "$kept"
-    done
-    warn "Si querés la versión de AOI de alguno, copiala vos desde el scaffold."
+    # La lista se calculó ANTES de reponer el scaffold, así que incluye archivos
+    # que el paso de reparación acaba de reemplazar. Reportarlos como "no se
+    # tocaron" sería falso, y peor: el consejo de copiarlos a mano le pediría al
+    # usuario arreglar lo que el instalador ya arregló.
+    FRESH_SOLO_DEL_USUARIO=""
+    while IFS= read -r kept; do
+      [ -n "$kept" ] || continue
+      if [ -n "$FRESH_RESTORE" ] && [ -s "$FRESH_RESTORE" ] && grep -qxF "$kept" "$FRESH_RESTORE"; then
+        continue
+      fi
+      FRESH_SOLO_DEL_USUARIO="${FRESH_SOLO_DEL_USUARIO}${kept}"$'\n'
+    done < <(printf '%s\n' "$FRESH_KEPT")
+
+    if [ -n "$FRESH_SOLO_DEL_USUARIO" ]; then
+      # No todos los "intactos" son iguales, y decirlo importa. Un archivo que
+      # difiere del scaffold no es sólo un archivo preservado: es un archivo
+      # que se quedó con una versión vieja y que NO va a recibir las mejoras.
+      # Medido en la auditoría de v2.5.0: la matriz de verificación del
+      # workspace quedó 167 líneas atrás del repo, así que el runbook que se
+      # ejecuta no tenía ni el respaldo previo a la limpieza ni la cobertura de
+      # las siete fases — mejoras hechas, precisamente, al runbook.
+      FRESH_DIFIEREN=""
+      while IFS= read -r kept; do
+        [ -n "$kept" ] || continue
+        if [ -f "$SCAFFOLD_DIR/$kept" ] && ! cmp -s "$PROJECT_PATH/$kept" "$SCAFFOLD_DIR/$kept"; then
+          FRESH_DIFIEREN="${FRESH_DIFIEREN}${kept}"$'\n'
+        fi
+      done < <(printf '%s' "$FRESH_SOLO_DEL_USUARIO")
+
+      warn "Estos archivos ya existían y NO se tocaron:"
+      while IFS= read -r kept; do
+        [ -n "$kept" ] || continue
+        if [ -n "$FRESH_DIFIEREN" ] && grep -qxF "$kept" < <(printf '%s' "$FRESH_DIFIEREN"); then
+          printf '     %s   ← DIFIERE de la versión de AOI\n' "$kept"
+        else
+          printf '     %s\n' "$kept"
+        fi
+      done < <(printf '%s' "$FRESH_SOLO_DEL_USUARIO")
+
+      if [ -n "$FRESH_DIFIEREN" ]; then
+        warn "Los marcados con ← DIFIERE conservan tu versión y NO reciben las mejoras de AOI."
+        warn "Si el archivo es un runbook o un documento, comparalo: cp del scaffold arriba."
+      fi
+      warn "Si querés la versión de AOI de alguno, copiala vos desde el scaffold."
+    fi
   fi
 
   prune_unselected_harness_files "$PROJECT_PATH" "$SELECTED_HARNESS"
+
+  rm -f "$FRESH_SNAPSHOT"
+  [ -n "$FRESH_RESTORE" ] && rm -f "$FRESH_RESTORE"
 fi
 
 # ── Rebuild the scaffold mirror inside the target ───────────────────────────
@@ -1832,7 +2017,10 @@ echo "  Next steps:"
 echo "    1. cd $PROJECT_PATH && code ."
 echo "    2. Run /init in Copilot Chat (bootstrap ICM, directories, base-project map)"
 echo "    3. (optional) Run /speckit.constitution to customize project rules"
-echo "    4. Start your first cycle: /sdd-new"
+echo "    4. Start a cycle. Three independent entries, pick by what you have:"
+echo "         /sdd-genesis  an idea, and no architecture yet  -> System Blueprint Contract"
+echo "         /sdd-frame    an intent in natural language     -> Behavioral Intent Contract"
+echo "         /sdd-new      a requirement already scoped       -> proposal + TASK-YYYY-NNN"
 if [ -f "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/package.json" ]; then
   echo "    5. Start the dashboard runtime: pnpm --dir aoi_apps/agentic-ops-dashboard dev"
 fi

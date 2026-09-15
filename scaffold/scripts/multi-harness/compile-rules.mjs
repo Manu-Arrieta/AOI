@@ -49,6 +49,7 @@ pnpm aoi:doctor                          # 360° Repository health check
 
 ### SDD Workflow Commands (Read from .github/prompts/<command>.prompt.md)
 - \`/init\` — Bootstrap project, ICM facts, and base project map (\`.github/prompts/init.prompt.md\`)
+- \`/sdd-genesis\` — Phase -2: co-design an abstract idea into a System Blueprint Contract (SBC) (\`.github/prompts/sdd-genesis.prompt.md\`)
 - \`/sdd-frame\` — Pre-Flight: Socratic dialogue in natural language & Behavioral Intent Contract (BIC) (\`.github/prompts/sdd-frame.prompt.md\`)
 - \`/sdd-new\` — Explore domain, discover services, and author proposal (\`.github/prompts/sdd-new.prompt.md\`)
 - \`/sdd-ff\` — Fast-Forward: specify → plan → tasks with TDD requirements (\`.github/prompts/sdd-ff.prompt.md\`)
@@ -85,7 +86,7 @@ export function generateAntigravityRules({ workspace = 'AOI' } = {}) {
 - Execute \`pnpm aoi:doctor\` to audit repository integrity in 0 tokens.
 - Follow Spec-Driven Development (SDD) lifecycle phases.
 - Headroom is an optional orthogonal compression layer; its absence produces warnings but never blocks execution.
-- SDD workflow prompts are defined in \`.github/prompts/<command>.prompt.md\` (e.g. \`init.prompt.md\`, \`sdd-frame.prompt.md\`, \`sdd-new.prompt.md\`, \`sdd-apply.prompt.md\`, \`sdd-verify.prompt.md\`, \`sdd-archive.prompt.md\`).
+- SDD workflow prompts are defined in \`.github/prompts/<command>.prompt.md\` (e.g. \`init.prompt.md\`, \`sdd-genesis.prompt.md\`, \`sdd-frame.prompt.md\`, \`sdd-new.prompt.md\`, \`sdd-apply.prompt.md\`, \`sdd-verify.prompt.md\`, \`sdd-archive.prompt.md\`).
 `
 }
 

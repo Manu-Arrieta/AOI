@@ -12,7 +12,7 @@ No necesitas memorizarte 50 comandos para trabajar con AOI todos los días. Con 
 graph LR
     C1["1. pnpm aoi:doctor<br>Para revisar la salud del auto"]
     C2["2. pnpm dev:dashboard<br>Para ver las pantallas en localhost:3000"]
-    C3["3. /sdd-frame<br>Para empezar una nueva idea en el chat"]
+    C3["3. /sdd-genesis o /sdd-frame<br>Para empezar una idea nueva o una funcionalidad"]
     C4["4. pnpm aoi:sync-rules<br>Para sincronizar tus editores"]
 
     C1 --> C2 --> C3 --> C4
@@ -23,6 +23,7 @@ graph LR
 | **Revisar si todo anda bien** | En la Terminal | `pnpm aoi:doctor` | Revisa las 6 áreas vitales en 1 segundo y te da el visto bueno verde en 0 tokens. |
 | **Abrir el panel visual** | En la Terminal | `pnpm dev:dashboard` | Abre tu navegador en `http://localhost:3000` con el tablero Kanban y el mapa 3D. |
 | **Empezar una funcionalidad** | En el Chat de la IA | `/sdd-frame` | Empieza la charla en español normal para definir qué quieres hacer y qué cosas están prohibidas. |
+| **Construir algo desde cero (idea nueva)** | En el Chat de la IA | `/sdd-genesis` | Le cuentas la idea y el asistente co-diseña la arquitectura: en qué se parte el sistema, qué reglas globales rigen, y por dónde empezar. |
 | **Sincronizar tus editores** | En la Terminal | `pnpm aoi:sync-rules` | Si cambiaste una regla, la copia a Copilot, Claude, Cursor, Antigravity y Cline al instante. |
 
 ---
@@ -32,6 +33,7 @@ graph LR
 ### 1. El Ciclo de Desarrollo (SDD)
 Escríbelos en el chat de tu editor a medida que avanzas en el trabajo:
 
+* **`/sdd-genesis`** ➔ **Fase -2 (Génesis):** Tienes una **idea** y ninguna arquitectura. El asistente te discute topologías, define los pedazos del sistema y las reglas globales, y produce un **SBC**. De ahí salen varios BICs.
 * **`/sdd-frame`** ➔ **Fase 0 (Pre-Flight):** Habla con la IA para definir la intención y crear el contrato de reglas NUNCA (BIC).
 * **`/sdd-new`** ➔ **Fase 1 (Especificación):** El analista redacta el documento formal de requerimientos (`spec.md`).
 * **`/sdd-ff`** ➔ **Fase 2 (Planos):** El arquitecto dibuja los diagramas y crea el plan de tareas (`plan.md`).

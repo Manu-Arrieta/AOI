@@ -8,7 +8,11 @@
  * crecen a ritmos distintos: esto es una tabla que se alarga con cada compuerta
  * nueva del ciclo, aquello es código que no cambia. La división la forzó el
  * trinquete del Invariante 5 al cruzar los 300 LOC, y el límite tenía razón.
+ *
+ * Las sondas de la Fase -2 viven en `behavioral-scenarios-genesis.mjs`: es la pre-fase, fuera del ciclo 0–5.
  */
+
+import { GENESIS_PROBES } from './behavioral-scenarios-genesis.mjs'
 
 /**
  * @typedef {object} Probe
@@ -21,6 +25,8 @@
  * @property {RegExp} [forbidden]    An answer that proves it did not.
  */
 export const PROBES = [
+  // La Fase -2 primero: es la pre-fase, y el orden del array sigue el ciclo.
+  ...GENESIS_PROBES,
   {
     id: 'triage-routing',
     cut: 'La tabla de 3 escenarios salió de la skill sdd-lifecycle',

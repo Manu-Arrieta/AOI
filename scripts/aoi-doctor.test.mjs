@@ -10,6 +10,7 @@ import {
   checkResourcesStructure,
   checkTaskRegistry,
   runAoiDoctor,
+  statusSymbol,
 } from './aoi-doctor.mjs'
 
 describe('aoi-doctor unit tests', () => {
@@ -119,5 +120,30 @@ describe('aoi-doctor unit tests', () => {
     })
     assert.ok(typeof report.ok === 'boolean')
     assert.ok(report.checks.length > 5)
+  })
+
+  it('el chequeo de Archify se reporta como no obligatorio', async () => {
+    // Es una skill de terceros que se baja de upstream: marcarla obligatoria
+    // haría fallar el doctor por no tener algo que el setup no exige.
+    const report = await runAoiDoctor({
+      execFn: async () => ({ stdout: 'All 15 ICM hook entries are healthy.' }),
+    })
+    const archify = report.checks.find((c) => /Archify/i.test(c.name))
+    assert.ok(archify, 'el chequeo de Archify desapareció del reporte')
+    assert.equal(archify.mandatory, false)
+  })
+})
+
+describe('statusSymbol traduce el veredicto al símbolo que se imprime', () => {
+  it('distingue warning, failed y el resto', () => {
+    assert.equal(statusSymbol('WARNING'), '⚠️ ')
+    assert.equal(statusSymbol('FAILED'), '❌')
+    assert.equal(statusSymbol('PASSED'), '✅')
+  })
+
+  it('un status desconocido cae en el símbolo de aprobado', () => {
+    // Sin el caso por defecto el símbolo quedaría `undefined` y la línea se
+    // imprimiría corrida, con un encabezado que igual parece bien formado.
+    assert.equal(statusSymbol('CUALQUIERA'), '✅')
   })
 })

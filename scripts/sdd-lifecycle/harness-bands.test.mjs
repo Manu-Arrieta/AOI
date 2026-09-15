@@ -21,7 +21,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
-import { formatHarnessBands, harnessSkillBands } from './context-budget.mjs'
+import { SDD_PHASES, formatHarnessBands, harnessSkillBands } from './context-budget.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
@@ -33,18 +33,25 @@ describe('harnessSkillBands', () => {
     assert.ok(b.agents > 0, 'no midió la banda de antigravity: vuelve a ser invisible')
   })
 
-  it('una banda ausente es un cero honesto, no una excepción', () => {
+  it('una banda ausente es un cero honesto, no una excepción', (t) => {
     // Un harness puede no estar instalado. Eso se reporta como cero; lo que no
     // puede pasar es que el instrumento se caiga y deje de reportar el resto.
     const vacio = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-bandas-'))
+    // `t.after` y no un `rmSync` al final: un borrado en la última línea no
+    // corre si un assert falla antes, y un test que falla es justo cuando más
+    // basura se acumula. Medido: 6 directorios por corrida sin esto.
+    t.after(() => fs.rmSync(vacio, { recursive: true, force: true }))
 
     assert.deepEqual(harnessSkillBands(vacio), { github: 0, agents: 0 })
   })
 
-  it('cuenta cada fase en la que la skill se carga, no el archivo una vez', () => {
-    // Una skill de alcance universal se paga en las seis fases. Contarla una
-    // sola vez es exactamente cómo 21.572 tokens pasaron años sin medirse.
+  it('cuenta cada fase en la que la skill se carga, no el archivo una vez', (t) => {
+    // Una skill de alcance universal se paga en TODAS las fases del ciclo.
+    // Contarla una sola vez es exactamente cómo 21.572 tokens pasaron años sin
+    // medirse. El multiplicador se DERIVA de la lista de fases: escribirlo a
+    // mano convierte "agregué una fase" en "el test miente".
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-bandas-'))
+    t.after(() => fs.rmSync(root, { recursive: true, force: true }))
     const cuerpo = 'x'.repeat(400)
     for (const dir of ['.github/skills/icm', '.agents/skills/icm']) {
       fs.mkdirSync(path.join(root, dir), { recursive: true })
@@ -53,7 +60,11 @@ describe('harnessSkillBands', () => {
     const b = harnessSkillBands(root)
 
     assert.equal(b.github, b.agents)
-    assert.equal(b.github, Math.ceil(cuerpo.length / 4) * 6, 'no aplicó el multiplicador de las seis fases')
+    assert.equal(
+      b.github,
+      Math.ceil(cuerpo.length / 4) * SDD_PHASES.length,
+      `no aplicó el multiplicador de las ${SDD_PHASES.length} fases`,
+    )
   })
 })
 

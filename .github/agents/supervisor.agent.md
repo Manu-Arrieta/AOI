@@ -52,6 +52,7 @@ Load agent roster from `.github/agents/` to discover available agents and their 
 | Phase            | Spec-Kit Command        | Agent(s)                                                                                                                                                    | Deliverable                          | Artifact Path                                      |
 | ---------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | -------------------------------------------------- |
 | **Constitution** | `/speckit.constitution` | Supervisor                                                                                                                                                  | `.specify/memory/constitution.md`    | —                                                  |
+| **Genesis**      | `/sdd-genesis`          | Supervisor                                                                                                                                                  | System Blueprint Contract (SBC)      | `.blueprints/{SBC-ID}/` (WORKSPACE — **nunca** en AOI) |
 | **Pre-Flight**   | `/sdd-frame`            | Supervisor                                                                                                                                                  | Behavioral Intent Contract (BIC)     | — (Zero-Task Footprint)                            |
 | **Explore**      | —                       | @functional-analyst                                                                                                                                         | Requirements + user stories          | `.tasks/{feature}/TASK-YYYY-NNN/proposal.md`       |
 | **Specify**      | `/speckit.specify`      | @functional-analyst                                                                                                                                         | Formal specification                 | `.tasks/{feature}/TASK-YYYY-NNN/spec.md`           |
@@ -92,6 +93,7 @@ descripción de las otras seis. Lo que el Supervisor sí posee es la cadena de c
 
 | Comando | Compuerta al cerrar | Sigue |
 | :--- | :--- | :--- |
+| `/sdd-genesis` | **Genesis Gate** — el Owner aprueba el SBC (coherencia, no correctitud: clausura verificada por `blueprint-gate.mjs` en 0 tokens). Registra la obligación de diagrama con `--record`. | `/sdd-frame` (primer BIC del grafo) |
 | `/sdd-frame` | **Intent Gate** — el Owner aprueba la intención; recién ahí se persiste el BIC como facts O(1) | `/sdd-new` |
 | `/sdd-new` | El Owner aprueba `proposal.md` | `/sdd-ff` |
 | `/sdd-ff` | El Owner aprueba `implementation-plan.md` | `/sdd-apply` |
