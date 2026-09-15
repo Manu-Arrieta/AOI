@@ -1321,10 +1321,16 @@ print(f'COMPARE_TMPDIR={td}')
         fi
 
         # Report conflicts (both scaffold and user modified). The directory is
-        # cleared first: a conflict from three reinstalls ago is indistinguishable
-        # from one raised just now, and stale entries make the folder unreadable.
+        # cleared on EVERY reinstall, not only on the ones that find a conflict.
+        # Doing it inside the conditional left the previous run's entry sitting
+        # there after it stopped being true: the folder kept advertising a merge
+        # nobody had to make, and the file inside it was byte-identical to AOI's
+        # own template — proof it was AOI's copy, not the owner's work. A stale
+        # conflict is indistinguishable from a fresh one, which is exactly what
+        # this clear exists to prevent. snapshot-conf.sh recreates the directory
+        # in Phase 7, so an empty .conf/ is still the layout the owner expects.
+        rm -rf "$PROJECT_PATH/.conf/conflicts"
         if [ -f "$COMPARE_TMPDIR/conflict" ] && [ -s "$COMPARE_TMPDIR/conflict" ]; then
-          rm -rf "$PROJECT_PATH/.conf/conflicts"
           mkdir -p "$PROJECT_PATH/.conf/conflicts"
           while IFS= read -r rel_file || [ -n "$rel_file" ]; do
             [ -z "$rel_file" ] && continue
