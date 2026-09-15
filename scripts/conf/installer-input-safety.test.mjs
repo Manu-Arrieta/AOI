@@ -122,18 +122,10 @@ describe('the installer cannot hang on a question nobody can answer', () => {
     }
   })
 
-  it('elige la redirección según haya terminal o no', () => {
-    // El texto exacto importa menos que la decisión: con terminal se la deja
-    // preguntar, sin terminal se le cierra la entrada.
-    assert.match(SETUP, /if \[ -t 0 \]; then[\s\S]{0,80}SPECIFY_STDIN=\/dev\/tty/)
-    assert.match(SETUP, /else[\s\S]{0,80}SPECIFY_STDIN=\/dev\/null/)
-  })
-
   it('demuestra el cuelgue: stdin que nunca cierra deja a specify esperando', (t) => {
     const dir = fakeSpecifyThatAsks(t)
-    // `sleep 30 |` da un stdin que no entrega datos ni cierra: exactamente lo
-    // que el instalador heredaba. Sin `timeout` este test colgaría la suite —
-    // que es el punto.
+    // `sleep 30 |` da un stdin que no entrega datos ni cierra: un pipe, no un
+    // terminal. Sin `timeout` este test colgaría la suite — que es el punto.
     assert.throws(
       () =>
         execFileSync('bash', ['-c', 'sleep 30 | specify init . --ai copilot --force'], {
@@ -160,6 +152,58 @@ describe('the installer cannot hang on a question nobody can answer', () => {
       },
     )
     assert.match(out, /TERMINO/)
+  })
+})
+
+/**
+ * La DECISIÓN, que es donde vivía el bug.
+ *
+ * Los dos casos de arriba fijan el mecanismo —"un stdin que no cierra cuelga,
+ * /dev/null lo termina"— y con eso solo el bug pasó inadvertido una release
+ * entera. La corrida que de verdad se cuelga no tiene stdin cerrado: tiene
+ * stdin apuntando al terminal del operador y STDOUT redirigido al log. El
+ * criterio viejo (`[ -t 0 ]`) elegía /dev/tty justo ahí, o sea el mismo
+ * terminal que ya se heredaba: cambiar un tty por el mismo tty no arregla
+ * nada, y el test seguía verde porque probaba un pipe.
+ *
+ * La función se extrae del propio `setup.sh` y se ejecuta, así que lo que se
+ * afirma es el código que corre, no una copia paralela.
+ */
+describe('specify_stdin_target decide por lo que el operador puede ver', () => {
+  const FN = SETUP.match(/specify_stdin_target\(\) \{[\s\S]*?\n\}/)
+  assert.ok(FN, 'setup.sh ya no define specify_stdin_target()')
+
+  /** Ejecuta la función real con los dos hechos como enteros. */
+  const decide = (stdinTty, stdoutTty) =>
+    execFileSync(
+      'bash',
+      ['-c', `${FN[0]}; specify_stdin_target "$1" "$2"`, 'x', String(stdinTty), String(stdoutTty)],
+      { encoding: 'utf8' },
+    )
+
+  it('libera la entrada cuando stdout NO es un terminal', () => {
+    // El caso que se colgaba: el operador no ve el prompt, así que esperar su
+    // respuesta es esperar para siempre.
+    assert.equal(decide(1, 0), '/dev/null')
+  })
+
+  it('la deja preguntar sólo si el operador mira Y puede tipear', () => {
+    assert.equal(decide(1, 1), '/dev/tty')
+  })
+
+  it('libera la entrada si falta cualquiera de los dos', () => {
+    // Sin stdin no hay quien tipee; sin stdout no hay quien lea la pregunta.
+    // Cualquiera de los dos que falte convierte la espera en un cuelgue, así
+    // que la única respuesta segura es EOF.
+    assert.equal(decide(0, 1), '/dev/null')
+    assert.equal(decide(0, 0), '/dev/null')
+  })
+
+  it('setup.sh usa la decisión en vez de preguntar por un solo descriptor', () => {
+    // El bug no fue el valor elegido: fue el CRITERIO. Un `[ -t 0 ]` suelto
+    // vuelve a elegir /dev/tty en la corrida que se cuelga.
+    assert.match(SETUP, /SPECIFY_STDIN="\$\(specify_stdin_target /)
+    assert.doesNotMatch(SETUP, /if \[ -t 0 \]; then\n\s*SPECIFY_STDIN=\/dev\/tty/)
   })
 })
 
