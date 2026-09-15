@@ -35,6 +35,7 @@ import {
   MANDATORY_BINARIES,
   RECOMMENDED_BINARIES,
 } from './doctor-checks.mjs'
+import { ARCHIFY_RENDERER_CANDIDATES } from './archify-checks.mjs'
 
 describe('checkBinaries separates what blocks from what merely warns', () => {
   const found = async () => ({ stdout: '/usr/local/bin/x\n', stderr: '' })
@@ -90,18 +91,6 @@ describe('checkBinaries separates what blocks from what merely warns', () => {
   })
 })
 
-/**
- * Las cuatro rutas donde el CLI `skills` puede dejar el paquete, con la
- * precedencia que decide cuál gana. Si esta lista se toca, el doctor y los dos
- * instaladores tienen que tocarse juntos.
- */
-const ARCHIFY_CANDIDATES = [
-  '.agents/skills/archify/bin/archify.mjs',
-  '.claude/skills/archify/bin/archify.mjs',
-  '.agents/skills/archify/archify/bin/archify.mjs',
-  '.claude/skills/archify/archify/bin/archify.mjs',
-]
-
 /** Un HOME temporal, borrado al cerrar el test. */
 function tempHome(t) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-doctor-archify-'))
@@ -120,24 +109,24 @@ function plant(home, rel) {
 describe('findArchifyRenderer localiza el renderizador por la ruta, no por el PATH', () => {
   it('devuelve la ruta absoluta de la primera candidata presente', (t) => {
     const home = tempHome(t)
-    const expected = plant(home, ARCHIFY_CANDIDATES[0])
+    const expected = plant(home, ARCHIFY_RENDERER_CANDIDATES[0])
     assert.equal(findArchifyRenderer(home), expected)
   })
 
   it('encuentra cada una de las cuatro, una por vez', (t) => {
     // Una por una y no todas juntas: con todas presentes, tres de las cuatro
-    // rutas podrían estar mal escritas y el test pasaría igual.
-    for (const rel of ARCHIFY_CANDIDATES) {
+    // rutas podrian estar mal escritas y el test pasaria igual.
+    for (const rel of ARCHIFY_RENDERER_CANDIDATES) {
       const home = tempHome(t)
       const expected = plant(home, rel)
-      assert.equal(findArchifyRenderer(home), expected, `no encontró ${rel}`)
+      assert.equal(findArchifyRenderer(home), expected, `no encontro ${rel}`)
     }
   })
 
   it('respeta la precedencia: la primera gana cuando hay varias', (t) => {
     const home = tempHome(t)
-    for (const rel of ARCHIFY_CANDIDATES) plant(home, rel)
-    assert.equal(findArchifyRenderer(home), path.join(home, ARCHIFY_CANDIDATES[0]))
+    for (const rel of ARCHIFY_RENDERER_CANDIDATES) plant(home, rel)
+    assert.equal(findArchifyRenderer(home), path.join(home, ARCHIFY_RENDERER_CANDIDATES[0]))
   })
 
   it('devuelve cadena vacía cuando no está, en vez de inventar una ruta', (t) => {
@@ -150,7 +139,7 @@ describe('findArchifyRenderer localiza el renderizador por la ruta, no por el PA
 describe('checkArchifySkill degrada a WARNING en vez de bloquear', () => {
   it('PASSED con la ruta cuando el renderizador existe', (t) => {
     const home = tempHome(t)
-    const expected = plant(home, ARCHIFY_CANDIDATES[0])
+    const expected = plant(home, ARCHIFY_RENDERER_CANDIDATES[0])
     const result = checkArchifySkill(home)
     assert.equal(result.status, 'PASSED')
     assert.equal(result.details, expected)
