@@ -33,6 +33,7 @@ import {
   buildDebuggingTurns, buildDiscoveryCorpus, captureRealTestRun,
   fallbackDebuggingTurns, fallbackDiscoveryCorpus, FALLBACK_CRASH,
 } from './real-corpus.mjs'
+import { COMPLEX_DESIGN_MD, COMPLEX_TASKS_MD, DEFECT_REPORTS } from './stress-fixtures.mjs'
 import { runGenesisPhase } from './blueprint-gate.mjs'
 
 const ledger = createLedger()
@@ -119,28 +120,6 @@ console.log(`  ✓ Phase 1 complete: ${p1.rawTokens} tokens -> ${p1.optimizedTok
 // FASE 2: /sdd-ff — Specify & Plan (TOON Payload Serialization)
 // ─────────────────────────────────────────────────────────────────────────────
 console.log('▶ [Fase 2: /sdd-ff] Testing TOON vs Raw Markdown Task Payload...')
-const complexTasksMd = `
-### Task T-1: Implement evaluateFiberHealth function
-- Status: Pending
-- Role: [backend]
-- TDD Requirements: Write failing test in fiber-health.test.ts, then implement in fiber-health.ts with Ratio calculation
-### Task T-2: Implement health metrics route handler
-- Status: Pending
-- Role: [backend]
-- TDD Requirements: Write test in fibers.test.ts, implement server/api/fibers.get.ts
-### Task T-3: Implement dashboard UI health badge
-- Status: Pending
-- Role: [frontend]
-- UI Requirements: Render green/yellow/red badge according to FiberStatus
-`
-const complexDesignMd = `
-## Contracts
-\`\`\`typescript
-export type FiberStatus = 'stable' | 'degraded' | 'critical'
-export interface FiberHealthResult { healthScore: number; status: FiberStatus }
-export function evaluateFiberHealth(active: number, failed: number): FiberHealthResult
-\`\`\`
-`
 // Prefer a genuine task's artifacts; fall back to the inline fixture.
 const ffTasksMd = REAL_TASK_DIR ? readIfPresent(path.join(REAL_TASK_DIR, 'tasks.md')) : ''
 const ffDesignMd = REAL_TASK_DIR ? readIfPresent(path.join(REAL_TASK_DIR, 'design.md')) : ''
@@ -148,8 +127,8 @@ const usingRealFf = Boolean(ffTasksMd.trim() && ffDesignMd.trim())
 const ffPayloadArgs = {
   taskId: usingRealFf ? path.basename(REAL_TASK_DIR) : 'TASK-2026-STRESS',
   role: 'backend',
-  tasksMd: usingRealFf ? ffTasksMd : complexTasksMd,
-  designMd: usingRealFf ? ffDesignMd : complexDesignMd,
+  tasksMd: usingRealFf ? ffTasksMd : COMPLEX_TASKS_MD,
+  designMd: usingRealFf ? ffDesignMd : COMPLEX_DESIGN_MD,
 }
 const rawPayload = buildSubagentPayload({ ...ffPayloadArgs, format: 'markdown' })
 const toonPayload = buildSubagentPayload({ ...ffPayloadArgs, format: 'toon' })
@@ -227,15 +206,11 @@ const rawCrashTokens = Math.round(rawCrash.length / 4)
 const optCrashTokens = Math.round(distilledCrash.length / 4)
 
 // Stress 4.2: Mechanical Set Union consolidating 4 simultaneous defect reports in 0 tokens
-const r1 = { source: 'vitest', failedTests: ['evaluateFiberHealth: should be stable'] }
-const r2 = { source: 'tsc', typeErrors: ['server/utils/fiber-health.ts:TS2322'] }
-const r3 = { source: 'linter', lintErrors: ['no-unused-vars:server/utils/fiber-health.ts:5'] }
-const r4 = { source: 'srp-guard', contractViolations: ['File > 300 LOC: none'] }
-const unified = unifyVerificationReports([r1, r2, r3, r4])
+const unified = unifyVerificationReports(DEFECT_REPORTS)
 // Measured, not assumed. Raw = what an LLM fuser must ingest (the four reports)
 // plus what it must emit (the summary). AOI = only the summary enters context,
 // produced deterministically, so the four raw reports are never read at all.
-const fuserInput = JSON.stringify([r1, r2, r3, r4])
+const fuserInput = JSON.stringify(DEFECT_REPORTS)
 const fuserOutput = formatUnifiedVerificationReport(unified)
 const rawVerifyFuserTokens = estimateTokens(fuserInput) + estimateTokens(fuserOutput)
 const optVerifyFuserTokens = estimateTokens(fuserOutput)

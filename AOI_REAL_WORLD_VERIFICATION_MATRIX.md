@@ -68,13 +68,25 @@ cd "/Users/equinox/Desktop/AOI TESTS"
 pnpm install
 ```
 
-> [!WARNING]
-> **`specify init` pide confirmación por TTY y NO es autónomo.** Corre en la Fase 2 de
-> `setup.sh` con su salida redirigida, así que su prompt no aparece en el log: el proceso
-> queda colgado indefinidamente. Medido: 6:44 minutos esperando, con `stdin` y `stdout`
-> apuntando a `/dev/ttys012`. Si la instalación se estanca sin output, mirá la terminal
-> —no el log— y respondé `y`. Una corrida verdaderamente desatendida necesita
-> `yes | bash setup.sh ...` o un `specify` no interactivo.
+> [!NOTE]
+> **`specify init` ya no se cuelga — corregido en v2.5.2.** Durante varias versiones este
+> paso fue el único punto NO autónomo del instalador: corría con `stdout` redirigido al log,
+> su prompt quedaba invisible ahí, y el proceso esperaba indefinidamente una respuesta que
+> nadie podía ver. Medido: 27 minutos de proceso con 0,02 s de CPU consumidos y ni una línea
+> nueva en el log.
+>
+> **El criterio correcto es `stdout`, no `stdin`.** La corrida que se colgaba tenía `stdin`
+> apuntando al terminal del operador —`[ -t 0 ]` verdadero— y lo que estaba redirigido era
+> `stdout`. Un arreglo intermedio preguntaba por `[ -t 0 ]` y elegía `/dev/tty`: el mismo
+> terminal que ya se heredaba, así que no cambiaba nada. Hoy `setup.sh` exige las dos cosas
+> —que el operador pueda ver la pregunta (`stdout` es terminal) y que pueda tipear (`stdin`
+> es terminal)— y cierra la entrada en cualquier otro caso. El log lo registra:
+> `▸ specify init → stdin: /dev/null (tty: in=sí out=no)`.
+>
+> **Si corrés una versión anterior a v2.5.2** y la instalación se estanca sin output: no
+> está trabajando, está esperando. Mirá la terminal —no el log— y respondé `y`, o corré
+> `yes | bash setup.sh ...`. El síntoma que lo distingue de una lentitud real es el consumo
+> de CPU: un proceso colgado en una lectura acumula centésimas de segundo por minutos.
 
 ### Paso 0.2: Validación Inmediata del Entorno Instalado
 Ejecuta la certificación inicial para asegurar que el ambiente está listo:

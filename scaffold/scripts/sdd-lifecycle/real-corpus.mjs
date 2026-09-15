@@ -14,6 +14,7 @@ import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { FALLBACK_CRASH, fallbackDebuggingTurns, fallbackDiscoveryCorpus } from './stress-fixtures.mjs'
 
 const CODE_EXTENSIONS = new Set(['.mjs', '.js', '.ts', '.vue'])
 const SKIP_DIRS = new Set(['node_modules', '.git', '.nuxt', '.output', 'dist', 'build', 'coverage', 'scaffold'])
@@ -256,40 +257,7 @@ export function buildDebuggingTurns({ failing, passing }) {
   ]
 }
 
-// ── Fallbacks ───────────────────────────────────────────────────────────────
-// Used only when the real capture is impossible. Kept here, beside the real
-// builders, so the benchmark orchestrator never carries synthetic data inline.
-
-/** Synthetic discovery corpus, for environments with no readable source tree. */
-export function fallbackDiscoveryCorpus() {
-  return {
-    signalItems: Array.from({ length: 10 }, (_, i) => ({
-      id: `sig-${i}`, content: 'Critical service signature and interface constraint block '.repeat(5),
-    })),
-    backgroundItems: Array.from({ length: 20 }, (_, i) => ({
-      id: `bg-${i}`, content: 'Unrelated background workspace context and obsolete historical log '.repeat(5),
-    })),
-    sampled: 0,
-  }
-}
-
-/** Synthetic debugging sequence, for environments where the runner cannot spawn. */
-export function fallbackDebuggingTurns() {
-  return [
-    { id: '1', turnNumber: 1, tool: 'test', summary: 'RED test failed', content: 'Stack trace with 80 lines: '.repeat(20) },
-    { id: '2', turnNumber: 2, tool: 'edit_file', target: 'fiber-health.ts', content: 'partial patch' },
-    { id: '3', turnNumber: 3, tool: 'test', summary: 'Type error TS2322', content: 'Stack trace with 60 lines: '.repeat(15) },
-    { id: '4', turnNumber: 4, tool: 'edit_file', target: 'fiber-health.ts', content: 'type fix' },
-    { id: '5', turnNumber: 5, tool: 'test', summary: 'GREEN test passed', content: '1 passed in 2ms' },
-  ]
-}
-
-/** Synthetic runner crash, for environments where the runner cannot spawn. */
-export const FALLBACK_CRASH = [
-  'RUN v4.1.7',
-  'FAIL test/server/fiber-health.test.ts',
-  "  AssertionError: expected 'stable' to equal 'degraded'",
-  '    at evaluateFiberHealth (server/utils/fiber-health.ts:15:9)',
-  '    at runTest (node_modules/vitest/dist/runner.js:12:3)',
-  'Test Files 1 failed (1)',
-].join('\n')
+// Se re-exportan para que la superficie publica no cambie: estaban aca y el
+// test los importaba de aca. Que vivan en `stress-fixtures.mjs` es un detalle de
+// organizacion, no algo que sus consumidores deban enterarse.
+export { FALLBACK_CRASH, fallbackDebuggingTurns, fallbackDiscoveryCorpus }
