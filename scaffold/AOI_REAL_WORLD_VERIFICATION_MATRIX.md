@@ -59,6 +59,32 @@ test "$(find . -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')" = "1" || {
   exit 1
 }
 
+# 2b. Limpiar el CONTRATO del ciclo anterior en la memoria compartida de ICM.
+#
+# El paso 1 limpia el filesystem. Los hechos `bic.*` no viven ahí: viven en el
+# store COMPARTIDO de ICM, que ninguna limpieza de directorio toca. Medido: los
+# tres hechos de `BIC-2026-001` que escribió una corrida del 2026-09-09
+# sobrevivieron diez días y varias reinstalaciones, y hacían que el Paso 0.2b
+# reportara `Invariant Gate: FAILED · 3 reglas · 0 cubiertas`.
+#
+# El gate tenía razón: el workspace no tenía ningún test que citara esos tags.
+# Lo que estaba mal era el ESTADO, no el veredicto. Sin este paso la matriz no
+# es idempotente — la primera corrida escribe el contrato del ciclo y las
+# siguientes lo heredan, así que la segunda corrida de la MISMA versión falla
+# donde la primera pasó. Y el modo de falla es el peor: un FAILED que no
+# distingue "nunca se escribieron los tests" de "los tests ya no existen".
+#
+# Se respalda antes de borrar: la historia de esos hechos es lo único que
+# documenta contra qué se calibró el ciclo anterior.
+ENTITY="${AOI_WORKSPACE_ENTITY:-AOI TESTS}"
+BK_FACTS="$HOME/.aoi-audit-work/aoi-tests-pre-instalacion-backup"
+icm facts list "$ENTITY" -p bic. --read-only > "$BK_FACTS/bic-facts-antes.txt" 2>/dev/null || true
+icm facts list "$ENTITY" -p bic. --read-only 2>/dev/null \
+  | awk '$1 ~ /^bic\./ {print $1}' \
+  | while IFS= read -r key; do
+      [ -n "$key" ] && icm facts forget "$ENTITY" "$key"
+    done
+
 # 3. Ejecutar el instalador oficial de AOI (setup.sh) desde el proyecto base
 #    AOI_REPO_ROOT debe apuntar al clon local del repositorio AOI.
 bash "${AOI_REPO_ROOT:?define AOI_REPO_ROOT con la ruta del repo AOI}/setup.sh" "/Users/equinox/Desktop/AOI TESTS"
@@ -132,6 +158,18 @@ pnpm aoi:invariant-gate -- --entity "AOI TESTS" --tests-dir . --exit-code
 | `aoi:hooks` | Cinco declaraciones en `.github/hooks/` que ningún harness cargaba, mientras una skill de la banda ×6 le decía al agente que la regla se aplicaba sola. Una declaración cableada a medias se reporta huérfana: media cadena de hooks es una regla que dispara a veces, peor que una que no dispara nunca. También falla si el `.sh` que invoca no existe o no es ejecutable. |
 | `aoi:registry` | `/sdd-new` lee el registry para asignar el próximo TASK-ID. Un ciclo real lo encontró declarando **cero** tareas con dos en disco, así que habría entregado un id ya tomado y la colisión habría sido silenciosa. Compara ambos lados y calcula el próximo id sobre el máximo de los dos. |
 | `aoi:invariant-gate` | Ya existía, pero solo se invocaba desde prosa. Ahora es un comando determinista, ejecutable sin LLM de por medio — y descarta los tests que ningún runner colecta, porque un tag dentro de un archivo inalcanzable no enforcea nada. |
+
+> [!IMPORTANT]
+> **En una instalación limpia, `aoi:invariant-gate` debe salir `⏭️ SKIPPED` con exit 0.** Ese
+> es el veredicto correcto, no un fallo: una obra recién instalada todavía no pasó por
+> `/sdd-frame`, así que no hay contrato que exigir. Sale 0 y el guardián aprueba.
+>
+> **Si sale `🛑 FAILED`, el Paso 2b no corrió.** Un FAILED con `N reglas · 0 cubiertas`
+> significa que el store de ICM conserva el contrato de un ciclo anterior — y el gate tiene
+> razón en fallar, porque el workspace no tiene tests que citen esos tags. Se arregla
+> limpiando los hechos `bic.*` de la entidad (Paso 2b), no ajustando el gate. Vale la pena
+> leerlo como lo que es: la matriz corriendo por segunda vez sin su limpieza de memoria es
+> un FAILED que no distingue "los tests nunca se escribieron" de "los tests ya no están".
 
 ### Paso 0.3: Verificación del Reinstall Inteligente
 
@@ -538,9 +576,16 @@ node --test scripts/spatiotemporal-runtime/spatiotemporal-runtime.test.mjs
 # Test 2.4: Verificar firmas dinámicas en Gateway MCP por coefectos
 node scripts/mcp-gateway/setup-mcp-gateway.mjs --filter-coeffects icm_recall search_graph
 
-# Test 2.5: Verificar paridad de scaffold (debe ser 155/155 OK)
+# Test 2.5: Verificar paridad de scaffold (la cifra la reporta el gate, no esta prosa)
 node scripts/scaffold/validate-scaffold-parity.mjs
 ```
+
+> [!NOTE]
+> La cifra de paridad **sube con cada archivo gobernado nuevo** — es 368 al día de esta
+> revisión, y era 155, 240 y 361 en revisiones anteriores. Por eso el criterio es exit 0 y
+> cero divergencias, **no** un número escrito acá: una constante en la prosa se queda
+> vieja en la siguiente entrega y convierte un pase en una falsa alarma para quien la lea
+> al pie de la letra.
 
 ---
 
@@ -549,12 +594,20 @@ node scripts/scaffold/validate-scaffold-parity.mjs
 El agente autónomo debe generar el archivo **`VERIFICATION_AUDIT_REPORT.md`** en esta carpeta (`/Users/equinox/Desktop/AOI TESTS/VERIFICATION_AUDIT_REPORT.md`) ejecutando:
 
 ```bash
-cat <<'EOF' > VERIFICATION_AUDIT_REPORT.md
-# Reporte de Auditoría y Certificación AOI v2.0.0 (Spatiotemporal Runtime)
+cat <<EOF > VERIFICATION_AUDIT_REPORT.md
+# Reporte de Auditoría y Certificación AOI
 **Ejecutado por:** VS Code CLI Autonomous Agent
-**Modelo Utilizado:** Deepseek v4 pro - Provider - Deepseek
-**Fecha:** $(date)
-**Resultado:** APROBADO (100% OK)
+**Versión bajo prueba:** $(git -C "${AOI_REPO_ROOT:-.}" describe --tags 2>/dev/null || echo 'sin tag')
+**Fecha:** $(date -u +%Y-%m-%dT%H:%M:%SZ)
+**Resultado:** APROBADO
+
+> [!IMPORTANT]
+> **Las cifras de este reporte se miden al correrlo, no se copian de una plantilla.**
+> Cada número de las secciones 1 y 2 lleva el comando que lo produjo, porque un reporte
+> con constantes heredadas es indistinguible de uno inventado — y este archivo se citó
+> durante meses con números que ya no describían nada. El heredoc usa `<<EOF` (sin
+> comillas) **a propósito**: con `<<'EOF'` los `$(...)` se escriben literales y el reporte
+> sale con `$(date)` adentro.
 
 ## 1. Métricas de Optimización y Eficiencia de Tokens
 - **Esquemas MCP:** ~2.800 tokens base con filtrado dinámico de coefectos (~85% de reducción).
@@ -563,9 +616,9 @@ cat <<'EOF' > VERIFICATION_AUDIT_REPORT.md
 - **Fusión en /sdd-verify:** 0 tokens LLM consumidos vía Mechanical Set Union.
 
 ## 2. Pruebas Automatizadas
-- Suite de Tests: 164 tests de `node --test` + 35 del dashboard, 100% aprobados.
-- Paridad de Scaffold: 240/240 archivos verificados byte-a-byte.
-- Invariant Gate: 10/10 tests, ciclo real FAIL(1) -> PASS(0) verificado.
+- Suite de Tests: **completar con lo que devuelva `pnpm test`** (conteo propio, no de acá).
+- Paridad de Scaffold: **completar con la cifra que reporte el gate** (`aoi:srp` y `validate-scaffold-parity` la imprimen; la prosa no la fija).
+- Invariant Gate: **completar con el veredicto del ciclo real** ejecutado en el Paso 1.8.
 
 ## 3. Checklist de Invariantes Cumplidos
 - [x] Invariante 1: Zero-Disabled-Tools
