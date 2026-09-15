@@ -43,3 +43,26 @@ scaffold/.exportsmemories/*
 
 # AOI configuration snapshots (system-generated, local state)
 /.conf/
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Fase -2 artifacts — `blueprint.md` y sus diagramas son trabajo por-SBC, la
+# misma categoría que `.tasks/*/`: el contrato se persiste como hechos `sbc.*`
+# en ICM, así que lo que sobrevive entre sesiones no depende de este archivo.
+# Se regenera con `/sdd-genesis`.
+# ───────────────────────────────────────────────────────────────────────────────
+.blueprints/*/
+
+# Briefing operativo — específico de la máquina (nombre del workspace, harness
+# elegido). Lo regenera `icm briefing`; versionarlo fijaría el estado de una
+# máquina dentro del repositorio.
+.specify/memory/briefings/
+
+# Scratch de runtime de AOI: `setup.sh` lo crea y `teardown.sh` lo borra. Hoy
+# ningún script del ciclo escribe adentro, y por eso mismo se ignora ahora: un
+# escritor futuro no debería poder filtrarlo a un commit en silencio.
+.atl/
+
+# Entornos virtuales de Python. AOI no crea ninguno, pero sus propios
+# escáneres lo saltean (`validate-test-globs`, `audit-protocol-integrity`),
+# que es la misma afirmación que "acá se espera encontrar uno".
+.venv/
