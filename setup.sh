@@ -1103,6 +1103,36 @@ if [ "$IS_REINSTALL" -eq 0 ]; then
   ( cd "$PROJECT_PATH" && find . -type f 2>/dev/null | LC_ALL=C sort ) > "$FRESH_SNAPSHOT" 2>/dev/null || true
 fi
 
+# Qué stdin darle a `specify init`.
+#
+# La pregunta real es si el operador puede VER el prompt, y eso depende de
+# STDOUT: `specify` escribe la pregunta ahí. Si stdout va a un archivo —el log
+# de una corrida desatendida— la pregunta queda invisible, y esperar una
+# respuesta que nadie puede ver es un cuelgue.
+#
+# El criterio anterior era `[ -t 0 ]`, y estaba mal. En la corrida que se cuelga
+# stdin SÍ es el terminal del operador; lo que está redirigido es stdout. Con
+# `[ -t 0 ]` se elegía /dev/tty, que es el mismo terminal que ya se heredaba:
+# cambiar un tty por el mismo tty no arregla nada. Medido: 27 minutos de
+# proceso con 0.02s de CPU, sin escribir una línea al log. Y la misma corrida
+# con `</dev/null` termina en 0.
+#
+# Ahora hacen falta los DOS: que el operador esté mirando (stdout=tty) y que
+# pueda tipear (stdin=tty). Si falta cualquiera, EOF inmediato — con `--force`
+# no hay nada que confirmar, y si igual pregunta, el EOF la termina en vez de
+# colgarla.
+#
+# Es una función con los dos hechos como argumentos porque una condición sobre
+# descriptores no se puede simular desde `node --test`, pero la DECISIÓN sí. El
+# test fija la tabla; el bug vivió justo en la rama que ningún test tocaba.
+specify_stdin_target() {
+  if [ "$1" -eq 1 ] && [ "$2" -eq 1 ]; then
+    printf '/dev/tty'
+  else
+    printf '/dev/null'
+  fi
+}
+
 if [ "$IS_REINSTALL" -eq 1 ]; then
   # `specify init --force` overwrites .github/ and .specify/ wholesale. It is
   # destruction on BOTH paths, not just this one: AOI's scaffold already owns
@@ -1118,23 +1148,8 @@ if [ "$IS_REINSTALL" -eq 1 ]; then
   info "Reinstall detected — skipping 'specify init --force' (AOI's scaffold owns these artifacts)"
 elif command -v specify &>/dev/null; then
   info "Initializing spec-kit for Copilot..."
-  # `2>/dev/null` tapa la salida de error, NO la entrada. Con stdin heredado de
-  # un proceso sin terminal, el prompt de `specify init` espera para siempre:
-  # medido, 6:44 colgado en una corrida desatendida, con el prompt escribiendo
-  # en /dev/ttys012 — fuera del log, así que el cuelgue era invisible hasta
-  # mirar el terminal. Un instalador que se declara autónomo y se cuelga
-  # esperando una respuesta que nadie puede dar no es autónomo.
-  #
-  # Cerrar stdin da EOF inmediato: con `--force` no hay nada que confirmar, y
-  # si igual pregunta, el EOF la termina en vez de colgarla, cayendo en el
-  # `|| warn` que ya estaba. Con terminal presente se la deja preguntar —
-  # cerrar stdin en una corrida interactiva convertiría una confirmación en un
-  # error silencioso.
-  if [ -t 0 ]; then
-    SPECIFY_STDIN=/dev/tty
-  else
-    SPECIFY_STDIN=/dev/null
-  fi
+  SPECIFY_STDIN="$(specify_stdin_target "$([ -t 0 ] && echo 1 || echo 0)" "$([ -t 1 ] && echo 1 || echo 0)")"
+  info "specify init → stdin: $SPECIFY_STDIN (tty: in=$([ -t 0 ] && echo sí || echo no) out=$([ -t 1 ] && echo sí || echo no))"
   specify init . --ai copilot --force 2>/dev/null <"$SPECIFY_STDIN" && ok "Spec-kit → Copilot" || warn "Spec-kit Copilot init skipped (may need manual setup)"
 else
   warn "Specify CLI not found — skipping spec-kit init"
