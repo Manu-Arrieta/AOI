@@ -118,25 +118,74 @@ bash "$SCRIPT_DIR/generate-checksums.sh" "$SCAFFOLD_DIR" "$SCAFFOLD_DIR" > "$CON
 TEMPLATED_PATHS=".vscode/settings.json
 .vscode/mcp.json"
 
+# Files `compile-rules.mjs` WRITES, interpolating the workspace name.
+#
+# Hashing the scaffold for these recorded `workspace: AOI` — the product's own
+# name — while the file on disk says `workspace: <project>`. The two can never
+# match, so every reinstall read AOI's own output as an Owner edit: the seven
+# were kept stale forever, so AOI's updates to them could never land, and any
+# change to a template surfaced as a CONFLICT asking the Owner to merge a file
+# they had never opened.
+#
+# Safe to re-baseline from disk, unlike a copied file, because compile-rules
+# rewrites these unconditionally: by the time this runs, the content on disk IS
+# AOI's. The marker check below is what keeps that reasoning honest — if the
+# generator did not run (node absent, phase skipped) the file would still be the
+# Owner's, and recording it as AOI's baseline would make the next reinstall
+# overwrite their work in silence.
+GENERATED_PATHS=".github/copilot-instructions.md
+CLAUDE.md
+AGENTS.md
+.clinerules
+.cursorrules
+.cursor/rules/aoi-rules.mdc
+.agents/rules/aoi-rules.md"
+
+# Every file compile-rules writes announces itself with this header.
+GENERATED_MARKER="<!-- AOI /"
+
 if command -v python3 &>/dev/null; then
-  python3 - "$CONF_DIR/checksums.json" "$PROJECT_DIR" "$TEMPLATED_PATHS" <<'PYEOF' && ok "Checksums written to .conf/checksums.json" \
+  python3 - "$CONF_DIR/checksums.json" "$PROJECT_DIR" "$TEMPLATED_PATHS" "$GENERATED_PATHS" "$GENERATED_MARKER" <<'PYEOF' && ok "Checksums written to .conf/checksums.json" \
     || warn "No se pudo re-basear los checksums de los archivos materializados"
 import hashlib, json, os, sys
 
-checksums_path, project_dir, templated = sys.argv[1:4]
+checksums_path, project_dir, templated, generated, marker = sys.argv[1:6]
 
 with open(checksums_path) as f:
     data = json.load(f)
 
 files = data.setdefault("files", {})
+
+
+def rebaseline(rel):
+    full = os.path.join(project_dir, rel)
+    if not os.path.isfile(full):
+        return False
+    with open(full, "rb") as fh:
+        files[rel] = "sha256:" + hashlib.sha256(fh.read()).hexdigest()
+    return True
+
+
 for rel in (p.strip() for p in templated.split("\n")):
+    if rel and rel in files:
+        rebaseline(rel)
+
+unmarked = []
+for rel in (p.strip() for p in generated.split("\n")):
     if not rel or rel not in files:
         continue
     full = os.path.join(project_dir, rel)
     if not os.path.isfile(full):
         continue
-    with open(full, "rb") as f:
-        files[rel] = "sha256:" + hashlib.sha256(f.read()).hexdigest()
+    with open(full, "r", encoding="utf-8", errors="replace") as fh:
+        head = fh.read(len(marker) + 64)
+    if marker not in head:
+        unmarked.append(rel)
+        continue
+    rebaseline(rel)
+
+if unmarked:
+    print("Sin marca de AOI, no se re-basean: " + ", ".join(unmarked), file=sys.stderr)
 
 with open(checksums_path, "w") as f:
     json.dump(data, f, indent=2)
