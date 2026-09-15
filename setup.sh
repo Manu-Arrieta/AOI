@@ -628,11 +628,24 @@ require_mcp_compressor() {
 # es una ruta gobernada, y meter ahí un skill de terceros obligaría a espejar
 # copia byte a byte de upstream dentro del scaffold.
 get_archify_path() {
+  # Las CUATRO rutas, en el mismo orden que `scripts/archify-checks.mjs` y que
+  # `scripts/install-archify.{sh,ps1}`. Acá había tres y faltaba la anidada de
+  # Claude Code: cuando el CLI `skills` deja el paquete en esa forma, esta
+  # función no lo encontraba y `require_archify` avisaba "Archify no está
+  # instalado" sobre una skill perfectamente instalada — mientras el doctor
+  # decía PASSED, porque el doctor sí mira las cuatro. Dos respuestas distintas
+  # sobre la misma máquina.
+  #
+  # Es una lista literal y no una variable: el nombre de la skill no es
+  # configurable en ningún lado, y una variable acá sólo agregaría una forma de
+  # que las copias se desincronicen. `archify-candidate-parity.test.mjs` falla
+  # si esta lista deja de coincidir con las otras tres.
   local candidate
   for candidate in \
     "$HOME/.agents/skills/archify/bin/archify.mjs" \
     "$HOME/.claude/skills/archify/bin/archify.mjs" \
-    "$HOME/.agents/skills/archify/archify/bin/archify.mjs"; do
+    "$HOME/.agents/skills/archify/archify/bin/archify.mjs" \
+    "$HOME/.claude/skills/archify/archify/bin/archify.mjs"; do
     if [[ -f "$candidate" ]]; then
       printf '%s' "$candidate"
       return 0

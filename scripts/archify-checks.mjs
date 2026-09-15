@@ -18,6 +18,32 @@ import os from 'node:os'
 import path from 'node:path'
 
 /**
+ * Las rutas donde el CLI `skills` puede dejar el renderizador, relativas al
+ * HOME, y en el orden de precedencia.
+ *
+ * Fuente única del lado JavaScript: `findArchifyRenderer` la recorre y los dos
+ * tests la importan en vez de escribir su propia copia. Cuando la lista vivía
+ * repetida, la copia del test no se enteraba de un cambio y seguía verde
+ * midiendo una lista que ya no era la del código.
+ *
+ * Las cuatro existen porque el CLI cambia dónde deja el paquete según su
+ * versión: plano o anidado (`archify/archify/bin`), y bajo la raíz de
+ * Codex/Antigravity (`~/.agents`) o la de Claude Code (`~/.claude`).
+ *
+ * El lado shell no puede importar esto, así que `setup.sh`,
+ * `install-archify.sh` e `install-archify.ps1` mantienen su copia a mano. Esa
+ * copia NO se confía: `scripts/conf/archify-candidate-parity.test.mjs` compara
+ * las tres contra esta lista y falla si alguna se desvía — que es exactamente
+ * lo que pasó con `setup.sh`, donde faltaba la anidada de Claude Code.
+ */
+export const ARCHIFY_RENDERER_CANDIDATES = [
+  '.agents/skills/archify/bin/archify.mjs',
+  '.claude/skills/archify/bin/archify.mjs',
+  '.agents/skills/archify/archify/bin/archify.mjs',
+  '.claude/skills/archify/archify/bin/archify.mjs',
+]
+
+/**
  * Localiza el renderizador de Archify y devuelve su ruta, o `''` si no está.
  *
  * Fuente ÚNICA de la detección: la usan el doctor y la compuerta de blueprint.
@@ -32,12 +58,7 @@ import path from 'node:path'
  * @returns {string} Ruta absoluta al renderizador, o '' si no existe.
  */
 export function findArchifyRenderer(homeDir = os.homedir()) {
-  const candidates = [
-    path.join(homeDir, '.agents/skills/archify/bin/archify.mjs'),
-    path.join(homeDir, '.claude/skills/archify/bin/archify.mjs'),
-    path.join(homeDir, '.agents/skills/archify/archify/bin/archify.mjs'),
-    path.join(homeDir, '.claude/skills/archify/archify/bin/archify.mjs'),
-  ]
+  const candidates = ARCHIFY_RENDERER_CANDIDATES.map((rel) => path.join(homeDir, rel))
   return candidates.find((candidate) => fs.existsSync(candidate)) || ''
 }
 
