@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "AOI — Arquitectura del sistema",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Manu-Arrieta/AOI",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "6ab5595e678672b6dab78f0aed6a122cec194ec6"
+    },
+    "views": [
+      { "id": "install", "label": "Instalación segura", "focus": ["owner", "installer", "scaffold", "workspace"], "note": "El setup instala contenido AOI y preserva la propiedad del proyecto destino." },
+      { "id": "delivery", "label": "Entrega gobernada", "focus": ["runtime", "sdd", "memory", "workspace"], "note": "Los prompts inician el ciclo y los scripts aplican gates comprobables." },
+      { "id": "assurance", "label": "Aseguramiento", "focus": ["ci", "runtime", "dashboard", "workspace"], "note": "CI prueba la infraestructura y el dashboard observa el workspace habilitado." }
+    ]
+  },
+  "components": [
+    { "id": "owner", "type": "external", "label": "Owner", "sublabel": "intención y aprobación", "pos": [30, 330], "size": [178, 72], "sources": [{ "path": "setup.sh", "line": 433, "label": "target" }] },
+    { "id": "installer", "type": "backend", "label": "Setup / Teardown", "sublabel": "Bash y PowerShell", "pos": [270, 330], "size": [178, 72], "sources": [{ "path": "setup.sh", "line": 395 }, { "path": "setup.ps1", "line": 584 }, { "path": "teardown.sh", "line": 72 }] },
+    { "id": "scaffold", "type": "database", "label": "Scaffold", "sublabel": "réplica instalable", "pos": [270, 90], "size": [178, 72], "sources": [{ "path": "scaffold/AGENTS.md", "label": "espejo" }] },
+    { "id": "runtime", "type": "security", "label": "Runtime gobernado", "sublabel": "agentes, prompts y scripts", "pos": [530, 330], "size": [190, 72], "sources": [{ "path": ".github/prompts/init.prompt.md" }, { "path": ".agents/rules/aoi-rules.md" }, { "path": "scripts/aoi-doctor.mjs" }] },
+    { "id": "sdd", "type": "backend", "label": "Ciclo SDD", "sublabel": "tareas y compuertas", "pos": [790, 330], "size": [178, 72], "sources": [{ "path": ".github/prompts/sdd-new.prompt.md" }, { "path": "scripts/sdd-lifecycle/phase-handoffs.mjs" }, { "path": ".tasks/registry.md" }] },
+    { "id": "workspace", "type": "external", "label": "Workspace habilitado", "sublabel": "código Owner + AOI", "pos": [1050, 330], "size": [190, 72], "sources": [{ "path": "README.es.md", "line": 236, "label": "contrato" }] },
+    { "id": "memory", "type": "database", "label": "ICM", "sublabel": "5 métodos y versiones", "pos": [790, 90], "size": [178, 72], "sources": [{ "path": ".agents/skills/icm/SKILL.md" }, { "path": "scripts/memory-sync/resolve-active-version.mjs" }, { "path": ".specify/memory/versions/active.json" }] },
+    { "id": "ci", "type": "cloud", "label": "CI y commit guard", "sublabel": "tests, paridad y mutación", "pos": [530, 90], "size": [190, 72], "sources": [{ "path": ".github/workflows/aoi-gate.yml" }, { "path": ".githooks/pre-commit-aoi-guard.sh" }, { "path": "package.json" }] },
+    { "id": "dashboard", "type": "frontend", "label": "Dashboard C2", "sublabel": "observación acotada", "pos": [1050, 570], "size": [190, 72], "sources": [{ "path": "aoi_apps/agentic-ops-dashboard/package.json" }] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Repositorio fuente AOI", "wraps": ["installer", "scaffold", "runtime", "sdd", "memory", "ci", "dashboard"], "pad": 28 },
+    { "kind": "security-group", "label": "Superficie gestionada por AOI", "wraps": ["runtime", "sdd", "memory"], "pad": 16 }
+  ],
+  "connections": [
+    { "from": "owner", "to": "installer", "label": "selecciona", "variant": "emphasis" },
+    { "from": "scaffold", "to": "installer", "label": "plantilla", "labelDy": 24, "variant": "security" },
+    { "from": "installer", "to": "runtime", "label": "materializa", "variant": "security" },
+    { "from": "runtime", "to": "sdd", "label": "orquesta", "variant": "emphasis" },
+    { "from": "sdd", "to": "memory", "label": "persiste", "variant": "security" },
+    { "from": "sdd", "to": "workspace", "label": "ejecuta", "variant": "emphasis" },
+    { "from": "ci", "to": "runtime", "label": "verifica", "labelDy": 24, "variant": "emphasis" },
+    { "from": "dashboard", "to": "workspace", "label": "lee y opera", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Índice canónico", "items": ["957 archivos versionados", "515 fuentes de verdad fuera de scaffold", "442 artefactos son réplica instalable"] },
+    { "dot": "emerald", "title": "Propiedad y aislamiento", "items": ["El dashboard es auxiliar, no workspace", "Setup y teardown protegen archivos del Owner", "Scaffold es espejo, no segundo sistema"] },
+    { "dot": "amber", "title": "Límite del determinismo", "items": ["Los gates son reproducibles sobre entradas fijadas", "El entorno, reloj, red, CLI y LLM cambian entradas", "El flujo específico documenta cada frontera"] }
+  ]
+}

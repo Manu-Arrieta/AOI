@@ -1,0 +1,59 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "AOI — Ciclo SDD: decisión, gates y cierre",
+    "quality_profile": "showcase",
+    "views": [
+      { "id": "intent", "label": "Intención y plan", "focus": ["need", "entry", "contract", "plan"], "note": "La necesidad, la interpretación asistida y las aprobaciones son entradas humanas o de LLM." },
+      { "id": "delivery", "label": "Aplicar y verificar", "focus": ["apply_gate", "tdd", "gates"], "note": "TDD cambia el workspace; los gates evalúan mecánicamente el estado observado." },
+      { "id": "closure", "label": "Cierre verificable", "focus": ["close", "archive", "memory"], "note": "El Owner decide el cierre y el archivo conserva evidencia y conocimiento reusable." }
+    ]
+  },
+  "lanes": [
+    { "id": "owner", "label": "Owner / decisiones" },
+    { "id": "agents", "label": "Supervisor y agentes" },
+    { "id": "runtime", "label": "Gates deterministas e ICM" }
+  ],
+  "phases": [
+    { "id": "intent", "label": "Intención", "fromCol": 0, "toCol": 1 },
+    { "id": "plan", "label": "Contrato y plan", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "apply", "label": "Aplicar", "fromCol": 4, "toCol": 4, "variant": "security" },
+    { "id": "close", "label": "Verificar y cerrar", "fromCol": 5, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "approval", "label": "SBC / BIC / Proposal Gate", "lane": "owner", "fromCol": 2, "toCol": 2, "variant": "security" },
+    { "id": "mechanical", "label": "Tests, BIC, blueprint y doctor", "lane": "runtime", "fromCol": 4, "toCol": 4, "variant": "emphasis" }
+  ],
+  "mainPath": ["need", "entry", "contract", "plan", "apply_gate", "tdd", "gates", "close", "archive", "memory"],
+  "semanticChecks": {
+    "allowedRoots": ["need"],
+    "allowedTerminals": ["memory"],
+    "requiredEdges": [{ "from": "tdd", "to": "gates" }, { "from": "gates", "to": "close" }],
+    "requiredPaths": [{ "from": "need", "to": "memory" }]
+  },
+  "nodes": [
+    { "id": "need", "lane": "owner", "col": 0, "type": "external", "label": "Necesidad", "sublabel": "entrada humana", "tag": "variable" },
+    { "id": "contract", "lane": "owner", "col": 2, "type": "security", "label": "Aprobar BIC", "sublabel": "SBC, BIC o proposal", "tag": "humano" },
+    { "id": "apply_gate", "lane": "owner", "col": 4, "type": "security", "label": "Gate apply", "sublabel": "autoriza cambio", "tag": "humano" },
+    { "id": "close", "lane": "owner", "col": 5, "type": "security", "label": "Decidir cierre", "sublabel": "archivar o iterar", "tag": "humano" },
+    { "id": "entry", "lane": "agents", "col": 1, "type": "backend", "label": "Entrada SDD", "sublabel": "genesis | frame | new", "tag": "LLM + contexto" },
+    { "id": "plan", "lane": "agents", "col": 3, "type": "backend", "label": "Planificar", "sublabel": "spec + design + tasks", "tag": "LLM asistido" },
+    { "id": "tdd", "lane": "agents", "col": 4, "type": "backend", "label": "Aplicar TDD", "sublabel": "RED → GREEN → REFACTOR", "tag": "herramientas" },
+    { "id": "archive", "lane": "agents", "col": 5, "type": "backend", "label": "Archivar", "sublabel": "reporte y docs", "tag": "/sdd-archive" },
+    { "id": "gates", "lane": "runtime", "col": 4, "type": "security", "label": "Gates", "sublabel": "tests + BIC + doctor", "tag": "FAIL → rework / Γ" },
+    { "id": "memory", "lane": "runtime", "col": 5, "type": "database", "label": "Cierre ICM", "sublabel": "facts + memoirs", "tag": "persistente" }
+  ],
+  "edges": [
+    { "from": "need", "to": "entry", "label": "expresa", "role": "main" },
+    { "from": "entry", "to": "contract", "label": "calibra", "role": "main" },
+    { "from": "contract", "to": "plan", "label": "aprueba", "role": "main", "variant": "emphasis" },
+    { "from": "plan", "to": "apply_gate", "label": "presenta plan", "role": "main" },
+    { "from": "apply_gate", "to": "tdd", "label": "autoriza", "role": "main", "variant": "security" },
+    { "from": "tdd", "to": "gates", "label": "pide evidencia", "role": "main", "variant": "emphasis" },
+    { "from": "gates", "to": "close", "label": "PASS / FAIL", "role": "main", "variant": "security" },
+    { "from": "close", "to": "archive", "label": "archive", "role": "main" },
+    { "from": "archive", "to": "memory", "label": "destila", "role": "main", "variant": "security" },
+    { "from": "contract", "to": "entry", "label": "reformular", "role": "return", "variant": "dashed" }
+  ]
+}
