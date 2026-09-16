@@ -233,7 +233,7 @@ const p4 = ledger.record('Phase_4_Verify', '/sdd-verify (Verification & QA)', {
   source: realRun.ok
     ? 'union: real serialization · distiller: real runner output · rollback: real side effect'
     : 'union: real serialization · distiller: synthetic crash · rollback: real side effect',
-  details: 'Mechanical Set Union (0 inference) + Diagnostic Distiller + 0-Token Fiber Rollback',
+  details: 'Mechanical Set Union (0 inference) + Diagnostic Distiller + registered-write Fiber recovery',
 })
 console.log(`  ✓ Phase 4 complete: ${p4.rawTokens} tokens -> ${p4.optimizedTokens} tokens (${p4.percentSaved} saved) [${realRun.ok ? 'real' : 'fixture'}]\n`)
 

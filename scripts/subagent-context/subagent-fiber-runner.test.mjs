@@ -8,7 +8,11 @@ import fs from 'node:fs';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { createSubagentSandbox, restoreTrackedFiles } from './subagent-fiber-runner.mjs';
+import {
+  createSubagentSandbox,
+  restoreTrackedFiles,
+  TRACKED_WRITE_ROLLBACK_SCOPE,
+} from './subagent-fiber-runner.mjs';
 
 describe('Subagent Fiber Runner: Revertible Sandboxes', () => {
   const testTaskDir = path.resolve(process.cwd(), '.tasks/test-feature/TASK-2026-999');
@@ -26,7 +30,7 @@ describe('Subagent Fiber Runner: Revertible Sandboxes', () => {
     }
   });
 
-  it('instantiates subagent with TOON payload and tracks file writes with instant rollback', () => {
+  it('BIC-2026-002:never.1 restores only writes explicitly registered with the sandbox', () => {
     const sandbox = createSubagentSandbox({
       role: 'backend',
       taskDir: '.tasks/test-feature/TASK-2026-999',
@@ -41,9 +45,58 @@ describe('Subagent Fiber Runner: Revertible Sandboxes', () => {
     assert.equal(fs.existsSync(tempTestFile), true);
     assert.equal(sandbox.getTrackedFileCount(), 1);
 
-    // Rollback sandbox (0ms / 0 tokens LLM)
+    assert.equal(sandbox.rollbackScope, TRACKED_WRITE_ROLLBACK_SCOPE);
+
+    // Local tracked-write recovery does not require LLM inference.
     sandbox.rollback();
     assert.equal(fs.existsSync(tempTestFile), false);
+  });
+
+  it('BIC-2026-002:oracle leaves an untracked direct write untouched by rollback', () => {
+    const directWriteFile = path.join(testTaskDir, 'direct-write.txt');
+    fs.writeFileSync(directWriteFile, 'before');
+
+    const sandbox = createSubagentSandbox({
+      role: 'backend',
+      taskDir: '.tasks/test-feature/TASK-2026-999',
+    });
+
+    // This simulates an editor/tool write that did not call trackFileWrite.
+    fs.writeFileSync(directWriteFile, 'outside-trackFileWrite');
+    sandbox.rollback();
+
+    assert.equal(fs.readFileSync(directWriteFile, 'utf8'), 'outside-trackFileWrite');
+  });
+
+  it('BIC-2026-002:never.3 scopes recovery guidance without a universal timing promise', () => {
+    const prompts = [
+      '.github/prompts/sdd-apply.prompt.md',
+      '.github/prompts/sdd-verify.prompt.md',
+      'scaffold/.github/prompts/sdd-apply.prompt.md',
+      'scaffold/.github/prompts/sdd-verify.prompt.md',
+    ];
+
+    for (const prompt of prompts) {
+      const content = fs.readFileSync(path.resolve(process.cwd(), prompt), 'utf8');
+      assert.match(content, /trackFileWrite/, `${prompt} omite el límite de registro explícito`);
+      assert.doesNotMatch(content, /all mutations carry explicit inverses/i, `${prompt} promete inversas universales`);
+      assert.doesNotMatch(content, /restoring the workspace state in 0ms/i, `${prompt} promete un SLA no medido`);
+    }
+
+    const publicContracts = [
+      'README.md',
+      'scaffold/README.md',
+      'docs/README.md',
+      'docs/internal/architecture/BEHAVIORAL_INTENT_CONTRACTS_PARADIGM.md',
+      'docs/internal/architecture/SPATIOTEMPORAL_MATHEMATICAL_FOUNDATIONS.md',
+      'docs/internal/architecture/SPATIOTEMPORAL_MATHEMATICAL_FOUNDATIONS.es.md',
+    ];
+
+    for (const document of publicContracts) {
+      const content = fs.readFileSync(path.resolve(process.cwd(), document), 'utf8');
+      assert.match(content, /registrad|registered/i, `${document} omite el alcance de efectos registrados`);
+      assert.doesNotMatch(content, /0 ms (and|y) 0 tokens|< 2 milliseconds|< 2 milisegundos/i, `${document} publica una garantía temporal no medida`);
+    }
   });
 });
 

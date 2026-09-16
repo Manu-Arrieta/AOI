@@ -16,7 +16,9 @@ En las arquitecturas tradicionales de agentes de inteligencia artificial (ReAct,
    - **Alucinaciones y efectos colaterales**: El agente suele modificar código preexistente no relacionado.
    - **No-determinismo**: No existe garantía de que el repositorio vuelva al estado inicial limpio si la tarea se cancela.
 
-AOI resuelve este problema desacoplando la inferencia de la IA del control de estado determinista. Toda acción física de un agente se gobierna a través de la **Composabilidad Espaciotemporal** y el formalismo de **Efectos Reversibles ($\partial\Gamma$)**.
+AOI usa este formalismo para desacoplar la inferencia de IA del control de estado determinista dentro del runtime. El adaptador actual de filesystem controla solamente los efectos registrados de forma explícita por su API; no gobierna toda acción física que un agente pueda ejecutar.
+
+> **Alcance de implementación.** Las ecuaciones describen un modelo de efectos reversibles. La garantía operacional aplica cuando el efecto fue capturado en el acumulador del runtime; no afirma aislamiento automático de proceso, filesystem, entorno o servicios remotos.
 
 ---
 
@@ -24,12 +26,12 @@ AOI resuelve este problema desacoplando la inferencia de la IA del control de es
 
 | Símbolo | Nombre Técnico | Definición Formal | Rol en AOI |
 | :---: | :--- | :--- | :--- |
-| **$\Gamma$** | **Contexto / Entorno** | $\Gamma = \{ x_1 : \tau_1, \dots, x_n : \tau_n \}$ | Espacio de estados completo del workspace (archivos, AST, variables de entorno, registros). |
-| **$\partial\Gamma$** | **Efecto Reversible** | $E_\Gamma := \Gamma \to \Gamma \times (\Gamma \to \Gamma)$ | Cada mutación atómica que porta intrínsecamente su morfismo inverso (*disposer*). |
+| **$\Gamma$** | **Contexto / Entorno** | $\Gamma = \{ x_1 : \tau_1, \dots, x_n : \tau_n \}$ | Modelo de estado; el runtime sólo controla el subconjunto que registra. |
+| **$\partial\Gamma$** | **Efecto Reversible** | $E_\Gamma := \Gamma \to \Gamma \times (\Gamma \to \Gamma)$ | Mutación registrada que porta su morfismo inverso (*disposer*). |
 | **$\diamond$** | **Composición Monoidal** | $(f \diamond g)(\gamma) := (\epsilon, s \circ t)$ | Composición secuencial de efectos preservando el orden contravariante de reversión. |
-| **$\text{recover}_\Gamma$** | **Operador de Rollback** | $\text{recover}(\Gamma) \equiv \text{id}_\Gamma$ | Vaciado LIFO de la pila de inversos; restaura el estado original en 0 ms y 0 tokens. |
+| **$\text{recover}_\Gamma$** | **Operador de Rollback** | $\text{recover}(\Gamma) \equiv \text{id}_\Gamma$ | Recupera inversos registrados en LIFO sin inferencia de LLM; no afirma tiempo universal ni workspace completo. |
 | **$\Sigma$** | **Coefectos** | Requerimientos ambientales ($\sigma \models d$) | Demanda de recursos que el agente necesita para operar (MCP, DB, CLI). |
-| **$\Sigma^{\text{iso}}$** | **Reinos de Aislamiento** | $\rho : K \to R$ (*Realms* disjuntos) | Sandboxing hermético que encapsula el espacio de nombres de cada subagente. |
+| **$\Sigma^{\text{iso}}$** | **Reinos de Aislamiento** | $\rho : K \to R$ (*Realms* disjuntos) | Aislamiento lógico de namespaces de coefectos, no de procesos ni filesystem. |
 | **$\Sigma^{\text{inter}}$** | **Intercepción de Coefectos**| $\iota : K \to M_k$ | Control de acceso basado en capacidades (*CBAC*) para herramientas y llamadas del sistema. |
 
 ---
@@ -50,9 +52,9 @@ El diseño del runtime implementado en `scripts/spatiotemporal-runtime/` se sust
 - **R. Landauer (1961) y C. Bennett (1973)**:  
   Demostraron que el borrado lógico de información tiene un costo termodinámico irreversible. En sistemas agénticos, el "borrado" o sobrescritura descontrolada destruye la coherencia del workspace y satura la ventana de contexto del LLM.
 - **Principio de Simetría Inversa**:  
-  En AOI, cada función de mutación $f : \Gamma \to \Gamma'$ devuelve un par:
+  Cada mutación registrada en el runtime de AOI puede devolver un par:
   $$( \Gamma', f^{-1} )$$
-  donde $f^{-1} : \Gamma' \to \Gamma$ garantiza que el costo de deshacer la operación sea puramente determinista y local.
+  donde $f^{-1} : \Gamma' \to \Gamma$ hace determinista y local el rollback de ese efecto registrado.
 
 ### C. Formalización de la Composabilidad Espaciotemporal (Spatiotemporal Composability)
 Basado en los teoremas y definiciones del paper de *Spatiotemporal Composability*:
@@ -63,7 +65,7 @@ Basado en los teoremas y definiciones del paper de *Spatiotemporal Composability
 2. **Invariante de Solidez (Soundness Invariant — Teorema 7)**:  
    Para cualquier secuencia finita de mutaciones $\Delta = [e_1, e_2, \dots, e_n]$, el operador $\text{recover}_\Gamma$ aplica la secuencia inversa en orden LIFO:
    $$\text{recover}(\Gamma_n) = (e_1^{-1} \circ e_2^{-1} \circ \dots \circ e_n^{-1})(\Gamma_n) = \Gamma_0$$
-   Garantizando que no existan fugas de estado (*zero resource leakage*).
+   Garantizando reversión dentro del acumulador cuando todos los efectos relevantes fueron registrados; los efectos del host no registrados quedan fuera de esa garantía.
 
 ---
 
@@ -81,7 +83,7 @@ export function createEffectContext(initialState = {}) {
     effect: (callback) => { ... },
     set: (key, value) => { ... },
     recover: () => {
-      // Reversión atómica LIFO en 0 tokens
+      // Reversión LIFO local, sin inferencia de LLM
       const toRun = [...inverses];
       inverses = [];
       for (const disposer of toRun) disposer();
@@ -93,8 +95,8 @@ export function createEffectContext(initialState = {}) {
 ### 2. Aislamiento de Micro-Agentes (`scripts/subagent-context/subagent-fiber-runner.mjs`)
 Cuando un subagente entra en ejecución:
 1. Se genera un **Reino Aislado ($\Sigma^{\text{iso}}$)** con ID único.
-2. Todas las escrituras a disco quedan registradas en el mapa de efectos inversos.
-3. Si la verificación (`sdd-verify`) falla, el método `rollback()` restaura el estado original byte por byte sin invocar al LLM.
+2. Sólo las escrituras enviadas mediante $\texttt{trackFileWrite}$ quedan registradas en el mapa de efectos inversos.
+3. El llamador que conserve el sandbox puede invocar $\texttt{rollback()}$ para restaurar esas instantáneas byte por byte sin inferencia de LLM; las escrituras externas, borrados, entorno, procesos y efectos remotos no se interceptan.
 
 ---
 
@@ -102,10 +104,10 @@ Cuando un subagente entra en ejecución:
 
 | Métrica | Enfoque Clásico (ReAct / LLM Repair) | Enfoque AOI ($\partial\Gamma$) |
 | :--- | :--- | :--- |
-| **Costo de Rollback (Tokens)** | 5,000 – 50,000+ tokens | **0 tokens** |
-| **Tiempo de Recuperación** | 15 – 60 segundos | **< 2 milisegundos** |
-| **Tasa de Éxito de Reversión** | ~80% (riesgo de alucinación) | **100% determinista** |
-| **Aislamiento Multitarea** | Global (conflictos de archivos) | Reinos disjuntos ($\Sigma^{\text{iso}}$) |
+| **Costo de Rollback (inferencia LLM)** | Depende del ciclo de reparación | Ninguno para recuperación in-process de efectos registrados |
+| **Tiempo de Recuperación** | Depende del entorno | Sin SLA temporal publicado |
+| **Tasa de Éxito de Reversión** | Depende del entorno | Determinista para efectos reversibles registrados |
+| **Aislamiento Multitarea** | Filesystem compartido (carreras) | Namespaces de coefectos; I/O externo sigue compartido |
 
 ---
 

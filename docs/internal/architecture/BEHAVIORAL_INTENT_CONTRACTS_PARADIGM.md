@@ -435,13 +435,13 @@ Cada BIC del proyecto transiciona de forma determinística por las compuertas de
 3. **Planificación Rápida (`/sdd-ff`):** El `@solution-architect` transforma el oráculo del BIC en casos de prueba de aceptación y diagrama de secuencia. Se genera el desglose de tareas con la sección `## Test Requirements` obligatoria para TDD.
 4. **Implementación Aislada (`/sdd-apply`):**
    * El payload para los subagentes se sanitiza vía `sanitize-subagent-payload.mjs --format toon` (-85% tokens).
-   * Los subagentes operan dentro de **Spatiotemporal Fiber Sandboxes** reversibles.
+   * Los Fiber Sandboxes aportan ciclo de vida y rollback únicamente para escrituras registradas mediante $\texttt{sandbox.trackFileWrite}$; no interceptan herramientas ni escrituras externas.
    * Se ejecuta el ciclo estricto de **TDD Gate**: RED (escribir test que falle) ➔ GREEN (código mínimo para pasar) ➔ REFACTOR.
    * Se respeta la regla de **Responsabilidad Única (SRP <300 LOC)** por archivo.
 5. **Verificación Determinística (`/sdd-verify`):**
    * **Invariant Gate:** `invariant-gate.mjs --entity {WORKSPACE} --exit-code` cruza las etiquetas de cada invariante y del oráculo contra la suite de tests. Si una regla "NUNCA" declarada no tiene test que la afirme, la verificación FALLA de forma automática. Cero tokens de inferencia.
    * Se ejecuta `mechanical-verify-union.mjs` para consolidar fallos de forma determinística sin gastar tokens de un LLM evaluador.
-   * Si algo falla, el runtime ejecuta `recover_Γ` / `sandbox.rollback()` restaurando el estado en **0 ms y 0 tokens**.
+   * Si el llamador conserva un sandbox activo, puede invocar $\texttt{sandbox.rollback()}$ para restaurar sus instantáneas registradas sin inferencia de LLM. No es una restauración universal ni una garantía de tiempo.
 6. **Cierre y Memoria (`/sdd-archive`):**
    * Se extraen los patrones arquitectónicos y se destilan en las **Memoirs** del proyecto (`icm memoir distill`).
    * Se registran los nuevos servicios y endpoints en el almacén de **Facts $O(1)$** de ICM.

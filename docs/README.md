@@ -11,7 +11,7 @@ Bienvenido al repositorio de documentación arquitectónica, metodológica y ope
 * **Resumen:** Por qué la historia de usuario tradicional falla en entornos de IA, cómo el rol funcional evoluciona a *Outcome & Invariant Architect*, las 4 dimensiones del **Behavioral Intent Contract (BIC)** ($\Delta S$, Invariantes "Never Rules", Topología de Actores y Oráculos de Negocio), el protocolo de diálogo socrático en lenguaje natural en `/sdd-frame`, la galería de ejemplos (atómico, SaaS y red multi-actor con escrow) y la estrategia end-to-end de ejecución en proyectos.
 
 ### 📐 [Fundamentos Matemáticos del Runtime Espaciotemporal](internal/architecture/SPATIOTEMPORAL_MATHEMATICAL_FOUNDATIONS.es.md) ([English](internal/architecture/SPATIOTEMPORAL_MATHEMATICAL_FOUNDATIONS.md))
-* **Resumen:** Especificación formal del espacio de efectos reversibles ($\partial\Gamma$), coefectos en sandboxes aisladas ($\Sigma^{\text{iso}}$), composición monoidal ($\diamond$) y demostración del operador de rollback en 0 ms y 0 tokens ($\text{recover}_\Gamma$).
+* **Resumen:** Modelo formal de efectos reversibles ($\partial\Gamma$), coefectos con namespaces lógicos ($\Sigma^{\text{iso}}$), composición monoidal ($\diamond$) y el alcance implementado de rollback para efectos registrados ($\text{recover}_\Gamma$).
 
 ---
 

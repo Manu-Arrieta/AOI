@@ -73,7 +73,7 @@ Hand off to **@integration-specialist** with isolated task context (via `node sc
    Include findings in verify-report under `## Principles Compliance`.
 6. **Diagnostic Distillation (MANDATORY)**: Never read a raw `vitest`/`tsc` failure into context. Pipe it through `node scripts/sdd-lifecycle/diagnostic-distiller.mjs` first, which keeps the assertion and the failing location and drops the stack noise. The saving scales with the size of the crash, so the worse the failure the more it matters.
 7. **Mechanical Set Union Consolidation**: When consolidating multiple verification reports (test failures, lint violations, type errors, LOC limits, and TDD coverage pairs), use deterministic Set Union aggregation (via `node scripts/sdd-lifecycle/mechanical-verify-union.mjs`) instead of paying for an LLM fuser/evaluator step.
-8. **Spatiotemporal Rollback on Failure (0-Token Reversibility)**: If verification emits `FAIL` or critical defect count > 0, the active Fiber Sandbox executes `recover_Γ` (`sandbox.rollback()`), restoring the workspace state in 0ms and 0 LLM tokens, eliminating context pollution from broken attempts.
+8. **Tracked-write recovery on failure**: When the caller still owns a live Fiber Sandbox and its changes were registered through sandbox.trackFileWrite, it may invoke sandbox.rollback() to restore those snapshots without LLM inference. This is not filesystem interception, does not restore arbitrary agent or tool changes, and has no universal timing guarantee.
 
 ### Step 4: Service Discovery Gate Check
 

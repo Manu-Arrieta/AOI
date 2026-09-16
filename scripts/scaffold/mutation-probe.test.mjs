@@ -130,9 +130,13 @@ describe('a suite leaves no process behind, by either exit', () => {
    * @param {'hang'|'exit'} kind si la suite además se cuelga o termina
    */
   function fixture(kind) {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-probe-ghost-'))
+    // This fixture is not a stale probe artifact. Its namespace must stay
+    // outside the production reaper pattern, because parity runs test files in
+    // parallel and a real reapGhosts() call in another worker must not kill the
+    // process group this test is timing.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-test-suite-group-'))
     SANDBOXES.push(dir)
-    const mark = `ghost-${process.pid}-${Math.random().toString(36).slice(2, 8)}`
+    const mark = `test-group-${process.pid}-${Math.random().toString(36).slice(2, 8)}`
     // El fantasma tiene que estar VIVO, no ocupado. Antes esto era
     // `while (true) {}`, que lo mantiene vivo al precio de quemar un núcleo
     // entero — y el único caso en que importa es justamente el que se fugó:
@@ -143,8 +147,8 @@ describe('a suite leaves no process behind, by either exit', () => {
     // nunca fue parte de lo que el caso verifica.
     fs.writeFileSync(path.join(dir, `${mark}.mjs`), 'setInterval(() => {}, 1000)\n')
     // Node's test runner may abandon a worker with a forever-pending test
-    // before our probe timeout fires. For the timeout path use a direct
-    // long-lived process instead: it exercises the same detached group and
+    // before our probe timeout fires. For the timeout path use a direct,
+    // blocked process instead: it exercises the same detached group and
     // reaper contract without borrowing the runner's lifecycle semantics.
     if (kind === 'hang') {
       fs.writeFileSync(
@@ -155,7 +159,7 @@ describe('a suite leaves no process behind, by either exit', () => {
           "import { fileURLToPath } from 'node:url'",
           'const here = path.dirname(fileURLToPath(import.meta.url))',
           `spawn(process.execPath, [path.join(here, '${mark}.mjs')], { stdio: 'ignore' })`,
-          'setInterval(() => {}, 1000)',
+          'Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0)',
           '',
         ].join('\n')
       )
@@ -176,7 +180,7 @@ describe('a suite leaves no process behind, by either exit', () => {
         '  const here = path.dirname(fileURLToPath(import.meta.url))',
         // El fantasma se deja en `unref` —su vida no la sostiene el padre, que
         // es justamente lo que hay que recoger— y el caso `hang` se sostiene
-        // con un intervalo propio. Esa separación es la que hace que cada caso
+        // con una espera bloqueante propia. Esa separación es la que hace que cada caso
         // mida su camino: sin el intervalo, una suite sin nada pendiente hace
         // que el runner salga por su cuenta y el caso del reloj mediría una
         // salida temprana; con el fantasma referenciado, el caso `exit` no
@@ -226,15 +230,15 @@ describe('a suite leaves no process behind, by either exit', () => {
     it(`kills the group when the suite ${label}`, async () => {
       const { dir, mark, runner } = fixture(kind)
       try {
-        const startedAt = Date.now()
+        const startedAt = performance.now()
         const passed = await suitePasses(dir, '*.test.mjs', timeout, runner)
-        const elapsed = Date.now() - startedAt
+        const elapsed = performance.now() - startedAt
         assert.equal(passed, expected, `la suite no salió por donde el caso pretende (${label})`)
         // El reloj es lo que distingue el camino del timeout de una salida
         // temprana del runner. `false` lo producen LOS DOS, así que sin esta
-        // aserción el caso medía una salida temprana creyendo medir el reloj —
-        // y el mutante que convierte `finish(false)` en `finish(true)`
-        // sobrevivía en la versión donde el runner sale antes.
+        // aserción el caso mediría una salida temprana creyendo medir el reloj.
+        // performance.now() es monotónico: Date.now() puede saltar al corregir
+        // el reloj de pared y aparentar una salida temprana que no existió.
         if (kind === 'hang') {
           assert.ok(
             elapsed >= timeout * 0.8,

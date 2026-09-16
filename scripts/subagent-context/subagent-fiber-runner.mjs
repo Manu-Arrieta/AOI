@@ -2,8 +2,8 @@
  * scripts/subagent-context/subagent-fiber-runner.mjs
  *
  * Implements Subagent Fiber Sandboxes (Module 2).
- * Enclaustrates micro-agent execution into a Spatiotemporal Fiber with Realm Isolation (Σ^iso)
- * and automatic effect tracking on filesystem and environment mutations.
+ * Provides a logical Fiber realm plus explicit snapshot-and-recovery for file
+ * writes sent through its tracking API. It does not intercept host effects.
  */
 
 import fs from 'node:fs';
@@ -12,13 +12,25 @@ import { createCoeffectRegistry } from '../spatiotemporal-runtime/coeffect-resol
 import { createFiberRuntime } from '../spatiotemporal-runtime/fiber-lifecycle.mjs';
 import { buildSubagentPayload } from './sanitize-subagent-payload.mjs';
 
+export const TRACKED_WRITE_ROLLBACK_SCOPE = Object.freeze({
+  kind: 'explicit-tracked-file-writes',
+  registration: 'sandbox.trackFileWrite(filePath, content)',
+  automaticInterception: false,
+  excludes: Object.freeze([
+    'untracked filesystem writes',
+    'deletions',
+    'environment mutations',
+    'process and remote effects',
+  ]),
+});
+
 /**
  * Creates a Subagent Fiber Sandbox for a specific role and task.
  * @param {Object} options
  * @param {string} options.role - 'frontend' | 'backend' | 'devops' | 'qa'
  * @param {string} options.taskDir - e.g. '.tasks/feature/TASK-YYYY-NNN'
  * @param {string} [options.format='toon'] - 'toon' | 'markdown'
- * @returns {Object} Sandbox controller with execution, tracking, and rollback capabilities
+ * @returns {Object} Sandbox controller with explicit write tracking and rollback capabilities
  */
 /**
  * Puts every tracked file back the way it was, and forgets them.
@@ -46,6 +58,10 @@ import { buildSubagentPayload } from './sanitize-subagent-payload.mjs';
  *
  * Lo que este rollback NO cubre, y está declarado: un borrado hecho por el
  * subagente (`unlinkSync` no se trackea, no hay API para eso) no se resucita.
+ *
+ * Scope: only writes registered through trackFileWrite are restored. External
+ * writes, deletions, environment changes, process effects and remote effects
+ * are not intercepted or recovered.
  *
  * @param {Map<string, {content: Buffer|null, mode: number, dirs: string[]}>} trackedFiles mutated: cleared when done
  */
@@ -150,6 +166,7 @@ export function createSubagentSandbox({ role, taskDir, format = 'toon' }) {
     realmId,
     payload: sanitizedPayload.payload,
     fiberUid: fiberController.uid,
+    rollbackScope: TRACKED_WRITE_ROLLBACK_SCOPE,
     trackFileWrite(filePath, content) {
       const fsService = registry.inject('fs', { realm: realmId });
       fsService.trackFileWrite(filePath, content);

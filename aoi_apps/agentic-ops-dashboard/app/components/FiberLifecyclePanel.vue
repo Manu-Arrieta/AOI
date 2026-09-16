@@ -12,6 +12,13 @@ interface FiberData {
 }
 
 interface FiberResponse {
+  observability: {
+    source: 'synthetic-local-runtime'
+    liveAgentExecution: false
+    filesystemTelemetry: false
+    rollbackTelemetry: false
+    note: string
+  }
   metrics: {
     totalFibers: number
     activeFibers: number
@@ -59,7 +66,7 @@ function getStateBadgeColor(state: string): 'success' | 'warning' | 'error' | 'n
         </div>
         <div>
           <h3 class="font-semibold text-slate-100">Spatiotemporal Fiber Runtime</h3>
-          <p class="text-xs text-slate-400">DeepSeek Dynamic Composability & Reversible Lifecycles</p>
+          <p class="text-xs text-slate-400">Synthetic local model — not live agent execution</p>
         </div>
       </div>
       <UButton
@@ -84,10 +91,14 @@ function getStateBadgeColor(state: string): 'success' | 'warning' | 'error' | 'n
         <div class="text-xl font-bold text-indigo-400">{{ data.metrics.providedKeys.length }}</div>
       </div>
       <div class="rounded-lg bg-slate-950/40 p-3 border border-slate-800/60">
-        <div class="text-xs text-slate-400">Zero-Restart Uptime</div>
-        <div class="text-xl font-bold text-cyan-400">100%</div>
+        <div class="text-xs text-slate-400">Observability source</div>
+        <div class="text-sm font-semibold text-cyan-400">Synthetic local</div>
       </div>
     </div>
+
+    <p v-if="data" class="mt-3 text-xs text-slate-500">
+      {{ data.observability.note }}
+    </p>
 
     <div class="mt-4 space-y-2">
       <div

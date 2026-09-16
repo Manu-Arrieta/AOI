@@ -135,20 +135,20 @@ Escribís las instrucciones una sola vez en `.github/instructions/` y AOI las co
 > Sincronizá todos los asistentes en cualquier momento con: `pnpm aoi:sync-rules`
 
 ### 5. 🛡️ Runtime Espaciotemporal y Sandboxes con Rollback
-Los agentes de IA pueden fallar o alucinar, pero con AOI **nunca rompen tu repositorio**:
+AOI modela efectos reversibles dentro de su runtime; el rollback de archivos actual tiene un alcance explícito y verificable:
 - **Fundamento Matemático ($\partial\Gamma$)**: En lugar de pedirle al LLM *"arregla lo que rompiste"* (lo cual consume miles de tokens y genera alucinaciones), AOI formaliza el espacio de efectos reversibles:
   $$E_\Gamma := \Gamma \to \Gamma \times (\Gamma \to \Gamma)$$
-  Toda mutación física sobre el disco o variables de entorno queda registrada junto a un morfismo inverso ($f^{-1}$). Si una prueba falla, el operador $\text{recover}_\Gamma$ restaura el estado original en **0 ms y 0 tokens**.
-- **Sandboxes Herméticas (`/sandbox-new`)**: Cada subagente se ejecuta en un *Fiber* aislado dentro de su propio reino ($\Sigma^{\text{iso}}$) y con cuotas estrictas de recursos (`.sandboxes/registry.md`).
+  La implementación de archivos registra sólo las escrituras enviadas de forma explícita por $\texttt{sandbox.trackFileWrite}$. Su rollback restaura esas instantáneas sin inferencia de LLM; no observa escrituras directas, borrados, variables de entorno, procesos ni efectos remotos, y no publica un SLA temporal.
+- **Fibers y Realms ($\Sigma^{\text{iso}}$)**: El runtime separa claves de coefectos y ciclos de vida lógicos. Esa separación no es una frontera de proceso o filesystem para herramientas externas.
 
 #### Nomenclatura del Runtime
 | Símbolo | Significado | Función Práctica |
 | :---: | :--- | :--- |
-| **$\Gamma$** | **Contexto / Entorno** | Estado completo del workspace (archivos, AST, variables, registros). |
-| **$\partial\Gamma$** | **Efecto Reversible** | Mutación que porta su propia función de reversión (*disposer*). |
+| **$\Gamma$** | **Contexto / Entorno** | Modelo de estado; el runtime sólo controla el subconjunto que registra. |
+| **$\partial\Gamma$** | **Efecto Reversible** | Operación registrada que porta su función de reversión (*disposer*). |
 | **$\diamond$** | **Composición Monoidal** | Encadena transformaciones preservando la reversión LIFO contravariante. |
-| **$\text{recover}_\Gamma$** | **Operador de Rollback** | Restaura el estado previo al 100% sin inferencia de IA (0 tokens). |
-| **$\Sigma^{\text{iso}}$** | **Reino Aislado** | Espacio de nombres hermético para que los subagentes no colisionen. |
+| **$\text{recover}_\Gamma$** | **Operador de Rollback** | Revierte efectos registrados; la recuperación local no usa inferencia. |
+| **$\Sigma^{\text{iso}}$** | **Reino Aislado** | Espacio de nombres de coefectos, no aislamiento de I/O externo. |
 
 > 📖 *Para profundizar en los teoremas, solidez de tipos y referencias académicas (Plotkin, Petricek, Landauer, Bennett), consultá [Fundamentos Matemáticos del Runtime Espaciotemporal](docs/internal/architecture/SPATIOTEMPORAL_MATHEMATICAL_FOUNDATIONS.es.md).*
 

@@ -5,12 +5,20 @@ import { createFiberRuntime } from '../../../../scripts/spatiotemporal-runtime/f
 let globalRegistry: any = null
 let globalRuntime: any = null
 
+const OBSERVABILITY = Object.freeze({
+  source: 'synthetic-local-runtime',
+  liveAgentExecution: false,
+  filesystemTelemetry: false,
+  rollbackTelemetry: false,
+  note: 'Seeded local Fiber model; it does not observe agent execution, file writes, or rollback outcomes.',
+})
+
 function getRuntime() {
   if (!globalRuntime) {
     globalRegistry = createCoeffectRegistry()
     globalRuntime = createFiberRuntime(globalRegistry)
     
-    // Seed initial system fibers for observability
+    // Seed a synthetic local model for UI observability; not agent telemetry.
     globalRuntime.instantiate({
       name: 'supervisor-fiber',
       inject: [],
@@ -39,6 +47,7 @@ export default defineEventHandler(() => {
   return {
     success: true,
     timestamp: new Date().toISOString(),
+    observability: OBSERVABILITY,
     metrics: {
       totalFibers: fibers.length,
       activeFibers: runtime.getActiveFibers().length,

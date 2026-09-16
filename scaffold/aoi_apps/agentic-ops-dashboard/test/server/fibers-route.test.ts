@@ -7,7 +7,7 @@ vi.mock('h3', () => ({
 import fibersHandler from '../../server/api/fibers.get'
 
 describe('server/api/fibers.get', () => {
-  it('returns active fibers and coeffect metrics', async () => {
+  it('BIC-2026-002:never.2 returns a synthetic local Fiber model, not agent telemetry', async () => {
     const event = {} as any
     const response = await fibersHandler(event)
 
@@ -16,5 +16,11 @@ describe('server/api/fibers.get', () => {
     expect(response.metrics.providedKeys).toContain('orchestrator')
     expect(Array.isArray(response.fibers)).toBe(true)
     expect(response.fibers.some((f: any) => f.name === 'supervisor-fiber')).toBe(true)
+    expect(response.observability).toMatchObject({
+      source: 'synthetic-local-runtime',
+      liveAgentExecution: false,
+      filesystemTelemetry: false,
+      rollbackTelemetry: false,
+    })
   })
 })

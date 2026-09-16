@@ -16,7 +16,9 @@ In traditional AI agent architectures (ReAct, AutoGPT, prompt-based subagents), 
    - **Hallucinations and cascading defects**: The model frequently modifies unrelated pre-existing files.
    - **Non-determinism**: No mathematical guarantee exists that the repository can be restored to its baseline state if the task is aborted.
 
-AOI solves this by decoupling LLM inference from deterministic state control. All physical actions taken by agents are governed by **Spatiotemporal Composability** and the formalism of **Revertible Effects ($\partial\Gamma$)**.
+AOI uses this formalism to decouple LLM inference from deterministic state control inside the runtime. The current filesystem adapter controls only effects explicitly registered through its tracking API; it does not govern every physical action an agent can take.
+
+> **Implementation scope.** The equations below describe a reversible-effect model. Their operational guarantee applies only when the effect is captured in the runtime accumulator; it is not a claim of automatic process, filesystem, environment, or remote-service isolation.
 
 ---
 
@@ -24,12 +26,12 @@ AOI solves this by decoupling LLM inference from deterministic state control. Al
 
 | Symbol | Technical Term | Formal Definition | Operational Role in AOI |
 | :---: | :--- | :--- | :--- |
-| **$\Gamma$** | **Context / Environment** | $\Gamma = \{ x_1 : \tau_1, \dots, x_n : \tau_n \}$ | Full state space of the workspace (files, AST, environment variables, task registry). |
-| **$\partial\Gamma$** | **Revertible Effect** | $E_\Gamma := \Gamma \to \Gamma \times (\Gamma \to \Gamma)$ | Atomic mutation that inherently encapsulates its inverse morphism (*disposer*). |
+| **$\Gamma$** | **Context / Environment** | $\Gamma = \{ x_1 : \tau_1, \dots, x_n : \tau_n \}$ | State-space model; the runtime controls only the subset it records. |
+| **$\partial\Gamma$** | **Revertible Effect** | $E_\Gamma := \Gamma \to \Gamma \times (\Gamma \to \Gamma)$ | Registered mutation that carries an inverse morphism (*disposer*). |
 | **$\diamond$** | **Monoidal Composition** | $(f \diamond g)(\gamma) := (\epsilon, s \circ t)$ | Sequential effect composition preserving contravariant disposal order. |
-| **$\text{recover}_\Gamma$** | **Rollback Operator** | $\text{recover}(\Gamma) \equiv \text{id}_\Gamma$ | LIFO evacuation of the inverse accumulator; restores pristine state in 0 ms and 0 tokens. |
+| **$\text{recover}_\Gamma$** | **Rollback Operator** | $\text{recover}(\Gamma) \equiv \text{id}_\Gamma$ | LIFO recovery of registered inverses without LLM inference; no universal timing or workspace-completeness claim. |
 | **$\Sigma$** | **Coeffects** | Contextual demands ($\sigma \models d$) | Environmental requirements needed by the agent (MCP tools, database, CLI binaries). |
-| **$\Sigma^{\text{iso}}$** | **Isolated Realms** | $\rho : K \to R$ (Disjoint realms) | Hermetic process and filesystem isolation for concurrent subagents. |
+| **$\Sigma^{\text{iso}}$** | **Isolated Realms** | $\rho : K \to R$ (Disjoint realms) | Logical namespace isolation for runtime coeffects, not process or filesystem isolation. |
 | **$\Sigma^{\text{inter}}$** | **Coeffect Interception** | $\iota : K \to M_k$ | Capability-Based Access Control (CBAC) for system calls and external tools. |
 
 ---
@@ -50,9 +52,9 @@ The runtime in `scripts/spatiotemporal-runtime/` is grounded in three core pilla
 - **R. Landauer (1961) & C. Bennett (1973)**:  
   Established that erasing information incurs an irreversible thermodynamic cost. In AI systems, disorderly state destruction pollutes LLM context windows and exhausts token budgets.
 - **Microscopic Invertibility**:  
-  In AOI, every mutation function $f : \Gamma \to \Gamma'$ returns a pair:
+  Each mutation registered in the AOI runtime can return a pair:
   $$( \Gamma', f^{-1} )$$
-  where $f^{-1} : \Gamma' \to \Gamma$ ensures rollback is computed purely locally and deterministically.
+  where $f^{-1} : \Gamma' \to \Gamma$ makes rollback local and deterministic for that registered effect.
 
 ### C. Spatiotemporal Composability Formalism
 Grounded in formal definitions from the *Spatiotemporal Composability* research:
@@ -63,7 +65,7 @@ Grounded in formal definitions from the *Spatiotemporal Composability* research:
 2. **Soundness Invariant (Theorem 7)**:  
    For any finite mutation sequence $\Delta = [e_1, e_2, \dots, e_n]$, the operator $\text{recover}_\Gamma$ executes the reverse sequence in strict LIFO order:
    $$\text{recover}(\Gamma_n) = (e_1^{-1} \circ e_2^{-1} \circ \dots \circ e_n^{-1})(\Gamma_n) = \Gamma_0$$
-   guaranteeing zero state or resource leakage.
+   guaranteeing reversal within the accumulator when every relevant effect was registered; untracked host effects are outside this guarantee.
 
 ---
 
@@ -71,10 +73,10 @@ Grounded in formal definitions from the *Spatiotemporal Composability* research:
 
 | Metric | Traditional Agentic Paradigm (ReAct / LLM Repair) | AOI Spatiotemporal ($\partial\Gamma$) |
 | :--- | :--- | :--- |
-| **Rollback Cost (Tokens)** | 5,000 – 50,000+ tokens | **0 tokens** |
-| **Recovery Latency** | 15 – 60 seconds | **< 2 milliseconds** |
-| **Restoration Success Rate** | ~80% (risk of hallucination) | **100% deterministic** |
-| **Concurrency Safety** | Shared filesystem (race conditions) | Isolated Realms ($\Sigma^{\text{iso}}$) |
+| **Rollback Cost (LLM inference)** | Depends on repair loop | None for in-process registered-effect recovery |
+| **Recovery Latency** | Environment-dependent | No published time SLO |
+| **Restoration Success Rate** | Environment-dependent | Deterministic for registered reversible effects |
+| **Concurrency Safety** | Shared filesystem (race conditions) | Coeffect namespaces; external I/O remains shared |
 
 ---
 
