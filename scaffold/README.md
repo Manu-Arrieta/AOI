@@ -1,12 +1,12 @@
 # AOI — Agentic Operational Infrastructure 🚀
 
 > **Convierte cualquier repositorio en un entorno de desarrollo agéntico autónomo, seguro y de altísima eficiencia.**  
-> Diseñado para que humanos e inteligencias artificiales colaboren con memoria infinita, mínimo consumo de tokens y cero pérdida de contexto.
+> Diseñado para que humanos e inteligencias artificiales colaboren con memoria persistente entre sesiones, contexto trazable y consumo de tokens medible.
 
 [![AOI Doctor](https://img.shields.io/badge/AOI_Doctor-360%C2%B0_Healthy-success?style=flat-square&logo=shield)](file:///scripts/aoi-doctor.mjs)
-[![Tests](https://img.shields.io/badge/Tests-134%2F134_Passing-brightgreen?style=flat-square&logo=vitest)](file:///package.json)
-[![Scaffold Parity](https://img.shields.io/badge/Scaffold_Parity-227%2F227_Verified-blue?style=flat-square)](file:///scripts/scaffold/validate-scaffold-parity.mjs)
-[![Multi-Harness](https://img.shields.io/badge/Multi--Harness-5_Assistants-orange?style=flat-square)](file:///scripts/multi-harness/compile-rules.mjs)
+[![Tests](https://img.shields.io/badge/Tests-Verified-brightgreen?style=flat-square&logo=vitest)](file:///package.json)
+[![Scaffold Parity](https://img.shields.io/badge/Scaffold_Parity-Verified-blue?style=flat-square)](file:///scripts/scaffold/validate-scaffold-parity.mjs)
+[![Multi-Harness](https://img.shields.io/badge/Multi--Harness-Verified-orange?style=flat-square)](file:///scripts/multi-harness/compile-rules.mjs)
 [![License](https://img.shields.io/badge/License-MIT-purple?style=flat-square)](file:///LICENSE)
 
 ---
@@ -16,11 +16,11 @@
 **AOI** es la infraestructura operativa que le da a tus asistentes de IA lo que siempre necesitaron para programar de verdad: **memoria persistente que trasciende sesiones**, **optimización matemática de tokens**, un **ciclo de vida de desarrollo guiado por especificaciones (SDD)** y **mecanismos de seguridad deterministas** con reversión instantánea de cambios.
 
 En lugar de lidiar con chats aislados que olvidan decisiones a los 20 minutos o que consumen millones de tokens innecesarios leyendo repositorios enteros, AOI equipa tu proyecto con:
-- **27 Agentes especializados** coordinados en arquitectura Hub-and-Spoke.
+- **Agentes especializados** coordinados en arquitectura Hub-and-Spoke.
 - **5 Métodos de Memoria (ICM v4)**: Recuerdos episódicos, grafos de arquitectura, hechos clave-valor exactos en $O(1)$, correcciones y transcripciones crudas.
-- **Motor Espaciotemporal & Sandboxes**: Ejecución aislada de tareas con reversión atómica de efectos ($\partial\Gamma$) si una prueba falla.
+- **Motor Espaciotemporal & Sandboxes**: Ejecución aislada de tareas con recuperación de efectos registrados ($\partial\Gamma$) si una prueba falla.
 - **Soporte Multi-Harness**: Una sola fuente de verdad para GitHub Copilot, Claude Code, Cursor, Antigravity/Gemini y Cline.
-- **Dashboard Operativo C2**: Tablero Kanban en tiempo real, matriz TanStack, visualizador 3D de dependencias y semáforo de salud 360°.
+- **Dashboard Operativo C2** (perfil `dashboard`): Tablero Kanban, matriz TanStack, visualizador 3D de dependencias y semáforo de salud.
 
 ---
 
@@ -76,12 +76,12 @@ Una vez instalado en tu proyecto, abrí el chat de tu asistente favorito (ej. Co
 
 ## 🚀 Los 5 Superpoderes de AOI
 
-### 1. 📉 Ahorro Radical de Tokens (60% al 90%)
+### 1. 📉 Eficiencia de Contexto y Tokens
 AOI combate el desperdicio de tokens en múltiples niveles:
 - **RTK (Rust ToolKit)**: Filtra y comprime la salida de comandos de terminal, tests y builds antes de que lleguen al modelo.
 - **Serialización TOON**: Los subagentes reciben contratos y tareas en una notación tabular ultracompacta (`scripts/subagent-context/`), evitando enviar especificaciones gigantes.
-- **MCP Gateway Proxy**: Comprime los esquemas de herramientas y aplica *Progressive Disclosure*, reduciendo hasta un 85% la sobrecarga en cada turno.
-- **Codebase Memory MCP**: Grafo estructural de código en SQLite que reemplaza búsquedas amplias tipo `grep` por consultas semánticas y caminos de llamada exactos.
+- **MCP Gateway Proxy**: Enruta cada servidor MCP registrado por `mcp-compressor` y aplica *Progressive Disclosure*. AOI verifica ese enrutamiento, pero no publica una tasa fija de ahorro: depende de los esquemas y la carga del workspace y debe medirse en ese contexto.
+- **Codebase Memory MCP**: Grafo estructural de código en SQLite que reemplaza búsquedas amplias tipo `grep` por consultas semánticas y caminos de llamada exactos. Está incluido en los perfiles `advanced` y `dashboard`.
 
 ### 2. 🧠 Memoria Persistente que Nunca Olvida (ICM v4)
 Integración nativa con [ICM](https://github.com/rtk-ai/icm) a través de **5 métodos complementarios**:
@@ -117,7 +117,7 @@ AOI evoluciona sobre el Scrum tradicional: **reemplaza la clásica "Historia de 
 
 - **Zero-Task Footprint**: En `/sdd-frame`, dialogás con el agente en lenguaje cotidiano (voz o texto) para auditar hechos en $O(1)$ y fijar las reglas "NUNCA" (invariantes) sin contaminar el registro de tareas.
 - **Las 4 Dimensiones del BIC**: Todo requerimiento se decanta en Delta de Estado ($\Delta S = S_0 \to S_1$), Invariantes Inquebrantables, Topología de Actores y un Oráculo Observable de Negocio.
-- **Total Desacople**: Podés iniciar con `/sdd-frame` si la necesidad requiere decantación o entrar directo a `/sdd-new` si ya tenés el requerimiento técnico 100% maduro.
+- **Total Desacople**: Podés iniciar con `/sdd-frame` si la necesidad requiere decantación o entrar directo a `/sdd-new` si el requerimiento técnico ya está acotado.
 
 > 📖 *Para comprender a fondo la metodología, galería de ejemplos y estrategias de ejecución (Tracer Bullet vs. Wavefront), consultá el tratado completo: [El Paradigma de la Intención: De la Historia de Usuario al Contrato Conductual en la Era Agéntica](docs/internal/architecture/BEHAVIORAL_INTENT_CONTRACTS_PARADIGM.md).*
 
@@ -156,9 +156,11 @@ AOI modela efectos reversibles dentro de su runtime; el rollback de archivos act
 
 ## 🤖 Ecosistema de Agentes
 
-AOI cuenta con **27 agentes especializados** divididos en roles de ingeniería y utilidades de automatización:
+AOI agrupa agentes especializados de ingeniería y automatización. Las listas de
+abajo son la fuente de verdad legible; el registro de agentes y los gates de
+ruteo verifican que sus identificadores sigan resolviendo.
 
-### Roles de Ingeniería y Arquitectura (13 Agentes)
+### Roles de Ingeniería y Arquitectura
 
 | Agente | Fase SDD | Especialidad |
 | :--- | :--- | :--- |
@@ -176,15 +178,16 @@ AOI cuenta con **27 agentes especializados** divididos en roles de ingeniería y
 | **`@project-analyzer`** | Transversal | Auditoría estática y análisis de dependencias del repositorio. |
 | **`@project-expert`** | Transversal | Asistente contextual con conocimiento integral del proyecto. |
 
-### Automatización Spec-Kit (14 Agentes Especializados)
+### Automatización Spec-Kit
 Automatizan tareas puntuales del flujo de especificaciones y git:
 `speckit.specify`, `speckit.plan`, `speckit.tasks`, `speckit.implement`, `speckit.analyze`, `speckit.checklist`, `speckit.clarify`, `speckit.constitution`, `speckit.git.initialize`, `speckit.git.feature`, `speckit.git.validate`, `speckit.git.remote`, `speckit.git.commit`, `speckit.taskstoissues`.
 
 ---
 
-## 🖥️ Dashboard de Operaciones en Tiempo Real (C2)
+## 🖥️ Dashboard de Operaciones (C2)
 
-AOI incluye una consola web operativa de alta fidelidad construida en **Nuxt 4** y **NuxtUI**:
+El perfil `dashboard` instala una consola web operativa construida en **Nuxt 4**
+y **NuxtUI**. No forma parte de los perfiles `core` ni `advanced`.
 
 ```bash
 pnpm dev:dashboard
@@ -192,7 +195,7 @@ pnpm dev:dashboard
 *Abre automáticamente en `http://localhost:3000`*.
 
 ### Características del Dashboard:
-- 📋 **Tablero Kanban Reactivo**: Visualización en tiempo real del progreso de las tareas gobernadas (`.tasks/registry.md`).
+- 📋 **Tablero Kanban Reactivo**: Visualización del progreso de las tareas gobernadas (`.tasks/registry.md`).
 - 📊 **Matriz TanStack Table**: Filtrado multifactorial, ordenamiento y vista de alta densidad para auditorías rápidas.
 - 🌐 **Grafo 3D de Arquitectura**: Inspección tridimensional interactiva de símbolos y dependencias mediante `codebase-memory-mcp` (`http://localhost:9749`).
 - 🧠 **Explorador de Memoria ICM**: Visualizador del grafo de conceptos (**Memoirs**) y tabla de hechos exactos (**Facts $O(1)$**).
@@ -215,7 +218,7 @@ AOI Doctor verifica de forma determinista:
 3. **Registro de Tareas**: Coherencia de `.tasks/registry.md`.
 4. **Gobernanza de Memoria**: Punteros canónicos en `.specify/memory/versions/active.json`.
 5. **Multi-Harness**: Estado y paridad de los 5 adaptadores generados.
-6. **Integridad del Mirror Scaffold (Principio I)**: Certificación de paridad byte-por-byte entre los archivos raíz y la plantilla `scaffold/` (227 archivos gobernados).
+6. **Integridad del Mirror Scaffold (Principio I)**: Validación byte-por-byte entre los archivos raíz y la plantilla `scaffold/` mediante `pnpm test:parity`.
 
 ---
 
@@ -258,7 +261,7 @@ AOI Doctor verifica de forma determinista:
 | `pnpm dev:dashboard` | Inicia el Dashboard de Operaciones en `localhost:3000`. |
 | `pnpm aoi:doctor` | Ejecuta el chequeo integral de salud del repositorio (0 tokens). |
 | `pnpm aoi:sync-rules` | Compila y sincroniza reglas para Copilot, Claude, Cursor, Gemini y Cline. |
-| `pnpm test` | Ejecuta la suite de pruebas automatizadas completa (134 tests). |
+| `pnpm test` | Ejecuta la suite de pruebas automatizadas completa. |
 | `pnpm test:parity` | Valida paridad absoluta byte-a-byte entre raíz y `scaffold/`. |
 | `pnpm test:memory-sync` | Prueba el versionado y la importación/exportación de memoria. |
 | `pnpm test:spatiotemporal` | Prueba los efectos reversibles y coefectos en sandboxes. |

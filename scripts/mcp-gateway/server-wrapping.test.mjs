@@ -6,10 +6,9 @@
  * shipped without a test — the same shape of hole the audit keeps finding, so
  * worth closing on the check that was just written to close one.
  *
- * Measured on the real toolset, wrapping is worth −83%: icm 3.538 → 638 and
- * codebase-memory-mcp 2.888 → 460 tokens of `tools/list`. Those are paid in the
- * system prompt of every request carrying the MCP surface, so a server that
- * quietly reverts to a direct connection costs all session long.
+ * This test proves routing only. A token-saving rate depends on the schemas
+ * and payload of the active workspace, so it belongs in a dated measurement
+ * corpus rather than in a current product guarantee.
  */
 
 import assert from 'node:assert/strict'

@@ -3,8 +3,8 @@
  * scripts/mcp-gateway/setup-mcp-gateway.mjs
  *
  * Configures and verifies the MCP Compression Gateway proxy using
- * @atlassian-labs/mcp-compressor. Ensures Zero-Disabled-Tools invariant
- * while reducing schema overhead by up to 85%.
+ * @atlassian-labs/mcp-compressor. It enforces the Zero-Disabled-Tools
+ * routing invariant; it does not measure a universal token-saving rate.
  */
 
 import fs from 'node:fs'
@@ -166,4 +166,3 @@ const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === fileURL
 if (isDirectRun) {
   main()
 }
-

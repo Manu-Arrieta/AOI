@@ -33,6 +33,7 @@
     "aoi:cache-guard": "node scripts/multi-harness/cache-guard.mjs",
     "aoi:lint-refs": "node scripts/multi-harness/reference-integrity.mjs",
     "aoi:audit-protocol": "node scripts/multi-harness/audit-protocol-integrity.mjs",
+    "aoi:claims": "node scripts/multi-harness/claims-evidence-ledger.mjs",
     "aoi:importance": "node scripts/multi-harness/importance-consistency.mjs",
     "aoi:test-globs": "node scripts/scaffold/validate-test-globs.mjs",
     "aoi:mutation": "node scripts/scaffold/mutation-ratchet.mjs",
@@ -51,6 +52,6 @@
     "aoi:tools": "node scripts/multi-harness/token-tool-coverage.mjs",
     "aoi:hooks": "node scripts/multi-harness/install-hooks.mjs --audit",
     "aoi:registry": "node scripts/sdd-lifecycle/registry-sync.mjs",
-    "test": "pnpm aoi:test-globs && pnpm aoi:srp && pnpm aoi:reachability && pnpm aoi:routing && pnpm aoi:handoffs && pnpm aoi:cache-prefix && pnpm aoi:tools && pnpm aoi:hooks && pnpm aoi:registry && pnpm test:parity && pnpm test:doctor && pnpm test:multi-harness && pnpm test:sandbox && pnpm test:memory-sync && pnpm test:subagent-payload && pnpm test:conf && pnpm test:sdd-lifecycle && pnpm test:spatiotemporal && pnpm test:mcp-gateway && pnpm test:code-lens && pnpm aoi:cache-guard && pnpm aoi:lint-refs && pnpm aoi:audit-protocol && pnpm aoi:importance && pnpm test:dashboard"
+    "test": "pnpm aoi:test-globs && pnpm aoi:srp && pnpm aoi:reachability && pnpm aoi:routing && pnpm aoi:handoffs && pnpm aoi:cache-prefix && pnpm aoi:tools && pnpm aoi:hooks && pnpm aoi:registry && pnpm test:parity && pnpm test:doctor && pnpm test:multi-harness && pnpm test:sandbox && pnpm test:memory-sync && pnpm test:subagent-payload && pnpm test:conf && pnpm test:sdd-lifecycle && pnpm test:spatiotemporal && pnpm test:mcp-gateway && pnpm test:code-lens && pnpm aoi:cache-guard && pnpm aoi:lint-refs && pnpm aoi:audit-protocol && pnpm aoi:claims && pnpm aoi:importance && pnpm test:dashboard"
   }
 }

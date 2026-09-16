@@ -18,7 +18,7 @@ Bienvenido al repositorio de documentación arquitectónica, metodológica y ope
 ## 📊 Benchmarks y Rendimiento
 
 ### ⚡ [Benchmark de Optimización de Tokens v2.0.0](internal/benchmarks/TOKEN_OPTIMIZATION_BENCHMARK_v2.0.0.es.md) ([English](internal/benchmarks/TOKEN_OPTIMIZATION_BENCHMARK_v2.0.0.md))
-* **Resumen:** Telemetría cuantitativa del ahorro del 60% al 90% de tokens en contextos agénticos mediante RTK, serialización TOON y Gateway MCP Compressor.
+* **Resumen:** Registro histórico y versionado de la medición v2.0.0. Sus cifras describen ese corpus y esa revisión, no una promesa de rendimiento vigente.
 
 ---
 
@@ -33,6 +33,9 @@ Bienvenido al repositorio de documentación arquitectónica, metodológica y ope
 
 ### 🔍 [Auditoría v2.2.0-66 → v2.3.0](internal/audits/AOI_AUDIT_2026-09-12_v2.2.0-66_vs_v2.3.0.md)
 * **Resumen:** Meta-auditoría del protocolo contra el sistema que describe. 11 hallazgos con `proof` reproducible, 4 verificados con control negativo; medición de los 1.930 tokens de adaptadores de harness que ningún instrumento contaba; creación de la compuerta `aoi:audit-protocol`.
+
+### 📋 [Ledger de Evidencia de Claims](internal/verification/AOI_CLAIMS_EVIDENCE_LEDGER_2026-09-16.md)
+* **Resumen:** Clasifica las promesas públicas actuales como verificadas, condicionadas o históricas, y enlaza cada una con su prueba ejecutable o corpus fechado.
 
 ---
 
