@@ -132,6 +132,19 @@ describe('aoi-doctor unit tests', () => {
     assert.ok(archify, 'el chequeo de Archify desapareció del reporte')
     assert.equal(archify.mandatory, false)
   })
+
+  it('el chequeo de naming de memoirs se reporta como no obligatorio', async () => {
+    // Es la misma decisión que la de Archify y se rompe igual: los workspaces
+    // anteriores al fix arrastran conceptos en kebab que puso AOI mismo, así
+    // que `mandatory: true` haría fallar el doctor —y con eso el ciclo entero—
+    // por datos que escribió el propio instalador.
+    const report = await runAoiDoctor({
+      execFn: async () => ({ stdout: 'All 15 ICM hook entries are healthy.' }),
+    })
+    const naming = report.checks.find((c) => /Memoir Concept Naming/i.test(c.name))
+    assert.ok(naming, 'el chequeo de naming desapareció del reporte')
+    assert.equal(naming.mandatory, false)
+  })
 })
 
 describe('statusSymbol traduce el veredicto al símbolo que se imprime', () => {

@@ -18,6 +18,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  MAX_NAMES_IN_REPORT,
   WORKSPACE_MEMOIR_SUFFIXES,
   checkMemoirNaming,
   classifyConceptName,
@@ -220,4 +221,45 @@ test('pide exactamente los memoirs del workspace, no los de otros', async () => 
   // El nombre pelado del workspace también se mira: en la base hay memoirs
   // creados así (`AOI`, `MoviHub`), no sólo con sufijo.
   assert.ok(asked.includes('probe'))
+})
+
+test('dentro de un mismo memoir, ordena por nombre y no sólo por memoir', () => {
+  // Con `||` mutado a `&&`, el comparador devuelve 0 en cuanto los dos memoirs
+  // coinciden —`localeCompare` de iguales es 0, que es falsy— y el desempate
+  // por nombre nunca corre. El orden queda el de entrada, que no es un orden.
+  const found = collectNamingViolations([
+    { name: 'a-architecture', concepts: [{ name: 'zeta-kebab' }, { name: 'alpha-kebab' }] },
+  ])
+
+  assert.deepEqual(found.map((v) => v.name), ['alpha-kebab', 'zeta-kebab'])
+})
+
+test('si el export no trae nombre de memoir, el candidato es el que nombra', async () => {
+  // `parsed.name || memoir` con `||` mutado a `&&` deja pasar el nombre vacío
+  // del export, y `checkedMemoires` queda con entradas sin nombre: el reporte
+  // dice "leí un memoir" sin poder decir cuál.
+  const execFn = async (cmd) => {
+    if (cmd === 'git') return { stdout: 'https://github.com/Owner/probe.git\n' }
+    return { stdout: JSON.stringify({ memoir: { name: '' }, concepts: [{ name: 'BaseProjectMap' }] }) }
+  }
+
+  const result = await checkMemoirNaming('/tmp/probe', execFn)
+
+  assert.deepEqual(result.checkedMemoires, WORKSPACE_MEMOIR_SUFFIXES.map((s) => `probe${s}`))
+  assert.ok(result.checkedMemoires.every((n) => n.trim() !== ''))
+})
+
+test('el recorte del mensaje corta en el límite, ni antes ni después', async () => {
+  // `>` mutado a `>=` agrega "(+0 more)" justo en el límite, que es el único
+  // caso donde los dos operadores discrepan.
+  const nombres = (n) => Array.from({ length: n }, (_, i) => `kebab-${i}`)
+  const correr = (n) =>
+    checkMemoirNaming('/tmp/probe', stubExec({ memoirs: { 'probe-architecture': nombres(n) } }))
+
+  const enElLimite = await correr(MAX_NAMES_IN_REPORT)
+  const unoMas = await correr(MAX_NAMES_IN_REPORT + 1)
+
+  assert.doesNotMatch(enElLimite.details, /more/, 'agregó el sufijo en el límite exacto')
+  assert.match(unoMas.details, /more/)
+  assert.match(unoMas.details, new RegExp(`\\+1 more`))
 })

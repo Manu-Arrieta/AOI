@@ -147,8 +147,14 @@ function firstLine(error) {
   return String(error?.message ?? error).split('\n')[0]
 }
 
-/** Caps the names in the report so one legacy workspace cannot flood the doctor. */
-const MAX_NAMES_IN_REPORT = 5
+/**
+ * Caps the names in the report so one legacy workspace cannot flood the doctor.
+ *
+ * Exportado porque el recorte es un contrato del mensaje, no un detalle: el
+ * caso que lo fija tiene que poder nombrar el límite en vez de repetir un
+ * literal que se desincroniza al primer cambio.
+ */
+export const MAX_NAMES_IN_REPORT = 5
 
 /**
  * Reads the workspace's memoirs and reports concepts whose names violate the
