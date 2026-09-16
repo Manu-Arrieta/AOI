@@ -60,7 +60,17 @@ export const TOKEN_TOOLS = [
   // Transport-level, so its wiring lives in .vscode/mcp.json rather than in
   // any prompt. Looking for it among the cycle surfaces was a category error:
   // no prompt will ever name the proxy its own MCP calls travel through.
-  { id: 'mcp-compressor', mandatory: true, channel: 'communication', surface: 'transport', needle: /mcp-compressor/, requiredBy: /require_mcp_compressor/ },
+  {
+    id: 'mcp-compressor',
+    mandatory: true,
+    channel: 'communication',
+    surface: 'transport',
+    needle: /mcp-compressor/,
+    requiredBy: /require_mcp_compressor/,
+    // The POSIX setup uses an explicit require step; Windows must invoke the
+    // equivalent installer rather than merely defining it.
+    windowsRequiredBy: /^\s*(?:\$null\s*=\s*)?Install-McpCompressor\s*$/m,
+  },
   // The one declared exception. Its absence must never block a run.
   { id: 'headroom', mandatory: false, channel: 'process', needle: /headroom/i, requiredBy: null },
 ]
@@ -175,6 +185,7 @@ export function wiringMap(root, tools = TOKEN_TOOLS) {
  */
 export function auditTokenTools(root, tools = TOKEN_TOOLS) {
   const setupPath = path.join(root, 'setup.sh')
+  const windowsSetupPath = path.join(root, 'setup.ps1')
   // The installer-policy half of this audit only has an answer in the
   // development repository. An installed workspace has no `setup.sh` to read,
   // and asking there produced a gate that failed on every tool the installer
@@ -182,8 +193,11 @@ export function auditTokenTools(root, tools = TOKEN_TOOLS) {
   // that validate-srp and validate-test-globs already use applies here: in a
   // workspace the installer has already run, so wiring is what remains
   // checkable.
-  const isDevRepo = fs.existsSync(setupPath)
-  const setup = isDevRepo ? read(setupPath) : ''
+  const hasPosixSetup = fs.existsSync(setupPath)
+  const hasWindowsSetup = fs.existsSync(windowsSetupPath)
+  const isDevRepo = hasPosixSetup || hasWindowsSetup
+  const setup = hasPosixSetup ? read(setupPath) : ''
+  const windowsSetup = hasWindowsSetup ? read(windowsSetupPath) : ''
   const map = wiringMap(root, tools)
   const notMandatory = []
   const notWired = []
@@ -194,7 +208,10 @@ export function auditTokenTools(root, tools = TOKEN_TOOLS) {
     // A tool is enforced when the installer refuses to continue without it.
     // `requiredBy: null` means enforcement lives in the cycle rather than in
     // the installer, so wiring alone decides.
-    const enforced = !isDevRepo || !tool.requiredBy ? where.length > 0 : tool.requiredBy.test(setup)
+    const installerChecks = []
+    if (tool.requiredBy && hasPosixSetup) installerChecks.push(tool.requiredBy.test(setup))
+    if (tool.windowsRequiredBy && hasWindowsSetup) installerChecks.push(tool.windowsRequiredBy.test(windowsSetup))
+    const enforced = !isDevRepo || installerChecks.length === 0 ? where.length > 0 : installerChecks.every(Boolean)
 
     if (tool.mandatory && !enforced) {
       notMandatory.push(`${tool.id}: el instalador permite continuar sin él`)
@@ -223,7 +240,9 @@ function main() {
   const root = process.cwd()
   const r = auditTokenTools(root)
 
-  const mode = fs.existsSync(path.join(root, 'setup.sh')) ? 'estricto (repo)' : 'laxo (workspace instalado)'
+  const mode = fs.existsSync(path.join(root, 'setup.sh')) || fs.existsSync(path.join(root, 'setup.ps1'))
+    ? 'estricto (repo)'
+    : 'laxo (workspace instalado)'
   console.log('=== AOI Token-Saving Tool Coverage ===\n')
   console.log(`Modo: ${mode}\n`)
   console.log(formatToolTable(r.rows))

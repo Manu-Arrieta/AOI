@@ -8,7 +8,12 @@ param(
     [Parameter()]
     [switch]$NonInteractive = $false,
     [Parameter()]
-    [switch]$SkipDashboardDeps = $false
+    [switch]$SkipDashboardDeps = $false,
+    # Internal test seam: load the function library without beginning an
+    # installation. It lets the Windows MCP writer be exercised in a real
+    # PowerShell process without duplicating its behavior in a test harness.
+    [Parameter(DontShow = $true)]
+    [switch]$DefinitionsOnly = $false
 )
 
 Set-StrictMode -Version Latest
@@ -335,6 +340,13 @@ function Get-CodebaseMemoryPath {
     )
 }
 
+function Get-McpCompressorPath {
+    return Get-ExecutablePath -Name "mcp-compressor" -Candidates @(
+        (Join-Path $LocalBinDir "mcp-compressor.exe"),
+        (Join-Path $LocalBinDir "mcp-compressor.cmd")
+    )
+}
+
 function Get-CommandOutput {
     param(
         [string]$BinaryPath,
@@ -499,6 +511,57 @@ function Install-Uv {
         throw "uv installation completed but the command is still not available in PATH."
     }
     Write-Ok "uv $(Get-CommandOutput -BinaryPath $installedPath -Arguments @("--version"))"
+}
+
+function Test-McpCompressor {
+    param([string]$CompressorPath)
+
+    if (-not $CompressorPath) {
+        return $false
+    }
+
+    try {
+        & $CompressorPath --version 2>$null | Out-Null
+        return ($LASTEXITCODE -eq 0)
+    } catch {
+        return $false
+    }
+}
+
+function Ensure-McpCompressorAvailable {
+    $compressorPath = Get-McpCompressorPath
+    if (Test-McpCompressor -CompressorPath $compressorPath) {
+        return $compressorPath
+    }
+
+    throw "mcp-compressor is mandatory. Install it with 'uv tool install mcp-compressor' and rerun setup.ps1. Do not use the npm wrapper: it can exit successfully without a working compressor binary."
+}
+
+function Install-McpCompressor {
+    Add-UserPathEntry $LocalBinDir
+    Add-SessionPathEntry $LocalBinDir
+
+    $compressorPath = Get-McpCompressorPath
+    if (Test-McpCompressor -CompressorPath $compressorPath) {
+        Write-Ok "MCP compressor $(Get-CommandOutput -BinaryPath $compressorPath -Arguments @("--version"))"
+        return $compressorPath
+    }
+
+    $uvPath = Get-UvPath
+    if (-not $uvPath) {
+        throw "uv is mandatory to install mcp-compressor, but it is not available."
+    }
+
+    Write-Info "Installing MCP compressor (required for every workspace MCP server)..."
+    & $uvPath tool install mcp-compressor
+    if ($LASTEXITCODE -ne 0) {
+        throw "uv could not install mcp-compressor (exit code $LASTEXITCODE)."
+    }
+
+    Refresh-SessionPath
+    $compressorPath = Ensure-McpCompressorAvailable
+    Write-Ok "MCP compressor installed ($(Get-CommandOutput -BinaryPath $compressorPath -Arguments @("--version")))"
+    return $compressorPath
 }
 
 function ConvertTo-Version {
@@ -831,38 +894,79 @@ function Set-WorkspaceMcpConfig {
     param([string]$TargetProjectPath)
 
     $mcpPath = Join-Path $TargetProjectPath ".vscode\mcp.json"
-    $servers = @{
-        icm = @{
-            type = "stdio"
-            command = "powershell"
-            args = @(
-                "-NoProfile",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-                '${workspaceFolder}\.github\scripts\icm-serve.ps1'
-            )
+    # This is deliberately strict. A malformed mcp.json belongs to the owner;
+    # unlike a freshly generated AOI file, it must never be repaired by
+    # rewriting it and potentially discarding an unparseable custom server.
+    try {
+        $mcpConfig = @{}
+        if (Test-Path -LiteralPath $mcpPath) {
+            $rawMcpConfig = Get-Content -LiteralPath $mcpPath -Raw
+            if (-not [string]::IsNullOrWhiteSpace($rawMcpConfig)) {
+                $mcpConfig = ConvertTo-NativeObject -Value ($rawMcpConfig | ConvertFrom-Json)
+            }
         }
+    } catch {
+        Write-Warn ".vscode/mcp.json is not valid JSON — left unchanged; configure it manually."
+        return
+    }
+
+    if (-not ($mcpConfig -is [System.Collections.IDictionary])) {
+        Write-Warn ".vscode/mcp.json is not a JSON object — left unchanged; configure it manually."
+        return
+    }
+
+    if (-not $mcpConfig.Contains("servers")) {
+        $mcpConfig["servers"] = @{}
+    }
+
+    $servers = $mcpConfig["servers"]
+    if (-not ($servers -is [System.Collections.IDictionary])) {
+        Write-Warn ".vscode/mcp.json has a non-object servers field — left unchanged; configure it manually."
+        return
+    }
+
+    $compressorPath = Ensure-McpCompressorAvailable
+    $mcpCompression = if ([string]::IsNullOrWhiteSpace($env:AOI_MCP_COMPRESSION)) { "high" } else { $env:AOI_MCP_COMPRESSION }
+    $servers["icm"] = @{
+        type = "stdio"
+        command = $compressorPath
+        args = @(
+            "-c",
+            $mcpCompression,
+            "--",
+            "powershell",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            '${workspaceFolder}\.github\scripts\icm-serve.ps1'
+        )
     }
 
     $cbmPath = Get-CodebaseMemoryPath
     if ($cbmPath) {
         $servers["codebase-memory-mcp"] = @{
             type = "stdio"
-            command = $cbmPath
+            command = $compressorPath
+            args = @(
+                "-c",
+                $mcpCompression,
+                "--",
+                $cbmPath
+            )
         }
-    }
-
-    $mcpConfig = @{
-        servers = $servers
     }
 
     Write-JsonObject -Path $mcpPath -Object $mcpConfig
     if ($cbmPath) {
-        Write-Ok "Workspace MCP configured in .vscode/mcp.json for Windows (ICM + codebase-memory-mcp)"
+        Write-Ok "Workspace MCP configured in .vscode/mcp.json for Windows (ICM + codebase-memory-mcp, compression=$mcpCompression)"
     } else {
-        Write-Ok "Workspace MCP configured in .vscode/mcp.json for Windows (ICM only)"
+        Write-Ok "Workspace MCP configured in .vscode/mcp.json for Windows (ICM only, compression=$mcpCompression)"
     }
+}
+
+if ($DefinitionsOnly) {
+    return
 }
 
 if (-not $ProjectPath) {
@@ -896,6 +1000,7 @@ try {
 Install-Icm
 $null = Ensure-IcmAvailable
 Install-Uv
+$null = Install-McpCompressor
 Install-Specify
 
 Write-Header "Phase 1.5: NVIDIA customendpoint (opcional)"
@@ -1247,10 +1352,10 @@ try {
     }
 
     $icmPath = Ensure-IcmAvailable
-    Write-Ok "ICM → Workspace MCP registered (.vscode/mcp.json)"
+    Write-Ok "ICM → Workspace MCP registered behind mcp-compressor (.vscode/mcp.json)"
     $cbmPath = Get-CodebaseMemoryPath
     if ($cbmPath) {
-        Write-Ok "codebase-memory-mcp → Workspace MCP registered (.vscode/mcp.json)"
+        Write-Ok "codebase-memory-mcp → Workspace MCP registered behind mcp-compressor (.vscode/mcp.json)"
     }
 
     try {

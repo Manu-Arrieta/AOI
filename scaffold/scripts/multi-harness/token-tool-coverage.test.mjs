@@ -78,6 +78,25 @@ describe('the gate detects what it claims to detect', () => {
     clean(root)
   })
 
+  it('requires the MCP compressor in every platform installer the repo ships', () => {
+    // Defining Install-McpCompressor is not enough: the Windows path has to
+    // invoke it, just as POSIX invokes require_mcp_compressor. Otherwise the
+    // cross-platform policy gate would turn green while half the installs
+    // still registered direct MCP backends.
+    const root = workspace({
+      'package.json': '{}',
+      'setup.sh': 'require_mcp_compressor\n',
+      'setup.ps1': 'function Install-McpCompressor { }\n',
+      '.vscode/mcp.json': '{"servers":{"icm":{"command":"mcp-compressor"}}}',
+    })
+
+    assert.ok(
+      auditTokenTools(root).notMandatory.some((m) => m.startsWith('mcp-compressor')),
+      'no detectó que setup.ps1 define el compresor pero no lo ejecuta'
+    )
+    clean(root)
+  })
+
   it('looks for a transport tool in the MCP config, not among the prompts', () => {
     // A category error the first version made: no prompt will ever name the
     // proxy its own MCP calls travel through, so searching the prose for it
