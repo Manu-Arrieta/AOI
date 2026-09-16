@@ -76,6 +76,10 @@ export const DEFAULT_SYNC_PATHS = [
   // las dos copias divergen.
   '.prettierrc',
   '.prettierignore',
+  // Codebase Memory reads this independently of Git. Its exclusion boundary
+  // must travel with the workspace and stay mirrored, otherwise a reinstall
+  // can make the graph silently include the scaffold duplicate or dashboard.
+  '.cbmignore',
   '.resources/constitution.md',
   'AOI_REAL_WORLD_VERIFICATION_MATRIX.md',
   'CLAUDE.md',
@@ -98,6 +102,7 @@ export const DEFAULT_SYNC_PATHS = [
   'aoi_apps/agentic-ops-dashboard/shared',
   'aoi_apps/agentic-ops-dashboard/test',
   'aoi_apps/agentic-ops-dashboard/tsconfig.json',
+  'aoi_apps/agentic-ops-dashboard/.cbmignore',
 ]
 
 /**

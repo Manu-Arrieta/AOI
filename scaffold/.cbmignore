@@ -1,0 +1,9 @@
+# Control-plane graph for the AOI development repository.
+#
+# `scaffold/` is a byte-for-byte installation mirror, not a second runtime.
+# `aoi_apps/` is a separate Nuxt application and receives its own graph only
+# when the Dashboard installation profile is selected. Keeping either tree in
+# the control-plane graph duplicates symbols and makes structural queries less
+# precise without adding source authority.
+scaffold/
+aoi_apps/

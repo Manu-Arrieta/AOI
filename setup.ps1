@@ -35,6 +35,9 @@ $LocalBinDir = Join-Path $env:USERPROFILE ".local\bin"
 $ProfileIncludesAdvanced = $Profile -in @("advanced", "dashboard")
 $ProfileIncludesDashboard = $Profile -eq "dashboard"
 $ProfileExcludedRelativePrefixes = if ($ProfileIncludesDashboard) { @() } else { @("aoi_apps") }
+# The value is populated only after the Advanced installer succeeds. Defining
+# it here makes the deferred Phase 3 handoff safe under StrictMode for Core.
+$CodebaseMemoryInitialIndexPath = $null
 
 function Write-ConsoleLine {
     param(
@@ -1201,13 +1204,12 @@ if (Test-Path $codebaseMemoryInstall) {
                     try { & $cbmBinInit config set ui true 2>$null; Write-Ok "codebase-memory-mcp: UI activada en http://localhost:9749" } catch {}
                     try { & $cbmBinInit config set port 9749 2>$null } catch {}
                 }
-                # Initial index — Start-Job so it's non-blocking. auto_index handles subsequent changes.
-                Write-Info "Indexando el repo por primera vez en background (codebase-memory-mcp)..."
-                Start-Job -ScriptBlock {
-                    param($bin, $repoPath, $log)
-                    & $bin cli index_repository "{`"repo_path`": `"$repoPath`"}" >> $log 2>&1
-                } -ArgumentList $cbmBinInit, $ProjectPath, "$env:TEMP\codebase-memory-mcp-index.log" | Out-Null
-                Write-Ok "Index inicial lanzado en background → $env:TEMP\codebase-memory-mcp-index.log"
+                # The initial index is deliberately deferred until Phase 3 has
+                # projected the scaffold. Indexing here saw a pre-install tree,
+                # so the graph was born without AOI's actual control plane and
+                # could not split the dashboard. `auto_index` keeps the
+                # completed graphs current afterwards.
+                $CodebaseMemoryInitialIndexPath = $cbmBinInit
             }
         } catch {
             Write-Err "No se pudo completar Codebase Memory para el perfil $Profile: $($_.Exception.Message)"
@@ -1307,6 +1309,33 @@ if ($ProfileIncludesDashboard) {
     Write-Ok "Directories: .tasks/ .sandboxes/ .resources/ aoi_apps/agentic-ops-dashboard/"
 } else {
     Write-Ok "Directories: .tasks/ .sandboxes/ .resources/ (profile $Profile, dashboard omitted)"
+}
+
+# `.cbmignore` keeps the primary graph about the source-of-truth control plane:
+# the installed `scaffold/` mirror and `aoi_apps/` are intentionally absent.
+# Dashboard is a separate application, so the Dashboard profile gets a second
+# graph rooted at that app. One background job indexes roots sequentially to
+# avoid concurrent writes to the provider's local graph store.
+if ($ProfileIncludesAdvanced -and $CodebaseMemoryInitialIndexPath) {
+    $indexRoots = @($ProjectPath)
+    $dashboardIndexPath = Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard"
+    if ($ProfileIncludesDashboard) {
+        if (Test-Path -LiteralPath $dashboardIndexPath -PathType Container) {
+            $indexRoots += $dashboardIndexPath
+        } else {
+            Write-Warn "Dashboard profile selected but its application is absent; only the control-plane graph will be indexed"
+        }
+    }
+    $indexRootsJson = $indexRoots | ConvertTo-Json -Compress
+    $indexLog = Join-Path $env:TEMP "codebase-memory-mcp-index.log"
+    Write-Info "Indexando control-plane y, si aplica, Dashboard en background (codebase-memory-mcp)..."
+    Start-Job -ScriptBlock {
+        param($bin, $pathsJson, $log)
+        foreach ($repoPath in @($pathsJson | ConvertFrom-Json)) {
+            & $bin cli index_repository "{`"repo_path`": `"$repoPath`"}" >> $log 2>&1
+        }
+    } -ArgumentList $CodebaseMemoryInitialIndexPath, $indexRootsJson, $indexLog | Out-Null
+    Write-Ok "Índice inicial lanzado → $indexLog"
 }
 
 if ($ProfileIncludesDashboard -and (Test-Path -LiteralPath (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\package.json") -PathType Leaf)) {

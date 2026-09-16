@@ -1117,11 +1117,10 @@ elif [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then
     "$CBM_BIN_INIT" config set ui true 2>/dev/null && ok "codebase-memory-mcp: UI activada en http://localhost:9749" || true
     "$CBM_BIN_INIT" config set port 9749 2>/dev/null || true
   fi
-  # Initial index — runs in background, non-blocking. auto_index handles subsequent changes.
-  info "Indexando el repo por primera vez en background (codebase-memory-mcp)..."
-  "$CBM_BIN_INIT" cli index_repository "{\"repo_path\": \"$PROJECT_PATH\"}" \
-    >> /tmp/codebase-memory-mcp-index.log 2>&1 &
-  ok "Index inicial lanzado en background → /tmp/codebase-memory-mcp-index.log"
+  # The initial index is deliberately deferred until Phase 3 has projected the
+  # scaffold. Indexing here saw a pre-install tree, so the graph was born
+  # without AOI's actual control plane and could not split the dashboard.
+  # `auto_index` keeps the completed graphs current afterwards.
 else
   err "scripts/install-codebase-memory.sh no encontrado: el perfil $INSTALLATION_PROFILE no se puede completar."
   exit 1
@@ -1694,6 +1693,33 @@ if [ "$PROFILE_INCLUDES_DASHBOARD" -eq 1 ]; then
   ok "Directories: .tasks/ .sandboxes/ .resources/ aoi_apps/agentic-ops-dashboard/"
 else
   ok "Directories: .tasks/ .sandboxes/ .resources/ (profile $INSTALLATION_PROFILE, dashboard omitted)"
+fi
+
+# ── Codebase Memory initial graphs (after the workspace is materialized) ───
+#
+# `.cbmignore` keeps the primary graph about the source-of-truth control plane:
+# the installed `scaffold/` mirror and `aoi_apps/` are intentionally absent.
+# Dashboard is a separate application, so the Dashboard profile gets a second
+# graph rooted at that app. Run the two roots sequentially in one background
+# job to avoid concurrent writes to the provider's local graph store.
+if [ "$PROFILE_INCLUDES_ADVANCED" -eq 1 ] && [ -n "${CBM_BIN_INIT:-}" ]; then
+  CBM_INDEX_LOG="/tmp/codebase-memory-mcp-index.log"
+  CBM_INDEX_PATHS=("$PROJECT_PATH")
+  if [ "$PROFILE_INCLUDES_DASHBOARD" -eq 1 ]; then
+    CBM_DASHBOARD_PATH="$PROJECT_PATH/aoi_apps/agentic-ops-dashboard"
+    if [ -d "$CBM_DASHBOARD_PATH" ]; then
+      CBM_INDEX_PATHS+=("$CBM_DASHBOARD_PATH")
+    else
+      warn "Dashboard profile selected but its application is absent; only the control-plane graph will be indexed"
+    fi
+  fi
+  info "Indexando control-plane y, si aplica, Dashboard en background (codebase-memory-mcp)..."
+  (
+    for CBM_INDEX_PATH in "${CBM_INDEX_PATHS[@]}"; do
+      "$CBM_BIN_INIT" cli index_repository "{\"repo_path\": \"$CBM_INDEX_PATH\"}"
+    done
+  ) >> "$CBM_INDEX_LOG" 2>&1 &
+  ok "Índice inicial lanzado → $CBM_INDEX_LOG"
 fi
 
 if [ "$PROFILE_INCLUDES_DASHBOARD" -eq 1 ] && [ -f "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/package.json" ]; then
