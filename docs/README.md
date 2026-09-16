@@ -34,6 +34,9 @@ Bienvenido al repositorio de documentación arquitectónica, metodológica y ope
 ### 🔍 [Auditoría v2.2.0-66 → v2.3.0](internal/audits/AOI_AUDIT_2026-09-12_v2.2.0-66_vs_v2.3.0.md)
 * **Resumen:** Meta-auditoría del protocolo contra el sistema que describe. 11 hallazgos con `proof` reproducible, 4 verificados con control negativo; medición de los 1.930 tokens de adaptadores de harness que ningún instrumento contaba; creación de la compuerta `aoi:audit-protocol`.
 
+### 🔍 [Auditoría de simplificación — Tareas 1 a 7](internal/audits/AOI_SIMPLIFICATION_TASKS_1_7_AUDIT_2026-09-16.md)
+* **Resumen:** Revisión de contratos, dependencias y límites deterministas/no deterministas antes de la reducción aislada de prompts y contexto.
+
 ### 📋 [Ledger de Evidencia de Claims](internal/verification/AOI_CLAIMS_EVIDENCE_LEDGER_2026-09-16.md)
 * **Resumen:** Clasifica las promesas públicas actuales como verificadas, condicionadas o históricas, y enlaza cada una con su prueba ejecutable o corpus fechado.
 

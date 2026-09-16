@@ -25,6 +25,12 @@ secuencial dentro de un único trabajo en background, para no competir por el
 almacenamiento local del proveedor. `auto_index` puede actualizar los grafos
 terminados cuando el entorno externo lo permita.
 
+Si el Owner ya tiene un `.cbmignore`, AOI preserva sus reglas y agrega al final
+su bloque administrado. La precedencia de gitignore hace que el bloque final
+mantenga excluidos `scaffold/` y `aoi_apps/` aun ante una negación anterior; en
+Dashboard hace lo mismo con `.output/`. El resultado se refleja en `scaffold/`
+antes de indexar, por lo que la paridad describe el workspace realmente usado.
+
 ### Cambio de frontera del grafo
 
 Cambiar un `.cbmignore` es una operación de configuración determinista; purgar

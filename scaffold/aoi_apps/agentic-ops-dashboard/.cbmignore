@@ -1,4 +1,5 @@
 # Dashboard graph: retain authored UI/API source, not Nuxt's generated server
 # and browser bundle. The provider's default exclusions already cover
 # node_modules and .nuxt; .output needs an explicit project boundary.
+# AOI managed Codebase Memory boundary: dashboard
 .output/

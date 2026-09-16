@@ -1270,11 +1270,49 @@ if ($nodePath -and (Test-Path -LiteralPath $projectPackage) -and (Test-Path -Lit
     }
 }
 
+# An Owner may already have a .cbmignore. The fresh merge preserves it, but
+# Codebase Memory needs AOI's managed boundary at the end of that file so a
+# prior owner negation cannot re-include scaffold/ or aoi_apps/. This runs
+# before the target mirror is built, which lets the mirror reflect the joined
+# result rather than the source template.
+if ($ProfileIncludesAdvanced -and $CodebaseMemoryInitialIndexPath) {
+    $cbmBoundaryScript = Join-Path $PSScriptRoot "scripts\conf\ensure-cbmignore.mjs"
+    if (-not $nodePath -or -not (Test-Path -LiteralPath $cbmBoundaryScript -PathType Leaf)) {
+        Write-Err "ensure-cbmignore.mjs o Node no disponible; no se puede garantizar la frontera del índice Codebase."
+        exit 1
+    }
+    try {
+        & $nodePath $cbmBoundaryScript "--file" (Join-Path $ProjectPath ".cbmignore") "--boundary" "control-plane" | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "control-plane boundary helper exited $LASTEXITCODE" }
+        if ($ProfileIncludesDashboard) {
+            $cbmDashboardPath = Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard"
+            if (Test-Path -LiteralPath $cbmDashboardPath -PathType Container) {
+                & $nodePath $cbmBoundaryScript "--file" (Join-Path $cbmDashboardPath ".cbmignore") "--boundary" "dashboard" | Out-Null
+                if ($LASTEXITCODE -ne 0) { throw "dashboard boundary helper exited $LASTEXITCODE" }
+            }
+        }
+    } catch {
+        Write-Err "No se pudo materializar la frontera de Codebase Memory: $($_.Exception.Message)"
+        exit 1
+    }
+}
+
 # Replicate scaffold mirror inside target
 $targetScaffoldDir = Join-Path $ProjectPath "scaffold"
 Copy-ScaffoldMissing -From $ScaffoldDir -To $targetScaffoldDir -ExcludedRelativePrefixes $ProfileExcludedRelativePrefixes
 Copy-Item -LiteralPath (Join-Path $ScaffoldDir ".github\*") -Destination (Join-Path $targetScaffoldDir ".github") -Recurse -Force -ErrorAction SilentlyContinue
 Copy-Item -LiteralPath (Join-Path $ProjectPath "scripts\*") -Destination (Join-Path $targetScaffoldDir "scripts") -Recurse -Force -ErrorAction SilentlyContinue
+if ($ProfileIncludesAdvanced -and $CodebaseMemoryInitialIndexPath) {
+    Copy-Item -LiteralPath (Join-Path $ProjectPath ".cbmignore") -Destination (Join-Path $targetScaffoldDir ".cbmignore") -Force
+    if ($ProfileIncludesDashboard) {
+        $dashboardIgnore = Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\.cbmignore"
+        if (Test-Path -LiteralPath $dashboardIgnore -PathType Leaf) {
+            $mirrorDashboardIgnore = Join-Path $targetScaffoldDir "aoi_apps\agentic-ops-dashboard\.cbmignore"
+            New-Item -ItemType Directory -Path (Split-Path -Parent $mirrorDashboardIgnore) -Force | Out-Null
+            Copy-Item -LiteralPath $dashboardIgnore -Destination $mirrorDashboardIgnore -Force
+        }
+    }
+}
 Prune-UnselectedHarnessFiles -TargetDir $targetScaffoldDir -SelectedHarness $Harness
 Convert-ToUnixLineEndings -TargetDir $ProjectPath
 Convert-ToUnixLineEndings -TargetDir $targetScaffoldDir

@@ -1617,6 +1617,29 @@ fi
 #
 # Base layer first (non-governed scaffold content, which has no project
 # counterpart to copy from), then every governed path from the project on top.
+# An Owner may already have a .cbmignore. The fresh merge rightly preserves it,
+# but Codebase Memory needs AOI's topology at the END of the file: a later
+# gitignore rule overrides an earlier owner negation. Do this before rebuilding
+# scaffold/ so the installed mirror records the actual, joined boundary.
+if [ "$PROFILE_INCLUDES_ADVANCED" -eq 1 ] && [ -n "${CBM_BIN_INIT:-}" ]; then
+  CBM_BOUNDARY_SCRIPT="$SCRIPT_DIR/scripts/conf/ensure-cbmignore.mjs"
+  if [ ! -f "$CBM_BOUNDARY_SCRIPT" ]; then
+    err "ensure-cbmignore.mjs no encontrado; no se puede garantizar la frontera del índice Codebase."
+    exit 1
+  fi
+  if ! node "$CBM_BOUNDARY_SCRIPT" --file "$PROJECT_PATH/.cbmignore" --boundary control-plane; then
+    err "No se pudo materializar la frontera control-plane de Codebase Memory."
+    exit 1
+  fi
+  if [ "$PROFILE_INCLUDES_DASHBOARD" -eq 1 ]; then
+    CBM_DASHBOARD_PATH="$PROJECT_PATH/aoi_apps/agentic-ops-dashboard"
+    if [ -d "$CBM_DASHBOARD_PATH" ] && ! node "$CBM_BOUNDARY_SCRIPT" --file "$CBM_DASHBOARD_PATH/.cbmignore" --boundary dashboard; then
+      err "No se pudo materializar la frontera Dashboard de Codebase Memory."
+      exit 1
+    fi
+  fi
+fi
+
 mkdir -p "$PROJECT_PATH/scaffold"
 if command -v rsync &>/dev/null; then
   rsync -a "${SCAFFOLD_COPY_EXCLUDE[@]}" "$SCAFFOLD_DIR/" "$PROJECT_PATH/scaffold/"

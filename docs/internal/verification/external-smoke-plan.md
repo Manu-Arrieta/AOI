@@ -50,11 +50,13 @@ Expected result:
 4. Open the dashboard and confirm it renders without inherited tasks or parse errors.
 5. Run `pnpm test:dashboard`.
 6. Run `pnpm test:memory-sync`.
+7. Run `node --test scripts/mcp-gateway/windows-installer-parity.test.mjs`.
 
 Expected result:
 
 - Dependencies install and the dashboard runtime works the same way as on macOS/Linux.
 - The validation suite passes under Windows too.
+- The PowerShell MCP writer executes its real key-merge and compressor-routing contract (the test must not be skipped).
 
 ## Downstream Bootstrap Smoke
 

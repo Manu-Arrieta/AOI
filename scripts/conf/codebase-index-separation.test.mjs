@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { CBM_BOUNDARIES } from './ensure-cbmignore.mjs'
 import { DEFAULT_SYNC_PATHS } from '../scaffold/validate-scaffold-parity.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
@@ -51,6 +52,8 @@ test('BIC-2026-007: la frontera Codebase se instala y se mantiene idéntica en e
   assertDashboardBoundary(DASHBOARD_IGNORE)
   assert.equal(SCAFFOLD_DASHBOARD_IGNORE, DASHBOARD_IGNORE, 'el .cbmignore del dashboard dejó de tener paridad byte a byte')
   assert.ok(DEFAULT_SYNC_PATHS.includes('aoi_apps/agentic-ops-dashboard/.cbmignore'), 'la reinstalación Dashboard no gobierna su .cbmignore')
+  assert.match(ROOT_IGNORE, new RegExp(CBM_BOUNDARIES['control-plane'].marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+  assert.match(DASHBOARD_IGNORE, new RegExp(CBM_BOUNDARIES.dashboard.marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
 })
 
 test('BIC-2026-007: control negativo — sin la exclusión dashboard el contrato falla', () => {
@@ -93,4 +96,30 @@ test('BIC-2026-007: ambos instaladores indexan únicamente después de materiali
   assert.match(windowsDeferred, /\$indexRoots = @\(\$ProjectPath\)/)
   assert.match(windowsDeferred, /\$indexRoots \+= \$dashboardIndexPath/)
   assert.match(windowsDeferred, /foreach \(\$repoPath in @\(\$pathsJson \| ConvertFrom-Json\)\) \{\s+& \$bin cli index_repository/)
+})
+
+test('BIC-2026-007: los instaladores materializan la frontera del Owner antes de reflejarla e indexarla', () => {
+  const posixBoundary = between(
+    POSIX,
+    '# An Owner may already have a .cbmignore.',
+    'mkdir -p "$PROJECT_PATH/scaffold"'
+  )
+  assert.match(posixBoundary, /node "\$CBM_BOUNDARY_SCRIPT" --file "\$PROJECT_PATH\/\.cbmignore" --boundary control-plane/)
+  assert.match(posixBoundary, /node "\$CBM_BOUNDARY_SCRIPT" --file "\$CBM_DASHBOARD_PATH\/\.cbmignore" --boundary dashboard/)
+
+  const windowsBoundary = between(
+    WINDOWS,
+    '# An Owner may already have a .cbmignore.',
+    '# Replicate scaffold mirror inside target'
+  )
+  assert.match(windowsBoundary, /& \$nodePath \$cbmBoundaryScript "--file" \(Join-Path \$ProjectPath "\.cbmignore"\) "--boundary" "control-plane"/)
+  assert.match(windowsBoundary, /& \$nodePath \$cbmBoundaryScript "--file" \(Join-Path \$cbmDashboardPath "\.cbmignore"\) "--boundary" "dashboard"/)
+
+  const windowsMirror = between(
+    WINDOWS,
+    '# Replicate scaffold mirror inside target',
+    'Prune-UnselectedHarnessFiles -TargetDir $targetScaffoldDir -SelectedHarness $Harness'
+  )
+  assert.match(windowsMirror, /Copy-Item -LiteralPath \(Join-Path \$ProjectPath "\.cbmignore"\) -Destination \(Join-Path \$targetScaffoldDir "\.cbmignore"\) -Force/)
+  assert.match(windowsMirror, /Copy-Item -LiteralPath \$dashboardIgnore -Destination \$mirrorDashboardIgnore -Force/)
 })
