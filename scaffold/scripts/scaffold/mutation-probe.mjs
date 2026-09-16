@@ -217,6 +217,9 @@ export function mutationsFor(source, operators = OPERATORS) {
 /** Sources of an area, excluding its tests. */
 export const DEFAULT_EXTENSIONS = ['.mjs', '.sh', '.ts']
 
+/** Prefijo de las copias de trabajo, con el pid del dueño a continuación. */
+export const WORK_PREFIX = 'aoi-mutate-'
+
 /**
  * Sources of an area, excluding its tests.
  *
@@ -938,8 +941,95 @@ export function suiteFailureTail(cwd, glob, timeout = 180000, runner = null, max
   }
 }
 
+/**
+ * Borra una copia de trabajo y todo lo que colgaba de ella.
+ *
+ * Separado porque hay TRES caminos que tienen que llamarlo —la salida normal,
+ * una excepción y una señal— y la versión anterior lo tenía escrito una sola
+ * vez, al final del camino feliz. Medido el 2026-09-16: seis directorios
+ * `aoi-mutate-*` de 8 MB cada uno en el temporal, cinco de ellos de corridas
+ * que el operador había interrumpido a mano. El costo no es el disco: es que
+ * una copia entera del árbol sobrevive a la medición que la creó.
+ */
+function releaseWork(work) {
+  reapGhosts()
+  try {
+    fs.rmSync(work, { recursive: true, force: true })
+  } catch {
+    // Si no se puede borrar ahora, `sweepOrphanCopies` lo recoge en la próxima
+    // corrida: el nombre lleva el pid del dueño justamente para eso.
+  }
+}
+
+/**
+ * La copia que deja una corrida que murió sin poder limpiar.
+ *
+ * `releaseWork` cubre la salida normal, la excepción y la señal. No cubre
+ * `SIGKILL` —que no se puede atrapar— ni un cierre por OOM, y ésos son
+ * exactamente los casos que este repo ya midió. El nombre de la copia lleva el
+ * pid del dueño, así que una corrida posterior distingue "huérfana" de "en
+ * uso" sin adivinar por fecha.
+ *
+ * Sólo borra lo que pertenece a un pid que ya no existe: un proceso vivo no ve
+ * su copia borrada por otro.
+ *
+ * @returns {number} cuántas copias se borraron
+ */
+export function sweepOrphanCopies() {
+  let removed = 0
+  let entradas = []
+  try {
+    entradas = fs.readdirSync(os.tmpdir()).filter((n) => n.startsWith(WORK_PREFIX))
+  } catch {
+    return 0
+  }
+  for (const nombre of entradas) {
+    const dueno = Number(nombre.slice(WORK_PREFIX.length).split('-')[0])
+    if (!Number.isInteger(dueno) || dueno <= 1 || dueno === process.pid) continue
+    try {
+      // Señal 0: no mata, sólo pregunta si existe.
+      process.kill(dueno, 0)
+      continue
+    } catch {
+      // El dueño ya no está: su copia quedó a medio camino.
+    }
+    try {
+      fs.rmSync(path.join(os.tmpdir(), nombre), { recursive: true, force: true })
+      removed += 1
+    } catch {
+      // Si no se puede borrar, la próxima corrida lo reintenta.
+    }
+  }
+  return removed
+}
+
+/**
+ * Limpia también cuando la corrida se corta desde afuera.
+ *
+ * Sin esto, el `finally` no alcanza: un `SIGINT`/`SIGTERM` termina el proceso
+ * sin desenrollar la pila, así que la copia y las suites quedaban vivas. Es el
+ * camino que el operador usa de verdad — un probe de una hora se interrumpe a
+ * mano mucho antes de que termine.
+ *
+ * @returns {() => void} desregistra los handlers
+ */
+function installSignalCleanup(work) {
+  const onSignal = (signal) => {
+    releaseWork(work)
+    process.exit(signal === 'SIGINT' ? 130 : 143)
+  }
+  process.once('SIGINT', onSignal)
+  process.once('SIGTERM', onSignal)
+  return () => {
+    process.removeListener('SIGINT', onSignal)
+    process.removeListener('SIGTERM', onSignal)
+  }
+}
+
 export async function probe(root, area, testGlob, limit = Infinity, log = () => {}, runner = null, extensions = DEFAULT_EXTENSIONS) {
-  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-mutate-'))
+  // El pid en el nombre es lo que permite que una corrida posterior reconozca
+  // esta copia como huérfana si el proceso muere sin poder limpiar.
+  const work = fs.mkdtempSync(path.join(os.tmpdir(), `${WORK_PREFIX}${process.pid}-`))
   // The mirror travels with the copy. Excluding it was a size optimisation
   // and it broke a real test: `scripts/conf` asserts that the files the
   // installer materialises are the ones the scaffold ships, so without the
@@ -958,62 +1048,69 @@ export async function probe(root, area, testGlob, limit = Infinity, log = () => 
     },
   })
 
-  if (runner) linkDependencies(root, work, ['.', runner.cwd ?? '.'])
+  // Todo lo que sigue corre con la limpieza ya armada: la copia existe desde el
+  // `mkdtempSync` de arriba, así que cualquier fallo a partir de acá tiene que
+  // deshacerse de ella.
+  const cleanupSignals = installSignalCleanup(work)
+  try {
+    if (runner) linkDependencies(root, work, ['.', runner.cwd ?? '.'])
 
-  // Antes de plantar nada: si la máquina no tiene memoria para sostener esto,
-  // se corta acá y no a mitad de camino con el sistema reaccionando.
-  assertEnoughMemory()
+    // Antes de plantar nada: si la máquina no tiene memoria para sostener esto,
+    // se corta acá y no a mitad de camino con el sistema reaccionando.
+    assertEnoughMemory()
 
-  // Y las suites que dejó una corrida anterior que murió sin limpiar: las suyas
-  // seguirían girando sin dueño, y una de ellas llevaba 49 minutos.
-  reapStaleSuites()
+    // Y lo que dejó una corrida anterior que murió sin limpiar: sus suites
+    // seguirían girando sin dueño —una llevaba 49 minutos— y su copia de 8 MB
+    // seguiría ocupando el temporal.
+    reapStaleSuites()
+    sweepOrphanCopies()
 
-  const startedAt = Date.now()
-  const baseline = await suitePasses(work, testGlob, 180000, runner)
-  const timeout = mutantTimeout(Date.now() - startedAt)
-  if (!baseline) {
-    // La salida se captura ANTES de borrar la copia, y solo aca: en el camino
-    // normal no cuesta nada.
-    const tail = suiteFailureTail(work, testGlob, 180000, runner)
-    fs.rmSync(work, { recursive: true, force: true })
-    throw new Error(
-      `La suite de ${area} ya falla sin mutar; no se puede medir nada sobre eso.\n\n` +
-        `--- salida de la suite ---\n${tail}\n--- fin ---`
-    )
-  }
-
-  const survivors = []
-  let killed = 0
-  let total = 0
-
-  for (const rel of areaSources(root, area, extensions)) {
-    const target = path.join(work, rel)
-    const original = fs.readFileSync(target, 'utf8')
-    const candidates = mutationsFor(original, operatorsFor(rel))
-    for (const mutation of candidates) {
-      if (total >= limit) break
-      total += 1
-      fs.writeFileSync(target, mutation.mutated)
-      if (await suitePasses(work, testGlob, timeout, runner)) {
-        survivors.push({ file: rel, ...mutation, mutated: undefined })
-      } else {
-        killed += 1
-      }
-      fs.writeFileSync(target, original)
-      // Fuera del código mutado, y después de que el caso ya midió: un fantasma
-      // que sobrevivió a su suite no tiene por qué esperar al final del área.
-      reapGhosts()
-      if (total % 25 === 0) log(`  ${total} mutantes · ${killed} muertos · ${survivors.length} sobreviven`)
+    const startedAt = Date.now()
+    const baseline = await suitePasses(work, testGlob, 180000, runner)
+    const timeout = mutantTimeout(Date.now() - startedAt)
+    if (!baseline) {
+      // La salida se captura ANTES de que el `finally` borre la copia.
+      const tail = suiteFailureTail(work, testGlob, 180000, runner)
+      throw new Error(
+        `La suite de ${area} ya falla sin mutar; no se puede medir nada sobre eso.\n\n` +
+          `--- salida de la suite ---\n${tail}\n--- fin ---`
+      )
     }
-    if (total >= limit) break
-  }
 
-  // El recorte dentro del bucle cubre todos los mutantes menos el último, así
-  // que sin esta línea el que deja el mutante final se queda vivo. Medido: una
-  // corrida completa dejaba uno suelto con el recorte sólo dentro del bucle.
-  reapGhosts()
-  fs.rmSync(work, { recursive: true, force: true })
-  return { area, total, killed, survivors }
+    const survivors = []
+    let killed = 0
+    let total = 0
+
+    for (const rel of areaSources(root, area, extensions)) {
+      const target = path.join(work, rel)
+      const original = fs.readFileSync(target, 'utf8')
+      const candidates = mutationsFor(original, operatorsFor(rel))
+      for (const mutation of candidates) {
+        if (total >= limit) break
+        total += 1
+        fs.writeFileSync(target, mutation.mutated)
+        if (await suitePasses(work, testGlob, timeout, runner)) {
+          survivors.push({ file: rel, ...mutation, mutated: undefined })
+        } else {
+          killed += 1
+        }
+        fs.writeFileSync(target, original)
+        // Fuera del código mutado, y después de que el caso ya midió: un fantasma
+        // que sobrevivió a su suite no tiene por qué esperar al final del área.
+        reapGhosts()
+        if (total % 25 === 0) log(`  ${total} mutantes · ${killed} muertos · ${survivors.length} sobreviven`)
+      }
+      if (total >= limit) break
+    }
+
+    return { area, total, killed, survivors }
+  } finally {
+    // `releaseWork` vuelve a recoger los fantasmas, y esa segunda pasada no es
+    // redundante: el recorte del bucle cubre todos los mutantes menos el último,
+    // y una salida por excepción no pasó por ningún recorte.
+    cleanupSignals()
+    releaseWork(work)
+  }
 }
 
 async function main() {

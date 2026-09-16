@@ -30,6 +30,8 @@ import {
   suiteFailureTail,
   suitePasses,
   suitesPidFile,
+  sweepOrphanCopies,
+  WORK_PREFIX,
 } from './mutation-probe.mjs'
 
 describe('mutations are generated only where a decision is made', () => {
@@ -822,6 +824,79 @@ describe('the operator set', () => {
     for (const op of OPERATORS) {
       op.find.lastIndex = 0
       assert.notEqual(op.replace, op.find.source, `${op.name} no cambia nada`)
+    }
+  })
+})
+
+describe('las copias de trabajo no sobreviven a la corrida', () => {
+  /** Una copia con el nombre que el probe le da a las suyas. */
+  const copia = (pid, sufijo = 'zzzz') => path.join(os.tmpdir(), `${WORK_PREFIX}${pid}-${sufijo}`)
+
+  it('el nombre lleva el pid del dueño, que es lo que permite reconocerla después', () => {
+    assert.equal(WORK_PREFIX, 'aoi-mutate-')
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), `${WORK_PREFIX}${process.pid}-`))
+    try {
+      assert.match(path.basename(work), new RegExp(`^${WORK_PREFIX}${process.pid}-`))
+    } finally {
+      fs.rmSync(work, { recursive: true, force: true })
+    }
+  })
+
+  it('barre la copia de un dueño que ya no existe', () => {
+    // Un pid que no puede existir: el probe ya guarda `-1` como centinela y
+    // nunca lanza procesos con ese número.
+    const huerfana = copia(4194303)
+    fs.mkdirSync(huerfana, { recursive: true })
+    fs.writeFileSync(path.join(huerfana, 'dato.txt'), 'x')
+
+    try {
+      sweepOrphanCopies()
+      assert.equal(fs.existsSync(huerfana), false, 'la copia huérfana sobrevivió al barrido')
+    } finally {
+      fs.rmSync(huerfana, { recursive: true, force: true })
+    }
+  })
+
+  it('NO barre la copia de un proceso vivo', () => {
+    // El pid 1 existe siempre y no es este proceso. La dirección peligrosa es
+    // ésta: borrar la copia de otro medidor que está trabajando.
+    const viva = copia(1)
+    fs.mkdirSync(viva, { recursive: true })
+
+    try {
+      sweepOrphanCopies()
+      assert.equal(fs.existsSync(viva), true, 'borró la copia de un proceso vivo')
+    } finally {
+      fs.rmSync(viva, { recursive: true, force: true })
+    }
+  })
+
+  it('NO barre la propia', () => {
+    // El proceso se pregunta por sí mismo, y `process.kill(pid, 0)` sobre el
+    // propio pid responde que existe. Está en la guarda por lectura, no por
+    // suerte.
+    const propia = copia(process.pid)
+    fs.mkdirSync(propia, { recursive: true })
+
+    try {
+      sweepOrphanCopies()
+      assert.equal(fs.existsSync(propia), true, 'se borró su propia copia')
+    } finally {
+      fs.rmSync(propia, { recursive: true, force: true })
+    }
+  })
+
+  it('ignora un nombre sin pid numérico en vez de borrar por lo que diga', () => {
+    // `slice().split('-')[0]` sobre un nombre que no sigue la convención da
+    // `NaN`, y un `NaN` que llegara a borrar se llevaría cualquier cosa.
+    const rara = path.join(os.tmpdir(), `${WORK_PREFIX}no-es-un-pid-abc`)
+    fs.mkdirSync(rara, { recursive: true })
+
+    try {
+      sweepOrphanCopies()
+      assert.equal(fs.existsSync(rara), true, 'borró un directorio que no sigue la convención')
+    } finally {
+      fs.rmSync(rara, { recursive: true, force: true })
     }
   })
 })
