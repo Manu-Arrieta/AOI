@@ -53,6 +53,21 @@ test('validateScaffoldParity detects missing files and content mismatches', () =
   fs.rmSync(tmpRepo, { recursive: true, force: true })
 })
 
+test('BIC-2026-001:never.3 keeps literal-payload accounting mirrored', () => {
+  const res = validateScaffoldParity(process.cwd(), [
+    'scripts/sdd-lifecycle/sdd-phases.mjs',
+    'scripts/sdd-lifecycle/assemble-phase-context.mjs',
+    'scripts/sdd-lifecycle/context-budget.mjs',
+    'scripts/sdd-lifecycle/cache-prefix.mjs',
+    'scripts/sdd-lifecycle/stress-report.mjs',
+    'scripts/sdd-lifecycle/behavioral-probes.test.mjs',
+    'scripts/sdd-lifecycle/context-budget.test.mjs',
+    'scripts/sdd-lifecycle/cache-prefix.test.mjs',
+  ])
+
+  assert.equal(res.valid, true, res.errors.join('\n'))
+})
+
 /**
  * El filtro de entradas del scaffold raiz.
  *

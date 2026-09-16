@@ -8,6 +8,7 @@ import {
   auditMidCycleRewrites,
   auditRepeatedMass,
   cacheEconomics,
+  formatCacheReport,
   partitionSurface,
   surfaceDigest,
   surfaceLoadMap,
@@ -23,7 +24,24 @@ describe('the repeated mass of the shipped cycle', () => {
     // partition is built from the assembler, the floor from the budget, and
     // they were written to be independent.
     const part = partitionSurface(surfaceLoadMap(REPO))
-    assert.equal(part.floor, auditContextBudget(REPO).floor)
+    const budget = auditContextBudget(REPO)
+    assert.equal(part.floor, budget.contentFloor)
+    assert.ok(budget.payloadFloor >= part.floor, 'literal framing cannot disappear from the reported payload')
+  })
+
+  it('BIC-2026-001:never.1 reports literal payload separately from source attribution', () => {
+    const part = partitionSurface(surfaceLoadMap(REPO))
+    const budget = auditContextBudget(REPO)
+    const report = formatCacheReport(part, { payloadFloor: budget.payloadFloor })
+
+    assert.match(report, new RegExp(`Payload literal fijo:\\s+${budget.payloadFloor.toLocaleString()} tokens`))
+    assert.match(report, /Framing del assembler \(sin asignar\):/)
+    assert.doesNotMatch(report, /- PISO:/, 'the source-only subtotal must not masquerade as the payload')
+  })
+
+  it('preserves the numeric phase-count argument for existing report consumers', () => {
+    const part = partitionSurface(surfaceLoadMap(REPO))
+    assert.match(formatCacheReport(part, 2), /Universal, en las 2 fases/)
   })
 
   it('splits the floor into bands that add back up', () => {

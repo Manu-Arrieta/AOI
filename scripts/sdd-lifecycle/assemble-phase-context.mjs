@@ -12,9 +12,14 @@
  * correctly with what is left, and to ask that question you need the "what is
  * left" as an actual artifact, not as a number.
  *
- * Composition mirrors phaseContextCost exactly, so `assembled tokens === floor`
- * is a real cross-check between the two. Conditional and one-of branches are
- * excluded: they are not part of what every run loads.
+ * `payloadTokens` is the tokenization of the emitted literal string; it is the
+ * canonical fixed transport cost. `contentTokens` remains the sum of source
+ * bodies so reports can attribute repeated mass to editable files. The values
+ * are deliberately distinct because this assembler emits framing headings and
+ * the estimator rounds each individual call.
+ *
+ * Conditional and one-of branches are excluded: they are not part of what
+ * every run loads.
  *
  * Zero inference tokens: it concatenates files already on disk.
  */
@@ -25,7 +30,7 @@ import { fileURLToPath } from 'node:url'
 import { estimateTokens } from './token-accounting.mjs'
 import { instructionsFor, read, skillsFor } from './instruction-scope.mjs'
 import { agentGroupsIn, agentsIn, speckitIn } from './phase-references.mjs'
-import { SDD_PHASES } from './context-budget.mjs'
+import { SDD_PHASES } from './sdd-phases.mjs'
 
 const agentFile = (root, name) => path.join(root, `.github/agents/${name}.agent.md`)
 const speckitFiles = (root, cmd) => [
@@ -36,7 +41,8 @@ const speckitFiles = (root, cmd) => [
 /**
  * Builds the floor context of a phase: everything a run loads unconditionally.
  *
- * @returns {{ text: string, parts: Array<{source: string, tokens: number}> }}
+ * @returns {{ text: string, parts: Array<{source: string, tokens: number}>,
+ *   contentTokens: number, payloadTokens: number, framingTokens: number }}
  */
 export function assemblePhaseContext(root, promptRel, phase = '') {
   const parts = []
@@ -65,9 +71,16 @@ export function assemblePhaseContext(root, promptRel, phase = '') {
   for (const i of instructionsFor(root, promptRel)) push(i.file, read(path.join(root, i.file)))
   for (const s of skillsFor(root, phase)) push(s.file, read(path.join(root, s.file)))
 
+  const assembledText = parts.map((p) => `\n\n===== ${p.source} =====\n${p.body}`).join('')
+  const contentTokens = parts.reduce((n, p) => n + p.tokens, 0)
+  const payloadTokens = estimateTokens(assembledText)
+
   return {
-    text: parts.map((p) => `\n\n===== ${p.source} =====\n${p.body}`).join(''),
+    text: assembledText,
     parts: parts.map(({ source, tokens }) => ({ source, tokens })),
+    contentTokens,
+    payloadTokens,
+    framingTokens: payloadTokens - contentTokens,
   }
 }
 

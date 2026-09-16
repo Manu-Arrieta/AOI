@@ -142,6 +142,29 @@ describe('a suite leaves no process behind, by either exit', () => {
     // —que es lo único que el caso necesita— y cuesta 0.0% medido. Ocupar CPU
     // nunca fue parte de lo que el caso verifica.
     fs.writeFileSync(path.join(dir, `${mark}.mjs`), 'setInterval(() => {}, 1000)\n')
+    // Node's test runner may abandon a worker with a forever-pending test
+    // before our probe timeout fires. For the timeout path use a direct
+    // long-lived process instead: it exercises the same detached group and
+    // reaper contract without borrowing the runner's lifecycle semantics.
+    if (kind === 'hang') {
+      fs.writeFileSync(
+        path.join(dir, 'hang.mjs'),
+        [
+          "import { spawn } from 'node:child_process'",
+          "import path from 'node:path'",
+          "import { fileURLToPath } from 'node:url'",
+          'const here = path.dirname(fileURLToPath(import.meta.url))',
+          `spawn(process.execPath, [path.join(here, '${mark}.mjs')], { stdio: 'ignore' })`,
+          'setInterval(() => {}, 1000)',
+          '',
+        ].join('\n')
+      )
+      return {
+        dir,
+        mark,
+        runner: { command: process.execPath, args: ['hang.mjs'], cwd: '.' },
+      }
+    }
     fs.writeFileSync(
       path.join(dir, 'suite.test.mjs'),
       [
@@ -159,13 +182,11 @@ describe('a suite leaves no process behind, by either exit', () => {
         // salida temprana; con el fantasma referenciado, el caso `exit` no
         // terminaría nunca y mediría un timeout.
         `  spawn(process.execPath, [path.join(here, '${mark}.mjs')], { stdio: 'ignore' }).unref()`,
-        kind === 'hang' ? '  setInterval(() => {}, 1000)' : '',
-        kind === 'hang' ? '  await new Promise(() => {})' : '',
         '})',
         '',
       ].join('\n')
     )
-    return { dir, mark }
+    return { dir, mark, runner: null }
   }
 
   /** Cuántos procesos con la marca siguen vivos; espera a que bajen a cero. */
@@ -203,10 +224,10 @@ describe('a suite leaves no process behind, by either exit', () => {
 
   for (const [kind, expected, timeout, label] of CASES) {
     it(`kills the group when the suite ${label}`, async () => {
-      const { dir, mark } = fixture(kind)
+      const { dir, mark, runner } = fixture(kind)
       try {
         const startedAt = Date.now()
-        const passed = await suitePasses(dir, '*.test.mjs', timeout)
+        const passed = await suitePasses(dir, '*.test.mjs', timeout, runner)
         const elapsed = Date.now() - startedAt
         assert.equal(passed, expected, `la suite no salió por donde el caso pretende (${label})`)
         // El reloj es lo que distingue el camino del timeout de una salida

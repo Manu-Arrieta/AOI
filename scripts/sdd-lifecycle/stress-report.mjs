@@ -45,7 +45,7 @@ export function printExecutiveSummary(root, ledger) {
 
   console.log(`\n${THIN}`)
   const surface = partitionSurface(surfaceLoadMap(root))
-  console.log(formatCacheReport(surface))
+  console.log(formatCacheReport(surface, { payloadFloor: budget.payloadFloor }))
   console.log(`\nHuella de la masa repetida: ${surfaceDigest(root, surface.universal)}`)
 
   // Va justo después de la telemetría de tokens porque es su letra chica: el

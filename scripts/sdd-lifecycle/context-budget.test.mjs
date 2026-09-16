@@ -8,6 +8,7 @@ import {
   auditContextBudget,
   expandBraces,
   fileTokens,
+  formatBudgetSummary,
   instructionsFor,
   matchesApplyTo,
   phaseContextCost,
@@ -243,7 +244,7 @@ describe('floor versus ceiling', () => {
 })
 
 describe('the reported totals actually add up', () => {
-  it('every phase floor equals the sum of its declared components', () => {
+  it('every content-only floor equals the sum of its declared components', () => {
     // The skills surface was added to the model only after it turned out to be
     // 28% of the real cost. Whatever component comes next, this fails the
     // moment it is measured but not included in the floor it belongs to.
@@ -262,6 +263,18 @@ describe('the reported totals actually add up', () => {
     const b = auditContextBudget(process.cwd())
     assert.equal(b.rows.reduce((n, r) => n + r.floor, 0), b.floor)
     assert.equal(b.rows.reduce((n, r) => n + r.total, 0), b.total)
+    assert.equal(b.rows.reduce((n, r) => n + r.payloadFloor, 0), b.payloadFloor)
+    assert.equal(b.rows.reduce((n, r) => n + r.framingTokens, 0), b.framingTokens)
+    assert.equal(b.contentFloor, b.floor, 'the explicit content label must preserve the historical baseline')
+  })
+
+  it('BIC-2026-001:never.1 labels literal payload as the fixed cost', () => {
+    const b = auditContextBudget(process.cwd())
+    const report = formatBudgetSummary(b, 0)
+
+    assert.match(report, new RegExp(`PAYLOAD LITERAL, se paga en todo ciclo:\\s+${b.payloadFloor.toLocaleString()} tokens`))
+    assert.match(report, new RegExp(`Framing emitido por el assembler:\\s+${b.framingTokens.toLocaleString()} tokens`))
+    assert.doesNotMatch(report, /PISO, se paga en todo ciclo/, 'the content subtotal cannot be presented as transport cost')
   })
 })
 
@@ -276,4 +289,3 @@ describe('auditContextBudget', () => {
     fs.rmSync(root, { recursive: true, force: true })
   })
 })
-

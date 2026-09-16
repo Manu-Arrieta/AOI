@@ -97,16 +97,11 @@ describe('invariant-gate answers with three distinct exit codes', () => {
     // que el aviso tiene que decir cuál salió y con qué criterio — o el
     // llamador no tiene cómo saber si el gate miró donde debía.
     assert.match(r.stderr, /entidad auto-resuelta "([^"]+)"/, 'no anuncia la entidad inferida')
-    // Y tiene que decir cómo SALIR del bloqueo. La aserción nombra la bandera y
-    // no la frase exacta a propósito: hay DOS formas de bloquear acá —la
-    // entidad inferida no tiene contrato, o ICM no conoce la entidad— y cuál
-    // ocurre depende del entorno. En el repositorio la inferencia da "AOI", que
-    // ICM conoce sin hechos `bic.*`; en una instalación da el basename del
-    // directorio, que ICM no conoce. Exigir una frase ataba el test a una de las
-    // dos ramas y lo hacía pasar verde en el repositorio y rojo instalado —
-    // medido, 784 pass · 1 fail. Las dos ramas nombran `--entity`; eso es lo que
-    // el test puede exigir sin mentir.
-    assert.match(r.stderr, /--entity/, 'no dice cómo desbloquearse')
+    // Y tiene que decir cómo SALIR del bloqueo. Si ICM no tiene el contrato,
+    // pide `--entity`; si sí lo tiene pero el cwd no permite resolver runners,
+    // pide `--facts-file`. Ambas son rutas válidas y dependen de los hechos
+    // persistidos que haya en la máquina que ejecuta la prueba.
+    assert.match(r.stderr, /--entity|--facts-file/, 'no dice cómo desbloquearse')
   })
 
   it('an inferred entity with no contract BLOCKS instead of skipping', () => {

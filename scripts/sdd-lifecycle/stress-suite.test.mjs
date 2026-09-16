@@ -151,23 +151,26 @@ describe('the arithmetic closes', () => {
 })
 
 describe('the fixed infrastructure cost is reported and internally consistent', () => {
-  it('reports a floor and a ceiling, with the ceiling no lower', () => {
-    // FLOOR is what every cycle pays; CEILING adds everything conditional. A
-    // ceiling below the floor would mean the conditional surfaces were
-    // subtracted instead of added.
-    const floor = num(output.match(/PISO, se paga en todo ciclo:\s+([\d.,]+)/)[1])
-    const ceiling = num(output.match(/TECHO, si además dispara todo lo condicional:\s+([\d.,]+)/)[1])
-    assert.ok(floor > 0, 'el piso dio cero: no midió ninguna superficie inyectada')
-    assert.ok(ceiling >= floor, `techo ${ceiling} por debajo del piso ${floor}`)
+  it('reports literal fixed payload and a separate content-only ceiling', () => {
+    // The literal payload includes assembler framing. Conditional accounting is
+    // still source-body attribution, so its ceiling must be compared against
+    // content, not against a differently shaped transport payload.
+    const payload = num(output.match(/PAYLOAD LITERAL, se paga en todo ciclo:\s+([\d.,]+)/)[1])
+    const content = num(output.match(/Contenido atribuible a archivos:\s+([\d.,]+)/)[1])
+    const framing = num(output.match(/Framing emitido por el assembler:\s+([\d.,]+)/)[1])
+    const ceiling = num(output.match(/Techo de contenido si dispara lo condicional:\s+([\d.,]+)/)[1])
+    assert.ok(payload > 0, 'el payload literal dio cero: no midió ninguna superficie inyectada')
+    assert.equal(payload, content + framing, 'el payload literal no cierra con contenido y framing')
+    assert.ok(ceiling >= content, `techo de contenido ${ceiling} por debajo del contenido fijo ${content}`)
   })
 
-  it('dwarfs the variable payload, which is the finding the floor exists to keep visible', () => {
+  it('dwarfs the variable payload, which is the finding the fixed payload keeps visible', () => {
     // The optimisers work on the variable payload, and it is a small part of
     // what a cycle actually costs. Losing this comparison is how the project
     // would start congratulating itself on the 6% it controls.
-    const floor = num(output.match(/PISO, se paga en todo ciclo:\s+([\d.,]+)/)[1])
+    const payload = num(output.match(/PAYLOAD LITERAL, se paga en todo ciclo:\s+([\d.,]+)/)[1])
     const aoi = num(output.match(/Consumo AOI:\s+([\d.,]+)/)[1])
-    assert.ok(floor > aoi * 5, `piso ${floor} no domina el payload ${aoi}`)
+    assert.ok(payload > aoi * 5, `payload fijo ${payload} no domina el payload variable ${aoi}`)
   })
 
   it('audits the prompt cache and reports zero violations', () => {

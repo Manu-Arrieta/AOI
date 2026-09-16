@@ -248,6 +248,6 @@ describe('cache-prefix guards the always-injected surface', () => {
     // una fase nueva no debe invalidar la guarda en silencio.
     const r = run(CACHE_PREFIX, [], REPO)
     assert.match(r.stdout, new RegExp(`x${SDD_PHASES.length}\\s+\\d+`))
-    assert.match(r.stdout, /PISO/)
+    assert.match(r.stdout, /PAYLOAD LITERAL/)
   })
 })

@@ -4,25 +4,24 @@
  *
  * Measures how much of the fixed cost is THE SAME BYTES, PAID AGAIN.
  *
- * The context budget answers what a cycle costs. It cannot answer the question
- * underneath: of those tokens, how many are a second, third and sixth copy of
- * prose already sent? That distinction decides two things the budget alone
- * gets wrong.
+ * The context budget answers the literal fixed payload of a cycle. This module
+ * answers a narrower question: how many source-body bytes are a second, third
+ * and sixth copy of prose already sent? Wrapper framing is reported separately
+ * because rounded estimates cannot be attributed honestly to an individual
+ * source row.
  *
  * First, priority. A token removed from a file loaded in one phase saves one
  * token; the same token removed from a file loaded in all six saves six. The
  * budget ranks files by size and so ranks them wrong. Every trim before this
  * module was chosen without knowing its multiplier.
  *
- * Second, the ceiling of prompt caching. A cache can only ever recover bytes
- * that repeat, so the repeated mass is the upper bound of what caching could
- * be worth here — measured, instead of assumed.
+ * Second, the source-body mass a prefix cache could reuse. A cache can only
+ * reuse bytes that repeat, but AOI cannot build the API request or select its
+ * cache boundary, so this is not a product-level savings promise.
  *
  * WHAT THIS DOES NOT CLAIM. AOI does not build the API request and cannot
- * place cache breakpoints: ordering and reuse belong to the harness. So the
- * recoverable figure is a ceiling conditional on the harness caching a stable
- * prefix, and it is reported as one. The multiplier is not conditional on
- * anything — it holds whoever runs the cycle.
+ * place cache breakpoints: ordering and reuse belong to the harness. The
+ * multiplier is not conditional on anything — it holds whoever runs the cycle.
  *
  * Static arithmetic over files on disk: 0 inference tokens.
  */
@@ -32,7 +31,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { CACHE_BUSTER_PATTERNS } from '../multi-harness/cache-guard.mjs'
 import { assemblePhaseContext } from './assemble-phase-context.mjs'
-import { SDD_PHASES } from './context-budget.mjs'
+import { auditContextBudget, SDD_PHASES } from './context-budget.mjs'
 import { read } from './instruction-scope.mjs'
 
 /** Anthropic bills a cache read at a tenth of an input token. */
@@ -187,28 +186,37 @@ export function formatMultiplierTable(rows, limit = 12) {
 }
 
 /** The report the benchmark prints. */
-export function formatCacheReport(part, phaseCount = SDD_PHASES.length) {
+export function formatCacheReport(part, options = {}) {
+  const { payloadFloor = part.floor, phaseCount = SDD_PHASES.length } =
+    typeof options === 'number' ? { phaseCount: options } : options
   const econ = cacheEconomics(part.universalPerPhase, phaseCount)
-  const share = part.floor > 0 ? ((part.universalCycle / part.floor) * 100).toFixed(1) : '0.0'
+  const framingTokens = payloadFloor - part.floor
+  const share = payloadFloor > 0 ? ((part.universalCycle / payloadFloor) * 100).toFixed(1) : '0.0'
 
   return [
-    'REPETICION DEL PISO (los mismos bytes, pagados de nuevo):',
+    'COSTO FIJO DEL PAYLOAD LITERAL:',
+    `- Payload literal fijo:                   ${payloadFloor.toLocaleString()} tokens`,
+    `- Contenido atribuible a archivos:        ${part.floor.toLocaleString()} tokens`,
+    `- Framing del assembler (sin asignar):    ${framingTokens.toLocaleString()} tokens`,
+    '',
+    'REPETICION DEL CONTENIDO ATRIBUIBLE (los mismos bytes, pagados de nuevo):',
     `- Universal, en las ${phaseCount} fases: ${part.universal.length} archivos, ` +
       `${part.universalPerPhase.toLocaleString()} tok/fase = ${part.universalCycle.toLocaleString()} por ciclo`,
     `- Repetido en algunas fases:            ${part.repeatedCycle.toLocaleString()} por ciclo`,
     `- Cargado una sola vez:                 ${part.onceCycle.toLocaleString()} por ciclo`,
-    `- PISO:                                 ${part.floor.toLocaleString()} tokens`,
-    `- El ${share}% del piso es masa repetida.`,
+    `- El ${share}% del payload literal es contenido repetido atribuible.`,
     '',
-    'TECHO DE LO QUE UN CACHE DE PREFIJO PODRIA RECUPERAR:',
+    'MASA DE CONTENIDO QUE UN CACHE DE PREFIJO PODRIA REUTILIZAR:',
     `- Sin cache:      ${econ.uncached.toLocaleString()} tokens`,
     `- Con cache a ${CACHE_READ_RATE}: ${econ.cached.toLocaleString()} tokens`,
     `- Recuperable:    ${econ.recoverable.toLocaleString()} tokens por ciclo`,
     '',
-    'Es un TECHO, no una promesa: AOI no arma el request ni coloca los puntos de',
-    'corte del cache, asi que el reuso lo decide el harness. Lo que si es',
-    'incondicional es el multiplicador — un token recortado en la banda universal',
-    `vale ${phaseCount}, y uno recortado en un prompt de fase vale 1.`,
+    'No es una promesa: AOI no arma el request ni coloca los puntos de corte del',
+    'cache, asi que el reuso lo decide el harness. Cubre cuerpos de archivos;',
+    'el framing de arriba también es estable, pero no se reparte entre fuentes',
+    'porque la estimación redondeada no permite atribuirlo con exactitud.',
+    'El multiplicador sí es incondicional: un token recortado en la banda',
+    `universal vale ${phaseCount}, y uno recortado en un prompt de fase vale 1.`,
     '',
     'COSTO POR CICLO, ORDENADO POR LO QUE DE VERDAD CUESTA:',
     formatMultiplierTable([...part.universal, ...part.repeated, ...part.once]),
@@ -218,9 +226,10 @@ export function formatCacheReport(part, phaseCount = SDD_PHASES.length) {
 function main() {
   const root = process.cwd()
   const part = partitionSurface(surfaceLoadMap(root))
+  const budget = auditContextBudget(root)
 
   console.log('=== AOI Cache Prefix Economics ===\n')
-  console.log(formatCacheReport(part))
+  console.log(formatCacheReport(part, { payloadFloor: budget.payloadFloor }))
   console.log(`\nHuella de la masa repetida: ${surfaceDigest(root, part.universal)}`)
   console.log('Tomala antes y despues de un ciclo real: si cambia, algo reescribio')
   console.log('una superficie siempre inyectada y no hay cache que sobreviva a eso.')

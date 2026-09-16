@@ -22,11 +22,14 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { estimateTokens } from './token-accounting.mjs'
+import { assemblePhaseContext } from './assemble-phase-context.mjs'
 import { fileTokens, instructionsFor, read, skillsFor } from './instruction-scope.mjs'
 import { agentGroupsIn, agentsIn, secondOrderAgents, speckitIn } from './phase-references.mjs'
+import { SDD_PHASES } from './sdd-phases.mjs'
 
 export { fileTokens, instructionsFor, expandBraces, matchesApplyTo, skillsFor, SKILL_SCOPE } from './instruction-scope.mjs'
 export { agentGroupsIn, agentsIn, secondOrderAgents, speckitIn, CONDITIONAL_MARKER, ONE_OF_MARKER, SECOND_ORDER } from './phase-references.mjs'
+export { SDD_PHASES } from './sdd-phases.mjs'
 
 
 /**
@@ -35,7 +38,8 @@ export { agentGroupsIn, agentsIn, secondOrderAgents, speckitIn, CONDITIONAL_MARK
  * @param {string} root
  * @param {string} promptRel e.g. '.github/prompts/sdd-verify.prompt.md'
  * @returns {{ prompt: number, agents: number, speckit: number, instructions: number,
- *             total: number, detail: object }}
+ *   floor: number, total: number, contentFloor: number, payloadFloor: number,
+ *   framingTokens: number, detail: object }}
  */
 export function phaseContextCost(root, promptRel, phase = '') {
   const text = read(path.join(root, promptRel))
@@ -81,9 +85,12 @@ export function phaseContextCost(root, promptRel, phase = '') {
   const skillList = skillsFor(root, phase)
   const skills = skillList.reduce((n, s) => n + s.tokens, 0)
 
-  // `floor` is what every run of this phase costs. `total` adds what it costs
-  // when every conditional branch also fires — the worst case, not the norm.
-  const floor = prompt + agents + speckit + instructions + skills
+  // Content-only fields preserve source attribution; the canonical literal
+  // payload is derived from assembler output, including framing and rounding.
+  const contentFloor = prompt + agents + speckit + instructions + skills
+  const { payloadTokens } = assemblePhaseContext(root, promptRel, phase)
+  const payloadFloor = payloadTokens
+  const framingTokens = payloadFloor - contentFloor
   return {
     prompt,
     agents,
@@ -91,8 +98,11 @@ export function phaseContextCost(root, promptRel, phase = '') {
     conditional,
     instructions,
     skills,
-    floor,
-    total: floor + conditional,
+    floor: contentFloor,
+    total: contentFloor + conditional,
+    contentFloor,
+    payloadFloor,
+    framingTokens,
     detail: {
       agents: agentList.filter((a) => !a.conditional).map((a) => a.name),
       speckit: speckitList.filter((s) => !s.conditional).map((s) => s.command),
@@ -110,33 +120,30 @@ export function phaseContextCost(root, promptRel, phase = '') {
   }
 }
 
-/** Phase key -> prompt file, in lifecycle order. */
-export const SDD_PHASES = [
-  ['Phase_-2_Genesis', '.github/prompts/sdd-genesis.prompt.md'],
-  ['Phase_0_Frame', '.github/prompts/sdd-frame.prompt.md'],
-  ['Phase_1_New', '.github/prompts/sdd-new.prompt.md'],
-  ['Phase_2_FF', '.github/prompts/sdd-ff.prompt.md'],
-  ['Phase_3_Apply', '.github/prompts/sdd-apply.prompt.md'],
-  ['Phase_4_Verify', '.github/prompts/sdd-verify.prompt.md'],
-  ['Phase_5_Archive', '.github/prompts/sdd-archive.prompt.md'],
-]
-
 /** Fixed cost of every phase plus the cycle total. */
 export function auditContextBudget(root, phases = SDD_PHASES) {
   const rows = []
   let total = 0
   let floor = 0
+  let payloadFloor = 0
+  let framingTokens = 0
   for (const [key, rel] of phases) {
     if (!fs.existsSync(path.join(root, rel))) continue
     const cost = phaseContextCost(root, rel, key)
     rows.push({ phase: key, ...cost })
     total += cost.total
     floor += cost.floor
+    payloadFloor += cost.payloadFloor
+    framingTokens += cost.framingTokens
   }
   // `floor` no cambia: es el numero historico y las lineas base viejas se
   // comparan contra el. Los adaptadores van aparte, visibles y sin sumar.
   const adapters = harnessAdapterCost(root)
-  return { rows, total, floor, adapters, floorWithAdapters: floor + adapters.total }
+  return {
+    rows, total, floor, contentFloor: floor,
+    payloadFloor, framingTokens, adapters,
+    floorWithAdapters: floor + adapters.total,
+  }
 }
 
 /**
@@ -145,24 +152,27 @@ export function auditContextBudget(root, phases = SDD_PHASES) {
  * what let a 76% reduction describe a twentieth of the real bill.
  */
 export function formatBudgetSummary(budget, payloadTokens) {
-  const { total, floor } = budget
-  const combined = floor + payloadTokens
+  const { total, floor, payloadFloor = floor, framingTokens = payloadFloor - floor } = budget
+  const combined = payloadFloor + payloadTokens
   const share = combined > 0 ? ((payloadTokens / combined) * 100).toFixed(1) : '0.0'
-  const heaviest = [...budget.rows].sort((a, b) => b.floor - a.floor)[0]
+  const heaviest = [...budget.rows].sort((a, b) => b.payloadFloor - a.payloadFloor)[0]
   const swing = total - floor
 
   return [
-    'COSTO FIJO DE INFRAESTRUCTURA (prosa cargada antes de trabajar):',
-    `- PISO, se paga en todo ciclo:                 ${floor.toLocaleString()} tokens`,
-    `- TECHO, si además dispara todo lo condicional: ${total.toLocaleString()} tokens`,
-    `- Margen condicional:                          ${swing.toLocaleString()} tokens`,
+    'COSTO FIJO DE INFRAESTRUCTURA (payload literal cargado antes de trabajar):',
+    `- PAYLOAD LITERAL, se paga en todo ciclo:      ${payloadFloor.toLocaleString()} tokens`,
+    `- Contenido atribuible a archivos:             ${floor.toLocaleString()} tokens`,
+    `- Framing emitido por el assembler:            ${framingTokens.toLocaleString()} tokens`,
+    `- Techo de contenido si dispara lo condicional: ${total.toLocaleString()} tokens`,
+    `- Margen condicional de contenido:             ${swing.toLocaleString()} tokens`,
     `- Payload optimizado del ciclo:                ${payloadTokens.toLocaleString()} tokens`,
-    `- El payload es el ${share}% del costo de piso del ciclo.`,
-    heaviest ? `- Fase más cara: ${heaviest.phase} con ${heaviest.floor.toLocaleString()} tokens de piso.` : '',
+    `- El payload optimizado es el ${share}% del payload fijo literal.`,
+    heaviest ? `- Fase más cara: ${heaviest.phase} con ${heaviest.payloadFloor.toLocaleString()} tokens de payload fijo.` : '',
     '',
-    'Piso y techo se reportan por separado porque un paso condicional no se paga',
-    'siempre; contarlo como fijo sobreestima el ciclo y, peor, haría invisible',
-    'cualquier mejora que consista precisamente en volver condicional un paso.',
+    'El techo condicional sigue siendo contenido atribuible: no existe un único',
+    'payload literal de techo porque las ramas pueden ejecutarse en órdenes y',
+    'combinaciones distintas. El payload fijo de cada fase sí se tokeniza sobre',
+    'el texto exacto que el assembler produce.',
     'Todo esto es aritmética estática sobre archivos en disco: 0 tokens de inferencia.',
   ]
     .filter(Boolean)
@@ -179,8 +189,10 @@ export function toBudgetRows({ rows }) {
     'Si aplica': r.conditional,
     Instr: r.instructions,
     Skills: r.skills,
-    PISO: r.floor,
-    TECHO: r.total,
+    'Contenido fijo': r.contentFloor,
+    Framing: r.framingTokens,
+    'Payload fijo': r.payloadFloor,
+    'Techo contenido': r.total,
   }))
 }
 
@@ -284,4 +296,3 @@ export function formatHarnessAdapters({ rows, total }, floor) {
     'N tokens de adaptadores; el piso real de un Copilot es de piso+N".',
   ].join('\n')
 }
-

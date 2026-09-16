@@ -11,14 +11,72 @@ import { estimateTokens } from './token-accounting.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
-describe('assembled context equals what the budget charges', () => {
-  it('the sum of assembled parts is exactly each phase floor', () => {
-    // The cross-check that validates both instruments at once. A component
-    // measured but never assembled, or assembled but never measured, looks
-    // identical from the outside until these two numbers disagree.
+describe('assembled context equals what the budget reports', () => {
+  it('BIC-2026-001:never.1 charges the exact literal payload for every phase', () => {
+    // The source-body total is still useful attribution, but headings are part
+    // of what the harness receives. Comparing the literal string catches a
+    // component that is assembled but not billed, including wrapper prose.
     for (const [key, rel] of SDD_PHASES) {
-      const parts = assemblePhaseContext(ROOT, rel, key).parts.reduce((n, p) => n + p.tokens, 0)
-      assert.equal(parts, phaseContextCost(ROOT, rel, key).floor, `${key}: assembler and budget disagree`)
+      const assembled = assemblePhaseContext(ROOT, rel, key)
+      const budget = phaseContextCost(ROOT, rel, key)
+      const parts = assembled.parts.reduce((n, p) => n + p.tokens, 0)
+
+      assert.equal(assembled.contentTokens, parts, `${key}: source-body accounting drifted`)
+      assert.equal(assembled.payloadTokens, estimateTokens(assembled.text), `${key}: payload is not literal text`)
+      assert.equal(budget.contentFloor, parts, `${key}: content attribution drifted`)
+      assert.equal(budget.payloadFloor, assembled.payloadTokens, `${key}: literal payload is undercounted`)
+      assert.equal(budget.framingTokens, assembled.payloadTokens - parts, `${key}: framing delta drifted`)
+    }
+  })
+
+  it('BIC-2026-001:oracle detects stale accounting after extra framing is injected', () => {
+    const [key, rel] = SDD_PHASES.find(([k]) => k === 'Phase_0_Frame')
+    const assembled = assemblePhaseContext(ROOT, rel, key)
+    const reframed = `${assembled.text}\n\n===== injected-framing =====\n${'x'.repeat(128)}`
+
+    assert.notEqual(
+      estimateTokens(reframed),
+      assembled.payloadTokens,
+      'a metric that ignores newly emitted framing would silently undercount'
+    )
+  })
+
+  it('BIC-2026-001:never.2 preserves the Frame source selection and order', () => {
+    const [key, rel] = SDD_PHASES.find(([k]) => k === 'Phase_0_Frame')
+    const sources = assemblePhaseContext(ROOT, rel, key).parts.map((part) => part.source)
+
+    assert.deepEqual(sources, [
+      '.github/prompts/sdd-frame.prompt.md',
+      '.github/agents/supervisor.agent.md',
+      '.github/instructions/agent-delegation.instructions.md',
+      '.github/instructions/icm-protocol.instructions.md',
+      '.github/instructions/model-selection.instructions.md',
+      '.github/instructions/rtk.instructions.md',
+      '.github/skills/icm/SKILL.md',
+      '.github/skills/rtk/SKILL.md',
+      '.github/skills/sdd-entry/SKILL.md',
+      '.github/skills/sdd-lifecycle/SKILL.md',
+    ], 'a measurement-only change must not select, omit, or reorder Frame context')
+  })
+
+  it('BIC-2026-001:never.3 keeps every affected module byte-identical in scaffold', () => {
+    const governed = [
+      'scripts/sdd-lifecycle/sdd-phases.mjs',
+      'scripts/sdd-lifecycle/assemble-phase-context.mjs',
+      'scripts/sdd-lifecycle/context-budget.mjs',
+      'scripts/sdd-lifecycle/cache-prefix.mjs',
+      'scripts/sdd-lifecycle/stress-report.mjs',
+      'scripts/sdd-lifecycle/behavioral-probes.test.mjs',
+      'scripts/sdd-lifecycle/context-budget.test.mjs',
+      'scripts/sdd-lifecycle/cache-prefix.test.mjs',
+    ]
+
+    for (const rel of governed) {
+      assert.equal(
+        fs.readFileSync(path.join(ROOT, rel), 'utf8'),
+        fs.readFileSync(path.join(ROOT, 'scaffold', rel), 'utf8'),
+        `${rel} drifted from its scaffold mirror`
+      )
     }
   })
 
