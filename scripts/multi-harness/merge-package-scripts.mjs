@@ -30,8 +30,17 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
-/** Scripts AOI needs; anything else in its manifest is not the Owner's concern. */
-const WANTED = /^(test|aoi:|sync:)/
+/**
+ * Scripts AOI needs; anything else in its manifest is not the Owner's concern.
+ *
+ * `*:dashboard` is in here as a family, not as five entries. The dashboard is
+ * an auxiliary app the Owner may legitimately want to run, and its lifecycle
+ * scripts all share that namespace. Before this, only `test:dashboard` matched
+ * (through the `test` prefix) and so it was the ONLY one merged: a project that
+ * already had a `package.json` got `pnpm test:dashboard` and nothing to build
+ * or serve with.
+ */
+const WANTED = /^(test|aoi:|sync:|[a-z]+:dashboard$)/
 
 /**
  * Merges the scaffold's AOI scripts into an existing manifest.

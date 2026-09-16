@@ -1,11 +1,17 @@
-# AOI Agentic Operational Infrastructure Runtime
-packages:
-  - aoi_apps/*
-allowBuilds:
-  '@parcel/watcher': true
-  esbuild: true
-  vue-demi: true
-onlyBuiltDependencies:
-  - "@parcel/watcher"
-  - esbuild
-  - vue-demi
+# The repository root declares no dependencies: it is a script runner, and the
+# dashboard owns its own workspace under `aoi_apps/`. This file exists because
+# pnpm materialises one on the first `pnpm <script>` run in a directory that has
+# a `package.json` — with an `allowBuilds` prompt stub when it finds ignored
+# builds — so an explicit empty manifest is what stops the root from being
+# whatever pnpm felt like writing at the time.
+#
+# It is deliberately NOT in `DEFAULT_SYNC_PATHS` and NOT in `scaffold/`. The
+# previous root manifest declared `packages: [aoi_apps/*]` and DID ship, which
+# is how installing AOI into a real pnpm monorepo replaced that repo's workspace
+# manifest — every package in it — with AOI's.
+#
+# `pnpm-lock.yaml` beside it is the counterpart: 114 bytes, one empty importer,
+# and no dashboard tree. It is tracked for the same reason this file is — pnpm
+# writes both on its own, and pinning them is what makes the root's state a
+# decision rather than a side effect of whichever script ran last.
+packages: []

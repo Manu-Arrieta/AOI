@@ -48,9 +48,22 @@ export const DEFAULT_SYNC_PATHS = [
   // quedaría vieja y `aoi:doctor` rompería lejos de la causa — el mismo
   // accidente que ya pasó dos veces con `doctor-checks.mjs`.
   'scripts/archify-checks.mjs',
+  // El guard de naming corre en el doctor de CADA instalación, así que la
+  // copia del espejo tiene que ser verificada o root y espejo derivan sin que
+  // nada falle acá — el mismo accidente que ya pasó dos veces con
+  // `doctor-checks.mjs`, y que se paga lejos de la causa.
+  'scripts/memoir-naming-guard.mjs',
+  'scripts/memoir-naming-guard.test.mjs',
   'LICENSE',
   'package.json',
-  'pnpm-workspace.yaml',
+  // `pnpm-workspace.yaml` used to be governed here, and it must not be: the
+  // root manifest existed only to declare `packages: [aoi_apps/*]` for the
+  // dashboard, so governing it shipped it. Installing AOI into a real pnpm
+  // monorepo then replaced that repo's workspace manifest — every package in
+  // it — with AOI's, and the base project's own packages became invisible to
+  // its package manager. The dashboard now declares its own workspace under
+  // `aoi_apps/`, which is the path governed below.
+  'aoi_apps/pnpm-workspace.yaml',
   // Un formateador de editor sin config fija reescribe el repo a su gusto: el
   // 2026-09-12 eso rompió la paridad y el SRP de golpe. Si la config no viaja a
   // la instalación, el mismo accidente es posible ahí y nadie lo ve hasta que

@@ -278,10 +278,13 @@ Ask the Owner: "Would you like me to create any of these project-specific instru
 
 ### Step 17: Base-Project Map (auto-detect + Owner confirm)
 
-The base project IS the AOI install directory (`baseRoot: "."`). Detect its
-framework roots, confirm with the Owner, then write the map.
+The base project IS the workspace AOI is installed INTO (`baseRoot: "."`) — the
+project inside this workspace, never AOI itself. `aoi_apps/` is AOI's own
+auxiliary tooling and must never appear in the map's roots: proposing it would
+make the installer treat AOI's own dashboard as the downstream project.
 
-1. Run the detector:
+1. Run the detector. It only PROPOSES — it prints a shape to stdout and never
+   writes the file:
 
    ```bash
    node scripts/sandbox/detect-base-project.mjs
@@ -289,20 +292,27 @@ framework roots, confirm with the Owner, then write the map.
 
 2. PRESENT the proposed `roots` to the Owner. Ask for confirmation.
 
-3. ONLY AFTER confirmation, write `.specify/memory/base-project.json`:
+   Three EMPTY lists are a legitimate answer for a workspace whose packages the
+   detector cannot see yet. Confirm that it is right instead of assuming the
+   detector failed — and never fill a root with `aoi_apps/...` to make the map
+   look useful.
 
-   ```json
-   {
-     "$schemaVersion": 1,
-     "baseRoot": ".",
-     "detectedAt": "<ISO timestamp>",
-     "confirmedBy": "<owner>",
-     "workspaceManager": "pnpm",
-     "roots": { "frontend": [], "backend": [], "sharedLibs": [] }
-   }
+3. ONLY AFTER the Owner confirms, write the map with the Owner's name:
+
+   ```bash
+   node scripts/sandbox/write-base-project.mjs --confirmed-by "<owner>"
    ```
 
-4. Refresh the `BaseProjectMap` memoir concept:
+   Add `--dry-run` to print exactly what would be written and touch nothing.
+
+   The writer refuses an empty, `null` or `undefined` `--confirmed-by`. That is
+   the point of it existing: `confirmedBy: null` is the marker of an
+   UNCONFIRMED proposal, and a proposal persisted on disk lies about its own
+   state. We already shipped one workspace where the ICM fact, the memoir
+   concept and two consumers all resolved against a map that had only ever been
+   printed.
+
+4. Refresh the `BaseProjectMap` memoir concept — in THIS workspace's graph:
 
    ```
    icm_memoir_add_concept(memoir: "{WORKSPACE}-architecture", name: "BaseProjectMap", ...)

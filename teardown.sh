@@ -181,12 +181,34 @@ if [ -d "$PROJECT_PATH/.cursor/rules" ] && [ -z "$(ls -A "$PROJECT_PATH/.cursor/
   [ -z "$(ls -A "$PROJECT_PATH/.cursor" 2>/dev/null)" ] && rm -rf "$PROJECT_PATH/.cursor"
 fi
 
-# Legacy cleanup: older AOI installs created dashboard workspace files at repo root.
+# Legacy cleanup: older AOI installs wrote the dashboard's workspace files at the
+# repo root — a `pnpm-workspace.yaml` declaring `packages: [aoi_apps/*]`, and a
+# 321 kB `pnpm-lock.yaml` holding the dashboard's tree. The installer no longer
+# writes either, but a workspace uninstalled today can still be carrying them
+# from an install that predates the fix.
+#
+# Each file is removed only on evidence that AOI wrote it. Uninstalling used to
+# delete the base project's OWN `pnpm-workspace.yaml`, `pnpm-lock.yaml` and
+# `node_modules` on the strength of a single `grep` against `package.json` — the
+# same destruction on the way out that the installer used to cause on the way in.
 if [ -f "$PROJECT_PATH/package.json" ] && grep -q "AOI Agentic Operational Infrastructure Runtime" "$PROJECT_PATH/package.json" 2>/dev/null; then
   rm -f "$PROJECT_PATH/package.json"
   ok "Removed package.json"
-  rm -f "$PROJECT_PATH/pnpm-workspace.yaml" 2>/dev/null && ok "Removed pnpm-workspace.yaml" || true
-  rm -f "$PROJECT_PATH/pnpm-lock.yaml" 2>/dev/null && ok "Removed pnpm-lock.yaml" || true
+fi
+
+if [ -f "$PROJECT_PATH/pnpm-workspace.yaml" ] && grep -q "aoi_apps" "$PROJECT_PATH/pnpm-workspace.yaml" 2>/dev/null; then
+  rm -f "$PROJECT_PATH/pnpm-workspace.yaml"
+  ok "Removed AOI's pnpm-workspace.yaml"
+fi
+
+if [ -f "$PROJECT_PATH/pnpm-lock.yaml" ] && grep -q "aoi_apps" "$PROJECT_PATH/pnpm-lock.yaml" 2>/dev/null; then
+  rm -f "$PROJECT_PATH/pnpm-lock.yaml"
+  ok "Removed AOI's pnpm-lock.yaml"
+fi
+
+# Only when the project was left without a manifest of its own: a `node_modules`
+# next to an owner-provided `package.json` is the owner's install, not ours.
+if [ ! -f "$PROJECT_PATH/package.json" ]; then
   remove_dir "node_modules"
   remove_dir ".pnpm-store"
 fi

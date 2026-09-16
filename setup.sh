@@ -1930,18 +1930,24 @@ icm store -t "$PROJECT_NAME-context" \
 icm memoir create -n "$PROJECT_NAME-architecture" \
   -d "Architecture decisions and component relationships for $PROJECT_NAME" 2>/dev/null && ok "Memoir: $PROJECT_NAME-architecture created"
 
-icm memoir add-concept -m "$PROJECT_NAME-architecture" -n "sdd-lifecycle" \
+icm memoir add-concept -m "$PROJECT_NAME-architecture" -n "SddLifecycle" \
   -d "Spec-Driven Development lifecycle: constitution → specify → plan → tasks → implement → verify → archive" \
   -l "type:process,domain:workflow" 2>/dev/null || true
 
-icm memoir add-concept -m "$PROJECT_NAME-architecture" -n "hub-and-spoke" \
+icm memoir add-concept -m "$PROJECT_NAME-architecture" -n "HubAndSpoke" \
   -d "Supervisor orchestrates specialized agents per SDD phase" \
   -l "type:pattern,domain:orchestration" 2>/dev/null || true
 
-icm memoir link -m "$PROJECT_NAME-architecture" \
-  --from "hub-and-spoke" --to "sdd-lifecycle" -r depends_on 2>/dev/null || true
-
-ok "Memoir: architecture graph bootstrapped"
+# `-r` acepta SÓLO kebab-case: `depends_on` es rechazado con exit 2. Este paso
+# pasaba snake_case, se comía el error con `2>/dev/null || true` e igual imprimía
+# el `ok` de abajo — el grafo quedaba sin su único lazo y el instalador decía
+# haberlo construido. El `ok` ahora depende del resultado real.
+if icm memoir link -m "$PROJECT_NAME-architecture" \
+  --from "HubAndSpoke" --to "SddLifecycle" -r depends-on 2>/dev/null; then
+  ok "Memoir: architecture graph bootstrapped"
+else
+  warn "Memoir: conceptos creados, pero falló el lazo HubAndSpoke→SddLifecycle"
+fi
 
 # Fast Briefing: deterministic bootstrap
 mkdir -p "$PROJECT_PATH/.specify/memory/briefings"

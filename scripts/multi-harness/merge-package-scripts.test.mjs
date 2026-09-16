@@ -50,6 +50,29 @@ describe('las compuertas de AOI llegan, sin desplazar las del Owner', () => {
     assert.ok(added.includes('aoi:doctor'))
   })
 
+  it('trae la familia entera del dashboard, no sólo el test', () => {
+    // `test:dashboard` llegaba por el prefijo `test` y era el ÚNICO que
+    // llegaba: el proyecto recibía con qué testear el dashboard y nada con qué
+    // levantarlo ni construirlo. Medido en una instalación real, no supuesto.
+    const dash = {
+      scripts: {
+        'dev:dashboard': 'cd aoi_apps/agentic-ops-dashboard && pnpm run dev',
+        'build:dashboard': 'cd aoi_apps/agentic-ops-dashboard && pnpm run build',
+        'preview:dashboard': 'cd aoi_apps/agentic-ops-dashboard && pnpm run preview',
+        'test:dashboard': 'cd aoi_apps/agentic-ops-dashboard && pnpm run prepare && pnpm run test',
+        'prepare:dashboard': 'cd aoi_apps/agentic-ops-dashboard && pnpm run prepare',
+      },
+    }
+
+    const { manifest, added } = mergeScripts({ scripts: { dev: 'vite' } }, dash)
+
+    for (const [name, body] of Object.entries(dash.scripts)) {
+      assert.equal(manifest.scripts[name], body, `faltó ${name}`)
+    }
+    assert.equal(added.length, 5)
+    assert.equal(manifest.scripts.dev, 'vite', 'perdió un script del Owner')
+  })
+
   it('NUNCA pisa un script que el Owner ya define', () => {
     // Un `pnpm test` que deja de correr su suite es peor falla que una
     // compuerta ausente: rompe lo que ya funcionaba.

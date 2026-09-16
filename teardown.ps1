@@ -316,29 +316,44 @@ Remove-IaBaseFile -Root $ProjectPath -RelativePath ".cursorrules" -Marker "AOI"
 Remove-IaBaseFile -Root $ProjectPath -RelativePath ".clinerules" -Marker "AOI"
 Remove-IaBaseFile -Root $ProjectPath -RelativePath ".cursor\rules\aoi-rules.mdc" -Marker "AOI"
 
-# Legacy cleanup: older AOI installs created dashboard workspace files at repo root.
+# Legacy cleanup: older AOI installs wrote the dashboard's workspace files at the
+# repo root — a `pnpm-workspace.yaml` declaring `packages: [aoi_apps/*]`, and a
+# 321 kB `pnpm-lock.yaml` holding the dashboard's tree. The installer no longer
+# writes either, but a workspace uninstalled today can still be carrying them
+# from an install that predates the fix.
+#
+# Each file is removed only on evidence that AOI wrote it. Uninstalling used to
+# delete the base project's OWN `pnpm-workspace.yaml`, `pnpm-lock.yaml` and
+# `node_modules` on the strength of a single match against `package.json` — the
+# same destruction on the way out that the installer used to cause on the way in.
 $runtimePackage = Join-Path $ProjectPath "package.json"
 if (Test-Path -LiteralPath $runtimePackage -PathType Leaf) {
     $packageContent = Get-Content -LiteralPath $runtimePackage -Raw
     if ($packageContent -match "AOI Agentic Operational Infrastructure Runtime") {
         Remove-Item -LiteralPath $runtimePackage -Force
         Write-Ok "Removed package.json"
-
-        $pnpmWorkspace = Join-Path $ProjectPath "pnpm-workspace.yaml"
-        if (Test-Path -LiteralPath $pnpmWorkspace -PathType Leaf) {
-            Remove-Item -LiteralPath $pnpmWorkspace -Force
-            Write-Ok "Removed pnpm-workspace.yaml"
-        }
-
-        $pnpmLock = Join-Path $ProjectPath "pnpm-lock.yaml"
-        if (Test-Path -LiteralPath $pnpmLock -PathType Leaf) {
-            Remove-Item -LiteralPath $pnpmLock -Force
-            Write-Ok "Removed pnpm-lock.yaml"
-        }
-
-        Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath "node_modules"
-        Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".pnpm-store"
     }
+}
+
+$pnpmWorkspace = Join-Path $ProjectPath "pnpm-workspace.yaml"
+if ((Test-Path -LiteralPath $pnpmWorkspace -PathType Leaf) -and
+    ((Get-Content -LiteralPath $pnpmWorkspace -Raw) -match "aoi_apps")) {
+    Remove-Item -LiteralPath $pnpmWorkspace -Force
+    Write-Ok "Removed AOI's pnpm-workspace.yaml"
+}
+
+$pnpmLock = Join-Path $ProjectPath "pnpm-lock.yaml"
+if ((Test-Path -LiteralPath $pnpmLock -PathType Leaf) -and
+    ((Get-Content -LiteralPath $pnpmLock -Raw) -match "aoi_apps")) {
+    Remove-Item -LiteralPath $pnpmLock -Force
+    Write-Ok "Removed AOI's pnpm-lock.yaml"
+}
+
+# Only when the project was left without a manifest of its own: a `node_modules`
+# next to an owner-provided `package.json` is the owner's install, not ours.
+if (-not (Test-Path -LiteralPath $runtimePackage -PathType Leaf)) {
+    Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath "node_modules"
+    Remove-DirectoryIfPresent -Root $ProjectPath -RelativePath ".pnpm-store"
 }
 
 $settingsPath = Join-Path $ProjectPath ".vscode\settings.json"

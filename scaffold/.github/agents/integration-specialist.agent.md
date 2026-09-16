@@ -56,6 +56,15 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
      `rootKey ∈ {frontend, backend, sharedLibs}`) against
      `.specify/memory/base-project.json` by looking up `roots[{rootKey}]` to get
      the real base-project destination path.
+   - If there are `integrate` + `pending` elements and that map does not exist,
+     **FAIL** with `base-project map not confirmed — run /init Step 17`. Do not
+     skip the step and do not resolve against a guessed path: an unresolved
+     target cannot be migrated, and a plan that names no destination reads as
+     ready to migrate. `confirmedBy: null` is the same FAIL — that value marks
+     an unconfirmed proposal.
+   - A target under `aoi_apps/` is a manifest error. That directory is AOI's own
+     auxiliary tooling and is excluded from the roots by design, so no map the
+     detector produces can satisfy it.
 6. **Record** findings as feedback: `icm_feedback_record(topic: "{WORKSPACE}-{category}", prediction, correction, context)`
 7. **Store** QA report: `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", content: "**What**: Verification [PASS|FAIL] — [findings summary]\n**Why**: [Ready for archive | Needs rework]\n**Where**: [QA report, test results]\n**Learned**: [Spec drift, common errors, scaffold-mirror issues]", importance: "high", keywords: "verify,qa,TASK-YYYY-NNN")`
 8. **Health check**: `icm_memory_health()` — audit topic hygiene before closing
@@ -71,6 +80,9 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
   `disposition: integrate` elements migrate; `discard`/`visualization-only` are
   excluded; `undecided` is flagged for the Owner. Every `target` is resolved
   against `.specify/memory/base-project.json` (rootKey → base path)
+- A missing or unconfirmed base-project map is a FAIL, never a skip: with
+  `integrate` + `pending` elements it blocks the migration plan outright, at the
+  same severity as the manifest-validator gate
 - Runtime selection of real versus temporary implementations in UI or state layers is a FAIL for integration-readiness by default
 - Sandbox-only dependencies, prototype diagnostics, and temporary runtime branches are blockers until removed or explicitly approved by the Owner
 - Verification must call out cleanup required for temporary behavior before migration to the target environment

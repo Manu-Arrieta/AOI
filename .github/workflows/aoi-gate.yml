@@ -25,9 +25,14 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
+          cache-dependency-path: aoi_apps/pnpm-lock.yaml
 
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+      # The repo root declares no dependencies: it is a script runner, and the
+      # dashboard owns its own workspace under `aoi_apps/`. Installing the root
+      # would resolve nothing — the dashboard is what has to be installed, and
+      # it is the only thing with a lockfile to freeze.
+      - name: Install Dashboard Dependencies
+        run: cd aoi_apps/agentic-ops-dashboard && pnpm install --frozen-lockfile
 
       - name: Run Global Test Suite & Scaffold Parity Check
         run: pnpm test

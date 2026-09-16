@@ -1126,17 +1126,17 @@ Convert-ToUnixLineEndings -TargetDir $ProjectPath
 Convert-ToUnixLineEndings -TargetDir $targetScaffoldDir
 Write-Ok "Scaffold mirror preserved in target (scaffold/)"
 
-# Copy pnpm workspace and lock configs
-$srcPnpmWorkspace = Join-Path $ScriptDir "pnpm-workspace.yaml"
-if (Test-Path -LiteralPath $srcPnpmWorkspace -PathType Leaf) {
-    Copy-Item -LiteralPath $srcPnpmWorkspace -Destination (Join-Path $ProjectPath "pnpm-workspace.yaml") -Force -ErrorAction SilentlyContinue
-    Copy-Item -LiteralPath $srcPnpmWorkspace -Destination (Join-Path $targetScaffoldDir "pnpm-workspace.yaml") -Force -ErrorAction SilentlyContinue
-}
-$srcPnpmLock = Join-Path $ScriptDir "pnpm-lock.yaml"
-if (Test-Path -LiteralPath $srcPnpmLock -PathType Leaf) {
-    Copy-Item -LiteralPath $srcPnpmLock -Destination (Join-Path $ProjectPath "pnpm-lock.yaml") -Force -ErrorAction SilentlyContinue
-    Copy-Item -LiteralPath $srcPnpmLock -Destination (Join-Path $targetScaffoldDir "pnpm-lock.yaml") -Force -ErrorAction SilentlyContinue
-}
+# `pnpm-workspace.yaml` and `pnpm-lock.yaml` used to be copied here into the
+# project with `-Force`, unconditionally. Both already travel inside the
+# scaffold, so both already go through the policy that protects the owner — and
+# this second writer overrode whichever of the two had just decided. Adding AOI
+# to an existing pnpm monorepo therefore replaced its workspace manifest — every
+# package in it — and its lockfile, with no warning and no conflict entry.
+#
+# It is gone rather than guarded, and it is gone in BOTH installers: setup.sh had
+# already dropped the duplicate, so a `-Force` copy that only existed here had no
+# counterpart to disagree with it. The only thing that kept the two paths honest
+# was that nobody ran this one.
 
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".tasks") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".sandboxes") -Force | Out-Null
@@ -1311,10 +1311,21 @@ try {
     Write-Warn "Memoir create skipped"
 }
 
-try { & $icmPath memoir add-concept -m "$ProjectName-architecture" -n "sdd-lifecycle" -d "Spec-Driven Development lifecycle: constitution → specify → plan → tasks → implement → verify → archive" -l "type:process,domain:workflow" 2>$null } catch { }
-try { & $icmPath memoir add-concept -m "$ProjectName-architecture" -n "hub-and-spoke" -d "Supervisor orchestrates specialized agents per SDD phase" -l "type:pattern,domain:orchestration" 2>$null } catch { }
-try { & $icmPath memoir link -m "$ProjectName-architecture" --from "hub-and-spoke" --to "sdd-lifecycle" -r depends_on 2>$null } catch { }
-Write-Ok "Memoir: architecture graph bootstrapped"
+try { & $icmPath memoir add-concept -m "$ProjectName-architecture" -n "SddLifecycle" -d "Spec-Driven Development lifecycle: constitution → specify → plan → tasks → implement → verify → archive" -l "type:process,domain:workflow" 2>$null } catch { }
+try { & $icmPath memoir add-concept -m "$ProjectName-architecture" -n "HubAndSpoke" -d "Supervisor orchestrates specialized agents per SDD phase" -l "type:pattern,domain:orchestration" 2>$null } catch { }
+# `-r` acepta SÓLO kebab-case: `depends_on` es rechazado con exit 2. Este paso
+# pasaba snake_case y el `catch` vacío se comía el fallo, así que el `Write-Ok`
+# de abajo afirmaba un grafo que no existía. Ahora reporta el resultado real.
+try {
+    & $icmPath memoir link -m "$ProjectName-architecture" --from "HubAndSpoke" --to "SddLifecycle" -r depends-on 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Ok "Memoir: architecture graph bootstrapped"
+    } else {
+        Write-Warn "Memoir: conceptos creados, pero falló el lazo HubAndSpoke->SddLifecycle"
+    }
+} catch {
+    Write-Warn "Memoir: conceptos creados, pero falló el lazo HubAndSpoke->SddLifecycle"
+}
 
 # Fast Briefing: deterministic bootstrap
 $briefingsDir = Join-Path $ProjectPath ".specify\memory\briefings"

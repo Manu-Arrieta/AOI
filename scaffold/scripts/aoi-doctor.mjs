@@ -17,6 +17,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { validateScaffoldParity } from './scaffold/validate-scaffold-parity.mjs'
+import { checkMemoirNaming } from './memoir-naming-guard.mjs'
 import {
   checkArchifySkill,
   checkBinaries,
@@ -34,6 +35,7 @@ import {
 export {
   checkBinaries,
   checkIcmHealth,
+  checkMemoirNaming,
   checkMemoryGovernance,
   checkMultiHarnessRules,
   checkResourcesStructure,
@@ -77,6 +79,10 @@ export async function runAoiDoctor(options = {}) {
   const governanceCheck = checkMemoryGovernance(repoRoot)
   const resourcesCheck = checkResourcesStructure(repoRoot)
   const harnessCheck = checkMultiHarnessRules(repoRoot)
+  // Lee la base compartida de ICM, así que necesita el mismo `execFn` que se
+  // inyecta en los tests — sin él la compuerta quedaría fuera de todo test y
+  // volvería a hablarle a la base real durante la suite.
+  const memoirNamingCheck = await checkMemoirNaming(repoRoot, execFn)
 
   let parityCheck
   try {
@@ -134,6 +140,17 @@ export async function runAoiDoctor(options = {}) {
       status: governanceCheck.status,
       details: governanceCheck.details,
       mandatory: true,
+    },
+    {
+      category: 'Governance',
+      name: 'Memoir Concept Naming',
+      status: memoirNamingCheck.status,
+      details: memoirNamingCheck.details,
+      // Nunca obligatorio, y el guard tampoco devuelve FAILED. Los workspaces
+      // anteriores al fix arrastran conceptos en kebab que puso AOI mismo, así
+      // que bloquear por ellos sería repetir el error del instalador que
+      // reemplazaba el `pnpm-workspace.yaml` del Owner. Reporta; no tranca.
+      mandatory: false,
     },
     {
       category: 'Multi-Harness',

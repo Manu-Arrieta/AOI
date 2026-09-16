@@ -1,0 +1,35 @@
+# AOI's auxiliary dashboard workspace.
+#
+# The dashboard is an AUXILIARY application. It has nothing to do with the
+# projects inside the AOI workspace, and nothing to do with the project AOI is
+# installed into. It gets its own workspace so that both statements are true by
+# construction rather than by convention:
+#
+#   - its install can never write the base project's `pnpm-lock.yaml`, because
+#     pnpm resolves THIS manifest as the workspace root from anywhere under
+#     `aoi_apps/`;
+#   - `pnpm --filter <anything>` in the base project cannot see it, because the
+#     base project's own workspace never lists it.
+#
+# This used to live in the root `pnpm-workspace.yaml`, as `packages: [aoi_apps/*]`.
+# That manifest travels inside the scaffold, so installing AOI into a real pnpm
+# monorepo replaced the repo's workspace manifest — every package in it — with
+# AOI's. The root manifest has been removed for the same reason.
+#
+# The root `package.json` reaches the dashboard with `cd <dir> && pnpm run <x>`,
+# NOT with `pnpm -C <dir> run <x>`. `-C` only redirects the command the script
+# runs; pnpm still performs its implicit `verify-deps-before-run` check against
+# the project in the CURRENT directory, so running it from a workspace root that
+# has no manifest writes a 114-byte `pnpm-lock.yaml` stub and an empty
+# `node_modules/` into that root — the base project. Measured both ways.
+packages:
+  - agentic-ops-dashboard
+
+# Dependencies whose postinstall must run. `allowBuilds` is the spelling pnpm
+# 11.3.0 honours; `onlyBuiltDependencies` is ignored and leaves the build
+# blocked with ERR_PNPM_IGNORED_BUILDS. Verified both ways against pnpm 11.3.0
+# with `node_modules` removed between runs.
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  vue-demi: true

@@ -139,9 +139,22 @@ node scripts/sandbox/validate-manifest.mjs .sandboxes/{name}/integration-manifes
   written as `{rootKey}:{relative-path}` where `rootKey ∈ {frontend, backend,
 sharedLibs}` — against `.specify/memory/base-project.json` by looking up
   `roots[{rootKey}]` to produce the real base-project path (FR-10).
-  Example: `auth-form` with `target: "frontend:aoi_apps/agentic-ops-dashboard/app/components/AuthForm.vue"`
-  resolves `frontend` via `base-project.json.roots.frontend` → the concrete
-  destination path under the base project.
+  Example: with `roots.frontend: ["apps/web"]`, an `auth-form` element whose
+  `target` is `"frontend:app/components/AuthForm.vue"` resolves to
+  `apps/web/app/components/AuthForm.vue` under the base project.
+- **A missing map is a FAIL, not a silent skip.** If there are `integrate` +
+  `pending` elements and `.specify/memory/base-project.json` does not exist,
+  stop and FAIL with `base-project map not confirmed — run /init Step 17`.
+  There is no destination to resolve against, and a migration plan that names no
+  destination is worse than none: it reads as ready to migrate. Same severity as
+  the manifest-validator gate above.
+- **`confirmedBy: null` is also a FAIL.** That value is the marker of an
+  unconfirmed proposal, and a proposal on disk resolves nothing because nobody
+  agreed to it. Re-confirm through `/init` Step 17 before planning a migration.
+- Never resolve a target to a path under `aoi_apps/`. That directory is AOI's own
+  auxiliary tooling and the detector excludes it from the roots by design, so a
+  `frontend:aoi_apps/...` target cannot be satisfied by any map the detector can
+  produce. Treat it as a manifest error, not as a path to guess at.
 - Elements with any other `disposition` (`discard`, `visualization-only`,
   `undecided`) or any other `status` are **excluded** from the migration plan.
 
