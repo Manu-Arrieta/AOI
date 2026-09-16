@@ -11,19 +11,8 @@ Engage with the Outcome & Invariant Architect (human) as an **Architectural Spar
 
 > **Model**: `Deepseek v4 flash - Provider - Deepseek` · **Fallback**: `deepseek-ai/deepseek-v4-pro`
 
-**Excepción consciente a la categoría, y se declara como tal.** `model-selection.instructions.md`
-mapea razonamiento y arquitectura a `DeepSeek V4 Pro`, y esta es la fase MÁS de razonamiento del
-ciclo. El Owner la fijó en Flash el 2026-09-14 por velocidad y costo en un diálogo de varias
-rondas. **No se verificó que Flash sea más capaz razonando**: la documentación oficial de DeepSeek
-no publica benchmark de razonamiento que lo sostenga, y posiciona a Flash como el modelo barato y
-de mayor concurrencia (3-4× más barato, 5× el límite de concurrencia de Pro). Lo que sí es cierto
-es que Flash es generación más nueva (`V4.1-Flash` vs `V4-Pro-0813`) y que soporta visión, cosa
-que Pro no. Si la calidad del sparring cae en la práctica, el default vuelve a Pro sin tocar nada
-más.
-
-**El picker es una cosa y la API es otra.** Para delegar a un subagente, el identificador lleva el
-sufijo del transporte: `Deepseek v4 flash - Provider - Deepseek (customendpoint)`. Pasarlo sin
-ese sufijo devuelve *"Requested model not found"* — está medido y documentado en el Agent Registry.
+**Excepción del Owner (2026-09-14):** Flash prioriza costo y latencia para este diálogo de varias
+rondas; no se afirma que razone mejor. Si la calidad observada no alcanza, usar el fallback Pro.
 
 ## Scope — What This Phase IS and IS NOT
 

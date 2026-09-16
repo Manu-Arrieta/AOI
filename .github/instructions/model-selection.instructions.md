@@ -31,6 +31,5 @@ sin fila explícita en el registro, así que un default nunca llega a aplicarse.
 
 ## 4. Multi-Provider & Tooling Context
 
-* Configuration template lives at `scaffold/.vscode/ChatLanguageModel.example.json`.
-* Automated setup via `scripts/nvidia-vscode-setup.{sh,ps1}` (Phase 1.5).
-* Compression via Headroom (Phase 1.6) and RTK for terminal command filtering (60–90% token reduction).
+Provider configuration lives at `scaffold/.vscode/ChatLanguageModel.example.json`; automated setup is
+`scripts/nvidia-vscode-setup.{sh,ps1}`. Terminal command filtering is governed by `rtk.instructions.md`.

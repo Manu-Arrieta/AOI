@@ -18,6 +18,15 @@ import { describe, it } from 'node:test'
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8')
 
+function auditSelectionProtocol(text) {
+  const failures = []
+  for (const needle of ['## Model Requirement', 'Primary', 'Fallback', 'agent-delegation.instructions.md', 'ChatLanguageModel.example.json', 'nvidia-vscode-setup.{sh,ps1}', 'rtk.instructions.md']) {
+    if (!text.includes(needle)) failures.push(`missing ${needle}`)
+  }
+  if (/\b60[–-]90% token reduction\b/.test(text)) failures.push('stale token-reduction percentage')
+  return failures
+}
+
 describe('per-agent model blocks stay compressed', () => {
   const agents = fs
     .readdirSync(path.join(ROOT, '.github/agents'))
@@ -59,5 +68,24 @@ describe('per-agent model blocks stay compressed', () => {
       const tokens = Math.round(block[0].length / 4)
       assert.ok(tokens <= 110, `${f} model block grew to ${tokens} tokens`)
     }
+  })
+})
+
+describe('model-selection instruction stays operationally focused', () => {
+  const protocol = read('.github/instructions/model-selection.instructions.md')
+
+  it('keeps selection, fallback, registry, setup, and RTK references', () => {
+    assert.deepEqual(auditSelectionProtocol(protocol), [])
+  })
+
+  it('detects a removed fallback rule', () => {
+    assert.deepEqual(auditSelectionProtocol(protocol.replaceAll('Fallback', 'removed')), ['missing Fallback'])
+  })
+
+  it('detects the retired universal token percentage', () => {
+    assert.deepEqual(
+      auditSelectionProtocol(`${protocol}\nRTK saves 60–90% token reduction.`),
+      ['stale token-reduction percentage']
+    )
   })
 })

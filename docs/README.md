@@ -37,6 +37,9 @@ Bienvenido al repositorio de documentación arquitectónica, metodológica y ope
 ### 🔍 [Auditoría de simplificación — Tareas 1 a 7](internal/audits/AOI_SIMPLIFICATION_TASKS_1_7_AUDIT_2026-09-16.md)
 * **Resumen:** Revisión de contratos, dependencias y límites deterministas/no deterministas antes de la reducción aislada de prompts y contexto.
 
+### 📉 [Tarea 8 — Reducción medida de prompts y contexto](internal/audits/AOI_TASK_8_PROMPT_CONTEXT_REDUCTION_2026-09-16.md)
+* **Resumen:** Baseline literal de siete fases, tres recortes seguros con controles negativos y el límite explícito entre compresión textual y rediseño de inyección del harness.
+
 ### 📋 [Ledger de Evidencia de Claims](internal/verification/AOI_CLAIMS_EVIDENCE_LEDGER_2026-09-16.md)
 * **Resumen:** Clasifica las promesas públicas actuales como verificadas, condicionadas o históricas, y enlaza cada una con su prueba ejecutable o corpus fechado.
 
