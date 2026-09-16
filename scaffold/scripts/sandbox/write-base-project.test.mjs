@@ -20,9 +20,12 @@ import test from "node:test";
 
 import {
   BASE_PROJECT_RELATIVE_PATH,
+  allRootsEmpty,
   buildConfirmedMap,
+  formatReport,
   normalizeOwner,
   parseArgs,
+  shouldPrintUsage,
   writeBaseProject,
 } from "./write-base-project.mjs";
 
@@ -159,4 +162,85 @@ test("el CLI reconoce lo que sí usa", () => {
     json: true,
     help: false,
   });
+});
+
+test("sin argumentos, los tres defaults son false", () => {
+  // Los tres campos son decisiones distintas, no relleno: `dryRun` y `json`
+  // cambian qué hace una corrida. Ningún test llamaba a parseArgs sin flags,
+  // así que dos de los tres `false` sobrevivían a la mutación.
+  assert.deepEqual(parseArgs([]), { dryRun: false, json: false, help: false });
+
+  // Y se afirman uno por uno: es lo que ata el nombre al valor.
+  assert.equal(parseArgs([]).dryRun, false);
+  assert.equal(parseArgs([]).json, false);
+  assert.equal(parseArgs([]).help, false);
+});
+
+test("-h es lo mismo que --help", () => {
+  // Con `||` mutado a `&&`, `-h` dejaría de activar la ayuda y el CLI
+  // intentaría escribir sin Owner.
+  assert.equal(parseArgs(["-h"]).help, true);
+  assert.equal(parseArgs(["--help"]).help, true);
+  assert.equal(parseArgs(["--confirmed-by", "Ana"]).help, false);
+});
+
+test("una invocación pelada es una pregunta, no una escritura", () => {
+  // El caso que motivó separarlo: sin argumentos no hay `--confirmed-by`
+  // tampoco, así que sin esta rama la respuesta a "¿cómo se usa?" sería un
+  // error diciendo que falta el Owner.
+  assert.equal(shouldPrintUsage({ help: false, argCount: 0 }), true);
+  assert.equal(shouldPrintUsage({ help: true, argCount: 0 }), true);
+  assert.equal(shouldPrintUsage({ help: true, argCount: 3 }), true);
+  assert.equal(shouldPrintUsage({ help: false, argCount: 1 }), false);
+
+  // Sin `help` explícito: es el único caso donde el default se puede observar.
+  // Con `argCount: 0` la respuesta es `true` pase lo que pase, así que el
+  // default de `help` sobrevive a cualquier aserción sobre ese caso.
+  assert.equal(shouldPrintUsage({ argCount: 1 }), false);
+  assert.equal(shouldPrintUsage(), true);
+});
+
+test("allRootsEmpty distingue vacío de parcialmente poblado", () => {
+  assert.equal(allRootsEmpty({ frontend: [], backend: [], sharedLibs: [] }), true);
+  assert.equal(allRootsEmpty({ frontend: [], backend: ["apps/api"], sharedLibs: [] }), false);
+  assert.equal(allRootsEmpty({ frontend: ["apps/web"], backend: ["apps/api"], sharedLibs: ["packages/ui"] }), false);
+  // Un mapa sin claves también resuelve nada.
+  assert.equal(allRootsEmpty({}), true);
+});
+
+test("el reporte avisa cuando los tres roots están vacíos, y sólo entonces", () => {
+  const base = {
+    written: true,
+    existed: false,
+    filePath: "/tmp/x/.specify/memory/base-project.json",
+    map: { confirmedBy: "Ana", baseRoot: ".", workspaceManager: "pnpm", roots: {} },
+  };
+
+  const vacio = formatReport({ ...base, map: { ...base.map, roots: { frontend: [], backend: [], sharedLibs: [] } } });
+  const poblado = formatReport({
+    ...base,
+    map: { ...base.map, roots: { frontend: ["apps/web"], backend: [], sharedLibs: [] } },
+  });
+
+  assert.match(vacio, /all three roots are empty/)
+  assert.doesNotMatch(poblado, /all three roots are empty/)
+  assert.match(poblado, /frontend: apps\/web/)
+  assert.match(poblado, /backend: \(none\)/)
+});
+
+test("el reporte distingue escribir de actualizar y de dry-run", () => {
+  const base = {
+    filePath: "/tmp/x/base-project.json",
+    map: { confirmedBy: "Ana", baseRoot: ".", workspaceManager: "pnpm", roots: { frontend: ["apps/web"], backend: [], sharedLibs: [] } },
+  };
+
+  assert.match(formatReport({ ...base, written: true }), /map written/)
+  assert.match(formatReport({ ...base, written: true, existed: true }), /map updated/)
+  assert.match(formatReport({ ...base, written: false }), /dry run — nothing written/)
+
+  // `existed` omitido, no en `false`: con el valor explícito el default es
+  // inobservable y un `false→true` sobrevive reportando "updated" en la
+  // primera escritura, que es justo lo que el mensaje tiene que distinguir.
+  assert.match(formatReport({ written: true, ...base }), /map written/)
+  assert.doesNotMatch(formatReport({ written: true, ...base }), /updated/)
 });

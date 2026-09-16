@@ -184,18 +184,83 @@ export function parseArgs(argv = []) {
   return options;
 }
 
+/**
+ * Whether an invocation is a QUESTION rather than a write.
+ *
+ * `--help` and a bare `node write-base-project.mjs` both mean "tell me how to
+ * use this". Checked before anything else, because a bare invocation also has
+ * no `--confirmed-by` — treating it as a write attempt would answer a question
+ * with an error about the Owner being missing.
+ *
+ * Exported because it is a decision, and a decision inside `main()` cannot be
+ * fixed by inputs. The mutation ratchet measured exactly that: the three
+ * operators in this one line survived every test, because no test could reach
+ * it.
+ *
+ * @param {{ help?: boolean, argCount?: number }} input
+ * @returns {boolean}
+ */
+export function shouldPrintUsage({ help = false, argCount = 0 } = {}) {
+  return Boolean(help) || argCount === 0;
+}
+
+/**
+ * True when the map resolves nothing.
+ *
+ * An all-empty map is a legitimate outcome — a project with no packages yet —
+ * so this drives a WARNING, never a refusal.
+ *
+ * @param {Record<string, unknown[]>} roots
+ * @returns {boolean}
+ */
+export function allRootsEmpty(roots = {}) {
+  return Object.values(roots).every((list) => list.length === 0);
+}
+
+/**
+ * The report the CLI prints for a run. Pure: printing is not the decision.
+ *
+ * @param {{ written: boolean, existed?: boolean, filePath: string, map: object }} result
+ * @returns {string}
+ */
+export function formatReport({ written, existed = false, filePath, map }) {
+  const rootSummary = Object.entries(map.roots)
+    .map(([key, list]) => `${key}: ${list.length === 0 ? "(none)" : list.join(", ")}`)
+    .join(" · ");
+
+  const lines = [
+    written
+      ? `✅ base-project map ${existed ? "updated" : "written"}: ${filePath}`
+      : `▸ dry run — nothing written. Target: ${filePath}`,
+    `   confirmedBy: ${map.confirmedBy}`,
+    `   baseRoot:    ${map.baseRoot}  (${map.workspaceManager})`,
+    `   roots:       ${rootSummary}`,
+  ];
+
+  // Saying this at write time is the only chance to catch "the detector saw
+  // nothing" being mistaken for "the project has nothing".
+  if (allRootsEmpty(map.roots)) {
+    lines.push(
+      "   ⚠ all three roots are empty — confirm this is right. An empty map " +
+        "still resolves nothing; targets will need `baseRoot`-relative paths.",
+    );
+  }
+
+  return `${lines.join("\n")}\n`;
+}
+
 function main() {
+  const argv = process.argv.slice(2);
   let options;
   try {
-    options = parseArgs(process.argv.slice(2));
+    options = parseArgs(argv);
   } catch (error) {
     process.stderr.write(`${error.message}\n\n${USAGE}`);
     process.exitCode = 2;
     return;
   }
 
-  // Checked BEFORE anything else: a bare invocation is a question, not a write.
-  if (options.help || process.argv.length <= 2) {
+  if (shouldPrintUsage({ help: options.help, argCount: argv.length })) {
     process.stdout.write(USAGE);
     return;
   }
@@ -214,30 +279,7 @@ function main() {
     return;
   }
 
-  const rootSummary = Object.entries(result.map.roots)
-    .map(([key, list]) => `${key}: ${list.length === 0 ? "(none)" : list.join(", ")}`)
-    .join(" · ");
-
-  const lines = [
-    result.written
-      ? `✅ base-project map ${result.existed ? "updated" : "written"}: ${result.filePath}`
-      : `▸ dry run — nothing written. Target: ${result.filePath}`,
-    `   confirmedBy: ${result.map.confirmedBy}`,
-    `   baseRoot:    ${result.map.baseRoot}  (${result.map.workspaceManager})`,
-    `   roots:       ${rootSummary}`,
-  ];
-
-  // An empty map is a legitimate outcome (a project with no packages yet), and
-  // saying so at write time is the only chance to catch "the detector saw
-  // nothing" being mistaken for "the project has nothing".
-  if (Object.values(result.map.roots).every((list) => list.length === 0)) {
-    lines.push(
-      "   ⚠ all three roots are empty — confirm this is right. An empty map " +
-        "still resolves nothing; targets will need `baseRoot`-relative paths.",
-    );
-  }
-
-  process.stdout.write(`${lines.join("\n")}\n`);
+  process.stdout.write(formatReport(result));
 }
 
 const invokedDirectly =
