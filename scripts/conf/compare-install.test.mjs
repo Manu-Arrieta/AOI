@@ -15,7 +15,7 @@ const sha256 = (text) => `sha256:${crypto.createHash('sha256').update(text).dige
  * Builds a scaffold + installed-project pair covering all four classifications,
  * then runs compare-install.sh against it with the SYSTEM bash.
  */
-function runComparison() {
+function runComparison(profile = 'dashboard') {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-compare-'))
   const scaffold = path.join(root, 'scaffold')
   const project = path.join(root, 'project')
@@ -70,7 +70,7 @@ function runComparison() {
   const checksumsPath = path.join(root, 'checksums.json')
   fs.writeFileSync(checksumsPath, JSON.stringify(checksums, null, 2))
 
-  const stdout = execFileSync('bash', [SCRIPT, scaffold, checksumsPath, project], {
+  const stdout = execFileSync('bash', [SCRIPT, scaffold, checksumsPath, project, profile], {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   })
@@ -123,6 +123,19 @@ describe('compare-install.sh', () => {
       !everything.some((f) => f.endsWith('user-feature.ts')),
       'a project-only file leaked into a bucket and could be overwritten'
     )
+  })
+
+  it('Core preserves an existing dashboard by excluding it from every merge decision', () => {
+    const parsed = JSON.parse(runComparison('core'))
+    const decisions = [
+      ...parsed.skip, ...parsed.auto_update, ...parsed.conflict,
+      ...parsed.new, ...parsed.orphan, ...parsed.orphan_modified,
+    ]
+    assert.ok(
+      !decisions.some((file) => file.startsWith('aoi_apps/')),
+      `Core intentó gobernar una app auxiliar existente: ${decisions.join(', ')}`
+    )
+    assert.ok(parsed.auto_update.includes('upgraded.md'), 'el filtro de perfil ocultó archivos Core no relacionados')
   })
 
   it('marks a file AOI no longer ships as an orphan when the owner never touched it', () => {
@@ -181,7 +194,30 @@ describe('compare-install.sh', () => {
     }, `manifest.json is not valid JSON:\n${raw}`)
     assert.equal(typeof manifest.tools, 'object')
     assert.match(String(manifest.tools.specify), /9\.9\.9/)
+    assert.equal(manifest.installation_profile, 'dashboard', 'el default preserva instalaciones históricas')
 
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+
+  it('snapshot Core never records dashboard files it did not materialise', () => {
+    const snapshot = path.join(path.dirname(SCRIPT), 'snapshot-conf.sh')
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-snapshot-core-'))
+    const scaffold = path.join(root, 'scaffold')
+    const project = path.join(root, 'project')
+    fs.mkdirSync(path.join(scaffold, 'aoi_apps', 'agentic-ops-dashboard'), { recursive: true })
+    fs.mkdirSync(project, { recursive: true })
+    fs.writeFileSync(path.join(scaffold, 'core.md'), 'core\n')
+    fs.writeFileSync(path.join(scaffold, 'aoi_apps', 'agentic-ops-dashboard', 'package.json'), '{}\n')
+
+    execFileSync('bash', [snapshot, scaffold, project, 'install', '9.9.9', 'core'], {
+      encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+    })
+
+    const manifest = JSON.parse(fs.readFileSync(path.join(project, '.conf', 'manifest.json'), 'utf8'))
+    const checksums = JSON.parse(fs.readFileSync(path.join(project, '.conf', 'checksums.json'), 'utf8'))
+    assert.equal(manifest.installation_profile, 'core')
+    assert.deepEqual(Object.keys(checksums.files), ['core.md'])
+    assert.equal(fs.existsSync(path.join(project, '.conf', 'snapshots', 'aoi_apps', 'agentic-ops-dashboard', 'package.json')), false)
     fs.rmSync(root, { recursive: true, force: true })
   })
 

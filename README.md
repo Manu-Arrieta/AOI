@@ -57,12 +57,28 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\AOI\setup.ps1" "
 bash "/c/path/to/AOI/setup.sh" "/c/ruta/a/mi-proyecto"
 ```
 
+#### Perfiles de instalación
+
+`core` es el perfil predeterminado: instala el runtime SDD esencial sin
+materializar el dashboard ni sus dependencias. Elegí `advanced` para sumar las
+integraciones de Headroom y Codebase Memory MCP, o `dashboard` para sumar
+además la aplicación operativa y sus dependencias.
+
+| Perfil | Incluye | Ejemplo macOS / Linux | Ejemplo PowerShell |
+| :-- | :-- | :-- | :-- |
+| `core` (predeterminado) | Runtime SDD esencial | `bash ./setup.sh --profile core /ruta/a/mi-proyecto` | `./setup.ps1 -Profile core "C:\ruta\a\mi-proyecto"` |
+| `advanced` | Core + Headroom + Codebase Memory MCP | `bash ./setup.sh --profile advanced /ruta/a/mi-proyecto` | `./setup.ps1 -Profile advanced "C:\ruta\a\mi-proyecto"` |
+| `dashboard` | Advanced + dashboard y sus dependencias | `bash ./setup.sh --profile dashboard /ruta/a/mi-proyecto` | `./setup.ps1 -Profile dashboard "C:\ruta\a\mi-proyecto"` |
+
+Seleccionar `core` o `advanced` nunca elimina un dashboard que ya exista en el
+proyecto destino; simplemente evita materializar uno nuevo.
+
 > [!TIP]
 > **Modo no interactivo y selección de asistentes:**  
 > Podés pasar banderas adicionales al instalador:
 >
 > ```bash
-> ./setup.sh --non-interactive --harness all /ruta/a/mi-proyecto
+> ./setup.sh --non-interactive --harness all --profile advanced /ruta/a/mi-proyecto
 > ```
 >
 > Opciones válidas para `--harness`: `copilot`, `claude`, `cursor`, `antigravity`, `cline` o `all`.
@@ -91,7 +107,7 @@ AOI combate el desperdicio de tokens en múltiples niveles:
 - **RTK (Rust ToolKit)**: Filtra y comprime la salida de comandos de terminal, tests y builds antes de que lleguen al modelo.
 - **Serialización TOON**: Los subagentes reciben contratos y tareas en una notación tabular ultracompacta (`scripts/subagent-context/`), evitando enviar especificaciones gigantes.
 - **MCP Gateway Proxy**: Comprime los esquemas de herramientas y aplica _Progressive Disclosure_, reduciendo hasta un 85% la sobrecarga en cada turno.
-- **Codebase Memory MCP**: Grafo estructural de código en SQLite que reemplaza búsquedas amplias tipo `grep` por consultas semánticas y caminos de llamada exactos.
+- **Codebase Memory MCP**: Grafo estructural de código en SQLite que reemplaza búsquedas amplias tipo `grep` por consultas semánticas y caminos de llamada exactos. Está incluido en los perfiles `advanced` y `dashboard`.
 
 ### 2. Memoria Persistente que Nunca Olvida (ICM)
 
@@ -260,7 +276,7 @@ AOI Doctor verifica de forma determinista:
 │   └── memory/versions/      # Version store gobernado de memoria activa
 ├── .tasks/                   # Tareas gobernadas del ciclo de vida SDD
 │   └── registry.md           # Registro autoritativo de estados
-├── aoi_apps/
+├── aoi_apps/                 # Sólo el perfil dashboard
 │   └── agentic-ops-dashboard # Dashboard operativo Nuxt 4 / NuxtUI
 ├── scripts/                  # Runtimes y utilidades deterministas
 │   ├── aoi-doctor.mjs        # Motor de diagnóstico 360°

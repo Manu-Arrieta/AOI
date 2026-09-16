@@ -4,6 +4,9 @@ param(
     [Parameter()]
     [string]$Harness = "all",
     [Parameter()]
+    [ValidateSet("core", "advanced", "dashboard")]
+    [string]$Profile = "core",
+    [Parameter()]
     [switch]$Yes = $false,
     [Parameter()]
     [switch]$NonInteractive = $false,
@@ -29,6 +32,9 @@ $ScaffoldDir = Join-Path $ScriptDir "scaffold"
 $RtkInstallDir = Join-Path $env:LOCALAPPDATA "rtk\bin"
 $IcmInstallDir = Join-Path $env:LOCALAPPDATA "icm\bin"
 $LocalBinDir = Join-Path $env:USERPROFILE ".local\bin"
+$ProfileIncludesAdvanced = $Profile -in @("advanced", "dashboard")
+$ProfileIncludesDashboard = $Profile -eq "dashboard"
+$ProfileExcludedRelativePrefixes = if ($ProfileIncludesDashboard) { @() } else { @("aoi_apps") }
 
 function Write-ConsoleLine {
     param(
@@ -644,15 +650,35 @@ function Install-Specify {
     }
 }
 
+function Test-InstallationProfileExcludedPath {
+    param(
+        [string]$RelativePath,
+        [string[]]$ExcludedRelativePrefixes = @()
+    )
+
+    $normalized = $RelativePath.Replace('\', '/').TrimStart('/')
+    foreach ($prefix in $ExcludedRelativePrefixes) {
+        $normalizedPrefix = $prefix.Replace('\', '/').Trim('/').Trim()
+        if ($normalized -eq $normalizedPrefix -or $normalized.StartsWith("$normalizedPrefix/")) {
+            return $true
+        }
+    }
+    return $false
+}
+
 function Copy-ScaffoldMissing {
     param(
         [string]$From,
-        [string]$To
+        [string]$To,
+        [string[]]$ExcludedRelativePrefixes = @()
     )
 
     Get-ChildItem -LiteralPath $From -Force -Recurse | ForEach-Object {
         $relativePath = $_.FullName.Substring($From.Length).TrimStart('\', '/')
         if (-not $relativePath) {
+            return
+        }
+        if (Test-InstallationProfileExcludedPath -RelativePath $relativePath -ExcludedRelativePrefixes $ExcludedRelativePrefixes) {
             return
         }
 
@@ -1028,6 +1054,7 @@ if (Test-Path $nvidiaScript) {
     Write-Warn "scripts/nvidia-vscode-setup.ps1 no encontrado junto a setup.ps1 — saltando Phase 1.5"
 }
 
+if ($ProfileIncludesAdvanced) {
 Write-Header "Phase 1.6: Headroom compression layer (opcional)"
 $headroomInstall = Join-Path $PSScriptRoot "scripts/install-headroom.ps1"
 $headroomPreview = Join-Path $PSScriptRoot "scripts/headroom-vscode-setup.ps1"
@@ -1141,17 +1168,16 @@ if (Test-Path -LiteralPath $projectGitDir -PathType Container) {
 
 Write-Ok "Phase 1.7 complete"
 
-Write-Header "Phase 1.8: Codebase Memory MCP (opcional)"
+Write-Header "Phase 1.8: Codebase Memory MCP (Advanced)"
 $codebaseMemoryInstall = Join-Path $PSScriptRoot "scripts/install-codebase-memory.ps1"
 if (Test-Path $codebaseMemoryInstall) {
     Write-Info "codebase-memory-mcp indexa el repo en un knowledge graph local para reducir exploración file-by-file."
     Write-Info "AOI lo instala en modo binario-only (--skip-config) y registra el MCP solo en el workspace actual."
-    $cbmChoice = "n"
-    if (-not ($Yes.IsPresent -or $NonInteractive.IsPresent)) {
-        $cbmChoice = Read-Prompt -Prompt "▸ Instalar codebase-memory-mcp? [Y/n]" -Default "Y"
-    }
+    # An explicit Advanced selection is a contract, not an aspirational prompt:
+    # unlike optional Headroom, it cannot quietly fall back to ICM-only.
+    $cbmChoice = "y"
     if ($cbmChoice -match '^[nN]([oO])?$') {
-        Write-Warn "codebase-memory-mcp omitido. AOI continúa con ICM/Headroom/RTK normales."
+        throw "Codebase Memory no puede omitirse en el perfil $Profile. Selecciona -Profile core para no instalarlo."
     } else {
         Write-Info "Variante UI incluye grafo 3D interactivo en http://localhost:9749"
         $cbmUiChoice = "n"
@@ -1163,32 +1189,37 @@ if (Test-Path $codebaseMemoryInstall) {
         try {
             $cbmExitCode = Invoke-WindowsPowerShellFile -ScriptPath $codebaseMemoryInstall -Arguments $cbmVariantArgs
             if ($cbmExitCode -ne 0) {
-                Write-Warn "install-codebase-memory.ps1 salió con código $cbmExitCode — el setup continúa."
-                Write-Warn "El operador puede reintentar luego; el MCP workspace-local quedará en ICM only."
+                throw "install-codebase-memory.ps1 salió con código $cbmExitCode. El perfil $Profile requiere Codebase Memory."
             } else {
                 # Post-install config: enable auto_index (native git watcher) and UI
                 $cbmBinInit = Get-CodebaseMemoryPath
-                if ($cbmBinInit) {
-                    try { & $cbmBinInit config set auto_index true 2>$null; Write-Ok "codebase-memory-mcp: auto_index activado (watcher nativo de git)" } catch {}
-                    if ($cbmWithUi) {
-                        try { & $cbmBinInit config set ui true 2>$null; Write-Ok "codebase-memory-mcp: UI activada en http://localhost:9749" } catch {}
-                        try { & $cbmBinInit config set port 9749 2>$null } catch {}
-                    }
-                    # Initial index — Start-Job so it's non-blocking. auto_index handles subsequent changes.
-                    Write-Info "Indexando el repo por primera vez en background (codebase-memory-mcp)..."
-                    Start-Job -ScriptBlock {
-                        param($bin, $repoPath, $log)
-                        & $bin cli index_repository "{`"repo_path`": `"$repoPath`"}" >> $log 2>&1
-                    } -ArgumentList $cbmBinInit, $ProjectPath, "$env:TEMP\codebase-memory-mcp-index.log" | Out-Null
-                    Write-Ok "Index inicial lanzado en background → $env:TEMP\codebase-memory-mcp-index.log"
+                if (-not $cbmBinInit) {
+                    throw "Codebase Memory informó éxito pero el binario no quedó disponible para el perfil $Profile."
                 }
+                try { & $cbmBinInit config set auto_index true 2>$null; Write-Ok "codebase-memory-mcp: auto_index activado (watcher nativo de git)" } catch {}
+                if ($cbmWithUi) {
+                    try { & $cbmBinInit config set ui true 2>$null; Write-Ok "codebase-memory-mcp: UI activada en http://localhost:9749" } catch {}
+                    try { & $cbmBinInit config set port 9749 2>$null } catch {}
+                }
+                # Initial index — Start-Job so it's non-blocking. auto_index handles subsequent changes.
+                Write-Info "Indexando el repo por primera vez en background (codebase-memory-mcp)..."
+                Start-Job -ScriptBlock {
+                    param($bin, $repoPath, $log)
+                    & $bin cli index_repository "{`"repo_path`": `"$repoPath`"}" >> $log 2>&1
+                } -ArgumentList $cbmBinInit, $ProjectPath, "$env:TEMP\codebase-memory-mcp-index.log" | Out-Null
+                Write-Ok "Index inicial lanzado en background → $env:TEMP\codebase-memory-mcp-index.log"
             }
         } catch {
-            Write-Warn "No se pudo invocar install-codebase-memory.ps1: $($_.Exception.Message) — el setup continúa."
+            Write-Err "No se pudo completar Codebase Memory para el perfil $Profile: $($_.Exception.Message)"
+            exit 1
         }
     }
 } else {
-    Write-Warn "scripts/install-codebase-memory.ps1 no encontrado junto a setup.ps1 — saltando Phase 1.8"
+    Write-Err "scripts/install-codebase-memory.ps1 no encontrado: el perfil $Profile no se puede completar."
+    exit 1
+}
+} else {
+    Write-Info "Core profile: advanced Headroom integration and Codebase Memory MCP are not installed."
 }
 
 Write-Header "Phase 2: Spec-Kit"
@@ -1213,7 +1244,7 @@ try {
 }
 
 Write-Header "Phase 3: Agentic Infrastructure"
-Copy-ScaffoldMissing -From $ScaffoldDir -To $ProjectPath
+Copy-ScaffoldMissing -From $ScaffoldDir -To $ProjectPath -ExcludedRelativePrefixes $ProfileExcludedRelativePrefixes
 Prune-UnselectedHarnessFiles -TargetDir $ProjectPath -SelectedHarness $Harness
 Write-Ok "Scaffold merged"
 
@@ -1221,9 +1252,25 @@ Write-Ok "Scaffold merged"
 Copy-Item -LiteralPath (Join-Path $ScaffoldDir ".github\*") -Destination (Join-Path $ProjectPath ".github") -Recurse -Force -ErrorAction SilentlyContinue
 Copy-Item -LiteralPath (Join-Path $ScriptDir "scripts\*") -Destination (Join-Path $ProjectPath "scripts") -Recurse -Force -ErrorAction SilentlyContinue
 
+# POSIX already merges AOI commands into an owner's manifest. Use the same
+# deterministic merger here, including the selected profile, rather than
+# making Windows silently retain dashboard commands Core never installs.
+$projectPackage = Join-Path $ProjectPath "package.json"
+$scaffoldPackage = Join-Path $ScaffoldDir "package.json"
+$mergePackageScripts = Join-Path $ScriptDir "scripts\multi-harness\merge-package-scripts.mjs"
+$nodePath = Get-ExecutablePath -Name "node"
+if ($nodePath -and (Test-Path -LiteralPath $projectPackage) -and (Test-Path -LiteralPath $scaffoldPackage) -and (Test-Path -LiteralPath $mergePackageScripts)) {
+    & $nodePath $mergePackageScripts $projectPackage $scaffoldPackage "--profile" $Profile
+    if ($LASTEXITCODE -eq 0) {
+        Write-Ok "AOI scripts merged into the existing package.json"
+    } else {
+        Write-Warn "No se pudieron fusionar los scripts de AOI en package.json — revisalo a mano"
+    }
+}
+
 # Replicate scaffold mirror inside target
 $targetScaffoldDir = Join-Path $ProjectPath "scaffold"
-Copy-ScaffoldMissing -From $ScaffoldDir -To $targetScaffoldDir
+Copy-ScaffoldMissing -From $ScaffoldDir -To $targetScaffoldDir -ExcludedRelativePrefixes $ProfileExcludedRelativePrefixes
 Copy-Item -LiteralPath (Join-Path $ScaffoldDir ".github\*") -Destination (Join-Path $targetScaffoldDir ".github") -Recurse -Force -ErrorAction SilentlyContinue
 Copy-Item -LiteralPath (Join-Path $ProjectPath "scripts\*") -Destination (Join-Path $targetScaffoldDir "scripts") -Recurse -Force -ErrorAction SilentlyContinue
 Prune-UnselectedHarnessFiles -TargetDir $targetScaffoldDir -SelectedHarness $Harness
@@ -1249,16 +1296,20 @@ New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".resources") -Force 
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".resources\userstories") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".resources\workflows") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjectPath ".atl") -Force | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\app\components") -Force | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\app\pages") -Force | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\server\api") -Force | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\server\routes") -Force | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\server\utils") -Force | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\shared") -Force | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\test") -Force | Out-Null
-Write-Ok "Directories: .tasks/ .sandboxes/ .resources/ aoi_apps/agentic-ops-dashboard/"
+if ($ProfileIncludesDashboard) {
+    New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\app\components") -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\app\pages") -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\server\api") -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\server\routes") -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\server\utils") -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\shared") -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\test") -Force | Out-Null
+    Write-Ok "Directories: .tasks/ .sandboxes/ .resources/ aoi_apps/agentic-ops-dashboard/"
+} else {
+    Write-Ok "Directories: .tasks/ .sandboxes/ .resources/ (profile $Profile, dashboard omitted)"
+}
 
-if (Test-Path -LiteralPath (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\package.json") -PathType Leaf) {
+if ($ProfileIncludesDashboard -and (Test-Path -LiteralPath (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\package.json") -PathType Leaf)) {
     $installDashboardDeps = $true
     if ($SkipDashboardDeps.IsPresent) {
         $installDashboardDeps = $false
@@ -1489,7 +1540,7 @@ if ($bashPath -and (Test-Path -LiteralPath $confSnapshotScript -PathType Leaf)) 
     Write-Info "Generating configuration snapshot (.conf/)..."
     try {
         Push-Location $ProjectPath
-        $confResult = & $bashPath $confSnapshotScript $ScaffoldDir $ProjectPath $confAction "0.1.x" 2>&1
+        $confResult = & $bashPath $confSnapshotScript $ScaffoldDir $ProjectPath $confAction "0.1.x" $Profile 2>&1
         Pop-Location
         if ($LASTEXITCODE -eq 0) {
             Write-Ok "Configuration snapshot persisted to .conf/"
@@ -1547,7 +1598,7 @@ Write-ConsoleLine -Message "    2. code ."
 Write-ConsoleLine -Message "    3. Run /init in Copilot Chat (bootstrap ICM, directories, base-project map)"
 Write-ConsoleLine -Message "    4. (optional) Run /speckit.constitution to customize project rules"
 Write-ConsoleLine -Message "    5. Start your first cycle: /sdd-new"
-if (Test-Path -LiteralPath (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\package.json") -PathType Leaf) {
+if ($ProfileIncludesDashboard -and (Test-Path -LiteralPath (Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\package.json") -PathType Leaf)) {
     Write-ConsoleLine -Message "    6. Start the dashboard runtime: pnpm --dir aoi_apps/agentic-ops-dashboard dev"
 }
 Write-ConsoleLine -Message "    7. Verify workspace health: pnpm aoi:doctor"

@@ -6,6 +6,9 @@
 # Usage:
 #   ./setup.sh                         # interactive
 #   ./setup.sh /path/to/my-project     # direct
+#   ./setup.sh --profile core /path     # base headless (default)
+#   ./setup.sh --profile advanced /path # Core + governance/indexing integrations
+#   ./setup.sh --profile dashboard /path # Advanced + auxiliary dashboard
 
 set -euo pipefail
 
@@ -303,6 +306,7 @@ invoke_windows_powershell() {
 run_windows_setup_from_git_bash() {
   local project_path=""
   local harness_choice="all"
+  local installation_profile="core"
   local auto_yes=0
   local skip_dashboard_deps=0
   local posix_script_path windows_project_path windows_script_path ps_exit_code ps_stderr saw_parser_error
@@ -323,6 +327,14 @@ run_windows_setup_from_git_bash() {
         ;;
       --harness=*)
         harness_choice="${1#*=}"
+        shift
+        ;;
+      --profile)
+        installation_profile="$2"
+        shift 2
+        ;;
+      --profile=*)
+        installation_profile="${1#*=}"
         shift
         ;;
       *)
@@ -365,9 +377,9 @@ run_windows_setup_from_git_bash() {
     exit 1
   fi
 
-  info "Git Bash on Windows detected — delegating to setup.ps1 (harness: $harness_choice)"
+  info "Git Bash on Windows detected — delegating to setup.ps1 (harness: $harness_choice, profile: $installation_profile)"
 
-  local extra_ps_args=("-Harness" "$harness_choice")
+  local extra_ps_args=("-Harness" "$harness_choice" "-Profile" "$installation_profile")
   if [ "$auto_yes" -eq 1 ]; then
     extra_ps_args+=("-Yes")
   fi
@@ -399,6 +411,7 @@ fi
 # harness — por lo tanto nunca funcionó: el manifest registraba "all" pasara lo
 # que pasara.
 export SELECTED_HARNESS="all"
+export INSTALLATION_PROFILE="core"
 RAW_PROJECT_PATH=""
 AUTO_YES=0
 SKIP_DASHBOARD_DEPS=0
@@ -421,6 +434,14 @@ while [[ $# -gt 0 ]]; do
       SELECTED_HARNESS="${1#*=}"
       shift
       ;;
+    --profile)
+      INSTALLATION_PROFILE="$2"
+      shift 2
+      ;;
+    --profile=*)
+      INSTALLATION_PROFILE="${1#*=}"
+      shift
+      ;;
     *)
       if [ -z "$RAW_PROJECT_PATH" ]; then
         RAW_PROJECT_PATH="$1"
@@ -429,6 +450,36 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+PROFILE_INCLUDES_ADVANCED=0
+PROFILE_INCLUDES_DASHBOARD=0
+case "$INSTALLATION_PROFILE" in
+  core) ;;
+  advanced) PROFILE_INCLUDES_ADVANCED=1 ;;
+  dashboard) PROFILE_INCLUDES_ADVANCED=1; PROFILE_INCLUDES_DASHBOARD=1 ;;
+  *)
+    err "Unknown installation profile: $INSTALLATION_PROFILE"
+    err "Expected one of: core, advanced, dashboard"
+    exit 2
+    ;;
+esac
+
+# The app is deliberately never removed. A profile downgrade simply stops AOI
+# from copying or governing it, preserving any pre-existing owner work.
+profile_excludes_relative_path() {
+  if [ "$PROFILE_INCLUDES_DASHBOARD" -eq 1 ]; then
+    return 1
+  fi
+  case "${1#./}" in
+    aoi_apps|aoi_apps/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+SCAFFOLD_COPY_EXCLUDE=()
+if [ "$PROFILE_INCLUDES_DASHBOARD" -eq 0 ]; then
+  SCAFFOLD_COPY_EXCLUDE+=("--exclude=aoi_apps/")
+fi
 
 # ── Target project path ────────────────────────────────────────────────────
 if [ -n "$RAW_PROJECT_PATH" ]; then
@@ -861,7 +912,8 @@ else
   warn "scripts/nvidia-vscode-setup.sh no encontrado junto a setup.sh — saltando Phase 1.5"
 fi
 
-# ── Phase 1.6: Headroom (headroom-ai) compression layer (optional) ────────
+# ── Advanced profile: Headroom integration and managed-files hook ──────────
+if [ "$PROFILE_INCLUDES_ADVANCED" -eq 1 ]; then
 header "Phase 1.6: Headroom compression layer (opcional)"
 
 if [[ -f "$SCRIPT_DIR/scripts/install-headroom.sh" ]]; then
@@ -1018,57 +1070,61 @@ else
   info "    When ready, run: ln -sf ../../.githooks/pre-commit-aoi-guard.sh .git/hooks/commit-msg"
 fi
 
-# ── Phase 1.8: codebase-memory-mcp (MANDATORY, workspace-local only) ───────
-header "Phase 1.8: Codebase Memory MCP (obligatorio)"
+else
+  info "Core profile: advanced Headroom integration and its git hook are not installed."
+fi
 
-if [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then
+# ── Phase 1.8: Codebase Memory MCP (Advanced, workspace-local only) ────────
+header "Phase 1.8: Codebase Memory MCP (Advanced)"
+
+if [ "$PROFILE_INCLUDES_ADVANCED" -eq 0 ]; then
+  info "Core profile: Codebase Memory MCP is not installed. Select --profile advanced to opt in."
+elif [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then
   info "codebase-memory-mcp indexa el repo en un knowledge graph local para reducir"
   info "exploración file-by-file. AOI lo instala con --skip-config para NO tocar"
   info "copilot-instructions.md del operador y registra el MCP sólo en el workspace actual."
-  # Mandatory, like RTK and ICM: it is one of the mechanisms that keeps
-  # exploration out of the context. It used to default to "n" whenever stdin
-  # was not a TTY, which silently disabled it in every automated install —
-  # exactly the installs that never get a human to reconsider.
-  CBM_CHOICE="y"
-  case "$CBM_CHOICE" in
-    n|N|no|NO)
-      warn "codebase-memory-mcp omitido."
-      ;;
-    *)
-      info "Variante UI incluye grafo 3D interactivo en http://localhost:9749"
-      if [ "$AUTO_YES" -eq 1 ] || ! [ -t 0 ]; then
-        CBM_UI_CHOICE="n"
-      else
-        printf "${YELLOW}▸${NC} Instalar variante con UI (recomendado)? [Y/n]: "
-        read -r CBM_UI_CHOICE
-      fi
-      CBM_VARIANT_FLAG="--ui"
-      case "$CBM_UI_CHOICE" in
-        n|N|no|NO) CBM_VARIANT_FLAG="--standard" ;;
-      esac
-      bash "$SCRIPT_DIR/scripts/install-codebase-memory.sh" --yes $CBM_VARIANT_FLAG || {
-        ret=$?
-        warn "install-codebase-memory.sh salió con código $ret — el setup continúa."
-        warn "El operador puede reintentar luego; el MCP workspace-local quedará en ICM only."
-      }
-      # Post-install config: enable auto_index (native git watcher) and UI
-      CBM_BIN_INIT="$(command -v codebase-memory-mcp 2>/dev/null || true)"
-      if [[ -n "$CBM_BIN_INIT" ]]; then
-        "$CBM_BIN_INIT" config set auto_index true 2>/dev/null && ok "codebase-memory-mcp: auto_index activado (watcher nativo de git)" || true
-        if [[ "$CBM_VARIANT_FLAG" == "--ui" ]]; then
-          "$CBM_BIN_INIT" config set ui true 2>/dev/null && ok "codebase-memory-mcp: UI activada en http://localhost:9749" || true
-          "$CBM_BIN_INIT" config set port 9749 2>/dev/null || true
-        fi
-        # Initial index — runs in background, non-blocking. auto_index handles subsequent changes.
-        info "Indexando el repo por primera vez en background (codebase-memory-mcp)..."
-        "$CBM_BIN_INIT" cli index_repository "{\"repo_path\": \"$PROJECT_PATH\"}" \
-          >> /tmp/codebase-memory-mcp-index.log 2>&1 &
-        ok "Index inicial lanzado en background → /tmp/codebase-memory-mcp-index.log"
-      fi
-      ;;
+  # An explicit Advanced selection is a contract, not an aspirational prompt:
+  # unlike optional Headroom, it cannot quietly fall back to ICM-only.
+  info "Variante UI incluye grafo 3D interactivo en http://localhost:9749"
+  if [ "$AUTO_YES" -eq 1 ] || ! [ -t 0 ]; then
+    CBM_UI_CHOICE="n"
+  else
+    printf "${YELLOW}▸${NC} Instalar variante con UI (recomendado)? [Y/n]: "
+    read -r CBM_UI_CHOICE
+  fi
+  CBM_VARIANT_FLAG="--ui"
+  case "$CBM_UI_CHOICE" in
+    n|N|no|NO) CBM_VARIANT_FLAG="--standard" ;;
   esac
+  if ! bash "$SCRIPT_DIR/scripts/install-codebase-memory.sh" --yes $CBM_VARIANT_FLAG; then
+    err "Codebase Memory es obligatorio para el perfil $INSTALLATION_PROFILE y no se pudo instalar."
+    err "Corrige la instalación y vuelve a ejecutar el setup, o elige --profile core."
+    exit 1
+  fi
+  # The child installer can add ~/.local/bin to its own PATH only. Resolve the
+  # installed candidate here as well, or a fresh Advanced install would pass
+  # while silently skipping its workspace configuration and first index.
+  CBM_BIN_INIT="$(command -v codebase-memory-mcp 2>/dev/null || true)"
+  if [[ -z "$CBM_BIN_INIT" && -x "$HOME/.local/bin/codebase-memory-mcp" ]]; then
+    CBM_BIN_INIT="$HOME/.local/bin/codebase-memory-mcp"
+  fi
+  if [[ -z "$CBM_BIN_INIT" ]]; then
+    err "Codebase Memory informó éxito pero el binario no quedó disponible para el perfil $INSTALLATION_PROFILE."
+    exit 1
+  fi
+  "$CBM_BIN_INIT" config set auto_index true 2>/dev/null && ok "codebase-memory-mcp: auto_index activado (watcher nativo de git)" || true
+  if [[ "$CBM_VARIANT_FLAG" == "--ui" ]]; then
+    "$CBM_BIN_INIT" config set ui true 2>/dev/null && ok "codebase-memory-mcp: UI activada en http://localhost:9749" || true
+    "$CBM_BIN_INIT" config set port 9749 2>/dev/null || true
+  fi
+  # Initial index — runs in background, non-blocking. auto_index handles subsequent changes.
+  info "Indexando el repo por primera vez en background (codebase-memory-mcp)..."
+  "$CBM_BIN_INIT" cli index_repository "{\"repo_path\": \"$PROJECT_PATH\"}" \
+    >> /tmp/codebase-memory-mcp-index.log 2>&1 &
+  ok "Index inicial lanzado en background → /tmp/codebase-memory-mcp-index.log"
 else
-  warn "scripts/install-codebase-memory.sh no encontrado junto a setup.sh — saltando Phase 1.8"
+  err "scripts/install-codebase-memory.sh no encontrado: el perfil $INSTALLATION_PROFILE no se puede completar."
+  exit 1
 fi
 
 # Reinstall is detected HERE, before spec-kit runs, because that decision
@@ -1215,7 +1271,8 @@ if [ "$IS_REINSTALL" -eq 1 ]; then
     COMPARE_OUTPUT="$(bash "$CONF_SCRIPTS_DIR/compare-install.sh" \
       "$SCAFFOLD_DIR" \
       "$PROJECT_PATH/.conf/checksums.json" \
-      "$PROJECT_PATH" 2>"$COMPARE_STDERR")"
+      "$PROJECT_PATH" \
+      "$INSTALLATION_PROFILE" 2>"$COMPARE_STDERR")"
     COMPARE_STATUS=$?
     set -e
     if [ "$COMPARE_STATUS" -ne 0 ]; then
@@ -1287,7 +1344,7 @@ print(f'COMPARE_TMPDIR={td}')
       if [ -z "$COMPARE_TMPDIR" ]; then
         warn "python3 smart merge produced no temp dir — falling back to rsync --ignore-existing"
         if command -v rsync &>/dev/null; then
-          rsync -a --ignore-existing "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
+          rsync -a --ignore-existing "${SCAFFOLD_COPY_EXCLUDE[@]}" "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
         fi
       else
         # Copy new files (exist in scaffold but not in previous install)
@@ -1373,13 +1430,13 @@ print(f'COMPARE_TMPDIR={td}')
     else
       warn "python3 not available for smart merge — falling back to rsync --ignore-existing"
       if command -v rsync &>/dev/null; then
-        rsync -a --ignore-existing "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
+        rsync -a --ignore-existing "${SCAFFOLD_COPY_EXCLUDE[@]}" "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
       fi
     fi
   else
     warn "compare-install.sh not found — falling back to rsync --ignore-existing"
     if command -v rsync &>/dev/null; then
-      rsync -a --ignore-existing "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
+      rsync -a --ignore-existing "${SCAFFOLD_COPY_EXCLUDE[@]}" "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
     fi
   fi
 
@@ -1428,12 +1485,13 @@ else
   # directory it behaves identically, so nothing is lost for the simple case.
   FRESH_KEPT=""
   if command -v rsync &>/dev/null; then
-    FRESH_KEPT="$(rsync -a --ignore-existing --out-format='%n' "$SCAFFOLD_DIR/" "$PROJECT_PATH/" >/dev/null 2>&1; \
-      rsync -an --existing --out-format='%n' "$SCAFFOLD_DIR/" "$PROJECT_PATH/" 2>/dev/null | grep -v '/$' || true)"
+    FRESH_KEPT="$(rsync -a --ignore-existing "${SCAFFOLD_COPY_EXCLUDE[@]}" --out-format='%n' "$SCAFFOLD_DIR/" "$PROJECT_PATH/" >/dev/null 2>&1; \
+      rsync -an --existing "${SCAFFOLD_COPY_EXCLUDE[@]}" --out-format='%n' "$SCAFFOLD_DIR/" "$PROJECT_PATH/" 2>/dev/null | grep -v '/$' || true)"
     ok "Scaffold merged (rsync, sin pisar lo existente)"
   else
     cd "$SCAFFOLD_DIR"
     while IFS= read -r file || [ -n "$file" ]; do
+      profile_excludes_relative_path "$file" && continue
       target="$PROJECT_PATH/$file"
       if [ -e "$target" ]; then
         FRESH_KEPT="$FRESH_KEPT
@@ -1467,6 +1525,7 @@ EOF
       cd "$SCAFFOLD_DIR" && find . -type f 2>/dev/null | sed 's|^\./||' | LC_ALL=C sort
     ) | while IFS= read -r rel; do
       [ -n "$rel" ] || continue
+      profile_excludes_relative_path "$rel" && continue
       grep -qxF "./$rel" "$FRESH_SNAPSHOT" || printf '%s\n' "$rel"
     done > "$FRESH_RESTORE"
 
@@ -1483,7 +1542,7 @@ EOF
   # in rather than the file being replaced.
   if [ -f "$PROJECT_PATH/package.json" ] && [ -f "$SCAFFOLD_DIR/package.json" ]; then
     node "$SCRIPT_DIR/scripts/multi-harness/merge-package-scripts.mjs" \
-      "$PROJECT_PATH/package.json" "$SCAFFOLD_DIR/package.json" \
+      "$PROJECT_PATH/package.json" "$SCAFFOLD_DIR/package.json" --profile "$INSTALLATION_PROFILE" \
       && ok "AOI scripts merged into the existing package.json" \
       || warn "No se pudieron fusionar los scripts de AOI en package.json — revisalo a mano"
   fi
@@ -1561,16 +1620,24 @@ fi
 # counterpart to copy from), then every governed path from the project on top.
 mkdir -p "$PROJECT_PATH/scaffold"
 if command -v rsync &>/dev/null; then
-  rsync -a "$SCAFFOLD_DIR/" "$PROJECT_PATH/scaffold/"
+  rsync -a "${SCAFFOLD_COPY_EXCLUDE[@]}" "$SCAFFOLD_DIR/" "$PROJECT_PATH/scaffold/"
 else
-  cp -R "$SCAFFOLD_DIR/"* "$PROJECT_PATH/scaffold/" 2>/dev/null || true
+  (
+    cd "$SCAFFOLD_DIR"
+    find . -type f -print | while IFS= read -r file; do
+      profile_excludes_relative_path "$file" && continue
+      target="$PROJECT_PATH/scaffold/${file#./}"
+      mkdir -p "$(dirname "$target")"
+      cp "$file" "$target"
+    done
+  )
 fi
 prune_unselected_harness_files "$PROJECT_PATH/scaffold" "$SELECTED_HARNESS"
 
 # The governed list is published by the gate itself rather than duplicated
 # here: a path added there and forgotten here would silently stop being
 # mirrored, and the mismatch only ever surfaces in someone else's workspace.
-GOVERNED_PATHS="$(node "$SCRIPT_DIR/scripts/scaffold/validate-scaffold-parity.mjs" --list-paths 2>/dev/null || true)"
+GOVERNED_PATHS="$(node "$SCRIPT_DIR/scripts/scaffold/validate-scaffold-parity.mjs" --list-paths --profile "$INSTALLATION_PROFILE" 2>/dev/null || true)"
 if [ -z "$GOVERNED_PATHS" ]; then
   warn "No se pudo leer la lista de paths gobernados — el espejo queda con la versión de AOI"
   warn "y validate-scaffold-parity puede fallar en este workspace. Revisá node y el scaffold."
@@ -1616,16 +1683,20 @@ mkdir -p "$PROJECT_PATH/.atl"
 mkdir -p "$PROJECT_PATH/.resources"
 mkdir -p "$PROJECT_PATH/.resources/userstories"
 mkdir -p "$PROJECT_PATH/.resources/workflows"
-mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/app/components"
-mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/app/pages"
-mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/server/api"
-mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/server/routes"
-mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/server/utils"
-mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/shared"
-mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/test"
-ok "Directories: .tasks/ .sandboxes/ .resources/ aoi_apps/agentic-ops-dashboard/"
+if [ "$PROFILE_INCLUDES_DASHBOARD" -eq 1 ]; then
+  mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/app/components"
+  mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/app/pages"
+  mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/server/api"
+  mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/server/routes"
+  mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/server/utils"
+  mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/shared"
+  mkdir -p "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/test"
+  ok "Directories: .tasks/ .sandboxes/ .resources/ aoi_apps/agentic-ops-dashboard/"
+else
+  ok "Directories: .tasks/ .sandboxes/ .resources/ (profile $INSTALLATION_PROFILE, dashboard omitted)"
+fi
 
-if [ -f "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/package.json" ]; then
+if [ "$PROFILE_INCLUDES_DASHBOARD" -eq 1 ] && [ -f "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/package.json" ]; then
   INSTALL_DASH_DEPS=1
   if [ "$SKIP_DASHBOARD_DEPS" -eq 1 ]; then
     INSTALL_DASH_DEPS=0
@@ -1999,7 +2070,7 @@ if [ -f "$CONF_SNAPSHOT_SCRIPT" ]; then
   # destruction the reinstall path exists to prevent. An installation that
   # cannot write its own baseline is not a finished installation, and saying
   # so now costs one message instead of someone's work later.
-  if bash "$CONF_SNAPSHOT_SCRIPT" "$SCAFFOLD_DIR" "$PROJECT_PATH" "$CONF_ACTION" "0.1.x"; then
+  if bash "$CONF_SNAPSHOT_SCRIPT" "$SCAFFOLD_DIR" "$PROJECT_PATH" "$CONF_ACTION" "0.1.x" "$INSTALLATION_PROFILE"; then
     ok "Configuration snapshot persisted to .conf/"
   else
     err "No se pudo escribir .conf/ — la instalación queda sin línea base."
@@ -2061,7 +2132,7 @@ echo "    4. Start a cycle. Three independent entries, pick by what you have:"
 echo "         /sdd-genesis  an idea, and no architecture yet  -> System Blueprint Contract"
 echo "         /sdd-frame    an intent in natural language     -> Behavioral Intent Contract"
 echo "         /sdd-new      a requirement already scoped       -> proposal + TASK-YYYY-NNN"
-if [ -f "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/package.json" ]; then
+if [ "$PROFILE_INCLUDES_DASHBOARD" -eq 1 ] && [ -f "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/package.json" ]; then
   echo "    5. Start the dashboard runtime: pnpm --dir aoi_apps/agentic-ops-dashboard dev"
 fi
 echo "    6. Verify workspace health: pnpm aoi:doctor"

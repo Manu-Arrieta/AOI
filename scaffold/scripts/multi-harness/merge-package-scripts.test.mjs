@@ -73,6 +73,23 @@ describe('las compuertas de AOI llegan, sin desplazar las del Owner', () => {
     assert.equal(manifest.scripts.dev, 'vite', 'perdió un script del Owner')
   })
 
+  it('no inyecta scripts del dashboard en Core ni Advanced', () => {
+    const dash = {
+      scripts: {
+        'dev:dashboard': 'pnpm run dev',
+        'test:dashboard': 'pnpm run test',
+        'aoi:doctor': 'node d.mjs',
+      },
+    }
+
+    for (const profile of ['core', 'advanced']) {
+      const { manifest, added } = mergeScripts({ scripts: {} }, dash, { profile })
+      assert.equal(manifest.scripts['dev:dashboard'], undefined, `${profile} recibió una app que no seleccionó`)
+      assert.equal(manifest.scripts['test:dashboard'], undefined, `${profile} recibió un test que no puede ejecutar`)
+      assert.deepEqual(added, ['aoi:doctor'])
+    }
+  })
+
   it('NUNCA pisa un script que el Owner ya define', () => {
     // Un `pnpm test` que deja de correr su suite es peor falla que una
     // compuerta ausente: rompe lo que ya funcionaba.

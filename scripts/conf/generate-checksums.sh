@@ -3,7 +3,7 @@
 # Part of AOI .conf configuration persistence system.
 #
 # Usage:
-#   bash scripts/conf/generate-checksums.sh <source_dir> [<base_prefix>]
+#   bash scripts/conf/generate-checksums.sh <source_dir> [<base_prefix>] [<exclude_prefix>]
 #
 # Output: JSON to stdout with the structure:
 #   { "$schema": "aoi-conf-checksums-v1", "generated_at": "...", "files": { "relative/path": "sha256:...", ... } }
@@ -14,10 +14,12 @@ set -euo pipefail
 
 SOURCE_DIR="${1:?Usage: generate-checksums.sh <source_dir> [<base_prefix>]}"
 BASE_PREFIX="${2:-$SOURCE_DIR}"
+EXCLUDE_PREFIX="${3:-}"
 
 # Normalize trailing slashes
 SOURCE_DIR="${SOURCE_DIR%/}"
 BASE_PREFIX="${BASE_PREFIX%/}"
+EXCLUDE_PREFIX="${EXCLUDE_PREFIX%/}"
 
 if [ ! -d "$SOURCE_DIR" ]; then
   echo "Error: directory not found: $SOURCE_DIR" >&2
@@ -32,6 +34,15 @@ declare -a entries=()
 while IFS= read -r -d '' file; do
   # Compute relative path from BASE_PREFIX
   rel_path="${file#"$BASE_PREFIX"/}"
+
+  # A Core/Advanced profile deliberately ships no auxiliary application. The
+  # checksum baseline must describe what AOI actually materialised; otherwise a
+  # later reinstall would classify a dashboard the profile never installed.
+  if [ -n "$EXCLUDE_PREFIX" ]; then
+    case "$rel_path" in
+      "$EXCLUDE_PREFIX"|"$EXCLUDE_PREFIX"/*) continue ;;
+    esac
+  fi
 
   # Skip .gitkeep files and directories
   if [[ "$(basename "$file")" == ".gitkeep" ]]; then

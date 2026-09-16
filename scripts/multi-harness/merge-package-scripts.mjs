@@ -29,6 +29,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { normalizeInstallationProfile, profileIncludesDashboard } from '../installation-profiles.mjs'
 
 /**
  * Scripts AOI needs; anything else in its manifest is not the Owner's concern.
@@ -47,7 +48,8 @@ const WANTED = /^(test|aoi:|sync:|[a-z]+:dashboard$)/
  *
  * @returns {{ manifest: object, added: string[], renamed: Array<[string,string]>, untouched: string[] }}
  */
-export function mergeScripts(ownerManifest, scaffoldManifest) {
+export function mergeScripts(ownerManifest, scaffoldManifest, { profile = 'dashboard' } = {}) {
+  const selectedProfile = normalizeInstallationProfile(profile)
   const manifest = { ...ownerManifest }
   const ownerScripts = { ...(ownerManifest.scripts ?? {}) }
   const incoming = scaffoldManifest.scripts ?? {}
@@ -58,6 +60,7 @@ export function mergeScripts(ownerManifest, scaffoldManifest) {
 
   for (const [name, body] of Object.entries(incoming)) {
     if (!WANTED.test(name)) continue
+    if (name.endsWith(':dashboard') && !profileIncludesDashboard(selectedProfile)) continue
 
     if (!(name in ownerScripts)) {
       ownerScripts[name] = body
@@ -86,10 +89,24 @@ export function mergeScripts(ownerManifest, scaffoldManifest) {
 }
 
 function main() {
-  const [ownerPath, scaffoldPath] = process.argv.slice(2)
+  const [ownerPath, scaffoldPath, ...options] = process.argv.slice(2)
   if (!ownerPath || !scaffoldPath) {
-    process.stderr.write('uso: merge-package-scripts.mjs <package.json del proyecto> <package.json del scaffold>\n')
+    process.stderr.write('uso: merge-package-scripts.mjs <package.json del proyecto> <package.json del scaffold> [--profile core|advanced|dashboard]\n')
     process.exit(2)
+  }
+
+  let profile = 'dashboard'
+  if (options.length > 0) {
+    if (options[0] !== '--profile' || !options[1] || options.length !== 2) {
+      process.stderr.write('uso: --profile core|advanced|dashboard\n')
+      process.exit(2)
+    }
+    try {
+      profile = normalizeInstallationProfile(options[1])
+    } catch (err) {
+      process.stderr.write(`${err.message}\n`)
+      process.exit(2)
+    }
   }
 
   let owner
@@ -103,7 +120,7 @@ function main() {
     process.exit(1)
   }
 
-  const { manifest, added, renamed, untouched } = mergeScripts(owner, scaffold)
+  const { manifest, added, renamed, untouched } = mergeScripts(owner, scaffold, { profile })
 
   if (added.length === 0 && renamed.length === 0) {
     console.log('package.json ya tenía todos los scripts de AOI — sin cambios.')

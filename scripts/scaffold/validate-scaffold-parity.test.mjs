@@ -5,6 +5,8 @@ import path from 'node:path'
 import os from 'node:os'
 import {
   collectFilePaths,
+  DEFAULT_SYNC_PATHS,
+  parityPathsForProfile,
   validateScaffoldParity,
 } from './validate-scaffold-parity.mjs'
 
@@ -51,6 +53,24 @@ test('validateScaffoldParity detects missing files and content mismatches', () =
   assert.ok(missingRes.errors[0].includes('MISSING_IN_SCAFFOLD'))
 
   fs.rmSync(tmpRepo, { recursive: true, force: true })
+})
+
+test('BIC-2026-005: Core parity excludes only the optional aoi_apps tree', () => {
+  const tmpRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-core-parity-'))
+  try {
+    fs.mkdirSync(path.join(tmpRepo, '.conf'), { recursive: true })
+    fs.writeFileSync(path.join(tmpRepo, '.conf', 'manifest.json'), JSON.stringify({ installation_profile: 'core' }))
+    fs.mkdirSync(path.join(tmpRepo, 'aoi_apps', 'agentic-ops-dashboard'), { recursive: true })
+    fs.writeFileSync(path.join(tmpRepo, 'aoi_apps', 'agentic-ops-dashboard', 'owner-work.mjs'), 'owner work\n')
+
+    const paths = parityPathsForProfile(tmpRepo)
+    assert.ok(!paths.some((entry) => entry.startsWith('aoi_apps/')), 'Core siguió gobernando el dashboard')
+    assert.ok(paths.includes('scripts/multi-harness'), 'Core dejó de gobernar sus compuertas')
+    assert.equal(validateScaffoldParity(tmpRepo).errors.some((error) => error.includes('aoi_apps')), false)
+    assert.ok(DEFAULT_SYNC_PATHS.some((entry) => entry.startsWith('aoi_apps/')), 'la cobertura Dashboard desapareció del repositorio')
+  } finally {
+    fs.rmSync(tmpRepo, { recursive: true, force: true })
+  }
 })
 
 test('BIC-2026-001:never.3 keeps literal-payload accounting mirrored', () => {

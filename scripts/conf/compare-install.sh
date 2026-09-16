@@ -27,9 +27,15 @@ set -euo pipefail
 SCAFFOLD_DIR="${1:?Usage: compare-install.sh <scaffold_dir> <checksums_json> <project_dir>}"
 CHECKSUMS_JSON="${2:?Usage: compare-install.sh <scaffold_dir> <checksums_json> <project_dir>}"
 PROJECT_DIR="${3:?Usage: compare-install.sh <scaffold_dir> <checksums_json> <project_dir>}"
+INSTALLATION_PROFILE="${4:-dashboard}"
 
 SCAFFOLD_DIR="${SCAFFOLD_DIR%/}"
 PROJECT_DIR="${PROJECT_DIR%/}"
+
+case "$INSTALLATION_PROFILE" in
+  core|advanced|dashboard) ;;
+  *) echo "Error: invalid installation profile: $INSTALLATION_PROFILE" >&2; exit 2 ;;
+esac
 
 if [ ! -d "$SCAFFOLD_DIR" ]; then
   echo "Error: scaffold directory not found: $SCAFFOLD_DIR" >&2
@@ -110,6 +116,20 @@ is_key_merged() {
   printf '%s\n' "$KEY_MERGED_PATHS" | grep -Fxq "$1"
 }
 
+# The auxiliary application is owned by the Dashboard profile only. A switch
+# to Core/Advanced is intentionally non-destructive: existing files are never
+# classified as updates, conflicts or orphans, so the installer cannot remove
+# or replace work an owner already has there.
+is_profile_excluded_path() {
+  if [ "$INSTALLATION_PROFILE" = "dashboard" ]; then
+    return 1
+  fi
+  case "$1" in
+    aoi_apps|aoi_apps/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 # ── Classify each scaffold file ─────────────────────────────────────────────
 declare -a skip_files=()
 declare -a update_files=()
@@ -123,6 +143,8 @@ while IFS= read -r -d '' scaffold_file; do
   if [[ "$(basename "$scaffold_file")" == ".gitkeep" ]]; then
     continue
   fi
+
+  is_profile_excluded_path "$rel_path" && continue
 
   # Skip the files AOI merges BY KEY rather than by file.
   #
@@ -208,6 +230,7 @@ for key in data.get('files', {}):
 
 while IFS= read -r rel_path || [ -n "$rel_path" ]; do
   [ -z "$rel_path" ] && continue
+  is_profile_excluded_path "$rel_path" && continue
   [ -f "$SCAFFOLD_DIR/$rel_path" ] && continue
   [ ! -f "$PROJECT_DIR/$rel_path" ] && continue
   is_protected_path "$rel_path" && continue

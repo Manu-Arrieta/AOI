@@ -2,8 +2,9 @@
 /**
  * scripts/multi-harness/token-tool-coverage.mjs
  *
- * Every token-saving tool is mandatory, and every mandatory tool must actually
- * be reached by the cycle. Headroom is the single declared exception.
+ * Core carries the deterministic token-saving substrate. Advanced and
+ * Dashboard additionally require Codebase Memory; every tool declared by a
+ * profile must actually be reached by the cycle. Headroom remains optional.
  *
  * The audit of 2026-09-09 found the two failure modes this gate exists to make
  * impossible, and neither was visible to any suite:
@@ -39,8 +40,9 @@ import { fileURLToPath } from 'node:url'
 const CYCLE_SURFACES = ['.github/prompts', '.github/agents', '.github/instructions', '.github/skills']
 
 /**
- * The inventory. `mandatory` is the Owner's policy, not an inference:
- * everything that saves tokens is required except Headroom.
+ * The inventory. `mandatory` is the Owner's policy, not an inference. A
+ * `profiles` value narrows an obligation to an explicit distribution; it does
+ * not make the tool best-effort inside that distribution.
  *
  * `channel` says what the tool compresses. `process` shrinks work inside a
  * phase; `communication` shrinks what crosses between components — shell
@@ -49,7 +51,17 @@ const CYCLE_SURFACES = ['.github/prompts', '.github/agents', '.github/instructio
 export const TOKEN_TOOLS = [
   { id: 'rtk', mandatory: true, channel: 'communication', needle: /\brtk\b/, requiredBy: /require_rtk/ },
   { id: 'icm', mandatory: true, channel: 'communication', needle: /\bicm\b/, requiredBy: /require_icm/ },
-  { id: 'codebase-memory-mcp', mandatory: true, channel: 'communication', needle: /codebase-memory/, requiredBy: /CBM_CHOICE="y"/ },
+  {
+    id: 'codebase-memory-mcp',
+    mandatory: true,
+    profiles: ['advanced', 'dashboard'],
+    channel: 'communication',
+    needle: /codebase-memory/,
+    // Core takes the explicit bypass; every Advanced path has to make the
+    // upstream installer fatal instead of quietly falling back to ICM-only.
+    requiredBy: /if \[ "\$PROFILE_INCLUDES_ADVANCED" -eq 0 \].*elif \[\[ -f "\$SCRIPT_DIR\/scripts\/install-codebase-memory\.sh" \]\].*if ! bash "\$SCRIPT_DIR\/scripts\/install-codebase-memory\.sh".*exit 1/s,
+    windowsRequiredBy: /if \(\$ProfileIncludesAdvanced\) \{.*\$codebaseMemoryInstall.*catch \{.*exit 1/s,
+  },
   { id: 'toon', mandatory: true, channel: 'communication', needle: /toon|sanitize-subagent-payload/i, requiredBy: null },
   { id: 'context-tombstone', mandatory: true, channel: 'communication', needle: /context-tombstone|shrinkTurns/, requiredBy: null },
   { id: 'ast-skeletonizer', mandatory: true, channel: 'process', needle: /ast-skeletonizer|ast-lens/i, requiredBy: null },
@@ -219,7 +231,7 @@ export function auditTokenTools(root, tools = TOKEN_TOOLS) {
     if (tool.mandatory && where.length === 0) {
       notWired.push(`${tool.id} (${tool.channel}): ningún prompt, agente, instruction o skill lo invoca`)
     }
-    rows.push({ id: tool.id, mandatory: tool.mandatory, channel: tool.channel, enforced, sites: where.length })
+    rows.push({ id: tool.id, mandatory: tool.mandatory, profiles: tool.profiles, channel: tool.channel, enforced, sites: where.length })
   }
 
   return { notMandatory, notWired, rows }
@@ -231,7 +243,8 @@ export function formatToolTable(rows) {
     .map((r) => {
       const pol = r.mandatory ? 'obligatoria' : 'opcional   '
       const mark = !r.mandatory ? '–' : r.sites > 0 && r.enforced ? '✅' : '❌'
-      return `  ${mark} ${r.id.padEnd(24)} ${pol}  ${r.channel.padEnd(14)} invocada en ${r.sites} superficie(s)`
+      const profile = r.profiles?.length ? r.profiles.join('/') : 'core+'
+      return `  ${mark} ${r.id.padEnd(24)} ${pol} ${profile.padEnd(18)} ${r.channel.padEnd(14)} invocada en ${r.sites} superficie(s)`
     })
     .join('\n')
 }
@@ -246,7 +259,7 @@ function main() {
   console.log('=== AOI Token-Saving Tool Coverage ===\n')
   console.log(`Modo: ${mode}\n`)
   console.log(formatToolTable(r.rows))
-  console.log('\nTodas obligatorias salvo Headroom. "Invocada" cuenta prompts, agentes,')
+  console.log('\nCore exige la base; Advanced/Dashboard exigen además Codebase Memory. "Invocada" cuenta prompts, agentes,')
   console.log('instructions y skills — nunca el benchmark, que mide pero no ejecuta el producto.')
 
   const failures = [...r.notMandatory, ...r.notWired]

@@ -36,6 +36,12 @@ describe('the shipped inventory', () => {
     assert.deepEqual(optional, ['headroom'])
   })
 
+  it('requires Codebase Memory only in the explicit Advanced distributions', () => {
+    const codebase = TOKEN_TOOLS.find((tool) => tool.id === 'codebase-memory-mcp')
+    assert.deepEqual(codebase?.profiles, ['advanced', 'dashboard'])
+    assert.equal(codebase?.mandatory, true, 'Advanced no puede degradarlo a una sugerencia silenciosa')
+  })
+
   it('distinguishes what compresses communication from what optimises a phase', () => {
     // The Owner asked for both halves to be verified. Collapsing the two would
     // let a saving that only applies inside one phase pass as one that also
@@ -51,7 +57,14 @@ describe('the gate detects what it claims to detect', () => {
     // nothing about what it would do on a real regression.
     const root = workspace({
       'package.json': '{}',
-      'setup.sh': 'require_rtk\nrequire_icm\nrequire_mcp_compressor\nCBM_CHOICE="y"\n',
+      'setup.sh': [
+        'require_rtk', 'require_icm', 'require_mcp_compressor',
+        'if [ "$PROFILE_INCLUDES_ADVANCED" -eq 0 ]; then :',
+        'elif [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then',
+        '  if ! bash "$SCRIPT_DIR/scripts/install-codebase-memory.sh" --yes; then exit 1; fi',
+        'fi',
+      ].join('\n'),
+      'setup.ps1': 'if ($ProfileIncludesAdvanced) { $codebaseMemoryInstall = "x"; try { } catch { exit 1 } }',
       '.github/prompts/p.prompt.md': 'rtk icm toon codebase-memory ast-lens context-arranger synthesize-stubs mechanical-verify-union diagnostic-distiller',
     })
 
@@ -74,6 +87,25 @@ describe('the gate detects what it claims to detect', () => {
     assert.ok(
       auditTokenTools(root).notMandatory.some((m) => m.startsWith('rtk')),
       'no detectó que el instalador tolera la ausencia de rtk'
+    )
+    clean(root)
+  })
+
+  it('flags an Advanced profile that names Codebase Memory but tolerates its install failure', () => {
+    const codebase = TOKEN_TOOLS.find((tool) => tool.id === 'codebase-memory-mcp')
+    const root = workspace({
+      'package.json': '{}',
+      'setup.sh': [
+        'if [ "$PROFILE_INCLUDES_ADVANCED" -eq 0 ]; then :',
+        'elif [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then warn "continúo igual"; fi',
+      ].join('\n'),
+      'setup.ps1': 'if ($ProfileIncludesAdvanced) { $codebaseMemoryInstall = "x"; try { } catch { exit 1 } }',
+      '.github/prompts/p.prompt.md': '`codebase-memory search`',
+    })
+
+    assert.ok(
+      auditTokenTools(root, [codebase]).notMandatory.some((message) => message.startsWith('codebase-memory-mcp')),
+      'certificó un perfil Advanced que permite continuar sin su índice obligatorio'
     )
     clean(root)
   })

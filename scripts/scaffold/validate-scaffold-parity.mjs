@@ -12,6 +12,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { normalizeInstallationProfile, readInstalledProfile, syncPathsForProfile } from '../installation-profiles.mjs'
 
 export const DEFAULT_SYNC_PATHS = [
   '.github/instructions',
@@ -31,6 +32,11 @@ export const DEFAULT_SYNC_PATHS = [
   'scripts/multi-harness',
   'scripts/aoi-doctor.mjs',
   'scripts/aoi-doctor.test.mjs',
+  // The profile resolver is imported by dashboard-command.mjs. It must travel
+  // with that command or a Core install would only discover the missing module
+  // when it tries to run its global test gate.
+  'scripts/installation-profiles.mjs',
+  'scripts/installation-profiles.test.mjs',
   // `doctor-checks.mjs` se enviaba a toda instalación vía scaffold/ pero no
   // estaba gobernado, y eso ya cobró su precio: se le agregó un export que
   // `aoi-doctor.mjs` —gobernado— importa, y la copia del scaffold quedó vieja.
@@ -93,6 +99,15 @@ export const DEFAULT_SYNC_PATHS = [
   'aoi_apps/agentic-ops-dashboard/test',
   'aoi_apps/agentic-ops-dashboard/tsconfig.json',
 ]
+
+/**
+ * A profile-aware installation deliberately lacks the auxiliary dashboard.
+ * Development repositories and legacy installations have no profile manifest,
+ * so `readInstalledProfile` preserves their historic Dashboard coverage.
+ */
+export function parityPathsForProfile(repoRoot, pathsToCheck = DEFAULT_SYNC_PATHS) {
+  return syncPathsForProfile(pathsToCheck, readInstalledProfile(repoRoot))
+}
 
 /**
  * Recursively collects all relative file paths inside a directory or single file.
@@ -206,7 +221,7 @@ export function validateScaffoldParity(repoRoot, pathsToCheck = DEFAULT_SYNC_PAT
   const errors = validateScaffoldContents(repoRoot)
   let checkedFilesCount = 0
 
-  for (const subpath of pathsToCheck) {
+  for (const subpath of parityPathsForProfile(repoRoot, pathsToCheck)) {
     const rootPath = path.join(repoRoot, subpath)
     const scaffoldPath = path.join(repoRoot, 'scaffold', subpath)
 
@@ -280,7 +295,10 @@ async function main() {
   // would simply stop matching for whatever path was added here and nowhere
   // else. So the list is published instead of duplicated.
   if (process.argv.includes('--list-paths')) {
-    process.stdout.write(DEFAULT_SYNC_PATHS.join('\n') + '\n')
+    const profileIndex = process.argv.indexOf('--profile')
+    const requestedProfile = profileIndex === -1 ? undefined : process.argv[profileIndex + 1]
+    const profile = normalizeInstallationProfile(requestedProfile)
+    process.stdout.write(syncPathsForProfile(DEFAULT_SYNC_PATHS, profile).join('\n') + '\n')
     return
   }
 

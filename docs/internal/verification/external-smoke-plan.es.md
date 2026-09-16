@@ -59,34 +59,36 @@ Resultado esperado:
 ## Smoke de Bootstrap Downstream
 
 1. Creá un repositorio scratch nuevo con un `README.md` mínimo e inicializalo con Git.
-2. En macOS/Linux corré `bash "/path/to/AOI/setup.sh" "/path/to/scratch-repo"`.
-3. En Windows corré `powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\AOI\setup.ps1" "C:\path\to\scratch-repo"`.
+2. En macOS/Linux corré `bash "/path/to/AOI/setup.sh" --profile core "/path/to/scratch-repo"`.
+3. En Windows corré `powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\AOI\setup.ps1" -Profile core "C:\path\to\scratch-repo"`.
 4. Abrí el proyecto bootstrappeado en VS Code.
-5. Verificá que el proyecto ahora incluya superficies de AOI como `.github/agents/`, `.github/prompts/`, `.vscode/mcp.json`, `.specify/`, `.resources/` y `aoi_apps/agentic-ops-dashboard/package.json`, sin agregar archivos de workspace del dashboard en la raíz del repo.
+5. Verificá que el proyecto ahora incluya superficies de AOI como `.github/agents/`, `.github/prompts/`, `.vscode/mcp.json`, `.specify/` y `.resources/`, y que no materialice `aoi_apps/agentic-ops-dashboard/package.json`.
 6. Corré `/init` y después `/sdd-new` desde Copilot Chat.
+7. En un segundo repositorio scratch independiente, repetí la instalación con `--profile dashboard` (o `-Profile dashboard` en PowerShell) y verificá que ahora sí exista `aoi_apps/agentic-ops-dashboard/package.json`, sin archivos del workspace del dashboard en la raíz.
 
 Resultado esperado:
 
 - El proyecto recibe el scaffold de AOI correctamente.
 - Los prompts de Copilot, los agentes y el registro MCP de ICM están presentes.
 - El primer workflow puede arrancar sin historia de tareas heredada.
+- Core no incorpora artefactos ni dependencias del dashboard; Dashboard los incorpora sólo cuando se selecciona explícitamente.
 
 ## Chequeos de Modos de Falla
 
 1. Probá el setup en una máquina donde `icm` no esté disponible.
 2. Probá el setup con `rtk` no disponible o con una falla intencional en su instalación.
-3. Probá el setup sin Node `>=20.19.0`.
-4. Probá el setup sin `corepack` y sin `pnpm >=11.3.0`.
+3. Con `--profile dashboard`, probá el setup sin Node `>=20.19.0`.
+4. Con `--profile dashboard`, probá el setup sin `corepack` y sin `pnpm >=11.3.0`.
 
 Resultado esperado:
 
 - La ausencia de `icm` bloquea el setup.
 - La ausencia o falla de `rtk` no bloquea el setup.
-- La ausencia de prerrequisitos del dashboard bloquea el setup antes de instalar dependencias.
+- La ausencia de prerrequisitos del dashboard bloquea el perfil Dashboard antes de instalar dependencias; Core no alcanza esa fase.
 
 ## Criterios de Salida
 
 - El repositorio público de AOI está limpio al clonarlo.
 - El runtime de AOI instala y corre en macOS/Linux y Windows.
 - El bootstrap downstream produce un workspace gobernado y limpio.
-- El manejo de fallas coincide con la política documentada para `icm`, `rtk` y los prerrequisitos del dashboard.
+- El manejo de fallas coincide con la política documentada para `icm`, `rtk`, los perfiles de instalación y los prerrequisitos del dashboard.

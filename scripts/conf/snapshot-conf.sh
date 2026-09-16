@@ -4,7 +4,7 @@
 # generates checksums.json and manifest.json, and appends to history.jsonl.
 #
 # Usage:
-#   bash scripts/conf/snapshot-conf.sh <scaffold_dir> <project_dir> <action> [<aoi_version>]
+#   bash scripts/conf/snapshot-conf.sh <scaffold_dir> <project_dir> <action> [<aoi_version>] [<profile>]
 #
 # <action>: "install" | "reinstall" | "constitution_update"
 
@@ -14,6 +14,12 @@ SCAFFOLD_DIR="${1:?Usage: snapshot-conf.sh <scaffold_dir> <project_dir> <action>
 PROJECT_DIR="${2:?Usage: snapshot-conf.sh <scaffold_dir> <project_dir> <action> [<aoi_version>]}"
 ACTION="${3:?Usage: snapshot-conf.sh <scaffold_dir> <project_dir> <action> [<aoi_version>]}"
 AOI_VERSION="${4:-0.1.x}"
+INSTALLATION_PROFILE="${5:-dashboard}"
+
+case "$INSTALLATION_PROFILE" in
+  core|advanced|dashboard) ;;
+  *) echo "Error: invalid installation profile: $INSTALLATION_PROFILE" >&2; exit 2 ;;
+esac
 
 SCAFFOLD_DIR="${SCAFFOLD_DIR%/}"
 PROJECT_DIR="${PROJECT_DIR%/}"
@@ -80,8 +86,10 @@ if [ -d "$SCAFFOLD_DIR/scripts" ]; then
     cp -R "$SCAFFOLD_DIR/scripts/." "$SNAPSHOTS_DIR/scripts/"
 fi
 
-# aoi_apps (full copy)
-if [ -d "$SCAFFOLD_DIR/aoi_apps" ]; then
+# aoi_apps only belongs to the explicit Dashboard profile. A profile switch
+# never deletes an owner-owned existing app; it merely stops snapshotting and
+# governing it as AOI material.
+if [ "$INSTALLATION_PROFILE" = "dashboard" ] && [ -d "$SCAFFOLD_DIR/aoi_apps" ]; then
   rsync -a --delete "$SCAFFOLD_DIR/aoi_apps/" "$SNAPSHOTS_DIR/aoi_apps/" 2>/dev/null || {
     rm -rf "$SNAPSHOTS_DIR/aoi_apps"
     cp -R "$SCAFFOLD_DIR/aoi_apps" "$SNAPSHOTS_DIR/"
@@ -92,7 +100,11 @@ ok "Snapshots created in .conf/snapshots/"
 
 # ── Generate checksums ──────────────────────────────────────────────────────
 info "Generating checksums..."
-bash "$SCRIPT_DIR/generate-checksums.sh" "$SCAFFOLD_DIR" "$SCAFFOLD_DIR" > "$CONF_DIR/checksums.json"
+CHECKSUM_EXCLUDE=""
+if [ "$INSTALLATION_PROFILE" != "dashboard" ]; then
+  CHECKSUM_EXCLUDE="aoi_apps"
+fi
+bash "$SCRIPT_DIR/generate-checksums.sh" "$SCAFFOLD_DIR" "$SCAFFOLD_DIR" "$CHECKSUM_EXCLUDE" > "$CONF_DIR/checksums.json"
 
 # ── Re-baseline the files the installer materialises ────────────────────────
 #
@@ -199,7 +211,11 @@ fi
 # ── Generate manifest ──────────────────────────────────────────────────────
 info "Generating manifest..."
 
-FILE_COUNT="$(find "$SCAFFOLD_DIR" -type f ! -name '.gitkeep' | wc -l | tr -d ' ')"
+if [ "$INSTALLATION_PROFILE" = "dashboard" ]; then
+  FILE_COUNT="$(find "$SCAFFOLD_DIR" -type f ! -name '.gitkeep' | wc -l | tr -d ' ')"
+else
+  FILE_COUNT="$(find "$SCAFFOLD_DIR" -type f ! -path "$SCAFFOLD_DIR/aoi_apps/*" ! -name '.gitkeep' | wc -l | tr -d ' ')"
+fi
 
 # Detect tool versions
 RTK_VER="$(rtk --version 2>/dev/null || echo 'null')"
@@ -256,6 +272,7 @@ cat > "$CONF_DIR/manifest.json" <<EOF
   "project_name": "$PROJECT_NAME",
   "scaffold_file_count": $FILE_COUNT,
   "selected_harness": $(quote_ver "${SELECTED_HARNESS:-all}"),
+  "installation_profile": "$INSTALLATION_PROFILE",
   "tools": {
     "rtk": $(quote_ver "$RTK_VER"),
     "icm": $(quote_ver "$ICM_VER"),
@@ -268,5 +285,5 @@ EOF
 ok "Manifest written to .conf/manifest.json"
 
 # ── Append to history ───────────────────────────────────────────────────────
-echo "{\"action\":\"$ACTION\",\"at\":\"$NOW\",\"aoi_version\":\"$AOI_VERSION\",\"files_count\":$FILE_COUNT}" >> "$CONF_DIR/history.jsonl"
+echo "{\"action\":\"$ACTION\",\"at\":\"$NOW\",\"aoi_version\":\"$AOI_VERSION\",\"installation_profile\":\"$INSTALLATION_PROFILE\",\"files_count\":$FILE_COUNT}" >> "$CONF_DIR/history.jsonl"
 ok "History appended to .conf/history.jsonl"

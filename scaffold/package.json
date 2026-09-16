@@ -8,11 +8,11 @@
     "node": ">=20.19.0"
   },
   "scripts": {
-    "dev:dashboard": "cd aoi_apps/agentic-ops-dashboard && pnpm run dev",
-    "build:dashboard": "cd aoi_apps/agentic-ops-dashboard && pnpm run build",
-    "preview:dashboard": "cd aoi_apps/agentic-ops-dashboard && pnpm run preview",
-    "test:dashboard": "cd aoi_apps/agentic-ops-dashboard && pnpm run prepare && pnpm run test",
-    "prepare:dashboard": "cd aoi_apps/agentic-ops-dashboard && pnpm run prepare",
+    "dev:dashboard": "node scripts/multi-harness/dashboard-command.mjs dev",
+    "build:dashboard": "node scripts/multi-harness/dashboard-command.mjs build",
+    "preview:dashboard": "node scripts/multi-harness/dashboard-command.mjs preview",
+    "test:dashboard": "node scripts/multi-harness/dashboard-command.mjs test",
+    "prepare:dashboard": "node scripts/multi-harness/dashboard-command.mjs prepare",
     "test:memory-sync": "node --test scripts/memory-sync/*.test.mjs",
     "test:memory-sync:bundle": "node --test scripts/memory-sync/bundle-contract.test.mjs scripts/memory-sync/export-memory-bundle.test.mjs scripts/memory-sync/import-memory-bundle.test.mjs scripts/memory-sync/bundle-lifecycle.test.mjs",
     "test:subagent-payload": "node --test scripts/subagent-context/*.test.mjs",
