@@ -101,6 +101,19 @@ scripts/
 .cursorrules
 AGENTS.md
 CLAUDE.md
+.cbmignore
+.gitattributes
+.prettierignore
+.prettierrc
+
+# Estos tres los instala AOI, pero un proyecto Node suele tener los SUYOS y el
+# merge fresco los preserva con `--ignore-existing`. Ignorarlos por nombre no
+# distingue de quién son: si el Owner ya tenía `package.json` o `LICENSE`
+# propios, dejan de versionarse. Es la decisión del Owner del 2026-09-17 para
+# sus workspaces; un proyecto que versione los suyos debe negarlos con `!`.
+LICENSE
+package.json
+pnpm-lock.yaml
 
 # Red de seguridad para workspaces instalados ANTES del 2026-09-17, que todavía
 # arrastran el espejo hasta su próxima reinstalación. Desde esa fecha ningún
