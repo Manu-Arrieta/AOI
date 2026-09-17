@@ -102,11 +102,15 @@ test('BIC-2026-007: ambos instaladores indexan únicamente después de materiali
   assert.match(windowsDeferred, /foreach \(\$repoPath in @\(\$pathsJson \| ConvertFrom-Json\)\) \{\s+& \$bin cli index_repository/)
 })
 
-test('BIC-2026-007: los instaladores materializan la frontera del Owner antes de reflejarla e indexarla', () => {
+// Este test verificaba, además de la frontera, que el espejo `scaffold/` del
+// destino REFLEJARA el `.cbmignore` del Owner. Esa mitad murió con el espejo: el
+// Owner zanjó el 2026-09-17 que el andamio no queda instalado. Lo que sobrevive
+// —y es lo que importaba— es que la frontera se materialice en el destino.
+test('BIC-2026-007: los instaladores materializan la frontera del Owner antes de indexar', () => {
   const posixBoundary = between(
     POSIX,
-    '# An Owner may already have a .cbmignore.',
-    'mkdir -p "$PROJECT_PATH/scaffold"'
+    '# Lo que sigue es de Codebase Memory, no del espejo.',
+    '# El espejo de una instalación previa se retira.'
   )
   assert.match(posixBoundary, /node "\$CBM_BOUNDARY_SCRIPT" --file "\$PROJECT_PATH\/\.cbmignore" --boundary control-plane/)
   assert.match(posixBoundary, /node "\$CBM_BOUNDARY_SCRIPT" --file "\$CBM_DASHBOARD_PATH\/\.cbmignore" --boundary dashboard/)
@@ -114,16 +118,25 @@ test('BIC-2026-007: los instaladores materializan la frontera del Owner antes de
   const windowsBoundary = between(
     WINDOWS,
     '# An Owner may already have a .cbmignore.',
-    '# Replicate scaffold mirror inside target'
+    '# El espejo `scaffold/` se replicaba acá dentro del destino.'
   )
   assert.match(windowsBoundary, /& \$nodePath \$cbmBoundaryScript "--file" \(Join-Path \$ProjectPath "\.cbmignore"\) "--boundary" "control-plane"/)
   assert.match(windowsBoundary, /& \$nodePath \$cbmBoundaryScript "--file" \(Join-Path \$cbmDashboardPath "\.cbmignore"\) "--boundary" "dashboard"/)
+})
 
-  const windowsMirror = between(
-    WINDOWS,
-    '# Replicate scaffold mirror inside target',
-    'Prune-UnselectedHarnessFiles -TargetDir $targetScaffoldDir -SelectedHarness $Harness'
-  )
-  assert.match(windowsMirror, /Copy-Item -LiteralPath \(Join-Path \$ProjectPath "\.cbmignore"\) -Destination \(Join-Path \$targetScaffoldDir "\.cbmignore"\) -Force/)
-  assert.match(windowsMirror, /Copy-Item -LiteralPath \$dashboardIgnore -Destination \$mirrorDashboardIgnore -Force/)
+// El andamio no queda instalado: ningún instalador puede volver a construir un
+// espejo en el destino, y ambos tienen que retirar el de una instalación previa.
+test('BIC-2026-007: ningún instalador deja scaffold/ en el destino', () => {
+  assert.doesNotMatch(POSIX, /mkdir -p "\$PROJECT_PATH\/scaffold"/)
+  assert.doesNotMatch(POSIX, /"\$SCAFFOLD_DIR\/" "\$PROJECT_PATH\/scaffold\/"/)
+  assert.match(POSIX, /rm -rf "\$PROJECT_PATH\/scaffold"/)
+
+  assert.doesNotMatch(WINDOWS, /Copy-ScaffoldMissing -From \$ScaffoldDir -To \$targetScaffoldDir/)
+  assert.match(WINDOWS, /Remove-Item -LiteralPath \$targetScaffoldDir -Recurse -Force/)
+
+  // El pruning necesita una referencia prístina, y era el espejo. Ambos
+  // instaladores deben pasarle ahora el scaffold de AOI, o `compile-rules`
+  // caería a `repoRoot/scaffold` —inexistente— y dejaría de podar.
+  assert.match(POSIX, /--prune --reference "\$SCAFFOLD_DIR"/)
+  assert.match(WINDOWS, /--prune --reference \$ScaffoldDir/)
 })

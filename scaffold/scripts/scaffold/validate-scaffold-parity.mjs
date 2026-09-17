@@ -12,7 +12,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { normalizeInstallationProfile, readInstalledProfile, syncPathsForProfile } from '../installation-profiles.mjs'
+import { readInstalledProfile, syncPathsForProfile } from '../installation-profiles.mjs'
 
 export const DEFAULT_SYNC_PATHS = [
   '.github/instructions',
@@ -294,16 +294,16 @@ export function validateScaffoldParity(repoRoot, pathsToCheck = DEFAULT_SYNC_PAT
 async function main() {
   const repoRoot = process.cwd()
 
-  // The installer has to rebuild this mirror inside the target workspace, and
-  // it must cover exactly the paths this gate judges. Hard-coding the list in
-  // setup.sh would let the two drift, and the drift is invisible: the mirror
-  // would simply stop matching for whatever path was added here and nowhere
-  // else. So the list is published instead of duplicated.
-  if (process.argv.includes('--list-paths')) {
-    const profileIndex = process.argv.indexOf('--profile')
-    const requestedProfile = profileIndex === -1 ? undefined : process.argv[profileIndex + 1]
-    const profile = normalizeInstallationProfile(requestedProfile)
-    process.stdout.write(syncPathsForProfile(DEFAULT_SYNC_PATHS, profile).join('\n') + '\n')
+  // El Principio I existe porque `scaffold/` es el payload que AOI le shippea a
+  // cada workspace: una ruta gobernada que cambie sin su espejo rompe a todos
+  // los workspaces instalados desde acá. Esa relación de propagación SÓLO
+  // existe en el repositorio de desarrollo, el que tiene `setup.sh` en la raíz.
+  //
+  // No hacía la distinción y corría igual en un workspace instalado, exigiendo
+  // un espejo que el Owner nunca debería tener: el andamio es lo que se instala,
+  // no algo que queda instalado. Criterio de validate-srp y token-tool-coverage.
+  if (!fs.existsSync(path.join(repoRoot, 'setup.sh'))) {
+    process.stdout.write('✅ Scaffold Mirror Parity: workspace instalado; el Principio I sólo rige en el repo fuente.\n')
     return
   }
 

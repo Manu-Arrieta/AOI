@@ -144,11 +144,16 @@ icm topics                                # list all topics
  * Compiles and writes harness configuration files.
  */
 export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = 'AOI', options = {}) {
-  const { prune = false } = options
+  const { prune = false, reference } = options
   const targetAll = harnesses.includes('all')
   const shouldCompile = (h) => targetAll || harnesses.includes(h)
   const compiledFiles = []
   const hasScaffold = fs.existsSync(path.join(repoRoot, 'scaffold'))
+  // La referencia prístina del pruning. Era siempre `repoRoot/scaffold`, y en un
+  // workspace instalado eso apuntaba al espejo — la única razón por la que el
+  // espejo tenía que existir en el destino. `setup.sh` pasa ahora el scaffold
+  // de AOI, el mismo que su propio `prune_unselected_harness_files` ya usaba.
+  const referenceRoot = reference || path.join(repoRoot, 'scaffold')
   const keptByPrune = []
 
   if (prune && !targetAll) {
@@ -168,7 +173,7 @@ export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = '
           // that stayed open after that fix, because setup.sh calls this
           // with `--prune` right after. Reproduced: a customised CLAUDE.md
           // and an Owner-authored `.agents/skills/mia/SKILL.md` both gone.
-          prunePathIfPristine(path.join(repoRoot, item), path.join(repoRoot, 'scaffold', item), keptByPrune)
+          prunePathIfPristine(path.join(repoRoot, item), path.join(referenceRoot, item), keptByPrune)
           if (hasScaffold) {
             // The scaffold copy is AOI's by definition, so it goes whole —
             // but only if the root counterpart was AOI's too. Removing the
@@ -256,11 +261,13 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   let harnessArg = 'all'
   let workspaceArg = ''
   let pruneArg = false
+  let referenceArg = ''
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--harness' && args[i + 1]) harnessArg = args[++i]
     else if (args[i] === '--workspace' && args[i + 1]) workspaceArg = args[++i]
     else if (args[i] === '--prune') pruneArg = true
+    else if (args[i] === '--reference' && args[i + 1]) referenceArg = args[++i]
     else if (args[i].startsWith('-')) {
       // Silently ignoring these ran a full compile: `--help` is not accepted.
       console.error(`Unknown flag: ${args[i]}`)
@@ -276,7 +283,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   if (!workspaceArg) workspaceArg = path.basename(repoRoot)
 
   console.log(`\n⚙️  Compiling AOI Multi-Harness Rules (harness: ${harnessArg}, workspace: ${workspaceArg})...\n`)
-  const result = compileHarnessRules(repoRoot, harnesses, workspaceArg, { prune: pruneArg })
+  const result = compileHarnessRules(repoRoot, harnesses, workspaceArg, { prune: pruneArg, reference: referenceArg || undefined })
 
   for (const file of result.compiledFiles) {
     console.log(`  ✓ Generated: ${path.relative(repoRoot, file)}`)
