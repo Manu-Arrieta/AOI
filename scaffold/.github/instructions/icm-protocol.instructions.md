@@ -127,8 +127,8 @@ Qué guardar con cada nivel: ver los disparadores de la sección 8.
 
 **Store triggers** — `icm_memory_store(topic, content, importance)`, CLI `icm store -t topic -c "..." -i {importance}`:
 
-* `critical` → project stack o contexto · decisión de arquitectura · convención establecida · preferencia del Owner (topic `preferences`)
-* `high` → spec o plan producido · tarea completada · reporte de QA o verify · error resuelto (topic `errors-resolved`)
+* `critical` → project stack o contexto · decisión de arquitectura · convención establecida · preferencia del Owner (topic `{WORKSPACE}-preferences`)
+* `high` → spec o plan producido · tarea completada · reporte de QA o verify · error resuelto (topic `{WORKSPACE}-errors-resolved`)
 * `medium` → progreso de implementación, checkpoint cada 3-5 tareas
 * `low` → notas de exploración, ideas temporales (se podan solas)
 
