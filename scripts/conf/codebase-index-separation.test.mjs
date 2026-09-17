@@ -78,12 +78,15 @@ test('BIC-2026-007: ambos instaladores indexan únicamente después de materiali
     '# ── Codebase Memory initial graphs (after the workspace is materialized)',
     'if [ "$PROFILE_INCLUDES_DASHBOARD" -eq 1 ] && [ -f "$PROJECT_PATH/aoi_apps/agentic-ops-dashboard/package.json" ]; then'
   )
-  assert.match(posixDeferred, /if \[ "\$PROFILE_INCLUDES_ADVANCED" -eq 1 \] && \[ -n "\$\{CBM_BIN_INIT:-\}" \]; then/)
+  // El gateo por perfil se fue: Codebase Memory es obligatorio en todo perfil,
+  // así que lo único que condiciona el indexado es tener el binario resuelto.
+  assert.match(posixDeferred, /if \[ -n "\$\{CBM_BIN_INIT:-\}" \]; then/)
+  assert.doesNotMatch(posixDeferred, /PROFILE_INCLUDES_ADVANCED/)
   assert.match(posixDeferred, /CBM_INDEX_PATHS=\("\$PROJECT_PATH"\)/)
   assert.match(posixDeferred, /CBM_INDEX_PATHS\+=\("\$CBM_DASHBOARD_PATH"\)/)
   assert.match(posixDeferred, /for CBM_INDEX_PATH in "\$\{CBM_INDEX_PATHS\[@\]\}"; do\s+"\$CBM_BIN_INIT" cli index_repository/)
 
-  const windowsPhase18 = between(WINDOWS, 'Write-Header "Phase 1.8: Codebase Memory MCP (Advanced)"', 'Write-Header "Phase 2: Spec-Kit"')
+  const windowsPhase18 = between(WINDOWS, 'Write-Header "Phase 1.8: Codebase Memory MCP"', 'Write-Header "Phase 2: Spec-Kit"')
   assert.doesNotMatch(windowsPhase18, /index_repository/, 'PowerShell aún indexa el árbol previo a Phase 3')
   assert.match(windowsPhase18, /\$CodebaseMemoryInitialIndexPath = \$cbmBinInit/)
 
@@ -92,7 +95,8 @@ test('BIC-2026-007: ambos instaladores indexan únicamente después de materiali
     '# `.cbmignore` keeps the primary graph about the source-of-truth control plane:',
     'if ($ProfileIncludesDashboard -and (Test-Path -LiteralPath (Join-Path $ProjectPath "aoi_apps\\agentic-ops-dashboard\\package.json") -PathType Leaf)) {'
   )
-  assert.match(windowsDeferred, /if \(\$ProfileIncludesAdvanced -and \$CodebaseMemoryInitialIndexPath\)/)
+  assert.match(windowsDeferred, /if \(\$CodebaseMemoryInitialIndexPath\)/)
+  assert.doesNotMatch(windowsDeferred, /\$ProfileIncludesAdvanced/)
   assert.match(windowsDeferred, /\$indexRoots = @\(\$ProjectPath\)/)
   assert.match(windowsDeferred, /\$indexRoots \+= \$dashboardIndexPath/)
   assert.match(windowsDeferred, /foreach \(\$repoPath in @\(\$pathsJson \| ConvertFrom-Json\)\) \{\s+& \$bin cli index_repository/)

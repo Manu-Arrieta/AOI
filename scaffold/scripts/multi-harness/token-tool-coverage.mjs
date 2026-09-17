@@ -40,9 +40,18 @@ import { fileURLToPath } from 'node:url'
 const CYCLE_SURFACES = ['.github/prompts', '.github/agents', '.github/instructions', '.github/skills']
 
 /**
- * The inventory. `mandatory` is the Owner's policy, not an inference. A
- * `profiles` value narrows an obligation to an explicit distribution; it does
- * not make the tool best-effort inside that distribution.
+ * The inventory. `mandatory` is the Owner's policy, not an inference.
+ *
+ * There used to be a `profiles` field here, and `codebase-memory-mcp` carried
+ * `['advanced','dashboard']`: an obligation narrowed to a distribution. Core is
+ * the default AND the only profile reachable without a flag — neither installer
+ * asks for one — so the narrowing made a mandatory tool optional for everyone
+ * who installs the documented way, and this gate reported ✅ the whole time
+ * because its own `requiredBy` embedded the Core bypass it should have refused.
+ *
+ * The Owner settled it on 2026-09-17: every saving tool is mandatory in every
+ * profile, and Headroom is the single exception. The field is gone rather than
+ * merely unused, because its existence is the move that has to be impossible.
  *
  * `channel` says what the tool compresses. `process` shrinks work inside a
  * phase; `communication` shrinks what crosses between components — shell
@@ -54,13 +63,15 @@ export const TOKEN_TOOLS = [
   {
     id: 'codebase-memory-mcp',
     mandatory: true,
-    profiles: ['advanced', 'dashboard'],
     channel: 'communication',
     needle: /codebase-memory/,
-    // Core takes the explicit bypass; every Advanced path has to make the
-    // upstream installer fatal instead of quietly falling back to ICM-only.
-    requiredBy: /if \[ "\$PROFILE_INCLUDES_ADVANCED" -eq 0 \].*elif \[\[ -f "\$SCRIPT_DIR\/scripts\/install-codebase-memory\.sh" \]\].*if ! bash "\$SCRIPT_DIR\/scripts\/install-codebase-memory\.sh".*exit 1/s,
-    windowsRequiredBy: /if \(\$ProfileIncludesAdvanced\) \{.*\$codebaseMemoryInstall.*catch \{.*exit 1/s,
+    // Both patterns require the phase to open UNCONDITIONALLY — a top-level
+    // `if`, not an `elif` hanging off a profile check — and the child
+    // installer's failure to be fatal. The previous POSIX pattern literally
+    // contained `PROFILE_INCLUDES_ADVANCED -eq 0`, so it accepted as proof of
+    // obligation the very branch that skipped the install.
+    requiredBy: /\nif \[\[ -f "\$SCRIPT_DIR\/scripts\/install-codebase-memory\.sh" \]\]; then[\s\S]*?if ! bash "\$SCRIPT_DIR\/scripts\/install-codebase-memory\.sh"[\s\S]*?exit 1/,
+    windowsRequiredBy: /\nWrite-Header "Phase 1\.8: Codebase Memory MCP"[\s\S]*?\$codebaseMemoryInstall[\s\S]*?catch \{[\s\S]*?exit 1/,
   },
   { id: 'toon', mandatory: true, channel: 'communication', needle: /toon|sanitize-subagent-payload/i, requiredBy: null },
   { id: 'context-tombstone', mandatory: true, channel: 'communication', needle: /context-tombstone|shrinkTurns/, requiredBy: null },
@@ -231,7 +242,7 @@ export function auditTokenTools(root, tools = TOKEN_TOOLS) {
     if (tool.mandatory && where.length === 0) {
       notWired.push(`${tool.id} (${tool.channel}): ningún prompt, agente, instruction o skill lo invoca`)
     }
-    rows.push({ id: tool.id, mandatory: tool.mandatory, profiles: tool.profiles, channel: tool.channel, enforced, sites: where.length })
+    rows.push({ id: tool.id, mandatory: tool.mandatory, channel: tool.channel, enforced, sites: where.length })
   }
 
   return { notMandatory, notWired, rows }
@@ -243,8 +254,7 @@ export function formatToolTable(rows) {
     .map((r) => {
       const pol = r.mandatory ? 'obligatoria' : 'opcional   '
       const mark = !r.mandatory ? '–' : r.sites > 0 && r.enforced ? '✅' : '❌'
-      const profile = r.profiles?.length ? r.profiles.join('/') : 'core+'
-      return `  ${mark} ${r.id.padEnd(24)} ${pol} ${profile.padEnd(18)} ${r.channel.padEnd(14)} invocada en ${r.sites} superficie(s)`
+      return `  ${mark} ${r.id.padEnd(24)} ${pol} ${r.channel.padEnd(14)} invocada en ${r.sites} superficie(s)`
     })
     .join('\n')
 }
@@ -259,7 +269,7 @@ function main() {
   console.log('=== AOI Token-Saving Tool Coverage ===\n')
   console.log(`Modo: ${mode}\n`)
   console.log(formatToolTable(r.rows))
-  console.log('\nCore exige la base; Advanced/Dashboard exigen además Codebase Memory. "Invocada" cuenta prompts, agentes,')
+  console.log('\nToda herramienta de ahorro es obligatoria en TODO perfil; Headroom es la única excepción. "Invocada" cuenta prompts, agentes,')
   console.log('instructions y skills — nunca el benchmark, que mide pero no ejecuta el producto.')
 
   const failures = [...r.notMandatory, ...r.notWired]

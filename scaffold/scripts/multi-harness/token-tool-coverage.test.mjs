@@ -36,10 +36,15 @@ describe('the shipped inventory', () => {
     assert.deepEqual(optional, ['headroom'])
   })
 
-  it('requires Codebase Memory only in the explicit Advanced distributions', () => {
+  // Exigía `profiles: ['advanced','dashboard']`: fijaba el carve-out en vez de
+  // impedirlo, así que corregir el instalador rompía la suite. Owner, 2026-09-17:
+  // toda herramienta de ahorro es obligatoria en todo perfil, salvo Headroom.
+  it('no deja acotar la obligación de ninguna herramienta a un perfil', () => {
     const codebase = TOKEN_TOOLS.find((tool) => tool.id === 'codebase-memory-mcp')
-    assert.deepEqual(codebase?.profiles, ['advanced', 'dashboard'])
-    assert.equal(codebase?.mandatory, true, 'Advanced no puede degradarlo a una sugerencia silenciosa')
+    assert.equal(codebase?.mandatory, true, 'Codebase Memory es obligatoria en todo perfil')
+
+    const acotadas = TOKEN_TOOLS.filter((tool) => tool.profiles !== undefined).map((t) => t.id)
+    assert.deepEqual(acotadas, [], 'un campo `profiles` vuelve opcional la herramienta para quien usa el default')
   })
 
   it('distinguishes what compresses communication from what optimises a phase', () => {
@@ -59,12 +64,12 @@ describe('the gate detects what it claims to detect', () => {
       'package.json': '{}',
       'setup.sh': [
         'require_rtk', 'require_icm', 'require_mcp_compressor',
-        'if [ "$PROFILE_INCLUDES_ADVANCED" -eq 0 ]; then :',
-        'elif [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then',
+        '',
+        'if [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then',
         '  if ! bash "$SCRIPT_DIR/scripts/install-codebase-memory.sh" --yes; then exit 1; fi',
         'fi',
       ].join('\n'),
-      'setup.ps1': 'if ($ProfileIncludesAdvanced) { $codebaseMemoryInstall = "x"; try { } catch { exit 1 } }',
+      'setup.ps1': '\nWrite-Header "Phase 1.8: Codebase Memory MCP"\n$codebaseMemoryInstall = "x"; try { } catch { exit 1 }',
       '.github/prompts/p.prompt.md': 'rtk icm toon codebase-memory ast-lens context-arranger synthesize-stubs mechanical-verify-union diagnostic-distiller',
     })
 
@@ -99,13 +104,38 @@ describe('the gate detects what it claims to detect', () => {
         'if [ "$PROFILE_INCLUDES_ADVANCED" -eq 0 ]; then :',
         'elif [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then warn "continúo igual"; fi',
       ].join('\n'),
-      'setup.ps1': 'if ($ProfileIncludesAdvanced) { $codebaseMemoryInstall = "x"; try { } catch { exit 1 } }',
+      'setup.ps1': '\nWrite-Header "Phase 1.8: Codebase Memory MCP"\n$codebaseMemoryInstall = "x"; try { } catch { exit 1 }',
       '.github/prompts/p.prompt.md': '`codebase-memory search`',
     })
 
     assert.ok(
       auditTokenTools(root, [codebase]).notMandatory.some((message) => message.startsWith('codebase-memory-mcp')),
       'certificó un perfil Advanced que permite continuar sin su índice obligatorio'
+    )
+    clean(root)
+  })
+
+  // El `requiredBy` anterior contenía literalmente `PROFILE_INCLUDES_ADVANCED
+  // -eq 0`: aceptaba como prueba de obligatoriedad la rama que salteaba la
+  // instalación. Gatear por perfil se rechaza aunque Advanced sea fatal.
+  it('rechaza un instalador que vuelva a gatear Codebase Memory por perfil', () => {
+    const codebase = TOKEN_TOOLS.find((tool) => tool.id === 'codebase-memory-mcp')
+    const root = workspace({
+      'package.json': '{}',
+      'setup.sh': [
+        'if [ "$PROFILE_INCLUDES_ADVANCED" -eq 0 ]; then',
+        '  info "Core profile: Codebase Memory MCP is not installed."',
+        'elif [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then',
+        '  if ! bash "$SCRIPT_DIR/scripts/install-codebase-memory.sh" --yes; then exit 1; fi',
+        'fi',
+      ].join('\n'),
+      'setup.ps1': 'if ($ProfileIncludesAdvanced) { $codebaseMemoryInstall = "x"; try { } catch { exit 1 } }',
+      '.github/prompts/p.prompt.md': '`codebase-memory search`',
+    })
+
+    assert.ok(
+      auditTokenTools(root, [codebase]).notMandatory.some((message) => message.startsWith('codebase-memory-mcp')),
+      'certificó como obligatoria una herramienta que el perfil por defecto no instala'
     )
     clean(root)
   })
