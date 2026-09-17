@@ -244,7 +244,12 @@ describe('telling an installed workspace from the development repository', () =>
     // whose failure mode this test exists to catch. Guarding a test with the
     // function under test lets a broken marker skip its own detector.
     if (!fs.existsSync(path.join(REPO, 'setup.sh'))) {
+      // `t.skip()` marca el caso como salteado pero NO detiene la ejecución: sin
+      // este `return` la aserción de abajo corre igual y el caso se reporta
+      // salteado Y fallado a la vez, haciendo salir `pnpm test` con 1 dentro de
+      // un workspace instalado mientras cada suite imprime `fail 0`.
       t.skip('workspace instalado: el veredicto no es sobre AOI')
+      return
     }
 
     assert.equal(isInstalledWorkspace(REPO), false, 'el repo AOI no es un workspace instalado')
