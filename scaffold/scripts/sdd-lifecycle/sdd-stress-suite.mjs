@@ -145,14 +145,28 @@ console.log(`  ✓ Phase 2 complete: ${p2.rawTokens} tokens -> ${p2.optimizedTok
 // FASE 3: /sdd-apply — Implement (AST-Lens + Scaffolding + Tombstoning)
 // ─────────────────────────────────────────────────────────────────────────────
 console.log('▶ [Fase 3: /sdd-apply] Stress testing AST-Lens, Zero-Token Scaffolding, and Context Tombstoning...')
-// Stress 3.1: AST-Lens on multiple real files
-const file1 = fs.readFileSync('scripts/spatiotemporal-runtime/coeffect-resolver.mjs', 'utf8')
-const file2 = fs.readFileSync('aoi_apps/agentic-ops-dashboard/server/utils/resource-operations.ts', 'utf8')
-const skel1 = skeletonizeCode(file1)
-const skel2 = skeletonizeCode(file2)
+// Stress 3.1: AST-Lens over whatever of the sample this tree actually holds.
+//
+// The TypeScript sample used to be read with a bare `readFileSync`, and a bare
+// read is an assertion that the file is there. It is not: `core` and `advanced`
+// installs drop the whole `aoi_apps` tree, so this CRASHED with ENOENT on the
+// DEFAULT profile. The benchmark only ever ran in the development repository or
+// a `dashboard` install — every recorded baseline came from a tree the product
+// does not ship.
+//
+// Read through `readIfPresent` like every other phase, and the source line below
+// names the files actually lensed, so a run that measured one file cannot be
+// mistaken for a run that measured two. Chars are summed before rounding, which
+// keeps the numbers identical where both files do exist.
+const AST_LENS_SAMPLE = [
+  'scripts/spatiotemporal-runtime/coeffect-resolver.mjs',
+  'aoi_apps/agentic-ops-dashboard/server/utils/resource-operations.ts',
+]
+const lensed = AST_LENS_SAMPLE.map((file) => ({ file, source: readIfPresent(file) })).filter(({ source }) => source.length > 0)
+const lensedNames = lensed.length ? lensed.map(({ file }) => path.basename(file)).join(' + ') : 'no sample present'
 
-const rawReadTokens = Math.round((file1.length + file2.length) / 4)
-const optReadTokens = Math.round((skel1.length + skel2.length) / 4)
+const rawReadTokens = Math.round(lensed.reduce((acc, { source }) => acc + source.length, 0) / 4)
+const optReadTokens = Math.round(lensed.reduce((acc, { source }) => acc + skeletonizeCode(source).length, 0) / 4)
 
 // Stress 3.2: Scaffolding Synthesizer
 const tempTaskDir = '.tasks/stress-test-task'
@@ -186,8 +200,8 @@ const p3 = ledger.record('Phase_3_Apply', '/sdd-apply (Implement & TDD)', {
   raw: rawApplyTotal, opt: optApplyTotal,
   provenance: realRun.ok ? MEASURED : FIXTURE,
   source: realRun.ok
-    ? 'AST-Lens: real files · scaffolder: real output · tombstoning: real runner output'
-    : 'AST-Lens: real files · scaffolder: real output · tombstoning: synthetic turns',
+    ? `AST-Lens: ${lensedNames} · scaffolder: real output · tombstoning: real runner output`
+    : `AST-Lens: ${lensedNames} · scaffolder: real output · tombstoning: synthetic turns`,
   details: 'AST-Lens + Zero-Token Scaffolding + Context Tombstoning',
 })
 console.log(`  ✓ Phase 3 complete: ${p3.rawTokens} tokens -> ${p3.optimizedTokens} tokens (${p3.percentSaved} saved) [${realRun.ok ? 'real' : 'fixture'}]\n`)
