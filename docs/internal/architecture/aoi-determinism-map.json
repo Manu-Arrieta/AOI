@@ -1,0 +1,730 @@
+{
+  "scripts/aoi-doctor.mjs": {
+    "class": "tiempo-o-azar",
+    "label": "Stateful con tiempo o azar",
+    "frontier": "La estructura se valida mecánicamente, pero la salida no es byte-idéntica entre corridas.",
+    "signals": [
+      "new Date\\s*\\("
+    ]
+  },
+  "scripts/archify-checks.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/archify-path.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/code-lens/ast-skeletonizer.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/code-lens/code-scanner.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/code-lens/determinism-classifier.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/code-lens/interaction-graph.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/conf/ensure-cbmignore.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/doctor-checks.mjs": {
+    "class": "proceso-o-entorno",
+    "label": "Proceso / entorno externo",
+    "frontier": "Depende de PATH, variables de entorno y binarios instalados fuera del repo.",
+    "signals": [
+      "from\\s*['\"]node:child_process['\"]"
+    ]
+  },
+  "scripts/installation-profiles.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/mcp-gateway/setup-mcp-gateway.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/memoir-naming-guard.mjs": {
+    "class": "proceso-o-entorno",
+    "label": "Proceso / entorno externo",
+    "frontier": "Depende de PATH, variables de entorno y binarios instalados fuera del repo.",
+    "signals": [
+      "from\\s*['\"]node:child_process['\"]"
+    ]
+  },
+  "scripts/memory-sync/activate-version.mjs": {
+    "class": "tiempo-o-azar",
+    "label": "Stateful con tiempo o azar",
+    "frontier": "La estructura se valida mecánicamente, pero la salida no es byte-idéntica entre corridas.",
+    "signals": [
+      "new Date\\s*\\("
+    ]
+  },
+  "scripts/memory-sync/cli-args.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/memory-sync/export-memory-bundle.mjs": {
+    "class": "tiempo-o-azar",
+    "label": "Stateful con tiempo o azar",
+    "frontier": "La estructura se valida mecánicamente, pero la salida no es byte-idéntica entre corridas.",
+    "signals": [
+      "new Date\\s*\\("
+    ]
+  },
+  "scripts/memory-sync/icm-scope-loaders.mjs": {
+    "class": "proceso-o-entorno",
+    "label": "Proceso / entorno externo",
+    "frontier": "Depende de PATH, variables de entorno y binarios instalados fuera del repo.",
+    "signals": [
+      "from\\s*['\"]node:child_process['\"]"
+    ]
+  },
+  "scripts/memory-sync/import-memory-bundle.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/memory-sync/library-only.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/memory-sync/prepare-version-manifest.mjs": {
+    "class": "tiempo-o-azar",
+    "label": "Stateful con tiempo o azar",
+    "frontier": "La estructura se valida mecánicamente, pero la salida no es byte-idéntica entre corridas.",
+    "signals": [
+      "new Date\\s*\\("
+    ]
+  },
+  "scripts/memory-sync/resolve-active-version.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/memory-sync/rollback-version.mjs": {
+    "class": "tiempo-o-azar",
+    "label": "Stateful con tiempo o azar",
+    "frontier": "La estructura se valida mecánicamente, pero la salida no es byte-idéntica entre corridas.",
+    "signals": [
+      "new Date\\s*\\("
+    ]
+  },
+  "scripts/memory-sync/schema.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/memory-sync/store-utils.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/multi-harness/audit-protocol-integrity.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/multi-harness/cache-guard.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/multi-harness/claims-evidence-ledger.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/multi-harness/compile-rules.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/multi-harness/dashboard-command.mjs": {
+    "class": "proceso-o-entorno",
+    "label": "Proceso / entorno externo",
+    "frontier": "Depende de PATH, variables de entorno y binarios instalados fuera del repo.",
+    "signals": [
+      "from\\s*['\"]node:child_process['\"]"
+    ]
+  },
+  "scripts/multi-harness/importance-consistency.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/multi-harness/install-hooks.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/multi-harness/merge-package-scripts.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/multi-harness/protocol-source.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/multi-harness/reference-integrity.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/multi-harness/token-tool-coverage.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/multi-harness/undocumented-commands.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/multi-harness/validate-agent-routing.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/sandbox/detect-base-project.mjs": {
+    "class": "tiempo-o-azar",
+    "label": "Stateful con tiempo o azar",
+    "frontier": "La estructura se valida mecánicamente, pero la salida no es byte-idéntica entre corridas.",
+    "signals": [
+      "new Date\\s*\\("
+    ]
+  },
+  "scripts/sandbox/generate-manifest-md.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/sandbox/manifest-schema.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/sandbox/validate-manifest.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/sandbox/workspace-globs.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/sandbox/write-base-project.mjs": {
+    "class": "tiempo-o-azar",
+    "label": "Stateful con tiempo o azar",
+    "frontier": "La estructura se valida mecánicamente, pero la salida no es byte-idéntica entre corridas.",
+    "signals": [
+      "new Date\\s*\\("
+    ]
+  },
+  "scripts/scaffold/failure-injection.mjs": {
+    "class": "proceso-o-entorno",
+    "label": "Proceso / entorno externo",
+    "frontier": "Depende de PATH, variables de entorno y binarios instalados fuera del repo.",
+    "signals": [
+      "from\\s*['\"]node:child_process['\"]"
+    ]
+  },
+  "scripts/scaffold/fake-icm.mjs": {
+    "class": "proceso-o-entorno",
+    "label": "Proceso / entorno externo",
+    "frontier": "Depende de PATH, variables de entorno y binarios instalados fuera del repo.",
+    "signals": [
+      "\\bprocess\\.env\\b"
+    ]
+  },
+  "scripts/scaffold/mutation-probe.mjs": {
+    "class": "proceso-o-entorno",
+    "label": "Proceso / entorno externo",
+    "frontier": "Depende de PATH, variables de entorno y binarios instalados fuera del repo.",
+    "signals": [
+      "\\bprocess\\.env\\b",
+      "\\bspawnSync?\\s*\\(",
+      "from\\s*['\"]node:child_process['\"]"
+    ]
+  },
+  "scripts/scaffold/mutation-ratchet.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/scaffold/source-reachability.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/scaffold/validate-scaffold-parity.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/scaffold/validate-srp.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/scaffold/validate-test-globs.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/assemble-phase-context.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/behavioral-coverage.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/sdd-lifecycle/behavioral-judge.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/sdd-lifecycle/behavioral-probes.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/behavioral-runner.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/behavioral-scenarios-entry.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/sdd-lifecycle/behavioral-scenarios-execution.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/sdd-lifecycle/behavioral-scenarios-genesis.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/sdd-lifecycle/behavioral-scenarios.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/sdd-lifecycle/benchmark-inputs.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/blueprint-diagram.mjs": {
+    "class": "proceso-o-entorno",
+    "label": "Proceso / entorno externo",
+    "frontier": "Depende de PATH, variables de entorno y binarios instalados fuera del repo.",
+    "signals": [
+      "from\\s*['\"]node:child_process['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/blueprint-gate.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/sdd-lifecycle/cache-prefix.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/sdd-lifecycle/context-arranger.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/context-budget.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/contract-facts.mjs": {
+    "class": "proceso-o-entorno",
+    "label": "Proceso / entorno externo",
+    "frontier": "Depende de PATH, variables de entorno y binarios instalados fuera del repo.",
+    "signals": [
+      "from\\s*['\"]node:child_process['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/diagnostic-distiller.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/genesis-phase.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/sdd-lifecycle/instruction-scope.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/invariant-gate-preconditions.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/invariant-gate.mjs": {
+    "class": "tiempo-o-azar",
+    "label": "Stateful con tiempo o azar",
+    "frontier": "La estructura se valida mecánicamente, pero la salida no es byte-idéntica entre corridas.",
+    "signals": [
+      "new Date\\s*\\("
+    ]
+  },
+  "scripts/sdd-lifecycle/link-resources.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/mechanical-verify-union.mjs": {
+    "class": "tiempo-o-azar",
+    "label": "Stateful con tiempo o azar",
+    "frontier": "La estructura se valida mecánicamente, pero la salida no es byte-idéntica entre corridas.",
+    "signals": [
+      "new Date\\s*\\("
+    ]
+  },
+  "scripts/sdd-lifecycle/phase-handoffs.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/phase-references.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/sdd-lifecycle/real-corpus.mjs": {
+    "class": "proceso-o-entorno",
+    "label": "Proceso / entorno externo",
+    "frontier": "Depende de PATH, variables de entorno y binarios instalados fuera del repo.",
+    "signals": [
+      "\\bprocess\\.env\\b",
+      "from\\s*['\"]node:child_process['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/registry-sync.mjs": {
+    "class": "tiempo-o-azar",
+    "label": "Stateful con tiempo o azar",
+    "frontier": "La estructura se valida mecánicamente, pero la salida no es byte-idéntica entre corridas.",
+    "signals": [
+      "new Date\\s*\\("
+    ]
+  },
+  "scripts/sdd-lifecycle/sdd-phases.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/sdd-lifecycle/sdd-stress-suite.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/stress-fixtures.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/sdd-lifecycle/stress-report.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/sdd-lifecycle/synthesize-stubs.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/test-reachability.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/token-accounting.mjs": {
+    "class": "proceso-o-entorno",
+    "label": "Proceso / entorno externo",
+    "frontier": "Depende de PATH, variables de entorno y binarios instalados fuera del repo.",
+    "signals": [
+      "from\\s*['\"]node:child_process['\"]"
+    ]
+  },
+  "scripts/sdd-lifecycle/workspace-identity.mjs": {
+    "class": "proceso-o-entorno",
+    "label": "Proceso / entorno externo",
+    "frontier": "Depende de PATH, variables de entorno y binarios instalados fuera del repo.",
+    "signals": [
+      "from\\s*['\"]node:child_process['\"]"
+    ]
+  },
+  "scripts/spatiotemporal-runtime/agent-hmr-engine.mjs": {
+    "class": "tiempo-o-azar",
+    "label": "Stateful con tiempo o azar",
+    "frontier": "La estructura se valida mecánicamente, pero la salida no es byte-idéntica entre corridas.",
+    "signals": [
+      "new Date\\s*\\("
+    ]
+  },
+  "scripts/spatiotemporal-runtime/coeffect-resolver.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/spatiotemporal-runtime/effect-tracker.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/spatiotemporal-runtime/fiber-lifecycle.mjs": {
+    "class": "tiempo-o-azar",
+    "label": "Stateful con tiempo o azar",
+    "frontier": "La estructura se valida mecánicamente, pero la salida no es byte-idéntica entre corridas.",
+    "signals": [
+      "new Date\\s*\\("
+    ]
+  },
+  "scripts/subagent-context/context-tombstone.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  },
+  "scripts/subagent-context/sanitize-subagent-payload.mjs": {
+    "class": "estado-fijado",
+    "label": "Determinista sobre estado fijado",
+    "frontier": "Lógica reproducible, pero observa archivos, symlinks y permisos existentes.",
+    "signals": [
+      "\\bfs\\.(read|write|exists|stat|readdir|rm|mkdir)",
+      "from\\s*['\"]node:fs['\"]"
+    ]
+  },
+  "scripts/subagent-context/subagent-fiber-runner.mjs": {
+    "class": "tiempo-o-azar",
+    "label": "Stateful con tiempo o azar",
+    "frontier": "La estructura se valida mecánicamente, pero la salida no es byte-idéntica entre corridas.",
+    "signals": [
+      "\\bDate\\.now\\s*\\("
+    ]
+  },
+  "scripts/subagent-context/toon-serializer.mjs": {
+    "class": "puro-mecanico",
+    "label": "Puro / mecánico",
+    "frontier": "Igual entrada textual ⇒ igual veredicto o transformación.",
+    "signals": []
+  }
+}
