@@ -64,3 +64,38 @@ coverage/
 # escáneres lo saltean (`validate-test-globs`, `audit-protocol-integrity`),
 # que es la misma afirmación que "acá se espera encontrar uno".
 .venv/
+# ─────────────────────────────────────────────────────────────────────────────
+# Huella de AOI dentro del proyecto del Owner.
+#
+# Todo lo de abajo lo instala AOI y lo regenera `setup.sh`: es infraestructura
+# agéntica, no código del proyecto. El repositorio del Owner versiona SU
+# producto, y el historial de un proyecto no debería registrar la instalación
+# de su andamiaje ni los conflictos de una reinstalación.
+#
+# Esto no aplica al repositorio de desarrollo de AOI, que tiene su propio
+# `.gitignore` en la raíz: allí `scripts/`, `.github/` y el resto SON el
+# producto y se versionan. Este archivo es el que viaja al destino.
+# ─────────────────────────────────────────────────────────────────────────────
+.agents/
+.claude/
+.cursor/
+.githooks/
+.github/
+.resources/
+.vscode/
+.idea/
+.sandboxes/
+.specify/
+.tasks/
+aoi_apps/
+docs/
+scripts/
+.clinerules
+.cursorrules
+AGENTS.md
+CLAUDE.md
+
+# Red de seguridad para workspaces instalados ANTES del 2026-09-17, que todavía
+# arrastran el espejo hasta su próxima reinstalación. Desde esa fecha ningún
+# instalador lo deja en el destino: el andamio no queda instalado.
+scaffold
