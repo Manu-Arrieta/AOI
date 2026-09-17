@@ -1393,26 +1393,16 @@ if ($CodebaseMemoryInitialIndexPath) {
     }
 }
 
-# Replicate scaffold mirror inside target
+# El espejo `scaffold/` se replicaba acá dentro del destino. El Owner lo zanjó
+# el 2026-09-17: el andamio es exactamente lo que se instala, y por eso mismo no
+# es algo que deba QUEDAR instalado. El espejo de una instalación previa se
+# retira; su contenido es de AOI por definición, así que nada del Owner vive ahí.
 $targetScaffoldDir = Join-Path $ProjectPath "scaffold"
-Copy-ScaffoldMissing -From $ScaffoldDir -To $targetScaffoldDir -ExcludedRelativePrefixes $ProfileExcludedRelativePrefixes
-Copy-Item -LiteralPath (Join-Path $ScaffoldDir ".github\*") -Destination (Join-Path $targetScaffoldDir ".github") -Recurse -Force -ErrorAction SilentlyContinue
-Copy-Item -LiteralPath (Join-Path $ProjectPath "scripts\*") -Destination (Join-Path $targetScaffoldDir "scripts") -Recurse -Force -ErrorAction SilentlyContinue
-if ($CodebaseMemoryInitialIndexPath) {
-    Copy-Item -LiteralPath (Join-Path $ProjectPath ".cbmignore") -Destination (Join-Path $targetScaffoldDir ".cbmignore") -Force
-    if ($ProfileIncludesDashboard) {
-        $dashboardIgnore = Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\.cbmignore"
-        if (Test-Path -LiteralPath $dashboardIgnore -PathType Leaf) {
-            $mirrorDashboardIgnore = Join-Path $targetScaffoldDir "aoi_apps\agentic-ops-dashboard\.cbmignore"
-            New-Item -ItemType Directory -Path (Split-Path -Parent $mirrorDashboardIgnore) -Force | Out-Null
-            Copy-Item -LiteralPath $dashboardIgnore -Destination $mirrorDashboardIgnore -Force
-        }
-    }
+if (Test-Path -LiteralPath $targetScaffoldDir -PathType Container) {
+    Remove-Item -LiteralPath $targetScaffoldDir -Recurse -Force
+    Write-Ok "Espejo scaffold/ retirado del destino (el andamio no se queda instalado)"
 }
-Prune-UnselectedHarnessFiles -TargetDir $targetScaffoldDir -SelectedHarness $Harness
 Convert-ToUnixLineEndings -TargetDir $ProjectPath
-Convert-ToUnixLineEndings -TargetDir $targetScaffoldDir
-Write-Ok "Scaffold mirror preserved in target (scaffold/)"
 
 # `pnpm-workspace.yaml` and `pnpm-lock.yaml` used to be copied here into the
 # project with `-Force`, unconditionally. Both already travel inside the
@@ -1599,7 +1589,7 @@ try {
     $nodePath = Get-ExecutablePath -Name "node"
     if ($nodePath -and (Test-Path -LiteralPath $compileRulesScript -PathType Leaf)) {
         try {
-            & $nodePath $compileRulesScript --harness $Harness --workspace $ProjectName --prune 2>$null
+            & $nodePath $compileRulesScript --harness $Harness --workspace $ProjectName --prune --reference $ScaffoldDir 2>$null
             Prune-UnselectedHarnessFiles -TargetDir $ProjectPath -SelectedHarness $Harness
             Write-Ok "Multi-harness rules compiled ($Harness)"
         } catch { }

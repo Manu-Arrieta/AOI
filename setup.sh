@@ -1731,27 +1731,20 @@ EOF
   [ -n "$FRESH_RESTORE" ] && rm -f "$FRESH_RESTORE"
 fi
 
-# ── Rebuild the scaffold mirror inside the target ───────────────────────────
+# ── Frontera del índice Codebase Memory ────────────────────────────────────
 #
-# Invariant 7 asks the mirror to be byte-identical to the governed files, and
-# `validate-scaffold-parity` checks exactly that inside the installed
-# workspace. So the mirror has to be built from what the merge ACTUALLY left on
-# disk, not from what AOI wanted to install.
+# Acá se reconstruía un espejo `scaffold/` DENTRO del workspace destino, unos
+# 399 archivos gobernados y 3.8 MB, para que `validate-scaffold-parity` pudiera
+# correr ahí. El Owner lo zanjó el 2026-09-17: `scaffold/` es el andamio — es
+# exactamente lo que se instala, y por eso mismo no es algo que deba QUEDAR
+# instalado. El Principio I protege la propagación de AOI hacia los workspaces,
+# y esa relación sólo existe en el repositorio fuente; downstream la compuerta
+# leía el espejo para verificar el espejo. Ahora distingue repo de workspace.
 #
-# It used to be built the other way: AOI's scaffold was copied over the mirror
-# wholesale and only `scripts/` was re-synced back from the project. Every
-# other governed path — .github/prompts, the dashboard, the constitution —
-# therefore carried AOI's version in the mirror while the project carried the
-# user's. That is precisely the state the merge produces whenever it preserves
-# a conflict, so the reward for resolving a conflict correctly was a parity
-# failure the operator had no way to read.
-#
-# Base layer first (non-governed scaffold content, which has no project
-# counterpart to copy from), then every governed path from the project on top.
-# An Owner may already have a .cbmignore. The fresh merge rightly preserves it,
-# but Codebase Memory needs AOI's topology at the END of the file: a later
-# gitignore rule overrides an earlier owner negation. Do this before rebuilding
-# scaffold/ so the installed mirror records the actual, joined boundary.
+# Lo que sigue es de Codebase Memory, no del espejo. Un Owner puede ya tener su
+# `.cbmignore`; el merge fresco lo preserva, pero Codebase Memory necesita la
+# topología de AOI al FINAL del archivo, porque una regla posterior anula una
+# negación anterior del Owner.
 if [ -n "${CBM_BIN_INIT:-}" ]; then
   CBM_BOUNDARY_SCRIPT="$SCRIPT_DIR/scripts/conf/ensure-cbmignore.mjs"
   if [ ! -f "$CBM_BOUNDARY_SCRIPT" ]; then
@@ -1771,50 +1764,12 @@ if [ -n "${CBM_BIN_INIT:-}" ]; then
   fi
 fi
 
-mkdir -p "$PROJECT_PATH/scaffold"
-if command -v rsync &>/dev/null; then
-  rsync -a ${SCAFFOLD_COPY_EXCLUDE[@]+"${SCAFFOLD_COPY_EXCLUDE[@]}"} "$SCAFFOLD_DIR/" "$PROJECT_PATH/scaffold/"
-else
-  (
-    cd "$SCAFFOLD_DIR"
-    find . -type f -print | while IFS= read -r file; do
-      profile_excludes_relative_path "$file" && continue
-      target="$PROJECT_PATH/scaffold/${file#./}"
-      mkdir -p "$(dirname "$target")"
-      cp "$file" "$target"
-    done
-  )
+# El espejo de una instalación previa se retira. Su contenido es de AOI por
+# definición y byte-idéntico a lo gobernado, así que nada del Owner vive ahí.
+if [ -d "$PROJECT_PATH/scaffold" ]; then
+  rm -rf "$PROJECT_PATH/scaffold"
+  ok "Espejo scaffold/ retirado del destino (el andamio no se queda instalado)"
 fi
-prune_unselected_harness_files "$PROJECT_PATH/scaffold" "$SELECTED_HARNESS"
-
-# The governed list is published by the gate itself rather than duplicated
-# here: a path added there and forgotten here would silently stop being
-# mirrored, and the mismatch only ever surfaces in someone else's workspace.
-GOVERNED_PATHS="$(node "$SCRIPT_DIR/scripts/scaffold/validate-scaffold-parity.mjs" --list-paths --profile "$INSTALLATION_PROFILE" 2>/dev/null || true)"
-if [ -z "$GOVERNED_PATHS" ]; then
-  warn "No se pudo leer la lista de paths gobernados — el espejo queda con la versión de AOI"
-  warn "y validate-scaffold-parity puede fallar en este workspace. Revisá node y el scaffold."
-else
-  while IFS= read -r gp || [ -n "$gp" ]; do
-    [ -z "$gp" ] && continue
-    src="$PROJECT_PATH/$gp"
-    [ -e "$src" ] || continue
-    dst="$PROJECT_PATH/scaffold/$gp"
-    mkdir -p "$(dirname "$dst")"
-    if [ -d "$src" ]; then
-      if command -v rsync &>/dev/null; then
-        rsync -a --delete "$src/" "$dst/"
-      else
-        rm -rf "$dst" && cp -R "$src" "$dst"
-      fi
-    else
-      cp "$src" "$dst"
-    fi
-  done <<GOVERNED_EOF
-$GOVERNED_PATHS
-GOVERNED_EOF
-fi
-ok "Scaffold mirror rebuilt from the installed tree (scaffold/)"
 
 # NOTE: pnpm-workspace.yaml and pnpm-lock.yaml used to be copied here with a
 # bare `cp`, unconditionally, in both the fresh and the reinstall path.
@@ -2156,7 +2111,7 @@ fi
 
 # Multi-Harness Rules Compilation
 if [ -f "$SCRIPT_DIR/scripts/multi-harness/compile-rules.mjs" ]; then
-  node "$SCRIPT_DIR/scripts/multi-harness/compile-rules.mjs" --harness "$SELECTED_HARNESS" --workspace "$PROJECT_NAME" --prune 2>/dev/null || true
+  node "$SCRIPT_DIR/scripts/multi-harness/compile-rules.mjs" --harness "$SELECTED_HARNESS" --workspace "$PROJECT_NAME" --prune --reference "$SCAFFOLD_DIR" 2>/dev/null || true
   prune_unselected_harness_files "$PROJECT_PATH" "$SELECTED_HARNESS"
   ok "Multi-harness rules compiled ($SELECTED_HARNESS)"
 fi

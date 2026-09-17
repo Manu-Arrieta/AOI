@@ -133,14 +133,13 @@ test('BIC-2026-005: ningún instalador emite la misma fase dos veces', () => {
 // falla, así que un test que ejecutara el instalador pasaría en cualquier
 // máquina moderna y callaría justo sobre la plataforma donde rompe.
 test('BIC-2026-005: toda expansión de SCAFFOLD_COPY_EXCLUDE sobrevive a bash 3.2', () => {
-  const expansiones = POSIX.match(/\$\{SCAFFOLD_COPY_EXCLUDE\[@\]/g) ?? []
-  assert.ok(expansiones.length >= 6, `esperaba ≥6 expansiones, hay ${expansiones.length}`)
-
   // La forma blindada `${ARR[@]+"${ARR[@]}"}` expande a NADA con el array
-  // vacío; la desnuda `"${ARR[@]}"` es la que aborta.
+  // vacío; la desnuda `"${ARR[@]}"` es la que aborta. Se afirma la propiedad y
+  // no un conteo: fijar "son 6" obligaba a tocar el test cada vez que una
+  // expansión nace o muere, y el número no es lo que protege a nadie.
   const desnudas = POSIX.match(/(?<!\+)"\$\{SCAFFOLD_COPY_EXCLUDE\[@\]\}"/g) ?? []
   assert.deepEqual(desnudas, [], 'una expansión sin blindar aborta el perfil dashboard en macOS')
 
   const blindadas = POSIX.match(/\$\{SCAFFOLD_COPY_EXCLUDE\[@\]\+"\$\{SCAFFOLD_COPY_EXCLUDE\[@\]\}"\}/g) ?? []
-  assert.equal(blindadas.length, 6, `las 6 expansiones deben estar blindadas, hay ${blindadas.length}`)
+  assert.ok(blindadas.length > 0, 'el array debe seguir usándose, y blindado')
 })
