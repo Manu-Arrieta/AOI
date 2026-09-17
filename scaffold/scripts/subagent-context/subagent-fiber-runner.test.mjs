@@ -68,7 +68,22 @@ describe('Subagent Fiber Runner: Revertible Sandboxes', () => {
     assert.equal(fs.readFileSync(directWriteFile, 'utf8'), 'outside-trackFileWrite');
   });
 
-  it('BIC-2026-002:never.3 scopes recovery guidance without a universal timing promise', () => {
+  it('BIC-2026-002:never.3 scopes recovery guidance without a universal timing promise', (t) => {
+    // Este caso auditea la DOCUMENTACIÓN DE AOI: que sus contratos públicos no
+    // publiquen una garantía temporal que nadie midió. En un workspace instalado
+    // `docs/` es del Owner y el veredicto no es sobre AOI, así que el caso leía
+    // `docs/README.md` y moría con ENOENT — haciendo salir `pnpm test` con 1 en
+    // una instalación de perfil core, que es el perfil por defecto.
+    //
+    // El discriminador es `setup.sh`, el mismo que ya usan `validate-srp`,
+    // `validate-test-globs`, `claude-project-guide`, `check-hook-wiring` e
+    // `install-git-guard`. El `return` es obligatorio: `t.skip()` marca el caso
+    // pero NO detiene la ejecución.
+    if (!fs.existsSync(path.resolve(process.cwd(), 'setup.sh'))) {
+      t.skip('workspace instalado: el veredicto no es sobre la documentación de AOI');
+      return;
+    }
+
     const prompts = [
       '.github/prompts/sdd-apply.prompt.md',
       '.github/prompts/sdd-verify.prompt.md',
