@@ -106,7 +106,12 @@ describe('the development repository and a fresh clone are not failed', () => {
     // el test. El marcador es `setup.sh`, el mismo que ya usan `validate-srp`,
     // `validate-test-globs` y `claude-project-guide`.
     if (!fs.existsSync(path.join(REPO, 'setup.sh'))) {
+      // `t.skip()` marca el caso como salteado pero NO detiene la ejecución: sin
+      // este `return` la aserción de abajo corre igual, y el caso se reporta
+      // salteado Y fallado a la vez. Eso es lo que hacía salir `pnpm test` con 1
+      // dentro de un workspace instalado mientras cada suite imprimía `fail 0`.
       t.skip('workspace instalado: el veredicto no es sobre AOI')
+      return
     }
 
     assert.equal(checkHookWiring(REPO).status, 'WARNING')
