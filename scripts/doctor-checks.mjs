@@ -28,14 +28,28 @@ export { checkArchifySkill, findArchifyRenderer }
 
 const execFileAsync = promisify(execFile)
 
+// The Owner's policy on token-saving tooling has one shape and one exception:
+// every saving tool is mandatory, and Headroom alone may be absent. This list
+// used to hold `icm` by itself, with `rtk` and `codebase-memory-mcp` sitting in
+// RECOMMENDED next to `headroom` — so the diagnostic told the operator that two
+// mandatory tools were merely advisable, and put the single declared exception
+// in the same basket as the obligations it exists to contrast with.
+//
+// The verdict reads `c.mandatory && c.status === 'FAILED'`, so this list is not
+// documentation: it decides which absence can condemn a workspace. A saving
+// tool listed as recommended cannot fail the doctor, which is the same as not
+// being required at all.
 export const MANDATORY_BINARIES = [
   { name: 'icm', description: 'Infinite Context Memory CLI' },
+  { name: 'rtk', description: 'Real-Time Token Compressor' },
+  { name: 'codebase-memory-mcp', description: 'Structural Graph AST Intelligence' },
 ]
 
+// Headroom is the one declared exception. `specify` stays here because it is a
+// spec-kit dependency rather than a token-saving tool, so the policy above does
+// not reach it.
 export const RECOMMENDED_BINARIES = [
-  { name: 'rtk', description: 'Real-Time Token Compressor' },
   { name: 'headroom', description: 'CLI Context Compression Layer' },
-  { name: 'codebase-memory-mcp', description: 'Structural Graph AST Intelligence' },
   { name: 'specify', description: 'Spec-Driven Development CLI' },
 ]
 

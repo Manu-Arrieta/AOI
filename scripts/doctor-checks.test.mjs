@@ -85,8 +85,24 @@ describe('checkBinaries separates what blocks from what merely warns', () => {
     assert.equal(r.status, 'WARNING')
   })
 
-  it('ships ICM as the only mandatory tool, per the Owner', () => {
-    assert.deepEqual(MANDATORY_BINARIES.map((b) => b.name), ['icm'])
+  // This used to read "ships ICM as the only mandatory tool, per the Owner" and
+  // pinned `['icm']` exactly — attributing to the Owner the opposite of the
+  // Owner's policy, and freezing it so the drift could never be corrected
+  // without the suite objecting. Every token-saving tool is mandatory; Headroom
+  // is the single declared exception.
+  it('marks every token-saving tool mandatory, per the Owner', () => {
+    const mandatory = MANDATORY_BINARIES.map((b) => b.name)
+    for (const saving of ['icm', 'rtk', 'codebase-memory-mcp']) {
+      assert.ok(mandatory.includes(saving), `${saving} debe ser obligatoria`)
+    }
+  })
+
+  // The negative control. Without it the assertion above is satisfied by a list
+  // that marks EVERYTHING mandatory, which would erase the one exception the
+  // policy actually grants and make the test vacuous.
+  it('keeps Headroom as the one tool whose absence never condemns a workspace', () => {
+    const mandatory = MANDATORY_BINARIES.map((b) => b.name)
+    assert.ok(!mandatory.includes('headroom'), 'Headroom es la única excepción declarada')
     assert.ok(RECOMMENDED_BINARIES.some((b) => b.name === 'headroom'))
   })
 })

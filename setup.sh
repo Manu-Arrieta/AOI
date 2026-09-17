@@ -1156,17 +1156,28 @@ else
   info "            El guard de managed-files SÍ se cablea: no depende del perfil."
 fi
 
-# ── Phase 1.8: Codebase Memory MCP (Advanced, workspace-local only) ────────
-header "Phase 1.8: Codebase Memory MCP (Advanced)"
+# ── Phase 1.8: Codebase Memory MCP (every profile, workspace-local only) ───
+#
+# This phase used to begin with `if [ "$PROFILE_INCLUDES_ADVANCED" -eq 0 ]`,
+# which skipped the install on Core. Core is the default profile AND the only
+# one reachable without a flag — the installer never asks for a profile — so in
+# practice the default installation shipped without a tool the Owner's policy
+# declares mandatory. Its two `info` lines sat next to Headroom's, identically
+# formatted, and Headroom is the ONE tool allowed to be optional: an operator
+# had no way to tell the declared exception from the skipped obligation.
+#
+# The Owner settled it on 2026-09-17: Codebase Memory is mandatory in Core too,
+# and Headroom remains the single optional tool. Narrowing an obligation to a
+# profile makes it optional for whoever uses the default, which is the same
+# thing the policy forbids.
+header "Phase 1.8: Codebase Memory MCP"
 
-if [ "$PROFILE_INCLUDES_ADVANCED" -eq 0 ]; then
-  info "Core profile: Codebase Memory MCP is not installed. Select --profile advanced to opt in."
-elif [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then
+if [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then
   info "codebase-memory-mcp indexa el repo en un knowledge graph local para reducir"
   info "exploración file-by-file. AOI lo instala con --skip-config para NO tocar"
   info "copilot-instructions.md del operador y registra el MCP sólo en el workspace actual."
-  # An explicit Advanced selection is a contract, not an aspirational prompt:
-  # unlike optional Headroom, it cannot quietly fall back to ICM-only.
+  # Mandatory in every profile: the installer cannot quietly fall back to
+  # ICM-only, the way optional Headroom is allowed to.
   info "Variante UI incluye grafo 3D interactivo en http://localhost:9749"
   if [ "$AUTO_YES" -eq 1 ] || ! [ -t 0 ]; then
     CBM_UI_CHOICE="n"
@@ -1179,8 +1190,9 @@ elif [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then
     n|N|no|NO) CBM_VARIANT_FLAG="--standard" ;;
   esac
   if ! bash "$SCRIPT_DIR/scripts/install-codebase-memory.sh" --yes $CBM_VARIANT_FLAG; then
-    err "Codebase Memory es obligatorio para el perfil $INSTALLATION_PROFILE y no se pudo instalar."
-    err "Corrige la instalación y vuelve a ejecutar el setup, o elige --profile core."
+    err "Codebase Memory es obligatorio en todos los perfiles y no se pudo instalar."
+    err "Corrige la instalación y vuelve a ejecutar el setup. No hay perfil que lo omita:"
+    err "la única herramienta de ahorro opcional de AOI es Headroom."
     exit 1
   fi
   # The child installer can add ~/.local/bin to its own PATH only. Resolve the
@@ -1191,7 +1203,7 @@ elif [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then
     CBM_BIN_INIT="$HOME/.local/bin/codebase-memory-mcp"
   fi
   if [[ -z "$CBM_BIN_INIT" ]]; then
-    err "Codebase Memory informó éxito pero el binario no quedó disponible para el perfil $INSTALLATION_PROFILE."
+    err "Codebase Memory informó éxito pero el binario no quedó disponible."
     exit 1
   fi
   "$CBM_BIN_INIT" config set auto_index true 2>/dev/null && ok "codebase-memory-mcp: auto_index activado (watcher nativo de git)" || true
@@ -1204,7 +1216,7 @@ elif [[ -f "$SCRIPT_DIR/scripts/install-codebase-memory.sh" ]]; then
   # without AOI's actual control plane and could not split the dashboard.
   # `auto_index` keeps the completed graphs current afterwards.
 else
-  err "scripts/install-codebase-memory.sh no encontrado: el perfil $INSTALLATION_PROFILE no se puede completar."
+  err "scripts/install-codebase-memory.sh no encontrado: Codebase Memory es obligatorio y la instalación no se puede completar."
   exit 1
 fi
 
@@ -1727,7 +1739,7 @@ fi
 # but Codebase Memory needs AOI's topology at the END of the file: a later
 # gitignore rule overrides an earlier owner negation. Do this before rebuilding
 # scaffold/ so the installed mirror records the actual, joined boundary.
-if [ "$PROFILE_INCLUDES_ADVANCED" -eq 1 ] && [ -n "${CBM_BIN_INIT:-}" ]; then
+if [ -n "${CBM_BIN_INIT:-}" ]; then
   CBM_BOUNDARY_SCRIPT="$SCRIPT_DIR/scripts/conf/ensure-cbmignore.mjs"
   if [ ! -f "$CBM_BOUNDARY_SCRIPT" ]; then
     err "ensure-cbmignore.mjs no encontrado; no se puede garantizar la frontera del índice Codebase."
@@ -1831,7 +1843,7 @@ fi
 # Dashboard is a separate application, so the Dashboard profile gets a second
 # graph rooted at that app. Run the two roots sequentially in one background
 # job to avoid concurrent writes to the provider's local graph store.
-if [ "$PROFILE_INCLUDES_ADVANCED" -eq 1 ] && [ -n "${CBM_BIN_INIT:-}" ]; then
+if [ -n "${CBM_BIN_INIT:-}" ]; then
   CBM_INDEX_LOG="/tmp/codebase-memory-mcp-index.log"
   CBM_INDEX_PATHS=("$PROJECT_PATH")
   if [ "$PROFILE_INCLUDES_DASHBOARD" -eq 1 ]; then
@@ -2275,7 +2287,12 @@ CBM_BIN="$(get_codebase_memory_path || true)"
 if [[ -n "$CBM_BIN" ]]; then
   echo "    ✓ Codebase Memory MCP   $($CBM_BIN --version 2>/dev/null || echo '')"
 else
-  echo "    ○ Codebase Memory MCP   optional / not installed"
+  # Was "○ Codebase Memory MCP   optional / not installed", printed with a
+  # neutral ○ while RTK and ICM printed ✗ for the same condition. Phase 1.8 is
+  # now fatal on every profile, so reaching this branch means the install was
+  # subverted, not that a choice was made — and saying "optional" here taught
+  # the operator the opposite of the policy.
+  echo "    ✗ Codebase Memory MCP   mandatory / NOT installed"
 fi
 command -v specify &>/dev/null && echo "    ✓ Specify CLI" || echo "    ✗ Specify CLI"
 echo ""

@@ -1250,17 +1250,36 @@ if (Test-Path -LiteralPath $projectGitDir -PathType Container) {
 }
 
 Write-Ok "Phase 1.7 complete"
+} else {
+    Write-Info "Core profile: la integración Headroom (wrapper + compresión) no se instala."
+}
 
-Write-Header "Phase 1.8: Codebase Memory MCP (Advanced)"
+# ── Phase 1.8: Codebase Memory MCP (every profile, workspace-local only) ───
+#
+# Phase 1.8 used to live INSIDE the `if ($ProfileIncludesAdvanced)` block above,
+# sharing it with optional Headroom, and Core printed a single line covering
+# both: "advanced Headroom integration and Codebase Memory MCP are not
+# installed." That sentence named the one tool the Owner allows to be optional
+# and a tool the policy declares mandatory in the same breath, so Core shipped
+# without Codebase Memory and the operator could not tell which was which.
+#
+# Core is the default AND the only profile reachable without a flag, because
+# neither installer asks for a profile. Narrowing an obligation to a profile
+# therefore makes it optional for everyone who installs the documented way.
+#
+# The Owner settled it on 2026-09-17: Codebase Memory is mandatory in Core too,
+# and Headroom stays the single optional tool. The block is split accordingly —
+# Headroom behind the profile, Codebase Memory for everyone.
+Write-Header "Phase 1.8: Codebase Memory MCP"
 $codebaseMemoryInstall = Join-Path $PSScriptRoot "scripts/install-codebase-memory.ps1"
 if (Test-Path $codebaseMemoryInstall) {
     Write-Info "codebase-memory-mcp indexa el repo en un knowledge graph local para reducir exploración file-by-file."
     Write-Info "AOI lo instala en modo binario-only (--skip-config) y registra el MCP solo en el workspace actual."
-    # An explicit Advanced selection is a contract, not an aspirational prompt:
-    # unlike optional Headroom, it cannot quietly fall back to ICM-only.
+    # Mandatory in every profile: the installer cannot quietly fall back to
+    # ICM-only, the way optional Headroom is allowed to.
     $cbmChoice = "y"
     if ($cbmChoice -match '^[nN]([oO])?$') {
-        throw "Codebase Memory no puede omitirse en el perfil $Profile. Selecciona -Profile core para no instalarlo."
+        throw "Codebase Memory no puede omitirse: es obligatorio en todos los perfiles. La única herramienta de ahorro opcional de AOI es Headroom."
     } else {
         Write-Info "Variante UI incluye grafo 3D interactivo en http://localhost:9749"
         $cbmUiChoice = "n"
@@ -1272,12 +1291,12 @@ if (Test-Path $codebaseMemoryInstall) {
         try {
             $cbmExitCode = Invoke-WindowsPowerShellFile -ScriptPath $codebaseMemoryInstall -Arguments $cbmVariantArgs
             if ($cbmExitCode -ne 0) {
-                throw "install-codebase-memory.ps1 salió con código $cbmExitCode. El perfil $Profile requiere Codebase Memory."
+                throw "install-codebase-memory.ps1 salió con código $cbmExitCode. Codebase Memory es obligatorio en todos los perfiles."
             } else {
                 # Post-install config: enable auto_index (native git watcher) and UI
                 $cbmBinInit = Get-CodebaseMemoryPath
                 if (-not $cbmBinInit) {
-                    throw "Codebase Memory informó éxito pero el binario no quedó disponible para el perfil $Profile."
+                    throw "Codebase Memory informó éxito pero el binario no quedó disponible."
                 }
                 try { & $cbmBinInit config set auto_index true 2>$null; Write-Ok "codebase-memory-mcp: auto_index activado (watcher nativo de git)" } catch {}
                 if ($cbmWithUi) {
@@ -1292,16 +1311,13 @@ if (Test-Path $codebaseMemoryInstall) {
                 $CodebaseMemoryInitialIndexPath = $cbmBinInit
             }
         } catch {
-            Write-Err "No se pudo completar Codebase Memory para el perfil $Profile: $($_.Exception.Message)"
+            Write-Err "No se pudo completar Codebase Memory, que es obligatorio: $($_.Exception.Message)"
             exit 1
         }
     }
 } else {
-    Write-Err "scripts/install-codebase-memory.ps1 no encontrado: el perfil $Profile no se puede completar."
+    Write-Err "scripts/install-codebase-memory.ps1 no encontrado: Codebase Memory es obligatorio y la instalación no se puede completar."
     exit 1
-}
-} else {
-    Write-Info "Core profile: advanced Headroom integration and Codebase Memory MCP are not installed."
 }
 
 Write-Header "Phase 2: Spec-Kit"
@@ -1355,7 +1371,7 @@ if ($nodePath -and (Test-Path -LiteralPath $projectPackage) -and (Test-Path -Lit
 # prior owner negation cannot re-include scaffold/ or aoi_apps/. This runs
 # before the target mirror is built, which lets the mirror reflect the joined
 # result rather than the source template.
-if ($ProfileIncludesAdvanced -and $CodebaseMemoryInitialIndexPath) {
+if ($CodebaseMemoryInitialIndexPath) {
     $cbmBoundaryScript = Join-Path $PSScriptRoot "scripts\conf\ensure-cbmignore.mjs"
     if (-not $nodePath -or -not (Test-Path -LiteralPath $cbmBoundaryScript -PathType Leaf)) {
         Write-Err "ensure-cbmignore.mjs o Node no disponible; no se puede garantizar la frontera del índice Codebase."
@@ -1382,7 +1398,7 @@ $targetScaffoldDir = Join-Path $ProjectPath "scaffold"
 Copy-ScaffoldMissing -From $ScaffoldDir -To $targetScaffoldDir -ExcludedRelativePrefixes $ProfileExcludedRelativePrefixes
 Copy-Item -LiteralPath (Join-Path $ScaffoldDir ".github\*") -Destination (Join-Path $targetScaffoldDir ".github") -Recurse -Force -ErrorAction SilentlyContinue
 Copy-Item -LiteralPath (Join-Path $ProjectPath "scripts\*") -Destination (Join-Path $targetScaffoldDir "scripts") -Recurse -Force -ErrorAction SilentlyContinue
-if ($ProfileIncludesAdvanced -and $CodebaseMemoryInitialIndexPath) {
+if ($CodebaseMemoryInitialIndexPath) {
     Copy-Item -LiteralPath (Join-Path $ProjectPath ".cbmignore") -Destination (Join-Path $targetScaffoldDir ".cbmignore") -Force
     if ($ProfileIncludesDashboard) {
         $dashboardIgnore = Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard\.cbmignore"
@@ -1434,7 +1450,7 @@ if ($ProfileIncludesDashboard) {
 # Dashboard is a separate application, so the Dashboard profile gets a second
 # graph rooted at that app. One background job indexes roots sequentially to
 # avoid concurrent writes to the provider's local graph store.
-if ($ProfileIncludesAdvanced -and $CodebaseMemoryInitialIndexPath) {
+if ($CodebaseMemoryInitialIndexPath) {
     $indexRoots = @($ProjectPath)
     $dashboardIndexPath = Join-Path $ProjectPath "aoi_apps\agentic-ops-dashboard"
     if ($ProfileIncludesDashboard) {

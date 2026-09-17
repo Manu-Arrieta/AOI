@@ -35,11 +35,35 @@ test('BIC-2026-005: Core prevents new dashboard copies without deleting an exist
   assert.doesNotMatch(WINDOWS, /Remove-Item[^\n]*aoi_apps\\agentic-ops-dashboard/)
 })
 
-test('BIC-2026-005: Advanced is the sole path that installs its integrations', () => {
-  assert.match(POSIX, /elif \[\[ -f "\$SCRIPT_DIR\/scripts\/install-codebase-memory\.sh" \]\]; then[\s\S]*if ! bash "\$SCRIPT_DIR\/scripts\/install-codebase-memory\.sh"[\s\S]*exit 1/)
-  assert.match(WINDOWS, /if \(\$ProfileIncludesAdvanced\) \{[\s\S]*\$codebaseMemoryInstall[\s\S]*catch \{[\s\S]*exit 1/)
-  assert.match(POSIX, /Core profile: Codebase Memory MCP is not installed/)
-  assert.match(WINDOWS, /Core profile: advanced Headroom integration and Codebase Memory MCP are not installed/)
+// Este test se llamaba "Advanced is the sole path that installs its
+// integrations" y afirmaba de Codebase Memory exactamente lo mismo que de
+// Headroom. El Owner zanjó el 2026-09-17 que Codebase Memory es obligatorio en
+// TODOS los perfiles y que Headroom es la única herramienta de ahorro opcional
+// de AOI, así que la premisa era falsa para la mitad de lo que verificaba — y
+// el test la sostenía, de modo que corregir el instalador rompía la suite.
+test('BIC-2026-005: Headroom es la única integración que un perfil puede omitir', () => {
+  assert.match(POSIX, /if \[ "\$PROFILE_INCLUDES_ADVANCED" -eq 1 \]; then\nheader "Phase 1\.6: Headroom/)
+  assert.match(WINDOWS, /if \(\$ProfileIncludesAdvanced\) \{\nWrite-Header "Phase 1\.6: Headroom/)
+  assert.match(POSIX, /Core profile: la integración Headroom/)
+  assert.match(WINDOWS, /Core profile: la integración Headroom/)
+})
+
+test('BIC-2026-005: Codebase Memory se instala en todo perfil y su fallo es fatal', () => {
+  // Incondicional: el bloque abre con `if` a nivel superior, no con un `elif`
+  // colgado de un chequeo de perfil, y el fallo del instalador hijo corta.
+  assert.match(POSIX, /\nif \[\[ -f "\$SCRIPT_DIR\/scripts\/install-codebase-memory\.sh" \]\]; then[\s\S]*?if ! bash "\$SCRIPT_DIR\/scripts\/install-codebase-memory\.sh"[\s\S]*?exit 1/)
+  assert.match(WINDOWS, /\nWrite-Header "Phase 1\.8: Codebase Memory MCP"/)
+  assert.match(WINDOWS, /\$codebaseMemoryInstall[\s\S]*?catch \{[\s\S]*?exit 1/)
+
+  // Los controles negativos, y son el punto. Sin ellos las aserciones de arriba
+  // las satisface igual un instalador que siga gateando Codebase Memory por
+  // perfil: fue exactamente esa forma la que dejó al perfil por defecto —el
+  // único alcanzable sin bandera— sin una herramienta declarada obligatoria.
+  assert.doesNotMatch(POSIX, /if \[ "\$PROFILE_INCLUDES_ADVANCED" -eq 0 \]; then\n\s*info "Core profile: Codebase Memory/)
+  assert.doesNotMatch(POSIX, /Core profile: Codebase Memory MCP is not installed/)
+  assert.doesNotMatch(POSIX, /elige --profile core/)
+  assert.doesNotMatch(WINDOWS, /Core profile: advanced Headroom integration and Codebase Memory MCP are not installed/)
+  assert.doesNotMatch(WINDOWS, /Selecciona -Profile core para no instalarlo/)
 })
 
 test('BIC-2026-005: profile persists before dashboard-safe commands inspect it', () => {
