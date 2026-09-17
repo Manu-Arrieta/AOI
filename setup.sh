@@ -148,6 +148,38 @@ report_harness_kept() {
   warn "They belong to a harness you did not select. Delete them yourself if you want them gone."
 }
 
+# Decide si el menú interactivo de harness puede mostrarse.
+#
+# La condición inline que reemplaza tenía DOS defectos, y el primero es la razón
+# por la que el operador nunca podía elegir:
+#
+#   [ -t 0 ] && [ "$AUTO_YES" -eq 0 ] && [ "$SELECTED_HARNESS" = "all" ] && [ -z "$RAW_PROJECT_PATH" ]
+#
+# El último término exigía que NO se hubiera pasado ruta de proyecto. Pero la
+# ruta es la invocación documentada en el encabezado de este mismo archivo
+# (`./setup.sh --profile core /ruta`) y el instalador se niega a correr sin
+# ella, así que instalar como está documentado salteaba el menú EN SILENCIO y
+# dejaba todo workspace en `all`. Medido: cuatro instalaciones consecutivas
+# reportaron "5 harness adapter(s) active" y ninguna mostró jamás el prompt.
+#
+# El segundo es más sutil. `[ -t 0 ]` pregunta sólo si stdin es un terminal —
+# exactamente el criterio que `specify_stdin_target` abandonó por insuficiente:
+# con stdout redirigido a un log el operador nunca VE la pregunta, y el
+# instalador espera para siempre una respuesta que nadie sabe que debe dar. Un
+# prompt es contestable sólo si los DOS descriptores son terminales.
+#
+# `--harness` se rastrea con su propia bandera en vez de inferirse del valor,
+# porque `--harness all` tipeado a propósito era indistinguible del default y
+# reabría el menú sin que nadie lo pidiera.
+harness_prompt_enabled() {
+  local stdin_tty="$1" stdout_tty="$2" auto_yes="$3" harness_explicit="$4"
+
+  if [ "$stdin_tty" != "1" ] || [ "$stdout_tty" != "1" ]; then echo 0; return 0; fi
+  if [ "$auto_yes" != "0" ]; then echo 0; return 0; fi
+  if [ "$harness_explicit" != "0" ]; then echo 0; return 0; fi
+  echo 1
+}
+
 # Sanitize a PowerShell script before passing it to Windows PowerShell 5.1.
 #
 # Windows PowerShell 5.1 (powershell.exe) is notoriously picky:
@@ -413,6 +445,8 @@ fi
 export SELECTED_HARNESS="all"
 export INSTALLATION_PROFILE="core"
 RAW_PROJECT_PATH=""
+# Puesta en 1 por `--harness`: distingue el default de una elección deliberada.
+HARNESS_EXPLICIT=0
 AUTO_YES=0
 SKIP_DASHBOARD_DEPS=0
 
@@ -428,10 +462,12 @@ while [[ $# -gt 0 ]]; do
       ;;
     --harness)
       SELECTED_HARNESS="$2"
+      HARNESS_EXPLICIT=1
       shift 2
       ;;
     --harness=*)
       SELECTED_HARNESS="${1#*=}"
+      HARNESS_EXPLICIT=1
       shift
       ;;
     --profile)
@@ -489,8 +525,20 @@ else
   read -r PROJECT_PATH
 fi
 
-# Interactive harness selection if running in TTY without explicit harness flag and not auto-yes
-if [ -t 0 ] && [ "$AUTO_YES" -eq 0 ] && [ "$SELECTED_HARNESS" = "all" ] && [ -z "$RAW_PROJECT_PATH" ]; then
+# Selección interactiva de harness. La decisión vive en `harness_prompt_enabled`,
+# que se puede extraer y ejecutar, en vez de en una condición inline que nadie
+# podía probar sin correr el instalador entero.
+# Los hechos del terminal se capturan ANTES de la sustitución, y esa es la parte
+# que no es obvia: dentro de `$(...)` la salida estándar ES un pipe, así que un
+# `[ -t 1 ]` escrito ahí adentro devuelve 0 SIEMPRE, incluso con el operador
+# mirando la pantalla. Medido con un pty real en ambos descriptores: la variante
+# inline reportaba `stdout=0` y el menú no se abría nunca. `[ -t 0 ]` sobrevive
+# a la sustitución porque sólo se redirige stdout, lo que hace al defecto
+# asimétrico y por lo tanto fácil de pasar por alto.
+STDIN_IS_TTY=0; [ -t 0 ] && STDIN_IS_TTY=1
+STDOUT_IS_TTY=0; [ -t 1 ] && STDOUT_IS_TTY=1
+
+if [ "$(harness_prompt_enabled "$STDIN_IS_TTY" "$STDOUT_IS_TTY" "$AUTO_YES" "$HARNESS_EXPLICIT")" = "1" ]; then
   echo ""
   echo "🤖 Choose target AI assistant(s) for rule compilation:"
   echo "  1) Universal / All (Copilot, Claude, Cursor, Antigravity, Cline) [Default]"
