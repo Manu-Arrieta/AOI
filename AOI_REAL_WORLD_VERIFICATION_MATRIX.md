@@ -188,6 +188,28 @@ pnpm aoi:invariant-gate -- --entity "AOI TESTS" --tests-dir . --exit-code
 > ignoran, y su par prueba que una copia sin gobernar del **mismo árbol** se sigue
 > detectando, para que la exclusión no se ensanche hasta tapar el defecto original.
 
+### Paso 0.2c: Emisores de arquitectura derivada (0 tokens de inferencia)
+
+No son compuertas y por eso no están en `pnpm test`: no emiten veredicto, emiten el
+grafo. Se verifican igual, porque el índice de arquitectura los cita como su fuente y
+un emisor mudo deja al documento afirmando cosas que nadie recalculó.
+
+```bash
+pnpm aoi:graph --hubs        # módulos por fan-out: el punto de integración real
+pnpm aoi:graph --cycles      # dependencias mutuas de import
+pnpm aoi:determinism --summary
+```
+
+| Emisor | Qué responde | Veredicto esperado en una instalación |
+| :--- | :--- | :--- |
+| `aoi:graph` | Quién invoca a quién: prompt→script, módulo→módulo, evento→hook, comando→compuerta y fases del instalador. | Lista no vacía de hubs. El fan-out más alto debe ser `sdd-stress-suite`; si aparece otro módulo arriba, el acoplamiento se movió y el índice quedó viejo. |
+| `aoi:determinism` | La clase de determinismo de **cada archivo**, con las señales que fundan el veredicto. | Cinco clases con conteo. `red-o-dependencias` en 0: ningún módulo del ciclo debe hacer red por su cuenta. |
+
+Los conteos dependen del workspace, no son constantes del producto: una instalación
+con menos módulos reporta menos archivos, y eso es correcto — el emisor mide el árbol
+donde corre, no un snapshot grabado. Comparar contra el ciclo anterior del mismo
+workspace, nunca contra el repositorio de desarrollo.
+
 ### Paso 0.3: Verificación del Reinstall Inteligente
 
 > [!WARNING]

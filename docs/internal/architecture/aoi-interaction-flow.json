@@ -1,0 +1,300 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "AOI — Flujo exacto de invocación",
+    "quality_profile": "showcase",
+    "output": "docs/internal/architecture/aoi-interaction-flow.html",
+    "views": [
+      {
+        "id": "capa-invisible",
+        "label": "Lo que corre solo",
+        "focus": [
+          "hooks_src",
+          "hooks_compile",
+          "hook_run"
+        ],
+        "note": "La cadena que nadie escribe en un prompt: declaración, compilación y disparo por evento del harness."
+      },
+      {
+        "id": "ciclo-sdd",
+        "label": "Prompt hacia script",
+        "focus": [
+          "hook_run",
+          "entry",
+          "ctx",
+          "apply",
+          "lens",
+          "verify"
+        ],
+        "note": "Qué ejecuta cada fase del ciclo SDD, con los módulos mecánicos que invoca."
+      },
+      {
+        "id": "verificacion",
+        "label": "Qué significa verificar",
+        "focus": [
+          "verify",
+          "hub",
+          "suite"
+        ],
+        "note": "El hub del grafo de imports y la cadena secuencial de compuertas donde el primer fallo detiene el resto."
+      }
+    ],
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "database": {
+          "label": "Declaración (fuente única)"
+        },
+        "backend": {
+          "label": "Script mecánico"
+        },
+        "security": {
+          "label": "Compuerta / veredicto"
+        },
+        "frontend": {
+          "label": "Prompt del ciclo SDD"
+        },
+        "messagebus": {
+          "label": "Hub del grafo de imports"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "harness",
+      "label": "Harness · dispara solo"
+    },
+    {
+      "id": "scripts",
+      "label": "Scripts mecánicos"
+    },
+    {
+      "id": "sdd",
+      "label": "Ciclo SDD · prompts"
+    },
+    {
+      "id": "gates",
+      "label": "Compuertas"
+    }
+  ],
+  "phases": [
+    {
+      "id": "arranque",
+      "label": "Arranque",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "intercepcion",
+      "label": "Intercepción",
+      "fromCol": 2,
+      "toCol": 2,
+      "variant": "emphasis"
+    },
+    {
+      "id": "ciclo",
+      "label": "Ciclo y veredicto",
+      "fromCol": 3,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "mainPath": [
+    "hooks_src",
+    "hooks_compile",
+    "hook_run",
+    "entry",
+    "apply",
+    "verify",
+    "suite"
+  ],
+  "nodes": [
+    {
+      "id": "hooks_src",
+      "lane": "harness",
+      "col": 0,
+      "type": "database",
+      "label": ".github/hooks/*.json",
+      "sublabel": "fuente única · 5 archivos",
+      "width": 140
+    },
+    {
+      "id": "hooks_compile",
+      "lane": "harness",
+      "col": 1,
+      "type": "backend",
+      "label": "install-hooks.mjs",
+      "sublabel": "compila el harness",
+      "width": 140,
+      "tag": "setup.sh · fase 4"
+    },
+    {
+      "id": "hook_run",
+      "lane": "harness",
+      "col": 2,
+      "type": "security",
+      "label": "ICM → RTK",
+      "sublabel": "PreToolUse (Bash)",
+      "tag": "el orden es el mecanismo",
+      "width": 140
+    },
+    {
+      "id": "ctx",
+      "lane": "scripts",
+      "col": 3,
+      "type": "backend",
+      "label": "context-arranger",
+      "sublabel": "link-resources · registry",
+      "width": 140
+    },
+    {
+      "id": "lens",
+      "lane": "scripts",
+      "col": 4,
+      "type": "backend",
+      "label": "ast-skeletonizer",
+      "sublabel": "synthesize · tombstone",
+      "width": 140
+    },
+    {
+      "id": "hub",
+      "lane": "scripts",
+      "col": 5,
+      "type": "messagebus",
+      "label": "sdd-stress-suite",
+      "sublabel": "14 imports · 4 áreas",
+      "tag": "hub del grafo",
+      "width": 140
+    },
+    {
+      "id": "entry",
+      "lane": "sdd",
+      "col": 3,
+      "type": "frontend",
+      "label": "Entrada SDD",
+      "sublabel": "genesis · frame · new · ff",
+      "width": 140
+    },
+    {
+      "id": "apply",
+      "lane": "sdd",
+      "col": 4,
+      "type": "frontend",
+      "label": "/sdd-apply",
+      "sublabel": "TDD en sandbox",
+      "width": 140
+    },
+    {
+      "id": "verify",
+      "lane": "sdd",
+      "col": 5,
+      "type": "security",
+      "label": "/sdd-verify",
+      "sublabel": "invariant · blueprint",
+      "tag": "veredicto mecánico",
+      "width": 140
+    },
+    {
+      "id": "suite",
+      "lane": "gates",
+      "col": 5,
+      "type": "security",
+      "label": "pnpm test",
+      "sublabel": "26 compuertas en cadena",
+      "tag": "CI suma mutation ratchet",
+      "width": 140
+    }
+  ],
+  "edges": [
+    {
+      "id": "declara-compila",
+      "from": "hooks_src",
+      "to": "hooks_compile",
+      "label": "declara",
+      "variant": "default"
+    },
+    {
+      "id": "compila-corre",
+      "from": "hooks_compile",
+      "to": "hook_run",
+      "label": "instala en el harness",
+      "variant": "emphasis"
+    },
+    {
+      "id": "intercepta-turno",
+      "from": "hook_run",
+      "to": "entry",
+      "label": "cada turno, sin prompt",
+      "variant": "emphasis"
+    },
+    {
+      "id": "entry-scripts",
+      "from": "entry",
+      "to": "ctx",
+      "label": "invoca",
+      "variant": "default"
+    },
+    {
+      "id": "entry-apply",
+      "from": "entry",
+      "to": "apply",
+      "variant": "emphasis"
+    },
+    {
+      "id": "apply-scripts",
+      "from": "apply",
+      "to": "lens",
+      "label": "invoca",
+      "variant": "default"
+    },
+    {
+      "id": "apply-verify",
+      "from": "apply",
+      "to": "verify",
+      "variant": "emphasis"
+    },
+    {
+      "id": "verify-suite",
+      "from": "verify",
+      "to": "suite",
+      "label": "pnpm test",
+      "variant": "security"
+    },
+    {
+      "id": "hub-importa",
+      "from": "hub",
+      "to": "lens",
+      "label": "importa",
+      "variant": "dashed",
+      "role": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Corre sin que nadie lo pida",
+      "items": [
+        "Los hooks se compilan al harness; ningún prompt los nombra",
+        "En PreToolUse la memoria se consulta ANTES de que RTK reescriba"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "El acoplamiento real",
+      "items": [
+        "Las áreas del catálogo son ayuda de lectura, no módulos",
+        "sdd-stress-suite integra 14 módulos de 4 áreas distintas"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Qué significa verificar",
+      "items": [
+        "26 pasos en cadena: el primero que falla detiene el resto",
+        "Ninguna decisión mecánica se delega a un juez LLM"
+      ]
+    }
+  ]
+}

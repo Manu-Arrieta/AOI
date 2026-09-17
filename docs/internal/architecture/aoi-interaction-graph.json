@@ -1,0 +1,1006 @@
+{
+  "prompts": {
+    "delete-resource-folder": {
+      "scripts": [],
+      "commands": [],
+      "tools": [],
+      "agents": [
+        "supervisor"
+      ]
+    },
+    "export-memory-bundle": {
+      "scripts": [
+        "scripts/memory-sync/resolve-active-version.mjs"
+      ],
+      "commands": [],
+      "tools": [],
+      "agents": [
+        "supervisor"
+      ]
+    },
+    "import-memory-bundle": {
+      "scripts": [
+        "scripts/memory-sync/resolve-active-version.mjs"
+      ],
+      "commands": [],
+      "tools": [],
+      "agents": [
+        "supervisor"
+      ]
+    },
+    "init": {
+      "scripts": [
+        "scripts/aoi-doctor.mjs",
+        "scripts/multi-harness/compile-rules.mjs",
+        "scripts/sandbox/detect-base-project.mjs",
+        "scripts/sandbox/write-base-project.mjs"
+      ],
+      "commands": [],
+      "tools": [
+        "icm briefing",
+        "icm facts",
+        "icm learn"
+      ],
+      "agents": [
+        "supervisor"
+      ]
+    },
+    "move-resource-folder": {
+      "scripts": [],
+      "commands": [],
+      "tools": [],
+      "agents": [
+        "supervisor"
+      ]
+    },
+    "new-resource-folder": {
+      "scripts": [],
+      "commands": [],
+      "tools": [],
+      "agents": [
+        "supervisor"
+      ]
+    },
+    "rollback-workspace-memory": {
+      "scripts": [
+        "scripts/memory-sync/resolve-active-version.mjs"
+      ],
+      "commands": [],
+      "tools": [],
+      "agents": [
+        "supervisor"
+      ]
+    },
+    "sandbox-new": {
+      "scripts": [
+        "scripts/sandbox/generate-manifest-md.mjs",
+        "scripts/sandbox/validate-manifest.mjs"
+      ],
+      "commands": [],
+      "tools": [],
+      "agents": [
+        "supervisor"
+      ]
+    },
+    "sdd-apply": {
+      "scripts": [
+        "scripts/aoi-doctor.mjs",
+        "scripts/code-lens/ast-skeletonizer.mjs",
+        "scripts/sdd-lifecycle/synthesize-stubs.mjs",
+        "scripts/subagent-context/context-tombstone.mjs",
+        "scripts/subagent-context/sanitize-subagent-payload.mjs"
+      ],
+      "commands": [],
+      "tools": [
+        "icm facts"
+      ],
+      "agents": [
+        "backend-developer",
+        "devops-engineer",
+        "frontend-developer",
+        "supervisor"
+      ]
+    },
+    "sdd-archive": {
+      "scripts": [],
+      "commands": [],
+      "tools": [
+        "icm briefing",
+        "icm extract-patterns",
+        "icm facts",
+        "icm memoir"
+      ],
+      "agents": [
+        "documentation-analyst",
+        "supervisor"
+      ]
+    },
+    "sdd-ff": {
+      "scripts": [],
+      "commands": [],
+      "tools": [
+        "icm facts"
+      ],
+      "agents": [
+        "functional-analyst",
+        "solution-architect",
+        "supervisor"
+      ]
+    },
+    "sdd-frame": {
+      "scripts": [],
+      "commands": [],
+      "tools": [
+        "icm facts",
+        "icm wake-up"
+      ],
+      "agents": [
+        "supervisor",
+        "triage-specialist"
+      ]
+    },
+    "sdd-genesis": {
+      "scripts": [
+        "scripts/sdd-lifecycle/blueprint-gate.mjs"
+      ],
+      "commands": [],
+      "tools": [
+        "icm facts",
+        "icm wake-up"
+      ],
+      "agents": [
+        "supervisor",
+        "triage-specialist"
+      ]
+    },
+    "sdd-new": {
+      "scripts": [
+        "scripts/sdd-lifecycle/context-arranger.mjs",
+        "scripts/sdd-lifecycle/link-resources.mjs",
+        "scripts/sdd-lifecycle/registry-sync.mjs"
+      ],
+      "commands": [],
+      "tools": [
+        "icm facts",
+        "icm wake-up",
+        "rtk rg"
+      ],
+      "agents": [
+        "functional-analyst",
+        "supervisor"
+      ]
+    },
+    "sdd-verify": {
+      "scripts": [
+        "scripts/aoi-doctor.mjs",
+        "scripts/sandbox/validate-manifest.mjs",
+        "scripts/sdd-lifecycle/blueprint-gate.mjs",
+        "scripts/sdd-lifecycle/diagnostic-distiller.mjs",
+        "scripts/sdd-lifecycle/invariant-gate.mjs",
+        "scripts/sdd-lifecycle/mechanical-verify-union.mjs",
+        "scripts/subagent-context/sanitize-subagent-payload.mjs"
+      ],
+      "commands": [
+        "pnpm aoi:test-globs",
+        "pnpm test"
+      ],
+      "tools": [
+        "rtk proxy"
+      ],
+      "agents": [
+        "integration-specialist",
+        "supervisor"
+      ]
+    },
+    "sync-workspace-memory": {
+      "scripts": [
+        "scripts/memory-sync/resolve-active-version.mjs"
+      ],
+      "commands": [],
+      "tools": [],
+      "agents": [
+        "supervisor"
+      ]
+    },
+    "update-resource-governance-structure": {
+      "scripts": [],
+      "commands": [],
+      "tools": [],
+      "agents": [
+        "resource-analyst",
+        "supervisor"
+      ]
+    }
+  },
+  "imports": {
+    "scripts/aoi-doctor.mjs": [
+      "scripts/doctor-checks.mjs",
+      "scripts/memoir-naming-guard.mjs",
+      "scripts/scaffold/validate-scaffold-parity.mjs"
+    ],
+    "scripts/archify-path.mjs": [
+      "scripts/doctor-checks.mjs"
+    ],
+    "scripts/code-lens/ast-skeletonizer.mjs": [
+      "scripts/code-lens/code-scanner.mjs"
+    ],
+    "scripts/doctor-checks.mjs": [
+      "scripts/archify-checks.mjs"
+    ],
+    "scripts/memory-sync/activate-version.mjs": [
+      "scripts/memory-sync/library-only.mjs",
+      "scripts/memory-sync/store-utils.mjs"
+    ],
+    "scripts/memory-sync/export-memory-bundle.mjs": [
+      "scripts/memory-sync/cli-args.mjs",
+      "scripts/memory-sync/icm-scope-loaders.mjs",
+      "scripts/memory-sync/store-utils.mjs"
+    ],
+    "scripts/memory-sync/import-memory-bundle.mjs": [
+      "scripts/memory-sync/cli-args.mjs",
+      "scripts/memory-sync/prepare-version-manifest.mjs",
+      "scripts/memory-sync/store-utils.mjs"
+    ],
+    "scripts/memory-sync/prepare-version-manifest.mjs": [
+      "scripts/memory-sync/library-only.mjs",
+      "scripts/memory-sync/resolve-active-version.mjs",
+      "scripts/memory-sync/schema.mjs",
+      "scripts/memory-sync/store-utils.mjs"
+    ],
+    "scripts/memory-sync/resolve-active-version.mjs": [
+      "scripts/memory-sync/schema.mjs"
+    ],
+    "scripts/memory-sync/rollback-version.mjs": [
+      "scripts/memory-sync/library-only.mjs",
+      "scripts/memory-sync/store-utils.mjs"
+    ],
+    "scripts/memory-sync/store-utils.mjs": [
+      "scripts/memory-sync/schema.mjs"
+    ],
+    "scripts/multi-harness/compile-rules.mjs": [
+      "scripts/multi-harness/protocol-source.mjs"
+    ],
+    "scripts/multi-harness/dashboard-command.mjs": [
+      "scripts/installation-profiles.mjs"
+    ],
+    "scripts/multi-harness/merge-package-scripts.mjs": [
+      "scripts/installation-profiles.mjs"
+    ],
+    "scripts/multi-harness/reference-integrity.mjs": [
+      "scripts/multi-harness/undocumented-commands.mjs"
+    ],
+    "scripts/sandbox/detect-base-project.mjs": [
+      "scripts/sandbox/workspace-globs.mjs"
+    ],
+    "scripts/sandbox/validate-manifest.mjs": [
+      "scripts/sandbox/manifest-schema.mjs"
+    ],
+    "scripts/sandbox/write-base-project.mjs": [
+      "scripts/sandbox/detect-base-project.mjs",
+      "scripts/sandbox/manifest-schema.mjs"
+    ],
+    "scripts/scaffold/mutation-ratchet.mjs": [
+      "scripts/scaffold/mutation-probe.mjs"
+    ],
+    "scripts/scaffold/validate-scaffold-parity.mjs": [
+      "scripts/installation-profiles.mjs"
+    ],
+    "scripts/scaffold/validate-srp.mjs": [
+      "scripts/sdd-lifecycle/mechanical-verify-union.mjs"
+    ],
+    "scripts/sdd-lifecycle/assemble-phase-context.mjs": [
+      "scripts/sdd-lifecycle/instruction-scope.mjs",
+      "scripts/sdd-lifecycle/phase-references.mjs",
+      "scripts/sdd-lifecycle/sdd-phases.mjs",
+      "scripts/sdd-lifecycle/token-accounting.mjs"
+    ],
+    "scripts/sdd-lifecycle/behavioral-judge.mjs": [
+      "scripts/sdd-lifecycle/behavioral-scenarios.mjs"
+    ],
+    "scripts/sdd-lifecycle/behavioral-probes.mjs": [
+      "scripts/sdd-lifecycle/assemble-phase-context.mjs",
+      "scripts/sdd-lifecycle/behavioral-scenarios.mjs"
+    ],
+    "scripts/sdd-lifecycle/behavioral-runner.mjs": [
+      "scripts/sdd-lifecycle/behavioral-judge.mjs",
+      "scripts/sdd-lifecycle/behavioral-probes.mjs",
+      "scripts/sdd-lifecycle/behavioral-scenarios.mjs"
+    ],
+    "scripts/sdd-lifecycle/behavioral-scenarios.mjs": [
+      "scripts/sdd-lifecycle/behavioral-scenarios-entry.mjs",
+      "scripts/sdd-lifecycle/behavioral-scenarios-execution.mjs",
+      "scripts/sdd-lifecycle/behavioral-scenarios-genesis.mjs"
+    ],
+    "scripts/sdd-lifecycle/blueprint-diagram.mjs": [
+      "scripts/sdd-lifecycle/contract-facts.mjs"
+    ],
+    "scripts/sdd-lifecycle/blueprint-gate.mjs": [
+      "scripts/doctor-checks.mjs",
+      "scripts/sdd-lifecycle/blueprint-diagram.mjs",
+      "scripts/sdd-lifecycle/genesis-phase.mjs"
+    ],
+    "scripts/sdd-lifecycle/cache-prefix.mjs": [
+      "scripts/multi-harness/cache-guard.mjs",
+      "scripts/sdd-lifecycle/assemble-phase-context.mjs",
+      "scripts/sdd-lifecycle/context-budget.mjs",
+      "scripts/sdd-lifecycle/instruction-scope.mjs"
+    ],
+    "scripts/sdd-lifecycle/context-budget.mjs": [
+      "scripts/sdd-lifecycle/assemble-phase-context.mjs",
+      "scripts/sdd-lifecycle/instruction-scope.mjs",
+      "scripts/sdd-lifecycle/phase-references.mjs",
+      "scripts/sdd-lifecycle/sdd-phases.mjs",
+      "scripts/sdd-lifecycle/token-accounting.mjs"
+    ],
+    "scripts/sdd-lifecycle/genesis-phase.mjs": [
+      "scripts/sdd-lifecycle/blueprint-gate.mjs",
+      "scripts/sdd-lifecycle/token-accounting.mjs"
+    ],
+    "scripts/sdd-lifecycle/instruction-scope.mjs": [
+      "scripts/sdd-lifecycle/token-accounting.mjs"
+    ],
+    "scripts/sdd-lifecycle/invariant-gate-preconditions.mjs": [
+      "scripts/sdd-lifecycle/contract-facts.mjs",
+      "scripts/sdd-lifecycle/workspace-identity.mjs"
+    ],
+    "scripts/sdd-lifecycle/invariant-gate.mjs": [
+      "scripts/sdd-lifecycle/contract-facts.mjs",
+      "scripts/sdd-lifecycle/invariant-gate-preconditions.mjs",
+      "scripts/sdd-lifecycle/test-reachability.mjs"
+    ],
+    "scripts/sdd-lifecycle/real-corpus.mjs": [
+      "scripts/sdd-lifecycle/stress-fixtures.mjs"
+    ],
+    "scripts/sdd-lifecycle/sdd-stress-suite.mjs": [
+      "scripts/code-lens/ast-skeletonizer.mjs",
+      "scripts/multi-harness/cache-guard.mjs",
+      "scripts/sdd-lifecycle/blueprint-gate.mjs",
+      "scripts/sdd-lifecycle/context-arranger.mjs",
+      "scripts/sdd-lifecycle/diagnostic-distiller.mjs",
+      "scripts/sdd-lifecycle/mechanical-verify-union.mjs",
+      "scripts/sdd-lifecycle/real-corpus.mjs",
+      "scripts/sdd-lifecycle/stress-fixtures.mjs",
+      "scripts/sdd-lifecycle/stress-report.mjs",
+      "scripts/sdd-lifecycle/synthesize-stubs.mjs",
+      "scripts/sdd-lifecycle/token-accounting.mjs",
+      "scripts/subagent-context/context-tombstone.mjs",
+      "scripts/subagent-context/sanitize-subagent-payload.mjs",
+      "scripts/subagent-context/subagent-fiber-runner.mjs"
+    ],
+    "scripts/sdd-lifecycle/stress-report.mjs": [
+      "scripts/sdd-lifecycle/benchmark-inputs.mjs",
+      "scripts/sdd-lifecycle/cache-prefix.mjs",
+      "scripts/sdd-lifecycle/context-budget.mjs",
+      "scripts/sdd-lifecycle/phase-handoffs.mjs",
+      "scripts/sdd-lifecycle/token-accounting.mjs"
+    ],
+    "scripts/sdd-lifecycle/test-reachability.mjs": [
+      "scripts/scaffold/validate-test-globs.mjs"
+    ],
+    "scripts/spatiotemporal-runtime/coeffect-resolver.mjs": [
+      "scripts/spatiotemporal-runtime/effect-tracker.mjs"
+    ],
+    "scripts/spatiotemporal-runtime/fiber-lifecycle.mjs": [
+      "scripts/spatiotemporal-runtime/effect-tracker.mjs"
+    ],
+    "scripts/subagent-context/sanitize-subagent-payload.mjs": [
+      "scripts/subagent-context/toon-serializer.mjs"
+    ],
+    "scripts/subagent-context/subagent-fiber-runner.mjs": [
+      "scripts/spatiotemporal-runtime/coeffect-resolver.mjs",
+      "scripts/spatiotemporal-runtime/fiber-lifecycle.mjs",
+      "scripts/subagent-context/sanitize-subagent-payload.mjs"
+    ]
+  },
+  "dependents": {
+    "scripts/archify-checks.mjs": [
+      "scripts/doctor-checks.mjs"
+    ],
+    "scripts/code-lens/ast-skeletonizer.mjs": [
+      "scripts/sdd-lifecycle/sdd-stress-suite.mjs"
+    ],
+    "scripts/code-lens/code-scanner.mjs": [
+      "scripts/code-lens/ast-skeletonizer.mjs"
+    ],
+    "scripts/doctor-checks.mjs": [
+      "scripts/aoi-doctor.mjs",
+      "scripts/archify-path.mjs",
+      "scripts/sdd-lifecycle/blueprint-gate.mjs"
+    ],
+    "scripts/installation-profiles.mjs": [
+      "scripts/multi-harness/dashboard-command.mjs",
+      "scripts/multi-harness/merge-package-scripts.mjs",
+      "scripts/scaffold/validate-scaffold-parity.mjs"
+    ],
+    "scripts/memoir-naming-guard.mjs": [
+      "scripts/aoi-doctor.mjs"
+    ],
+    "scripts/memory-sync/cli-args.mjs": [
+      "scripts/memory-sync/export-memory-bundle.mjs",
+      "scripts/memory-sync/import-memory-bundle.mjs"
+    ],
+    "scripts/memory-sync/icm-scope-loaders.mjs": [
+      "scripts/memory-sync/export-memory-bundle.mjs"
+    ],
+    "scripts/memory-sync/library-only.mjs": [
+      "scripts/memory-sync/activate-version.mjs",
+      "scripts/memory-sync/prepare-version-manifest.mjs",
+      "scripts/memory-sync/rollback-version.mjs"
+    ],
+    "scripts/memory-sync/prepare-version-manifest.mjs": [
+      "scripts/memory-sync/import-memory-bundle.mjs"
+    ],
+    "scripts/memory-sync/resolve-active-version.mjs": [
+      "scripts/memory-sync/prepare-version-manifest.mjs"
+    ],
+    "scripts/memory-sync/schema.mjs": [
+      "scripts/memory-sync/prepare-version-manifest.mjs",
+      "scripts/memory-sync/resolve-active-version.mjs",
+      "scripts/memory-sync/store-utils.mjs"
+    ],
+    "scripts/memory-sync/store-utils.mjs": [
+      "scripts/memory-sync/activate-version.mjs",
+      "scripts/memory-sync/export-memory-bundle.mjs",
+      "scripts/memory-sync/import-memory-bundle.mjs",
+      "scripts/memory-sync/prepare-version-manifest.mjs",
+      "scripts/memory-sync/rollback-version.mjs"
+    ],
+    "scripts/multi-harness/cache-guard.mjs": [
+      "scripts/sdd-lifecycle/cache-prefix.mjs",
+      "scripts/sdd-lifecycle/sdd-stress-suite.mjs"
+    ],
+    "scripts/multi-harness/protocol-source.mjs": [
+      "scripts/multi-harness/compile-rules.mjs"
+    ],
+    "scripts/multi-harness/undocumented-commands.mjs": [
+      "scripts/multi-harness/reference-integrity.mjs"
+    ],
+    "scripts/sandbox/detect-base-project.mjs": [
+      "scripts/sandbox/write-base-project.mjs"
+    ],
+    "scripts/sandbox/manifest-schema.mjs": [
+      "scripts/sandbox/validate-manifest.mjs",
+      "scripts/sandbox/write-base-project.mjs"
+    ],
+    "scripts/sandbox/workspace-globs.mjs": [
+      "scripts/sandbox/detect-base-project.mjs"
+    ],
+    "scripts/scaffold/mutation-probe.mjs": [
+      "scripts/scaffold/mutation-ratchet.mjs"
+    ],
+    "scripts/scaffold/validate-scaffold-parity.mjs": [
+      "scripts/aoi-doctor.mjs"
+    ],
+    "scripts/scaffold/validate-test-globs.mjs": [
+      "scripts/sdd-lifecycle/test-reachability.mjs"
+    ],
+    "scripts/sdd-lifecycle/assemble-phase-context.mjs": [
+      "scripts/sdd-lifecycle/behavioral-probes.mjs",
+      "scripts/sdd-lifecycle/cache-prefix.mjs",
+      "scripts/sdd-lifecycle/context-budget.mjs"
+    ],
+    "scripts/sdd-lifecycle/behavioral-judge.mjs": [
+      "scripts/sdd-lifecycle/behavioral-runner.mjs"
+    ],
+    "scripts/sdd-lifecycle/behavioral-probes.mjs": [
+      "scripts/sdd-lifecycle/behavioral-runner.mjs"
+    ],
+    "scripts/sdd-lifecycle/behavioral-scenarios-entry.mjs": [
+      "scripts/sdd-lifecycle/behavioral-scenarios.mjs"
+    ],
+    "scripts/sdd-lifecycle/behavioral-scenarios-execution.mjs": [
+      "scripts/sdd-lifecycle/behavioral-scenarios.mjs"
+    ],
+    "scripts/sdd-lifecycle/behavioral-scenarios-genesis.mjs": [
+      "scripts/sdd-lifecycle/behavioral-scenarios.mjs"
+    ],
+    "scripts/sdd-lifecycle/behavioral-scenarios.mjs": [
+      "scripts/sdd-lifecycle/behavioral-judge.mjs",
+      "scripts/sdd-lifecycle/behavioral-probes.mjs",
+      "scripts/sdd-lifecycle/behavioral-runner.mjs"
+    ],
+    "scripts/sdd-lifecycle/benchmark-inputs.mjs": [
+      "scripts/sdd-lifecycle/stress-report.mjs"
+    ],
+    "scripts/sdd-lifecycle/blueprint-diagram.mjs": [
+      "scripts/sdd-lifecycle/blueprint-gate.mjs"
+    ],
+    "scripts/sdd-lifecycle/blueprint-gate.mjs": [
+      "scripts/sdd-lifecycle/genesis-phase.mjs",
+      "scripts/sdd-lifecycle/sdd-stress-suite.mjs"
+    ],
+    "scripts/sdd-lifecycle/cache-prefix.mjs": [
+      "scripts/sdd-lifecycle/stress-report.mjs"
+    ],
+    "scripts/sdd-lifecycle/context-arranger.mjs": [
+      "scripts/sdd-lifecycle/sdd-stress-suite.mjs"
+    ],
+    "scripts/sdd-lifecycle/context-budget.mjs": [
+      "scripts/sdd-lifecycle/cache-prefix.mjs",
+      "scripts/sdd-lifecycle/stress-report.mjs"
+    ],
+    "scripts/sdd-lifecycle/contract-facts.mjs": [
+      "scripts/sdd-lifecycle/blueprint-diagram.mjs",
+      "scripts/sdd-lifecycle/invariant-gate-preconditions.mjs",
+      "scripts/sdd-lifecycle/invariant-gate.mjs"
+    ],
+    "scripts/sdd-lifecycle/diagnostic-distiller.mjs": [
+      "scripts/sdd-lifecycle/sdd-stress-suite.mjs"
+    ],
+    "scripts/sdd-lifecycle/genesis-phase.mjs": [
+      "scripts/sdd-lifecycle/blueprint-gate.mjs"
+    ],
+    "scripts/sdd-lifecycle/instruction-scope.mjs": [
+      "scripts/sdd-lifecycle/assemble-phase-context.mjs",
+      "scripts/sdd-lifecycle/cache-prefix.mjs",
+      "scripts/sdd-lifecycle/context-budget.mjs"
+    ],
+    "scripts/sdd-lifecycle/invariant-gate-preconditions.mjs": [
+      "scripts/sdd-lifecycle/invariant-gate.mjs"
+    ],
+    "scripts/sdd-lifecycle/mechanical-verify-union.mjs": [
+      "scripts/scaffold/validate-srp.mjs",
+      "scripts/sdd-lifecycle/sdd-stress-suite.mjs"
+    ],
+    "scripts/sdd-lifecycle/phase-handoffs.mjs": [
+      "scripts/sdd-lifecycle/stress-report.mjs"
+    ],
+    "scripts/sdd-lifecycle/phase-references.mjs": [
+      "scripts/sdd-lifecycle/assemble-phase-context.mjs",
+      "scripts/sdd-lifecycle/context-budget.mjs"
+    ],
+    "scripts/sdd-lifecycle/real-corpus.mjs": [
+      "scripts/sdd-lifecycle/sdd-stress-suite.mjs"
+    ],
+    "scripts/sdd-lifecycle/sdd-phases.mjs": [
+      "scripts/sdd-lifecycle/assemble-phase-context.mjs",
+      "scripts/sdd-lifecycle/context-budget.mjs"
+    ],
+    "scripts/sdd-lifecycle/stress-fixtures.mjs": [
+      "scripts/sdd-lifecycle/real-corpus.mjs",
+      "scripts/sdd-lifecycle/sdd-stress-suite.mjs"
+    ],
+    "scripts/sdd-lifecycle/stress-report.mjs": [
+      "scripts/sdd-lifecycle/sdd-stress-suite.mjs"
+    ],
+    "scripts/sdd-lifecycle/synthesize-stubs.mjs": [
+      "scripts/sdd-lifecycle/sdd-stress-suite.mjs"
+    ],
+    "scripts/sdd-lifecycle/test-reachability.mjs": [
+      "scripts/sdd-lifecycle/invariant-gate.mjs"
+    ],
+    "scripts/sdd-lifecycle/token-accounting.mjs": [
+      "scripts/sdd-lifecycle/assemble-phase-context.mjs",
+      "scripts/sdd-lifecycle/context-budget.mjs",
+      "scripts/sdd-lifecycle/genesis-phase.mjs",
+      "scripts/sdd-lifecycle/instruction-scope.mjs",
+      "scripts/sdd-lifecycle/sdd-stress-suite.mjs",
+      "scripts/sdd-lifecycle/stress-report.mjs"
+    ],
+    "scripts/sdd-lifecycle/workspace-identity.mjs": [
+      "scripts/sdd-lifecycle/invariant-gate-preconditions.mjs"
+    ],
+    "scripts/spatiotemporal-runtime/coeffect-resolver.mjs": [
+      "scripts/subagent-context/subagent-fiber-runner.mjs"
+    ],
+    "scripts/spatiotemporal-runtime/effect-tracker.mjs": [
+      "scripts/spatiotemporal-runtime/coeffect-resolver.mjs",
+      "scripts/spatiotemporal-runtime/fiber-lifecycle.mjs"
+    ],
+    "scripts/spatiotemporal-runtime/fiber-lifecycle.mjs": [
+      "scripts/subagent-context/subagent-fiber-runner.mjs"
+    ],
+    "scripts/subagent-context/context-tombstone.mjs": [
+      "scripts/sdd-lifecycle/sdd-stress-suite.mjs"
+    ],
+    "scripts/subagent-context/sanitize-subagent-payload.mjs": [
+      "scripts/sdd-lifecycle/sdd-stress-suite.mjs",
+      "scripts/subagent-context/subagent-fiber-runner.mjs"
+    ],
+    "scripts/subagent-context/subagent-fiber-runner.mjs": [
+      "scripts/sdd-lifecycle/sdd-stress-suite.mjs"
+    ],
+    "scripts/subagent-context/toon-serializer.mjs": [
+      "scripts/subagent-context/sanitize-subagent-payload.mjs"
+    ]
+  },
+  "hookDeclarations": {
+    "SessionStart": [
+      {
+        "source": ".github/hooks/icm.json",
+        "command": "bash .github/scripts/icm-hook.sh start"
+      },
+      {
+        "source": ".github/hooks/session-init.json",
+        "command": "bash .github/scripts/session-init-hook.sh"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "source": ".github/hooks/icm.json",
+        "command": "bash .github/scripts/icm-hook.sh pre"
+      },
+      {
+        "source": ".github/hooks/rtk-rewrite.json",
+        "command": "bash .github/scripts/rtk-hook.sh"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "source": ".github/hooks/icm.json",
+        "command": "bash .github/scripts/icm-hook.sh post"
+      },
+      {
+        "source": ".github/hooks/post-tool-learning.json",
+        "command": "bash .github/scripts/post-tool-learning-hook.sh"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "source": ".github/hooks/icm.json",
+        "command": "bash .github/scripts/icm-hook.sh prompt"
+      }
+    ],
+    "Stop": [
+      {
+        "source": ".github/hooks/session-close.json",
+        "command": "bash .github/scripts/session-close-hook.sh"
+      }
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "command": "bash .github/scripts/icm-hook.sh start",
+        "timeout": 10
+      },
+      {
+        "matcher": "*",
+        "command": "bash .github/scripts/session-init-hook.sh",
+        "timeout": 15
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "command": "bash .github/scripts/icm-hook.sh pre",
+        "timeout": 5
+      },
+      {
+        "matcher": "Bash",
+        "command": "bash .github/scripts/rtk-hook.sh",
+        "timeout": 5
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "command": "bash .github/scripts/icm-hook.sh post",
+        "timeout": 10
+      },
+      {
+        "matcher": "Bash",
+        "command": "bash .github/scripts/post-tool-learning-hook.sh",
+        "timeout": 15
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "command": "bash .github/scripts/icm-hook.sh prompt",
+        "timeout": 10
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "command": "bash .github/scripts/session-close-hook.sh",
+        "timeout": 30
+      }
+    ]
+  },
+  "commands": {
+    "aoi:archify": {
+      "body": "node scripts/archify-path.mjs",
+      "targets": [
+        "scripts/archify-path.mjs"
+      ]
+    },
+    "aoi:ast-lens": {
+      "body": "node scripts/code-lens/ast-skeletonizer.mjs",
+      "targets": [
+        "scripts/code-lens/ast-skeletonizer.mjs"
+      ]
+    },
+    "aoi:audit-protocol": {
+      "body": "node scripts/multi-harness/audit-protocol-integrity.mjs",
+      "targets": [
+        "scripts/multi-harness/audit-protocol-integrity.mjs"
+      ]
+    },
+    "aoi:blueprint-gate": {
+      "body": "node scripts/sdd-lifecycle/blueprint-gate.mjs",
+      "targets": [
+        "scripts/sdd-lifecycle/blueprint-gate.mjs"
+      ]
+    },
+    "aoi:cache-guard": {
+      "body": "node scripts/multi-harness/cache-guard.mjs",
+      "targets": [
+        "scripts/multi-harness/cache-guard.mjs"
+      ]
+    },
+    "aoi:cache-prefix": {
+      "body": "node scripts/sdd-lifecycle/cache-prefix.mjs",
+      "targets": [
+        "scripts/sdd-lifecycle/cache-prefix.mjs"
+      ]
+    },
+    "aoi:claims": {
+      "body": "node scripts/multi-harness/claims-evidence-ledger.mjs",
+      "targets": [
+        "scripts/multi-harness/claims-evidence-ledger.mjs"
+      ]
+    },
+    "aoi:context": {
+      "body": "node scripts/sdd-lifecycle/assemble-phase-context.mjs",
+      "targets": [
+        "scripts/sdd-lifecycle/assemble-phase-context.mjs"
+      ]
+    },
+    "aoi:determinism": {
+      "body": "node scripts/code-lens/determinism-classifier.mjs",
+      "targets": [
+        "scripts/code-lens/determinism-classifier.mjs"
+      ]
+    },
+    "aoi:doctor": {
+      "body": "node scripts/aoi-doctor.mjs",
+      "targets": [
+        "scripts/aoi-doctor.mjs"
+      ]
+    },
+    "aoi:graph": {
+      "body": "node scripts/code-lens/interaction-graph.mjs",
+      "targets": [
+        "scripts/code-lens/interaction-graph.mjs"
+      ]
+    },
+    "aoi:handoffs": {
+      "body": "node scripts/sdd-lifecycle/phase-handoffs.mjs",
+      "targets": [
+        "scripts/sdd-lifecycle/phase-handoffs.mjs"
+      ]
+    },
+    "aoi:hooks": {
+      "body": "node scripts/multi-harness/install-hooks.mjs --audit",
+      "targets": [
+        "scripts/multi-harness/install-hooks.mjs"
+      ]
+    },
+    "aoi:importance": {
+      "body": "node scripts/multi-harness/importance-consistency.mjs",
+      "targets": [
+        "scripts/multi-harness/importance-consistency.mjs"
+      ]
+    },
+    "aoi:invariant-gate": {
+      "body": "node scripts/sdd-lifecycle/invariant-gate.mjs --exit-code",
+      "targets": [
+        "scripts/sdd-lifecycle/invariant-gate.mjs"
+      ]
+    },
+    "aoi:lint-refs": {
+      "body": "node scripts/multi-harness/reference-integrity.mjs",
+      "targets": [
+        "scripts/multi-harness/reference-integrity.mjs"
+      ]
+    },
+    "aoi:mutation": {
+      "body": "node scripts/scaffold/mutation-ratchet.mjs",
+      "targets": [
+        "scripts/scaffold/mutation-ratchet.mjs"
+      ]
+    },
+    "aoi:probes": {
+      "body": "node scripts/sdd-lifecycle/behavioral-runner.mjs --emit",
+      "targets": [
+        "scripts/sdd-lifecycle/behavioral-runner.mjs"
+      ]
+    },
+    "aoi:probes:judge": {
+      "body": "node scripts/sdd-lifecycle/behavioral-runner.mjs --judge",
+      "targets": [
+        "scripts/sdd-lifecycle/behavioral-runner.mjs"
+      ]
+    },
+    "aoi:reachability": {
+      "body": "node scripts/scaffold/source-reachability.mjs",
+      "targets": [
+        "scripts/scaffold/source-reachability.mjs"
+      ]
+    },
+    "aoi:registry": {
+      "body": "node scripts/sdd-lifecycle/registry-sync.mjs",
+      "targets": [
+        "scripts/sdd-lifecycle/registry-sync.mjs"
+      ]
+    },
+    "aoi:routing": {
+      "body": "node scripts/multi-harness/validate-agent-routing.mjs",
+      "targets": [
+        "scripts/multi-harness/validate-agent-routing.mjs"
+      ]
+    },
+    "aoi:srp": {
+      "body": "node scripts/scaffold/validate-srp.mjs",
+      "targets": [
+        "scripts/scaffold/validate-srp.mjs"
+      ]
+    },
+    "aoi:stress-sdd": {
+      "body": "node scripts/sdd-lifecycle/sdd-stress-suite.mjs",
+      "targets": [
+        "scripts/sdd-lifecycle/sdd-stress-suite.mjs"
+      ]
+    },
+    "aoi:sync-rules": {
+      "body": "node scripts/multi-harness/compile-rules.mjs",
+      "targets": [
+        "scripts/multi-harness/compile-rules.mjs"
+      ]
+    },
+    "aoi:test-globs": {
+      "body": "node scripts/scaffold/validate-test-globs.mjs",
+      "targets": [
+        "scripts/scaffold/validate-test-globs.mjs"
+      ]
+    },
+    "aoi:tools": {
+      "body": "node scripts/multi-harness/token-tool-coverage.mjs",
+      "targets": [
+        "scripts/multi-harness/token-tool-coverage.mjs"
+      ]
+    },
+    "build:dashboard": {
+      "body": "node scripts/multi-harness/dashboard-command.mjs build",
+      "targets": [
+        "scripts/multi-harness/dashboard-command.mjs"
+      ]
+    },
+    "dev:dashboard": {
+      "body": "node scripts/multi-harness/dashboard-command.mjs dev",
+      "targets": [
+        "scripts/multi-harness/dashboard-command.mjs"
+      ]
+    },
+    "doctor": {
+      "body": "node scripts/aoi-doctor.mjs",
+      "targets": [
+        "scripts/aoi-doctor.mjs"
+      ]
+    },
+    "prepare:dashboard": {
+      "body": "node scripts/multi-harness/dashboard-command.mjs prepare",
+      "targets": [
+        "scripts/multi-harness/dashboard-command.mjs"
+      ]
+    },
+    "preview:dashboard": {
+      "body": "node scripts/multi-harness/dashboard-command.mjs preview",
+      "targets": [
+        "scripts/multi-harness/dashboard-command.mjs"
+      ]
+    },
+    "sync:rules": {
+      "body": "node scripts/multi-harness/compile-rules.mjs",
+      "targets": [
+        "scripts/multi-harness/compile-rules.mjs"
+      ]
+    },
+    "test": {
+      "body": "pnpm aoi:test-globs && pnpm aoi:srp && pnpm aoi:reachability && pnpm aoi:routing && pnpm aoi:handoffs && pnpm aoi:cache-prefix && pnpm aoi:tools && pnpm aoi:hooks && pnpm aoi:registry && pnpm test:parity && pnpm test:doctor && pnpm test:multi-harness && pnpm test:sandbox && pnpm test:memory-sync && pnpm test:subagent-payload && pnpm test:conf && pnpm test:sdd-lifecycle && pnpm test:spatiotemporal && pnpm test:mcp-gateway && pnpm test:code-lens && pnpm aoi:cache-guard && pnpm aoi:lint-refs && pnpm aoi:audit-protocol && pnpm aoi:claims && pnpm aoi:importance && pnpm test:dashboard",
+      "targets": []
+    },
+    "test:code-lens": {
+      "body": "node --test scripts/code-lens/*.test.mjs",
+      "targets": []
+    },
+    "test:conf": {
+      "body": "node --test scripts/conf/*.test.mjs",
+      "targets": []
+    },
+    "test:dashboard": {
+      "body": "node scripts/multi-harness/dashboard-command.mjs test",
+      "targets": [
+        "scripts/multi-harness/dashboard-command.mjs"
+      ]
+    },
+    "test:doctor": {
+      "body": "node --test scripts/*.test.mjs",
+      "targets": []
+    },
+    "test:mcp-gateway": {
+      "body": "node --test scripts/mcp-gateway/*.test.mjs",
+      "targets": []
+    },
+    "test:memory-sync": {
+      "body": "node --test scripts/memory-sync/*.test.mjs",
+      "targets": []
+    },
+    "test:memory-sync:bundle": {
+      "body": "node --test scripts/memory-sync/bundle-contract.test.mjs scripts/memory-sync/export-memory-bundle.test.mjs scripts/memory-sync/import-memory-bundle.test.mjs scripts/memory-sync/bundle-lifecycle.test.mjs",
+      "targets": []
+    },
+    "test:multi-harness": {
+      "body": "node --test scripts/multi-harness/*.test.mjs",
+      "targets": []
+    },
+    "test:parity": {
+      "body": "node scripts/scaffold/validate-scaffold-parity.mjs && node --test scripts/scaffold/*.test.mjs",
+      "targets": [
+        "scripts/scaffold/validate-scaffold-parity.mjs"
+      ]
+    },
+    "test:sandbox": {
+      "body": "node --test scripts/sandbox/*.test.mjs",
+      "targets": []
+    },
+    "test:sdd-lifecycle": {
+      "body": "node --test scripts/sdd-lifecycle/*.test.mjs",
+      "targets": []
+    },
+    "test:spatiotemporal": {
+      "body": "node --test scripts/spatiotemporal-runtime/*.test.mjs",
+      "targets": []
+    },
+    "test:subagent-payload": {
+      "body": "node --test scripts/subagent-context/*.test.mjs",
+      "targets": []
+    }
+  },
+  "testChain": [
+    "pnpm aoi:test-globs",
+    "pnpm aoi:srp",
+    "pnpm aoi:reachability",
+    "pnpm aoi:routing",
+    "pnpm aoi:handoffs",
+    "pnpm aoi:cache-prefix",
+    "pnpm aoi:tools",
+    "pnpm aoi:hooks",
+    "pnpm aoi:registry",
+    "pnpm test:parity",
+    "pnpm test:doctor",
+    "pnpm test:multi-harness",
+    "pnpm test:sandbox",
+    "pnpm test:memory-sync",
+    "pnpm test:subagent-payload",
+    "pnpm test:conf",
+    "pnpm test:sdd-lifecycle",
+    "pnpm test:spatiotemporal",
+    "pnpm test:mcp-gateway",
+    "pnpm test:code-lens",
+    "pnpm aoi:cache-guard",
+    "pnpm aoi:lint-refs",
+    "pnpm aoi:audit-protocol",
+    "pnpm aoi:claims",
+    "pnpm aoi:importance",
+    "pnpm test:dashboard"
+  ],
+  "installerPhases": [
+    "AOI → $PROJECT_NAME",
+    "Phase 1: Tools",
+    "Phase 1.5: NVIDIA customendpoint (opcional)",
+    "Phase 1.6: Headroom compression layer (opcional)",
+    "Phase 1.7: AOI Headroom integration (obligatorio)",
+    "Phase 1.8: Codebase Memory MCP (Advanced)",
+    "Phase 2: Spec-Kit",
+    "Phase 3: Agentic Infrastructure",
+    "Phase 4: Tool Configuration",
+    "Phase 5: ICM Bootstrap",
+    "Phase 6: Base-Project Map",
+    "Phase 7: Configuration Snapshot",
+    "Installation Complete"
+  ]
+}
