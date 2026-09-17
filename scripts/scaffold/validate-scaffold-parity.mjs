@@ -81,7 +81,6 @@ export const DEFAULT_SYNC_PATHS = [
   // can make the graph silently include the scaffold duplicate or dashboard.
   '.cbmignore',
   '.resources/constitution.md',
-  'AOI_REAL_WORLD_VERIFICATION_MATRIX.md',
   'CLAUDE.md',
   'AGENTS.md',
   '.cursorrules',
