@@ -1109,10 +1109,30 @@ cd "$PROJECT_PATH"
 # La foto previa restaura la distinción: lo que existía antes es del usuario y
 # no se toca; lo que apareció DURANTE la instalación es de una herramienta y se
 # reemplaza por la de AOI.
+#
+# La foto VACÍA es un dato válido, no un fallo: significa que el destino no tenía
+# ni un archivo. Por eso la validez va en su propia variable y NO se infiere del
+# tamaño. Este era el defecto que desactivaba el fix: un destino sin archivos daba
+# una foto de 0 bytes, `-s` la leía como "no hay foto", la reparación de Fase 3 se
+# salteaba entera y los 14 agentes `speckit.*` se quedaban con la versión de
+# spec-kit, sin su bloque `## Model Requirement` — exactamente lo que este paso
+# existe para reparar. Dispara con cualquier destino de cero archivos en todo el
+# árbol, incluido uno que solo tenga directorios vacíos (`find . -type f` no lista
+# directorios). Medido: destino vacío 13/27 agentes con bloque; con un solo
+# archivo, 27/27.
+#
+# `set -o pipefail` (arriba) hace que el exit del pipeline distinga los dos casos:
+# un directorio vacío sale 0, un `find` que no puede leer sale distinto de 0.
+# Verificado en ambos sentidos.
 FRESH_SNAPSHOT=""
+FRESH_SNAPSHOT_OK=0
 if [ "$IS_REINSTALL" -eq 0 ]; then
   FRESH_SNAPSHOT="$(mktemp "${TMPDIR:-/tmp}/aoi-preinstalacion.XXXXXX")"
-  ( cd "$PROJECT_PATH" && find . -type f 2>/dev/null | LC_ALL=C sort ) > "$FRESH_SNAPSHOT" 2>/dev/null || true
+  if ( cd "$PROJECT_PATH" && find . -type f 2>/dev/null | LC_ALL=C sort ) > "$FRESH_SNAPSHOT" 2>/dev/null; then
+    FRESH_SNAPSHOT_OK=1
+  else
+    warn "No se pudo fotografiar el destino — la reparación de Fase 3 no va a correr"
+  fi
 fi
 
 # Qué stdin darle a `specify init`.
@@ -1474,8 +1494,12 @@ EOF
   # `## Model Requirement` en una instalación limpia, o sea que el Model
   # Selection Protocol no tenía qué modelo declarar. El repo no lo veía porque
   # `.github/agents/` del repo sí tiene los bloques.
+  #
+  # El guard leía `-s "$FRESH_SNAPSHOT"`, así que en el único caso para el que
+  # este paso fue escrito —un destino sin archivos— la foto era de 0 bytes y la
+  # reparación no corría. La validez la decide el exit de la foto, no su tamaño.
   FRESH_RESTORE=""
-  if [ -n "$FRESH_SNAPSHOT" ] && [ -s "$FRESH_SNAPSHOT" ] && command -v rsync &>/dev/null; then
+  if [ "$FRESH_SNAPSHOT_OK" -eq 1 ] && command -v rsync &>/dev/null; then
     FRESH_RESTORE="$(mktemp "${TMPDIR:-/tmp}/aoi-restaurar.XXXXXX")"
     (
       cd "$SCAFFOLD_DIR" && find . -type f 2>/dev/null | sed 's|^\./||' | LC_ALL=C sort

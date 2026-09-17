@@ -229,11 +229,25 @@ describe('telling an installed workspace from the development repository', () =>
 
     assert.equal(isInstalledWorkspace(installed), true)
     assert.equal(isInstalledWorkspace(dev), false)
-    // The distinction is load-bearing: the wiring lives under `.git/`, which is
-    // never versioned, so it can only be enforced where an installer has run.
-    assert.equal(isInstalledWorkspace(REPO), false, 'el repo AOI no es un workspace instalado')
     clean(installed)
     clean(dev)
+  })
+
+  it('does not read this tree as an installed workspace', (t) => {
+    // The distinction is load-bearing: the wiring lives under `.git/`, which is
+    // never versioned, so it can only be enforced where an installer has run.
+    // It is also a claim ABOUT this tree, so it only holds in the development
+    // repository. In an install this same tree IS the install, the marker is
+    // there and correct, and asserting otherwise fails a non-defect.
+    //
+    // The discriminator is `setup.sh` — deliberately NOT `isInstalledWorkspace`,
+    // whose failure mode this test exists to catch. Guarding a test with the
+    // function under test lets a broken marker skip its own detector.
+    if (!fs.existsSync(path.join(REPO, 'setup.sh'))) {
+      t.skip('workspace instalado: el veredicto no es sobre AOI')
+    }
+
+    assert.equal(isInstalledWorkspace(REPO), false, 'el repo AOI no es un workspace instalado')
   })
 })
 

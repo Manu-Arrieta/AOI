@@ -98,7 +98,17 @@ describe('the development repository and a fresh clone are not failed', () => {
     clean(root)
   })
 
-  it('passes in the development repository, which has no install manifest', () => {
+  it('passes in the development repository, which has no install manifest', (t) => {
+    // El veredicto sobre REPO sólo es un hecho sobre AOI en el árbol de
+    // desarrollo. En un workspace instalado ESTE árbol es la instalación, el
+    // guard está cableado y el veredicto correcto es PASSED: asertar WARNING
+    // ahí sería exigir que la instalación se parezca al repo donde se escribió
+    // el test. El marcador es `setup.sh`, el mismo que ya usan `validate-srp`,
+    // `validate-test-globs` y `claude-project-guide`.
+    if (!fs.existsSync(path.join(REPO, 'setup.sh'))) {
+      t.skip('workspace instalado: el veredicto no es sobre AOI')
+    }
+
     assert.equal(checkHookWiring(REPO).status, 'WARNING')
   })
 })
