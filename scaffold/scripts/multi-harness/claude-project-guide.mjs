@@ -255,9 +255,11 @@ same change, or \`test:parity\` fails. Adding one no test loads fails
 
 ## Working conventions
 
-- **Most of this tree is gitignored.** \`rg\` and \`fd\` find almost nothing without
-  \`--no-ignore\`; use it by default here, or you will conclude a file is absent
-  when it is merely ignored.
+- **Most of this tree is gitignored, and most of it is hidden.** For files use
+  \`fd -H -I\` — two flags: \`-H\` for dot-directories, \`-I\` for ignored ones. Here
+  \`.md\` files count 60 without them and 1356 with. For content use
+  \`rtk proxy rg --no-ignore\`: bare \`rg\` is rewritten to \`grep\` by the RTK hook, and
+  \`grep\` rejects \`--no-ignore\` outright, so the plain form cannot be followed.
 - \`compile-rules.mjs\` takes \`--workspace ${workspace}\`. Unknown flags fall back
   to defaults silently rather than erroring.
 - ICM content passes through a shell: backticks inside it are command-substituted.
