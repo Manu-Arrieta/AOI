@@ -139,7 +139,72 @@ describe('facts consistency guard', () => {
     assert.ok(result.details.includes('/init'))
   })
 
-  it('audits the two facts that name things a tree can confirm', () => {
-    assert.deepEqual(AUDITED_FACT_KEYS, ['stack.frameworks', 'stack.packageManager'])
+  it('audits the facts that name things a tree can confirm', () => {
+    assert.deepEqual(AUDITED_FACT_KEYS, ['stack.frameworks', 'stack.packageManager', 'baseProject.map'])
+  })
+})
+
+// `baseProject.map` was added after an installed workspace carried it through
+// six consecutive `/init` runs asserting it had written
+// `.specify/memory/base-project.json` — with a byte count and the phrase
+// "verified on disk by ls" — while the file was absent every time. The writer
+// works; nothing regenerates the file and nothing noticed it had gone.
+//
+// Adding the key was NOT enough, and that is the point of these cases. The old
+// `PATH_CLAIM` matched exactly two segments, so the claim above yielded
+// `.specify/memory` — a directory that DOES exist. The guard would have passed
+// on the very fact that motivated it: a gate that appears to cover a path and
+// does not is worse than one that admits it never looked.
+describe('a fact that names a file, not just its directory', () => {
+  it('reads the whole path, so the file is what gets checked', () => {
+    assert.deepEqual(
+      extractPathClaims('written to .specify/memory/base-project.json (235 bytes, verified on disk by ls)'),
+      ['.specify/memory/base-project.json'],
+    )
+  })
+
+  it('reports the absent file even though its directory is there', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-facts-path-'))
+    fs.mkdirSync(path.join(root, '.specify', 'memory'), { recursive: true })
+
+    const found = unsupportedClaims(
+      'baseProject.map',
+      'written to .specify/memory/base-project.json, verified on disk by ls',
+      { dependencies: new Set(), manifestCount: 0 },
+      root,
+    )
+
+    assert.deepEqual(found, ['baseProject.map nombra la ruta ".specify/memory/base-project.json/" que no existe en el árbol'])
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+
+  // Negative control: the same claim over a tree that really holds the file
+  // must stay silent, or the guard is just noise that gets muted.
+  it('stays silent when the file is actually there', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-facts-path-'))
+    fs.mkdirSync(path.join(root, '.specify', 'memory'), { recursive: true })
+    fs.writeFileSync(path.join(root, '.specify', 'memory', 'base-project.json'), '{}')
+
+    const found = unsupportedClaims(
+      'baseProject.map',
+      'written to .specify/memory/base-project.json, verified on disk by ls',
+      { dependencies: new Set(), manifestCount: 0 },
+      root,
+    )
+
+    assert.deepEqual(found, [])
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+
+  // The glob form must keep behaving as before: this is what caught
+  // `workspaces: aoi_apps/*` over a tree with no `aoi_apps/`.
+  it('still strips a glob suffix to the directory it names', () => {
+    assert.deepEqual(extractPathClaims('pnpm@11.3.0 (workspaces: aoi_apps/*)'), ['aoi_apps'])
+  })
+
+  // And a scoped package must still not be read as a folder, or the guard
+  // drowns in noise and stops being read.
+  it('still refuses to read a scoped package as a directory', () => {
+    assert.deepEqual(extractPathClaims('Nuxt 4.4.6, @nuxt/ui 4.9.0'), [])
   })
 })
