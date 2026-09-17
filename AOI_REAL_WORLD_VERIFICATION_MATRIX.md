@@ -171,6 +171,23 @@ pnpm aoi:invariant-gate -- --entity "AOI TESTS" --tests-dir . --exit-code
 > leerlo como lo que es: la matriz corriendo por segunda vez sin su limpieza de memoria es
 > un FAILED que no distingue "los tests nunca se escribieron" de "los tests ya no están".
 
+> [!NOTE]
+> **Defecto detectado y corregido el 2026-09-16 en `AOI TESTS`.** La compuerta
+> `protocol-single-source` recorría el workspace buscando copias del protocolo sin
+> ignorar `.conf/`, que es donde el instalador guarda su snapshot de configuración y,
+> en `conflicts/`, los archivos que chocaron durante un reinstall. Consecuencia medida:
+> un workspace que alguna vez tuvo un conflicto sobre este archivo quedaba con
+> `pnpm test` **en rojo de forma permanente**, por un artefacto que el propio instalador
+> creó y que existe para ser consultado. El repositorio de desarrollo nunca lo vio
+> porque ahí `.conf/` no existe: sólo apareció al correr esta matriz sobre una
+> instalación real.
+>
+> `.conf` está ahora en la lista de exclusión, por la misma razón que `node_modules`:
+> está gitignoreado en la raíz y en el scaffold, y su contenido son copias por diseño.
+> Dos controles negativos fijan el corte — uno prueba que las copias bajo `.conf/` se
+> ignoran, y su par prueba que una copia sin gobernar del **mismo árbol** se sigue
+> detectando, para que la exclusión no se ensanche hasta tapar el defecto original.
+
 ### Paso 0.3: Verificación del Reinstall Inteligente
 
 > [!WARNING]

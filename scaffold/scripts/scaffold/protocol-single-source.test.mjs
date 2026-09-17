@@ -15,6 +15,25 @@
  * Nada lo detectó porque la paridad sólo mira rutas gobernadas, el linter de
  * referencias sólo mira prosa ejecutable, y ningún test leía los README. Esta
  * es la compuerta que faltaba, y cuesta 0 tokens de inferencia.
+ *
+ * Por qué `.conf/` se ignora, y es un defecto medido. Esta compuerta recorría
+ * el filesystem —no `git ls-files`— y `.conf/` no existe en el repositorio de
+ * desarrollo, así que acá siempre pasó limpia. En una instalación real sí
+ * existe: es el directorio donde el instalador guarda su snapshot de
+ * configuración y, en `conflicts/`, los archivos que chocaron durante un
+ * reinstall. Medido en `AOI TESTS` el 2026-09-16: un reinstall del día anterior
+ * había dejado `.conf/conflicts/AOI_REAL_WORLD_VERIFICATION_MATRIX.md`, y esta
+ * compuerta lo contaba como una tercera copia sin gobernar. **`pnpm test`
+ * quedaba en rojo de forma permanente por un artefacto que el propio instalador
+ * creó**, y ninguna acción del Owner lo arreglaba salvo borrar a mano evidencia
+ * de conflicto que existe justamente para ser consultada.
+ *
+ * `.conf/` entra a la lista por la misma razón que `node_modules`: está en el
+ * `.gitignore` de la raíz y del scaffold, no se versiona, y su contenido son
+ * copias por diseño —`snapshots/` replica prompts, agentes, scripts y configs
+ * enteros—. Nadie lo lee como fuente de autoridad ni enlaza hacia adentro. Lo
+ * que esta compuerta persigue es una copia a la que un operador pueda ser
+ * ruteado, y a `.conf/` no lo rutea nadie.
  */
 
 import assert from 'node:assert/strict'
@@ -30,8 +49,15 @@ const PROTOCOL = 'AOI_REAL_WORLD_VERIFICATION_MATRIX.md'
 /** Las dos únicas ubicaciones legítimas, ambas gobernadas por la paridad. */
 const GOBERNADAS = [PROTOCOL, path.join('scaffold', PROTOCOL)]
 
-/** Directorios que no vale la pena recorrer y nunca contienen fuente propia. */
-const IGNORAR = new Set(['node_modules', '.git', '.nuxt', 'dist', '.output', '.sandboxes'])
+/**
+ * Directorios que no vale la pena recorrer y nunca contienen fuente propia.
+ *
+ * `.conf` es estado del instalador, no del repositorio: snapshots de
+ * configuración y archivos en conflicto de un reinstall. Está gitignoreado en
+ * la raíz y en el scaffold. Sin él acá, toda instalación que alguna vez tuvo un
+ * conflicto sobre el protocolo quedaba con la suite en rojo para siempre.
+ */
+const IGNORAR = new Set(['node_modules', '.git', '.nuxt', 'dist', '.output', '.sandboxes', '.conf'])
 
 /** Toda ruta relativa bajo `dir`, saltándose lo que no es fuente del repo. */
 function recorrer(dir, rel = '') {
@@ -119,6 +145,43 @@ describe('control negativo — la compuerta reconoce el defecto que la motivó',
     const copias = copiasDelProtocolo(arbolConTerceraCopia())
     assert.equal(copias.length, 3)
     assert.ok(copias.some((c) => c.includes('docs')), 'no vio la copia fuera de paridad')
+  })
+
+  /**
+   * El árbol que tenía `AOI TESTS` el 2026-09-16, más la copia que la compuerta
+   * SÍ debe seguir viendo. Van juntas en un solo fixture a propósito: separadas,
+   * cada mitad se puede aprobar con una exclusión demasiado ancha o demasiado
+   * angosta, y sólo el par prueba que el corte cae donde tiene que caer.
+   */
+  function arbolInstaladoConConflicto() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-protocolo-'))
+    temporales.push(dir)
+    for (const sub of ['scaffold', '.conf/conflicts', '.conf/snapshots/configs', 'docs/internal/verification']) {
+      fs.mkdirSync(path.join(dir, sub), { recursive: true })
+    }
+    fs.writeFileSync(path.join(dir, PROTOCOL), 'vigente\n')
+    fs.writeFileSync(path.join(dir, 'scaffold', PROTOCOL), 'vigente\n')
+    fs.writeFileSync(path.join(dir, '.conf/conflicts', PROTOCOL), 'en conflicto\n')
+    fs.writeFileSync(path.join(dir, '.conf/snapshots/configs', PROTOCOL), 'snapshot previo\n')
+    fs.writeFileSync(path.join(dir, 'docs/internal/verification', PROTOCOL), 'vieja\n')
+    return dir
+  }
+
+  it('ignora las copias que el instalador deja en .conf/', () => {
+    // El defecto medido: sin esto, un reinstall con conflicto dejaba `pnpm test`
+    // en rojo permanente por evidencia que el instalador creó a propósito.
+    const copias = copiasDelProtocolo(arbolInstaladoConConflicto())
+    assert.ok(
+      !copias.some((c) => c.includes('.conf')),
+      `contó estado del instalador como fuente: ${copias.join(', ')}`,
+    )
+  })
+
+  it('pero sigue detectando la copia sin gobernar del mismo árbol', () => {
+    // El par del control anterior: prueba que la exclusión es quirúrgica y no
+    // un agujero que deja pasar la tercera copia que motivó esta compuerta.
+    const copias = copiasDelProtocolo(arbolInstaladoConConflicto())
+    assert.deepEqual(copias, [PROTOCOL, `docs/internal/verification/${PROTOCOL}`, `scaffold/${PROTOCOL}`].sort())
   })
 
   it('detecta un enlace que apunta a una ruta que no existe', () => {
