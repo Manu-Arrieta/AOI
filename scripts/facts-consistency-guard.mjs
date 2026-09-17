@@ -39,7 +39,7 @@ import { resolveWorkspaceName } from './memoir-naming-guard.mjs'
 const execFileAsync = promisify(execFile)
 
 /** The facts worth confronting: the ones that name things a tree can confirm. */
-export const AUDITED_FACT_KEYS = ['stack.frameworks', 'stack.packageManager']
+export const AUDITED_FACT_KEYS = ['stack.frameworks', 'stack.packageManager', 'baseProject.map']
 
 /**
  * Claim token → the dependency name that would prove it.
@@ -76,7 +76,7 @@ export const MANIFEST_SCAN_DEPTH = 4
  * `nuxt/ui/`, and noise is how a warning-only guard gets ignored. `/` keeps a
  * URL's own segments out, so `https://example.com/foo` contributes nothing.
  */
-export const PATH_CLAIM = /(?<![@/A-Za-z0-9_.-])[A-Za-z0-9_.-]+\/[A-Za-z0-9_*.-]*/g
+export const PATH_CLAIM = /(?<![@/A-Za-z0-9_.-])[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_*.-]*)+/g
 
 /**
  * `icm facts get` prints the value on the first line and its provenance on the
