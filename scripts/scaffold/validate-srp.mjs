@@ -31,24 +31,60 @@ import { validateFileSizes } from '../sdd-lifecycle/mechanical-verify-union.mjs'
 
 export const MAX_LOC = 300
 const SOURCE_EXTENSIONS = new Set(['.mjs', '.js', '.ts'])
-const SKIP_DIRS = new Set(['node_modules', '.git', '.nuxt', '.output', 'dist', 'build', 'coverage', 'scaffold'])
+const SKIP_DIRS = new Set(['node_modules', '.git', '.nuxt', '.output', 'dist', 'build', 'coverage'])
+
+/**
+ * The mirror, as a path from the root — not as a directory name.
+ *
+ * `scaffold` used to sit in `SKIP_DIRS`, which the walk matches by BASENAME.
+ * The intent was to skip the root mirror; the effect was to skip
+ * `scripts/scaffold/`, because that directory is also named `scaffold` and it
+ * is the only one the walk ever reaches — `listSourceFiles` starts at
+ * `scripts/`, so the root mirror was never a candidate to begin with. The
+ * entry therefore excluded nothing it meant to, and excluded an entire area of
+ * governed source instead.
+ *
+ * Measured, and it is why the budget below is not empty: the gate reported
+ * `Scanned: 197` against 216 `.mjs` files under `scripts/`. The missing 19 were
+ * `scripts/scaffold/` — the area that holds the gates themselves — and five of
+ * them were over the limit, including `mutation-probe.mjs` at 1143 LOC, 3.8x
+ * the cap and the largest file in the repository. A gate that cannot see its
+ * own area reports green by construction.
+ */
+const MIRROR_DIR = 'scaffold'
 
 /**
  * Files that exceed the limit, with the size they had when they were recorded.
  * Each one is a debt, not an exemption: the number may only be lowered.
  *
- * **Empty, and that is the point.** The gate shipped with three entries. The
- * three were paid by splitting along real seams rather than by shaving lines:
- * `export-memory-bundle.mjs` lost a fifty-line argument parser duplicated in
- * its sibling, `aoi-doctor.mjs` lost the six checks it runs — leaving it with
- * the one decision it actually owns — and `detect-base-project.mjs` lost the
- * pnpm-workspace parsing, which was never about classifying a project.
+ * It was empty once, and that was earned: the gate shipped with three entries
+ * and all three were paid by splitting along real seams rather than by shaving
+ * lines — `export-memory-bundle.mjs` lost a fifty-line argument parser
+ * duplicated in its sibling, `aoi-doctor.mjs` lost the six checks it runs,
+ * leaving it the one decision it actually owns, and `detect-base-project.mjs`
+ * lost the pnpm-workspace parsing, which was never about classifying a project.
+ *
+ * It is not empty now, and nothing regressed to make it so. Fixing the mirror
+ * skip above (see `MIRROR_DIR`) admitted `scripts/scaffold/` into the audit for
+ * the first time, and these five were already there — debt that predates the
+ * measurement, not debt that was added. Recording it at today's size is exactly
+ * what the ratchet is for: the numbers may only go down from here.
+ *
+ * `mutation-probe.mjs` is the one to split first. It is the largest file in the
+ * repository by a wide margin, and 928 test lines sit beside it, so the seam is
+ * very likely real rather than cosmetic.
  *
  * Sizes are as `validateFileSizes` counts them, which is the same count
  * `/sdd-verify` reports. That is one more than `wc -l` for a file ending in a
  * newline; using the gate's own measure keeps the two from disagreeing.
  */
-export const LEGACY_BUDGET = {}
+export const LEGACY_BUDGET = {
+  'scripts/scaffold/mutation-probe.mjs': 1143,
+  'scripts/scaffold/mutation-probe.test.mjs': 928,
+  'scripts/scaffold/validate-scaffold-parity.mjs': 327,
+  'scripts/scaffold/validate-test-globs.mjs': 355,
+  'scripts/scaffold/validate-test-globs.test.mjs': 359,
+}
 
 /**
  * Lists source files to audit, skipping vendored trees and the mirror.
@@ -72,6 +108,9 @@ export function listSourceFiles(root, dir = 'scripts') {
     for (const entry of entries) {
       if (SKIP_DIRS.has(entry.name)) continue
       const full = path.join(current, entry.name)
+      // The mirror is one specific path, not every directory that shares its
+      // name. Matching by basename here is what hid `scripts/scaffold/`.
+      if (path.relative(root, full) === MIRROR_DIR) continue
       // A symlink is neither `isDirectory()` nor `isFile()` to `readdirSync`,
       // so a linked directory used to be skipped entirely — 900 LOC of
       // governed source sat behind one and the ratchet reported clean. The

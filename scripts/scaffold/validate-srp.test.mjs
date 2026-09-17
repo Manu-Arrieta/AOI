@@ -38,16 +38,45 @@ function treeWith(sizes, { devRepo = true } = {}) {
 }
 
 describe('listSourceFiles', () => {
-  it('skips vendored trees and the scaffold mirror', () => {
+  it('skips vendored trees, and those only by directory name', () => {
     const root = treeWith({
       'setup.sh': 2,
       'scripts/real.mjs': 5,
       'scripts/node_modules/vendor.mjs': 5,
-      'scripts/scaffold/mirror.mjs': 5,
       'scripts/notes.md': 5,
     })
 
     assert.deepEqual(listSourceFiles(root), ['scripts/real.mjs'])
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+
+  // This case used to assert the opposite, under the name "skips the scaffold
+  // mirror", and that name is where the defect came from. `scripts/scaffold/`
+  // is not the mirror: the mirror is `scaffold/` at the root, which this walk
+  // never reaches because it starts at `scripts/`. Skipping by basename
+  // therefore excluded an entire area of governed source — the area that holds
+  // the gates themselves — and five files sat over the limit unmeasured.
+  it('audits scripts/scaffold, which is source and not the mirror', () => {
+    const root = treeWith({
+      'setup.sh': 2,
+      'scripts/real.mjs': 5,
+      'scripts/scaffold/validate-thing.mjs': 5,
+    })
+
+    assert.deepEqual(listSourceFiles(root), ['scripts/real.mjs', 'scripts/scaffold/validate-thing.mjs'])
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+
+  it('skips the root mirror itself, matched as a path and not as a name', () => {
+    const root = treeWith({
+      'setup.sh': 2,
+      'scripts/real.mjs': 5,
+      'scaffold/scripts/real.mjs': 5,
+    })
+
+    // Walking from the root is not what `auditSrp` does, but asserting it here
+    // keeps the distinction honest if the walk is ever widened.
+    assert.deepEqual(listSourceFiles(root, '.'), ['scripts/real.mjs'])
     fs.rmSync(root, { recursive: true, force: true })
   })
 
