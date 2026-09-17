@@ -223,6 +223,14 @@ export function validateScaffoldContents(repoRoot, forbidden = FORBIDDEN_IN_SCAF
 }
 
 export function validateScaffoldParity(repoRoot, pathsToCheck = DEFAULT_SYNC_PATHS) {
+  // El Principio I rige donde `scaffold/` es el payload que AOI shippea: el repo
+  // fuente, el que tiene `setup.sh`. Este guard vivía en `main()`, y por eso
+  // `aoi:doctor` —que importa esta función directo— reportaba 47 mismatches en
+  // un workspace instalado: arreglar un llamador no arregla la regla.
+  if (!fs.existsSync(path.join(repoRoot, 'setup.sh'))) {
+    return { valid: true, errors: [], checkedFilesCount: 0, sourceRepo: false }
+  }
+
   const errors = validateScaffoldContents(repoRoot)
   let checkedFilesCount = 0
 
@@ -294,20 +302,12 @@ export function validateScaffoldParity(repoRoot, pathsToCheck = DEFAULT_SYNC_PAT
 async function main() {
   const repoRoot = process.cwd()
 
-  // El Principio I existe porque `scaffold/` es el payload que AOI le shippea a
-  // cada workspace: una ruta gobernada que cambie sin su espejo rompe a todos
-  // los workspaces instalados desde acá. Esa relación de propagación SÓLO
-  // existe en el repositorio de desarrollo, el que tiene `setup.sh` en la raíz.
-  //
-  // No hacía la distinción y corría igual en un workspace instalado, exigiendo
-  // un espejo que el Owner nunca debería tener: el andamio es lo que se instala,
-  // no algo que queda instalado. Criterio de validate-srp y token-tool-coverage.
-  if (!fs.existsSync(path.join(repoRoot, 'setup.sh'))) {
+  const result = validateScaffoldParity(repoRoot)
+
+  if (result.sourceRepo === false) {
     process.stdout.write('✅ Scaffold Mirror Parity: workspace instalado; el Principio I sólo rige en el repo fuente.\n')
     return
   }
-
-  const result = validateScaffoldParity(repoRoot)
 
   if (!result.valid) {
     process.stderr.write(`❌ Scaffold Mirror Parity FAILED (${result.errors.length} violations):\n`)

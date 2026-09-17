@@ -98,9 +98,11 @@ export async function runAoiDoctor(options = {}) {
     const parity = validateScaffoldParity(repoRoot)
     parityCheck = {
       status: parity.valid ? 'PASSED' : 'FAILED',
-      details: parity.valid
-        ? `${parity.checkedFilesCount} governed files verified byte-for-byte`
-        : `${parity.errors.length} parity mismatch(es)`,
+      details: parity.sourceRepo === false
+        ? 'workspace instalado: el andamio no queda instalado, no hay espejo que verificar'
+        : parity.valid
+          ? `${parity.checkedFilesCount} governed files verified byte-for-byte`
+          : `${parity.errors.length} parity mismatch(es)`,
       errors: parity.errors,
     }
   } catch (err) {

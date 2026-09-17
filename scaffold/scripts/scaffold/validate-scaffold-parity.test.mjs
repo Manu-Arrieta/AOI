@@ -25,6 +25,9 @@ test('collectFilePaths finds files recursively while ignoring DS_Store', () => {
 
 test('validateScaffoldParity detects missing files and content mismatches', () => {
   const tmpRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'parity-test-'))
+  // Un fixture sin `setup.sh` ya no es un repo fuente: la paridad se saltea y
+  // toda aserción de "no hay errores" pasa sin probar nada.
+  fs.writeFileSync(path.join(tmpRepo, 'setup.sh'), '#!/usr/bin/env bash\n')
   const rootDir = path.join(tmpRepo, 'tested-dir')
   const scaffoldDir = path.join(tmpRepo, 'scaffold', 'tested-dir')
 
@@ -57,6 +60,9 @@ test('validateScaffoldParity detects missing files and content mismatches', () =
 
 test('BIC-2026-005: Core parity excludes only the optional aoi_apps tree', () => {
   const tmpRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-core-parity-'))
+  // Un fixture sin `setup.sh` ya no es un repo fuente: la paridad se saltea y
+  // toda aserción de "no hay errores" pasa sin probar nada.
+  fs.writeFileSync(path.join(tmpRepo, 'setup.sh'), '#!/usr/bin/env bash\n')
   try {
     fs.mkdirSync(path.join(tmpRepo, '.conf'), { recursive: true })
     fs.writeFileSync(path.join(tmpRepo, '.conf', 'manifest.json'), JSON.stringify({ installation_profile: 'core' }))
@@ -108,6 +114,9 @@ test('BIC-2026-001:never.3 keeps literal-payload accounting mirrored', () => {
  */
 test('el ruido del sistema no se reporta como archivo llegado por accidente', () => {
   const tmpRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-dsstore-'))
+  // Un fixture sin `setup.sh` ya no es un repo fuente: la paridad se saltea y
+  // toda aserción de "no hay errores" pasa sin probar nada.
+  fs.writeFileSync(path.join(tmpRepo, 'setup.sh'), '#!/usr/bin/env bash\n')
   fs.writeFileSync(path.join(tmpRepo, 'setup.sh'), '#!/usr/bin/env bash\n')
   fs.mkdirSync(path.join(tmpRepo, 'scaffold'))
 
@@ -133,6 +142,9 @@ test('un archivo prohibido en la raiz del scaffold tampoco se reporta como stray
   // prohibido y lo reporta por las DOS vias — un hallazgo duplicado por un
   // archivo que el operador ya sabe que no va.
   const tmpRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-prohibido-'))
+  // Un fixture sin `setup.sh` ya no es un repo fuente: la paridad se saltea y
+  // toda aserción de "no hay errores" pasa sin probar nada.
+  fs.writeFileSync(path.join(tmpRepo, 'setup.sh'), '#!/usr/bin/env bash\n')
   fs.writeFileSync(path.join(tmpRepo, 'setup.sh'), '#!/usr/bin/env bash\n')
   fs.mkdirSync(path.join(tmpRepo, 'scaffold'))
   // `node_modules` esta en FORBIDDEN_IN_SCAFFOLD.
@@ -158,6 +170,9 @@ test('un archivo real sin contraparte SI se reporta, para no tapar el hallazgo',
   // que el gate existe para encontrar. Este caso fija que el filtro no se lleve
   // puesto un archivo real.
   const tmpRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-stray-'))
+  // Un fixture sin `setup.sh` ya no es un repo fuente: la paridad se saltea y
+  // toda aserción de "no hay errores" pasa sin probar nada.
+  fs.writeFileSync(path.join(tmpRepo, 'setup.sh'), '#!/usr/bin/env bash\n')
   fs.writeFileSync(path.join(tmpRepo, 'setup.sh'), '#!/usr/bin/env bash\n')
   fs.mkdirSync(path.join(tmpRepo, 'scaffold'))
   fs.writeFileSync(path.join(tmpRepo, 'scaffold/colado.md'), 'llegue por accidente\n')
@@ -181,6 +196,9 @@ test('un archivo real sin contraparte SI se reporta, para no tapar el hallazgo',
  */
 test('el error de symlink nombra el lado donde esta el symlink', () => {
   const tmpRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-symlink-'))
+  // Un fixture sin `setup.sh` ya no es un repo fuente: la paridad se saltea y
+  // toda aserción de "no hay errores" pasa sin probar nada.
+  fs.writeFileSync(path.join(tmpRepo, 'setup.sh'), '#!/usr/bin/env bash\n')
   fs.writeFileSync(path.join(tmpRepo, 'setup.sh'), '#!/usr/bin/env bash\n')
   fs.mkdirSync(path.join(tmpRepo, 'gobernado'), { recursive: true })
   fs.mkdirSync(path.join(tmpRepo, 'scaffold/gobernado'), { recursive: true })
@@ -207,4 +225,41 @@ test('el error de symlink nombra el lado donde esta el symlink', () => {
   assert.ok(err.includes('gobernado/enlace.mjs'), `el mensaje no nombro el archivo: ${err}`)
 
   fs.rmSync(tmpRepo, { recursive: true, force: true })
+})
+
+// El guard vivía en `main()`, el punto de entrada CLI. `aoi:doctor` importa
+// `validateScaffoldParity` directamente, así que no lo heredaba: un workspace
+// instalado —donde el andamio ya no queda, por decisión del Owner del
+// 2026-09-17— reportaba 47 mismatches y el doctor fallaba con salida 1.
+//
+// Por eso estas pruebas atacan la FUNCIÓN y no el CLI. Un test del CLI habría
+// quedado verde sobre exactamente el mismo defecto.
+test('la paridad no aplica fuera del repo fuente, y lo hereda todo llamador', () => {
+  const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-instalado-'))
+  // Un workspace instalado: rutas gobernadas presentes, sin `setup.sh` y sin
+  // espejo. Es exactamente la forma que hacía fallar al doctor.
+  fs.mkdirSync(path.join(ws, '.github/prompts'), { recursive: true })
+  fs.writeFileSync(path.join(ws, '.github/prompts/p.prompt.md'), '# p\n')
+  assert.ok(!fs.existsSync(path.join(ws, 'scaffold')))
+
+  const r = validateScaffoldParity(ws)
+  assert.equal(r.valid, true, 'un workspace instalado no puede fallar por no tener espejo')
+  assert.equal(r.sourceRepo, false)
+  assert.deepEqual(r.errors, [])
+  fs.rmSync(ws, { recursive: true, force: true })
+})
+
+// El control negativo. Sin él, la prueba de arriba la satisface una función que
+// devuelva `valid: true` SIEMPRE — que es peor que el defecto que arregla.
+test('en el repo fuente sí exige el espejo: el mismo árbol, con setup.sh, falla', () => {
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-fuente-'))
+  fs.mkdirSync(path.join(repo, '.github/prompts'), { recursive: true })
+  fs.writeFileSync(path.join(repo, '.github/prompts/p.prompt.md'), '# p\n')
+  fs.writeFileSync(path.join(repo, 'setup.sh'), '#!/usr/bin/env bash\n')
+
+  const r = validateScaffoldParity(repo)
+  assert.equal(r.valid, false, 'el repo fuente sin espejo debe fallar')
+  assert.notEqual(r.sourceRepo, false)
+  assert.ok(r.errors.some((e) => e.includes('.github/prompts')))
+  fs.rmSync(repo, { recursive: true, force: true })
 })
