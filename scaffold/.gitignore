@@ -14,9 +14,11 @@ coverage/
 # Exported memory bundle artifacts
 .exportsmemories/
 
-# NVIDIA customendpoint credentials — keep example tracked, ignore real keyfile
+# Credenciales del customendpoint NVIDIA. El ejemplo se preservaba con una
+# negación, que murió cuando `.vscode/` pasó a ignorarse entero más abajo: git
+# no re-incluye un archivo bajo un directorio excluido. Se retira en vez de
+# dejarla, porque una regla que dice preservar algo y no lo preserva se cree.
 .vscode/ChatLanguageModel.json
-!.vscode/ChatLanguageModel.example.json*
 !.exportsmemories/.gitkeep
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -75,6 +77,13 @@ coverage/
 # Esto no aplica al repositorio de desarrollo de AOI, que tiene su propio
 # `.gitignore` en la raíz: allí `scripts/`, `.github/` y el resto SON el
 # producto y se versionan. Este archivo es el que viaja al destino.
+#
+# `.tasks/` y `.sandboxes/` NO figuran acá a propósito. Ignorar el directorio
+# entero anula las reglas granulares de más arriba, porque git no puede
+# re-incluir un archivo cuyo directorio padre está excluido: se perdían
+# `.tasks/registry.md` —el índice del ciclo SDD del Owner— y
+# `.sandboxes/_templates/`. Ambos siguen versionados; lo que se ignora son los
+# artefactos generados por feature y los sandboxes reales.
 # ─────────────────────────────────────────────────────────────────────────────
 .agents/
 .claude/
@@ -84,9 +93,7 @@ coverage/
 .resources/
 .vscode/
 .idea/
-.sandboxes/
 .specify/
-.tasks/
 aoi_apps/
 docs/
 scripts/
