@@ -119,3 +119,28 @@ test('BIC-2026-005: ningún instalador emite la misma fase dos veces', () => {
   const banners = WINDOWS.match(/Write-Header "AOI → \$ProjectName"/g) ?? []
   assert.equal(banners.length, 1, `setup.ps1 abre ${banners.length} corridas`)
 })
+
+// El perfil dashboard nunca funcionó en macOS, y nadie lo supo hasta que se
+// instaló uno de verdad el 2026-09-17.
+//
+// `SCAFFOLD_COPY_EXCLUDE` queda vacío exactamente cuando el perfil incluye
+// dashboard. macOS trae bash 3.2.57 y `env bash` resuelve a `/bin/bash`; bash
+// anterior a 4.4 trata `"${ARR[@]}"` sobre un array vacío bajo `set -u` como
+// variable no ligada. La corrida moría en Phase 3 con
+// `SCAFFOLD_COPY_EXCLUDE[@]: unbound variable`.
+//
+// La aserción es TEXTUAL a propósito. En bash 4.4+ la forma sin blindar no
+// falla, así que un test que ejecutara el instalador pasaría en cualquier
+// máquina moderna y callaría justo sobre la plataforma donde rompe.
+test('BIC-2026-005: toda expansión de SCAFFOLD_COPY_EXCLUDE sobrevive a bash 3.2', () => {
+  const expansiones = POSIX.match(/\$\{SCAFFOLD_COPY_EXCLUDE\[@\]/g) ?? []
+  assert.ok(expansiones.length >= 6, `esperaba ≥6 expansiones, hay ${expansiones.length}`)
+
+  // La forma blindada `${ARR[@]+"${ARR[@]}"}` expande a NADA con el array
+  // vacío; la desnuda `"${ARR[@]}"` es la que aborta.
+  const desnudas = POSIX.match(/(?<!\+)"\$\{SCAFFOLD_COPY_EXCLUDE\[@\]\}"/g) ?? []
+  assert.deepEqual(desnudas, [], 'una expansión sin blindar aborta el perfil dashboard en macOS')
+
+  const blindadas = POSIX.match(/\$\{SCAFFOLD_COPY_EXCLUDE\[@\]\+"\$\{SCAFFOLD_COPY_EXCLUDE\[@\]\}"\}/g) ?? []
+  assert.equal(blindadas.length, 6, `las 6 expansiones deben estar blindadas, hay ${blindadas.length}`)
+})

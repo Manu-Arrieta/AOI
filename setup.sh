@@ -582,6 +582,19 @@ profile_excludes_relative_path() {
   esac
 }
 
+# Este array queda VACÍO exactamente cuando el perfil incluye dashboard, que es
+# el único caso en que no hay nada que excluir. macOS trae GNU bash 3.2.57 y el
+# shebang `env bash` resuelve a `/bin/bash`, y bash anterior a 4.4 trata la
+# expansión `"${ARR[@]}"` de un array vacío bajo `set -u` como variable no
+# ligada. Resultado medido: `--profile dashboard` abortaba en Phase 3 con
+# `SCAFFOLD_COPY_EXCLUDE[@]: unbound variable`, así que el perfil dashboard
+# nunca funcionó en macOS. Las seis expansiones usan la forma portable
+# `${ARR[@]+"${ARR[@]}"}`, que expande a NADA cuando el array está vacío.
+#
+# Ninguna suite lo vio: todas leen `setup.sh` como texto y ninguna lo ejecuta.
+# Y la regresión se asegura con una aserción TEXTUAL sobre el idioma, no
+# ejecutando: en bash 4.4+ la forma sin blindar no falla, así que un test de
+# ejecución pasaría en cualquier máquina moderna y callaría sobre macOS.
 SCAFFOLD_COPY_EXCLUDE=()
 if [ "$PROFILE_INCLUDES_DASHBOARD" -eq 0 ]; then
   SCAFFOLD_COPY_EXCLUDE+=("--exclude=aoi_apps/")
@@ -1457,7 +1470,7 @@ print(f'COMPARE_TMPDIR={td}')
       if [ -z "$COMPARE_TMPDIR" ]; then
         warn "python3 smart merge produced no temp dir — falling back to rsync --ignore-existing"
         if command -v rsync &>/dev/null; then
-          rsync -a --ignore-existing "${SCAFFOLD_COPY_EXCLUDE[@]}" "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
+          rsync -a --ignore-existing ${SCAFFOLD_COPY_EXCLUDE[@]+"${SCAFFOLD_COPY_EXCLUDE[@]}"} "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
         fi
       else
         # Copy new files (exist in scaffold but not in previous install)
@@ -1543,13 +1556,13 @@ print(f'COMPARE_TMPDIR={td}')
     else
       warn "python3 not available for smart merge — falling back to rsync --ignore-existing"
       if command -v rsync &>/dev/null; then
-        rsync -a --ignore-existing "${SCAFFOLD_COPY_EXCLUDE[@]}" "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
+        rsync -a --ignore-existing ${SCAFFOLD_COPY_EXCLUDE[@]+"${SCAFFOLD_COPY_EXCLUDE[@]}"} "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
       fi
     fi
   else
     warn "compare-install.sh not found — falling back to rsync --ignore-existing"
     if command -v rsync &>/dev/null; then
-      rsync -a --ignore-existing "${SCAFFOLD_COPY_EXCLUDE[@]}" "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
+      rsync -a --ignore-existing ${SCAFFOLD_COPY_EXCLUDE[@]+"${SCAFFOLD_COPY_EXCLUDE[@]}"} "$SCAFFOLD_DIR/" "$PROJECT_PATH/"
     fi
   fi
 
@@ -1598,8 +1611,8 @@ else
   # directory it behaves identically, so nothing is lost for the simple case.
   FRESH_KEPT=""
   if command -v rsync &>/dev/null; then
-    FRESH_KEPT="$(rsync -a --ignore-existing "${SCAFFOLD_COPY_EXCLUDE[@]}" --out-format='%n' "$SCAFFOLD_DIR/" "$PROJECT_PATH/" >/dev/null 2>&1; \
-      rsync -an --existing "${SCAFFOLD_COPY_EXCLUDE[@]}" --out-format='%n' "$SCAFFOLD_DIR/" "$PROJECT_PATH/" 2>/dev/null | grep -v '/$' || true)"
+    FRESH_KEPT="$(rsync -a --ignore-existing ${SCAFFOLD_COPY_EXCLUDE[@]+"${SCAFFOLD_COPY_EXCLUDE[@]}"} --out-format='%n' "$SCAFFOLD_DIR/" "$PROJECT_PATH/" >/dev/null 2>&1; \
+      rsync -an --existing ${SCAFFOLD_COPY_EXCLUDE[@]+"${SCAFFOLD_COPY_EXCLUDE[@]}"} --out-format='%n' "$SCAFFOLD_DIR/" "$PROJECT_PATH/" 2>/dev/null | grep -v '/$' || true)"
     ok "Scaffold merged (rsync, sin pisar lo existente)"
   else
     cd "$SCAFFOLD_DIR"
@@ -1760,7 +1773,7 @@ fi
 
 mkdir -p "$PROJECT_PATH/scaffold"
 if command -v rsync &>/dev/null; then
-  rsync -a "${SCAFFOLD_COPY_EXCLUDE[@]}" "$SCAFFOLD_DIR/" "$PROJECT_PATH/scaffold/"
+  rsync -a ${SCAFFOLD_COPY_EXCLUDE[@]+"${SCAFFOLD_COPY_EXCLUDE[@]}"} "$SCAFFOLD_DIR/" "$PROJECT_PATH/scaffold/"
 else
   (
     cd "$SCAFFOLD_DIR"
