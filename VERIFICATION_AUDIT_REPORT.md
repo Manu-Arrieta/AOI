@@ -8,8 +8,8 @@
 > encontraron defectos abiertos que este informe no podía conocer.
 > Un "0 defectos · 0 GAPs" sin fecha de vigencia se lee como permanente, y
 > eso es justo lo que no es. La comparación viva está en
-> [`AOI_REAL_WORLD_VERIFICATION_MATRIX.md`](AOI_REAL_WORLD_VERIFICATION_MATRIX.md)
-> y en `docs/internal/audits/`.
+> `AOI_REAL_WORLD_VERIFICATION_MATRIX.md`, que vive en el workspace de
+> verificación y no en este repositorio, y en `docs/internal/audits/`.
 
 **Ejecutado por:** Antigravity Autonomous Agent (Google DeepMind)
 **Workspace de Prueba:** `/Users/equinox/Desktop/AOI TESTS`

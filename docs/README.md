@@ -28,8 +28,8 @@ Bienvenido al repositorio de documentación arquitectónica, metodológica y ope
 * **Procedimiento Operativo Canónico de Auditoría Multi-Harness**
 * **Resumen:** Procedimiento determinista para auditar cualquier versión de AOI contra otra en rendimiento, uso de herramientas, ahorro de tokens y comportamiento SDD, regido por la regla de reproducibilidad estricta, descomposición de cuatro términos sin residuo, pruebas de falso verde y verificación cruzada de bandas de contexto.
 
-### 🧪 [Matriz de Verificación en el Mundo Real](../AOI_REAL_WORLD_VERIFICATION_MATRIX.md)
-* **Resumen:** Protocolo de validación integral y los 8 invariantes operativos de AOI probados bajo condiciones reales.
+### 🧪 Matriz de Verificación en el Mundo Real
+* **Resumen:** Protocolo de validación integral y los 8 invariantes operativos de AOI probados bajo condiciones reales. No vive en este repositorio: se ejecuta desde el workspace de verificación, contra una instalación real.
 
 ### 🔍 [Auditoría v2.2.0-66 → v2.3.0](internal/audits/AOI_AUDIT_2026-09-12_v2.2.0-66_vs_v2.3.0.md)
 * **Resumen:** Meta-auditoría del protocolo contra el sistema que describe. 11 hallazgos con `proof` reproducible, 4 verificados con control negativo; medición de los 1.930 tokens de adaptadores de harness que ningún instrumento contaba; creación de la compuerta `aoi:audit-protocol`.

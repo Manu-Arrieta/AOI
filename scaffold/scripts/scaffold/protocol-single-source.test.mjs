@@ -47,16 +47,25 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const PROTOCOL = 'AOI_REAL_WORLD_VERIFICATION_MATRIX.md'
 
 /**
- * La única ubicación legítima: la raíz del repositorio fuente.
+ * Ninguna. El protocolo NO vive en este repositorio.
  *
- * Eran dos, porque el protocolo viajaba en el scaffold hasta cada workspace
- * instalado. Son 99 KB que describen cómo se verifica AOI, en proyectos que no
- * son AOI: ningún script, prompt, agente ni compuerta los lee para decidir nada
- * — sus dos consumidores de código eran esta prueba y la lista de paridad, o
- * sea, vigilancia sobre el propio archivo. El Owner lo retiró del destino el
- * 2026-09-17, por la misma razón por la que el andamio no queda instalado.
+ * Eran dos ubicaciones: la raíz y el espejo del scaffold, desde donde viajaba a
+ * cada workspace instalado. El Owner lo resolvió el 2026-09-17 en dos pasos —
+ * primero fuera del destino, después fuera de AOI— y el segundo tiene el mismo
+ * fundamento que el primero: el protocolo describe cómo se verifica AOI desde
+ * afuera, ejecutándose contra una instalación real. No es el producto que AOI
+ * shippea ni código que AOI versione. Su lugar es el workspace de verificación,
+ * `/Users/equinox/Desktop/AOI TESTS`.
+ *
+ * El propio documento lo venía diciendo: su paso de limpieza inicial contenía
+ * una línea que lo salteaba por nombre para no borrarse a sí mismo, o sea que
+ * siempre asumió estar corriendo desde adentro del workspace de pruebas.
+ *
+ * Esta compuerta se invierte en vez de eliminarse: antes exigía una copia y una
+ * sola, ahora exige ninguna. Un archivo de 100 KB que ya se fue dos veces puede
+ * volver sin que nada falle, y volvería a shippearse a cada instalación.
  */
-const GOBERNADAS = [PROTOCOL]
+const GOBERNADAS = []
 
 /**
  * Directorios que no vale la pena recorrer y nunca contienen fuente propia.
@@ -102,12 +111,12 @@ export function enlacesRotos(root) {
   return rotos.sort()
 }
 
-describe('el protocolo de verificación tiene una sola fuente', () => {
-  it('existe únicamente en la raíz y en su espejo gobernado', () => {
+describe('el protocolo de verificación no vive en este repositorio', () => {
+  it('no queda ninguna copia: su lugar es el workspace de verificación', () => {
     assert.deepEqual(
       copiasDelProtocolo(REPO),
       [...GOBERNADAS].sort(),
-      'apareció una copia del protocolo fuera de las rutas que la paridad vigila: va a derivar sin que nada falle',
+      'reapareció el protocolo dentro de AOI: su lugar es `AOI TESTS`, y acá deriva y vuelve a shippearse',
     )
   })
 })
