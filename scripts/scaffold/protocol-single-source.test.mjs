@@ -46,8 +46,17 @@ import { describe, it, after } from 'node:test'
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const PROTOCOL = 'AOI_REAL_WORLD_VERIFICATION_MATRIX.md'
 
-/** Las dos únicas ubicaciones legítimas, ambas gobernadas por la paridad. */
-const GOBERNADAS = [PROTOCOL, path.join('scaffold', PROTOCOL)]
+/**
+ * La única ubicación legítima: la raíz del repositorio fuente.
+ *
+ * Eran dos, porque el protocolo viajaba en el scaffold hasta cada workspace
+ * instalado. Son 99 KB que describen cómo se verifica AOI, en proyectos que no
+ * son AOI: ningún script, prompt, agente ni compuerta los lee para decidir nada
+ * — sus dos consumidores de código eran esta prueba y la lista de paridad, o
+ * sea, vigilancia sobre el propio archivo. El Owner lo retiró del destino el
+ * 2026-09-17, por la misma razón por la que el andamio no queda instalado.
+ */
+const GOBERNADAS = [PROTOCOL]
 
 /**
  * Directorios que no vale la pena recorrer y nunca contienen fuente propia.
@@ -100,11 +109,6 @@ describe('el protocolo de verificación tiene una sola fuente', () => {
       [...GOBERNADAS].sort(),
       'apareció una copia del protocolo fuera de las rutas que la paridad vigila: va a derivar sin que nada falle',
     )
-  })
-
-  it('las dos copias gobernadas son idénticas', () => {
-    const [a, b] = GOBERNADAS.map((f) => fs.readFileSync(path.join(REPO, f), 'utf8'))
-    assert.equal(a, b, 'la raíz y el scaffold publican protocolos distintos')
   })
 })
 
