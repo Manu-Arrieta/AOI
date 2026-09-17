@@ -49,14 +49,41 @@ icm_memory_store(
 )
 ```
 
-Initialize deterministic exact facts:
+FIRST, read the facts that are already there and judge each against Step 2:
 
 ```bash
+icm facts list "{WORKSPACE}"
+```
+
+This is not a formality, and `/init` is the only place it happens. ICM keeps one
+database for every project on the machine (`~/Library/Application
+Support/dev.icm.icm/memories.db`); the entity is just the string passed on the
+command line, and nothing scopes it to this directory. So a wrong fact is not
+corrected by reinstalling, by `aoi:sync-rules`, or by fixing whatever wrote it —
+it lives outside the repository and outlives every repair made inside it.
+
+Measured case: an installed workspace carried `stack.frameworks = Nuxt 4.4.6, Vue
+3.5.34, …` and `stack.packageManager = pnpm (workspaces: aoi_apps/*)` for a tree
+of plain `.mjs` with no dependencies at all. Nothing was hallucinated — an
+earlier installer copied AOI's own `pnpm-workspace.yaml` into the installation,
+`/init` followed that glob into the dashboard's `package.json`, and recorded what
+it genuinely found. The installer bug was fixed; the facts it produced were not,
+because fixing the emitter does not retract what it already emitted.
+
+Any fact that contradicts Step 2 is superseded, not left alone — `icm facts set`
+on an existing key keeps the old row in history, so correcting one loses nothing:
+
+```bash
+icm facts history "{WORKSPACE}" "stack.frameworks"   # what it said, and since when
 icm facts set "{WORKSPACE}" "stack.languages" "{detected languages}"
 icm facts set "{WORKSPACE}" "stack.frameworks" "{detected frameworks}"
 icm facts set "{WORKSPACE}" "stack.packageManager" "{detected packageManager}"
 icm facts set "{WORKSPACE}" "icm.protocol" "v4"
 ```
+
+Facts are O(1) and are consumed by `icm wake-up` without verification, so a wrong
+one is read as settled truth by every future session. Prefer "unknown" to a
+plausible guess.
 
 Create the architecture memoir:
 
@@ -159,15 +186,21 @@ Count and report: "{N}/27 agents present. Missing: {list}."
 Check all `.github/instructions/*.instructions.md` files have valid YAML frontmatter
 with `applyTo`:
 
-| Instruction File                   | Expected `applyTo`                                     |
-| ---------------------------------- | ------------------------------------------------------ |
-| `agent-delegation.instructions.md` | `**`                                                   |
-| `code-safety.instructions.md`      | `**/*.{ts,js,vue,py,sh,ps1,json,cs,java,go,rb,php,rs}` |
-| `icm-protocol.instructions.md`     | `**`                                                   |
-| `model-selection.instructions.md`  | `**`                                                   |
-| `rtk.instructions.md`              | `**`                                                   |
+Do NOT compare against a list of expected globs. This step used to carry one and
+it drifted: it froze five files at `applyTo: "**"` while the tree had six, two of
+them scoped — so following the table meant "correcting" instructions that were
+already right. Read what is there and report it:
 
-For each file, validate: `head -7 .github/instructions/{file}` shows correct YAML.
+```bash
+for f in .github/instructions/*.instructions.md; do
+  printf "%-42s %s\n" "$(basename "$f")" "$(rg -m1 -N 'applyTo:' "$f" || echo '!! SIN applyTo')"
+done
+```
+
+The assertion is structural, not literal: every file has an `applyTo` key and its
+value is non-empty. A missing or empty `applyTo` is the defect — a specific glob
+is a decision, not a deviation. Report the count found and the values, so the
+Owner judges the scoping.
 
 ### Step 8: Verify Skills
 
@@ -345,8 +378,8 @@ Present a comprehensive checklist:
 ✅ spec-kit: Copilot integration installed
 ✅ Constitution: {found|generated}
 ✅ Agents: {N}/27 present ({missing_list})
-✅ Instructions: {N}/5 with valid applyTo
-✅ Skills: {N}/5 present
+✅ Instructions: {N} present, all with a non-empty applyTo
+✅ Skills: {N}/{total found in .github/skills/} present
 ✅ Hooks: {N}/5 hook files valid
 ✅ Prompts: {N} SDD + memory + speckit prompts
 ✅ MCP: {servers} registered

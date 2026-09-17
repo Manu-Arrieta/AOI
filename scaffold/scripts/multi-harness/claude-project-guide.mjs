@@ -85,6 +85,75 @@ keeps the bug. Fix it in the AOI development repository and let it propagate.
 }
 
 /**
+ * What each area under `scripts/` owns.
+ *
+ * Only the prose lives here. Which areas EXIST is read from the tree, because
+ * the row set used to be hardcoded too — and a `core` installation, which
+ * receives no `scripts/conf/`, still got a ten-row table naming it. Every agent
+ * reading that CLAUDE.md was told to look for a directory the installer had
+ * deliberately not sent. The section's own closing paragraph warns against
+ * "prose written once and never re-measured"; the table under it was exactly
+ * that.
+ *
+ * An area on disk with no entry here still gets a row, flagged. Dropping it
+ * would restore the original failure in the opposite direction: a real area
+ * invisible because nobody updated a literal.
+ */
+export const AREA_OWNERSHIP = {
+  'sdd-lifecycle': 'SDD phases, the Invariant and Blueprint gates, context budget, behavioural probes',
+  'multi-harness': 'compiling one protocol into six assistant dialects; the prose linters',
+  'memory-sync': 'versioned ICM memory: manifests, bundles, activation, rollback',
+  scaffold: 'the gates that judge AOI itself: parity, SRP, reachability, test globs, mutation',
+  sandbox: '`.sandboxes/` manifests and base-project detection',
+  'code-lens': 'the read-only lenses listed above',
+  'subagent-context': 'sanitized subagent payloads, TOON serialization, context tombstoning',
+  'spatiotemporal-runtime': 'Fiber lifecycle, revertible effects, coeffects, transactional HMR',
+  'mcp-gateway': 'the MCP compression proxy and its zero-disabled-tools invariant',
+  conf: "installed-workspace configuration AOI owns without overwriting the Owner's",
+}
+
+/**
+ * The area directories actually present under `scripts/`, sorted.
+ *
+ * `node_modules` and dot-directories are not areas; nothing else is filtered,
+ * so a new area appears the moment it is created.
+ *
+ * @param {string} repoRoot
+ * @returns {string[]}
+ */
+export function discoverAreas(repoRoot) {
+  const scriptsDir = path.join(repoRoot, 'scripts')
+  if (!fs.existsSync(scriptsDir)) return []
+  return fs
+    .readdirSync(scriptsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .filter((name) => name !== 'node_modules' && !name.startsWith('.'))
+    .sort()
+}
+
+/** Renders the Architecture table from the tree being compiled into. */
+function renderAreaTable(repoRoot) {
+  const areas = discoverAreas(repoRoot)
+  if (areas.length === 0) {
+    return 'No area directories under `scripts/` — this tree carries no AOI runtime.'
+  }
+
+  const rows = areas
+    .map((area) => {
+      const owns = AREA_OWNERSHIP[area] ?? '**(undescribed — add it to `AREA_OWNERSHIP` in `claude-project-guide.mjs`)**'
+      return `| \`${area}/\` | ${owns} |`
+    })
+    .join('\n')
+
+  return `${areas.length} areas under \`scripts/\`, each with its tests beside it:
+
+| Area | Owns |
+| --- | --- |
+${rows}`
+}
+
+/**
  * The repository guide appended to CLAUDE.md.
  * @param {{ workspace?: string, repoRoot?: string }} options
  */
@@ -147,20 +216,7 @@ pnpm aoi:ast-lens       # fold function bodies, keep signatures
 
 ## Architecture
 
-Ten areas under \`scripts/\`, each with its tests beside it:
-
-| Area | Owns |
-| --- | --- |
-| \`sdd-lifecycle/\` | SDD phases, the Invariant and Blueprint gates, context budget, behavioural probes |
-| \`multi-harness/\` | compiling one protocol into six assistant dialects; the prose linters |
-| \`memory-sync/\` | versioned ICM memory: manifests, bundles, activation, rollback |
-| \`scaffold/\` | the gates that judge AOI itself: parity, SRP, reachability, test globs, mutation |
-| \`sandbox/\` | \`.sandboxes/\` manifests and base-project detection |
-| \`code-lens/\` | the read-only lenses listed above |
-| \`subagent-context/\` | sanitized subagent payloads, TOON serialization, context tombstoning |
-| \`spatiotemporal-runtime/\` | Fiber lifecycle, revertible effects, coeffects, transactional HMR |
-| \`mcp-gateway/\` | the MCP compression proxy and its zero-disabled-tools invariant |
-| \`conf/\` | installed-workspace configuration AOI owns without overwriting the Owner's |
+${renderAreaTable(repoRoot)}
 
 Do not mistake that table for the architecture. It is a taxonomy, and a taxonomy
 hides the thing that actually matters — who calls whom, in what order. For the

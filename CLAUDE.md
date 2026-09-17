@@ -107,20 +107,20 @@ pnpm aoi:ast-lens       # fold function bodies, keep signatures
 
 ## Architecture
 
-Ten areas under `scripts/`, each with its tests beside it:
+10 areas under `scripts/`, each with its tests beside it:
 
 | Area | Owns |
 | --- | --- |
-| `sdd-lifecycle/` | SDD phases, the Invariant and Blueprint gates, context budget, behavioural probes |
-| `multi-harness/` | compiling one protocol into six assistant dialects; the prose linters |
-| `memory-sync/` | versioned ICM memory: manifests, bundles, activation, rollback |
-| `scaffold/` | the gates that judge AOI itself: parity, SRP, reachability, test globs, mutation |
-| `sandbox/` | `.sandboxes/` manifests and base-project detection |
 | `code-lens/` | the read-only lenses listed above |
-| `subagent-context/` | sanitized subagent payloads, TOON serialization, context tombstoning |
-| `spatiotemporal-runtime/` | Fiber lifecycle, revertible effects, coeffects, transactional HMR |
-| `mcp-gateway/` | the MCP compression proxy and its zero-disabled-tools invariant |
 | `conf/` | installed-workspace configuration AOI owns without overwriting the Owner's |
+| `mcp-gateway/` | the MCP compression proxy and its zero-disabled-tools invariant |
+| `memory-sync/` | versioned ICM memory: manifests, bundles, activation, rollback |
+| `multi-harness/` | compiling one protocol into six assistant dialects; the prose linters |
+| `sandbox/` | `.sandboxes/` manifests and base-project detection |
+| `scaffold/` | the gates that judge AOI itself: parity, SRP, reachability, test globs, mutation |
+| `sdd-lifecycle/` | SDD phases, the Invariant and Blueprint gates, context budget, behavioural probes |
+| `spatiotemporal-runtime/` | Fiber lifecycle, revertible effects, coeffects, transactional HMR |
+| `subagent-context/` | sanitized subagent payloads, TOON serialization, context tombstoning |
 
 Do not mistake that table for the architecture. It is a taxonomy, and a taxonomy
 hides the thing that actually matters — who calls whom, in what order. For the

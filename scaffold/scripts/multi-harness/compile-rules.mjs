@@ -13,6 +13,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { renderProjectGuide } from './claude-project-guide.mjs'
+import { syncHarnessCommands } from './harness-commands.mjs'
 import { fallbackStoreTriggers, prunePathIfPristine, readMcpActivation, readStoreTriggers, renderMcpActivation, renderStoreTriggers, syncAntigravitySkills } from './protocol-source.mjs'
 
 export const SUPPORTED_HARNESSES = ['copilot', 'claude', 'cursor', 'antigravity', 'cline', 'all']
@@ -209,6 +210,9 @@ export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = '
     // workspace, and reading that from the current directory would describe
     // wherever the command was launched from rather than what is being written.
     writeTargetFile('CLAUDE.md', generateClaudeMd({ workspace, repoRoot }))
+    // Without this, CLAUDE.md documented a `/init` that Claude Code resolved to
+    // its own bundled command — the one that rewrites CLAUDE.md by hand.
+    syncHarnessCommands(repoRoot, writeTargetFile, 'claude')
   }
 
   // 2. Cursor
@@ -216,6 +220,7 @@ export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = '
     const content = generateCursorRules({ workspace })
     writeTargetFile('.cursorrules', content)
     writeTargetFile('.cursor/rules/aoi-rules.mdc', content)
+    syncHarnessCommands(repoRoot, writeTargetFile, 'cursor')
   }
 
   // 3. Antigravity / Gemini

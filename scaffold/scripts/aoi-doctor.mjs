@@ -4,10 +4,12 @@
  *
  * AOI Workspace 360° Health Diagnostic Guard.
  *
- * This file owns ONE decision: turning the six checks into the single word
- * the Owner reads. The checks themselves live in `doctor-checks.mjs` —
- * separating them was what made it obvious that the verdict, not the checks,
- * was the part nothing tested.
+ * This file owns ONE decision: turning the checks into the single word the
+ * Owner reads. The checks themselves live in `doctor-checks.mjs` and, when one
+ * needs its own rationale, in a `*-guard.mjs` beside it — separating them was
+ * what made it obvious that the verdict, not the checks, was the part nothing
+ * tested. Their number is not stated here: it changed, and a count in prose is
+ * the same defect this diagnostic exists to catch elsewhere.
  *
  * Deterministic, 0 inference tokens.
  */
@@ -18,6 +20,7 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { validateScaffoldParity } from './scaffold/validate-scaffold-parity.mjs'
 import { checkMemoirNaming } from './memoir-naming-guard.mjs'
+import { checkFactsConsistency } from './facts-consistency-guard.mjs'
 import {
   checkArchifySkill,
   checkBinaries,
@@ -34,6 +37,7 @@ import {
 // the doctor's public surface stays one import for a consumer.
 export {
   checkBinaries,
+  checkFactsConsistency,
   checkIcmHealth,
   checkMemoirNaming,
   checkMemoryGovernance,
@@ -83,6 +87,9 @@ export async function runAoiDoctor(options = {}) {
   // inyecta en los tests — sin él la compuerta quedaría fuera de todo test y
   // volvería a hablarle a la base real durante la suite.
   const memoirNamingCheck = await checkMemoirNaming(repoRoot, execFn)
+  // Misma razón que el de memoirs: lee la base compartida de ICM, así que
+  // necesita el `execFn` inyectado o la suite le hablaría a la base real.
+  const factsCheck = await checkFactsConsistency(repoRoot, execFn)
 
   let parityCheck
   try {
@@ -150,6 +157,18 @@ export async function runAoiDoctor(options = {}) {
       // anteriores al fix arrastran conceptos en kebab que puso AOI mismo, así
       // que bloquear por ellos sería repetir el error del instalador que
       // reemplazaba el `pnpm-workspace.yaml` del Owner. Reporta; no tranca.
+      mandatory: false,
+    },
+    {
+      category: 'Memory Engine',
+      name: 'ICM Facts vs. Tree',
+      status: factsCheck.status,
+      details: factsCheck.details,
+      // Nunca obligatorio. La evidencia es más débil que la de parity: un fact
+      // puede describir legítimamente algo que este árbol no puede mostrar —un
+      // stack planeado, un servicio en otro repo, un lenguaje sin manifiesto—.
+      // Trancar el doctor sobre una inferencia sería el mismo error que el
+      // instalador que pisaba el `pnpm-workspace.yaml` del Owner.
       mandatory: false,
     },
     {

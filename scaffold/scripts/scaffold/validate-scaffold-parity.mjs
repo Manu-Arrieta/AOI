@@ -54,12 +54,12 @@ export const DEFAULT_SYNC_PATHS = [
   // quedaría vieja y `aoi:doctor` rompería lejos de la causa — el mismo
   // accidente que ya pasó dos veces con `doctor-checks.mjs`.
   'scripts/archify-checks.mjs',
-  // El guard de naming corre en el doctor de CADA instalación, así que la
-  // copia del espejo tiene que ser verificada o root y espejo derivan sin que
-  // nada falle acá — el mismo accidente que ya pasó dos veces con
-  // `doctor-checks.mjs`, y que se paga lejos de la causa.
+  // Ambos guards corren en el doctor de CADA instalación —y el de facts sólo
+  // sirve ahí—: un espejo viejo rompe lejos de la causa, como `doctor-checks.mjs`.
   'scripts/memoir-naming-guard.mjs',
   'scripts/memoir-naming-guard.test.mjs',
+  'scripts/facts-consistency-guard.mjs',
+  'scripts/facts-consistency-guard.test.mjs',
   'LICENSE',
   'package.json',
   // `pnpm-workspace.yaml` used to be governed here, and it must not be: the
