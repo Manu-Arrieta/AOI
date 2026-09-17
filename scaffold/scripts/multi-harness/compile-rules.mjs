@@ -12,6 +12,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { renderProjectGuide } from './claude-project-guide.mjs'
 import { fallbackStoreTriggers, prunePathIfPristine, readMcpActivation, readStoreTriggers, renderMcpActivation, renderStoreTriggers, syncAntigravitySkills } from './protocol-source.mjs'
 
 export const SUPPORTED_HARNESSES = ['copilot', 'claude', 'cursor', 'antigravity', 'cline', 'all']
@@ -51,7 +52,7 @@ pnpm aoi:doctor                          # 360° Repository health check
 - \`/sdd-apply\` — Implement planned tasks with TDD & Fiber sandboxes (\`.github/prompts/sdd-apply.prompt.md\`)
 - \`/sdd-verify\` — Verify implementation, test gates, Invariant Gate, and SRP limits (<300 LOC) (\`.github/prompts/sdd-verify.prompt.md\`)
 - \`/sdd-archive\` — Close task, distill patterns, and refresh fast briefings (\`.github/prompts/sdd-archive.prompt.md\`)
-`
+${renderProjectGuide({ workspace, repoRoot })}`
 }
 
 export function generateCursorRules({ workspace = 'AOI' } = {}) {
@@ -203,7 +204,11 @@ export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = '
 
   // 1. Claude Code
   if (shouldCompile('claude')) {
-    writeTargetFile('CLAUDE.md', generateClaudeMd({ workspace }))
+    // `repoRoot` is passed explicitly, not left to `process.cwd()`: the guide
+    // reports whether the tree is the development repository or an installed
+    // workspace, and reading that from the current directory would describe
+    // wherever the command was launched from rather than what is being written.
+    writeTargetFile('CLAUDE.md', generateClaudeMd({ workspace, repoRoot }))
   }
 
   // 2. Cursor
