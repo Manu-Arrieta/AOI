@@ -28,7 +28,12 @@ describe('the harness surfaces are derived from the protocol, not copied', () =>
 
     for (const [level, cases] of Object.entries(levels)) {
       for (const [name, text] of [['CLAUDE.md', claude], ['copilot-instructions', copilot]]) {
-        assert.ok(text.includes(`\`-i ${level}\` → ${cases}`), `${name} no refleja el nivel ${level}`)
+        // El protocolo escribe los topics con `{WORKSPACE}` porque su regla es
+        // que todo topic lleve prefijo; la superficie compilada lo sustituye.
+        // La expectativa sustituye igual, o el caso exigiría que el placeholder
+        // llegara crudo al archivo — que es justo el defecto que se arregló.
+        const esperado = cases.replaceAll('{WORKSPACE}', 'AOI')
+        assert.ok(text.includes(`\`-i ${level}\` → ${esperado}`), `${name} no refleja el nivel ${level}`)
       }
     }
   })
@@ -66,11 +71,32 @@ describe('the harness surfaces are derived from the protocol, not copied', () =>
       ['fallback copilot', fallback.copilot],
     ]
 
+    // Los CUATRO, no dos. Este caso cubría sólo `context` y `decisions` —
+    // los que tenían el prefijo INVERTIDO— y dejaba afuera `errors-resolved` y
+    // `preferences`, que no tenían prefijo NINGUNO. El generador los emitía
+    // pelados contra la regla en negrita de su propia fuente ("ALL topics MUST
+    // be prefixed"), así que caían en cubos GLOBALES compartidos por todos los
+    // proyectos de la máquina: medido en la DB, `errors-resolved` 114 y
+    // `preferences` 15 contra `AOI-errors-resolved` 16 y `AOI-preferences` 2.
+    // Un caso que cubre parte de una superficie reporta verde, y ese verde se
+    // lee como cobertura entera.
     for (const [name, text] of surfaces) {
-      for (const topic of [`${WS}-context`, `${WS}-decisions`]) {
+      for (const topic of [`${WS}-context`, `${WS}-decisions`, `${WS}-errors-resolved`, `${WS}-preferences`]) {
         assert.ok(text.includes(topic), `${name} no nombra ${topic}`)
         assert.equal(isWorkspaceScopedTopic(topic, WS), true, `${topic} tiene que contar como del workspace`)
       }
+
+      // Sin prefijo el topic es global, no del workspace. La aserción no puede
+      // ser `includes`, porque `AOI-errors-resolved` contiene `errors-resolved`:
+      // el lookbehind es lo que distingue el topic pelado del prefijado.
+      for (const bare of ['errors-resolved', 'preferences']) {
+        assert.equal(isWorkspaceScopedTopic(bare, WS), false, `${bare} no debería ser scoped`)
+        assert.doesNotMatch(text, new RegExp(`(?<!${WS}-)\\b${bare}\\b`), `${name} nombra el topic global ${bare}`)
+      }
+
+      // El placeholder llegaba sin sustituir a la superficie compilada, que le
+      // ordenaba al agente un topic que literalmente no existe.
+      assert.doesNotMatch(text, /\{WORKSPACE\}/, `${name} filtró el placeholder sin sustituir`)
 
       for (const reversed of [`context-${WS}`, `decisions-${WS}`]) {
         // El prefijo invertido no sólo "se ve raro": la regla lo rechaza, y eso

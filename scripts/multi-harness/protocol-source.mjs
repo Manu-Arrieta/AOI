@@ -181,9 +181,13 @@ export function renderStoreTriggers(levels, workspace) {
     `### Store Triggers (MANDATORY) — derivado de \`${ICM_PROTOCOL}\``,
     '',
     `\`icm store -t <topic> -c "<description>" -i <importance>\` · topics: \`${workspace}-decisions\`,`,
-    `\`${workspace}-context\`, \`errors-resolved\`, \`preferences\`.`,
+    `\`${workspace}-context\`, \`${workspace}-errors-resolved\`, \`${workspace}-preferences\`.`,
     '',
-    ...present.map((l) => `- \`-i ${l}\` → ${levels[l]}`),
+    // El protocolo escribe los topics como \`{WORKSPACE}-preferences\`, porque su
+    // propia regla es que TODO topic lleve prefijo. Esa prosa se copiaba verbatim
+    // y el placeholder llegaba sin sustituir al archivo compilado, ordenándole al
+    // agente un topic literalmente inexistente.
+    ...present.map((l) => `- \`-i ${l}\` → ${levels[l].replaceAll('{WORKSPACE}', workspace)}`),
     '',
     `Configuración exacta como hecho O(1): \`icm facts set "${workspace}" "key" "value"\`.`,
   ].join('\n')
@@ -253,15 +257,15 @@ export function renderMcpActivation(tools) {
 export function fallbackStoreTriggers(workspace) {
   return {
     claude: `### Store Triggers (MANDATORY)
-1. **Error resolved** → \`icm store -t errors-resolved -c "description" -i high -k "keyword1,keyword2"\`
+1. **Error resolved** → \`icm store -t ${workspace}-errors-resolved -c "description" -i high -k "keyword1,keyword2"\`
 2. **Architecture / Design decision** → \`icm store -t ${workspace}-decisions -c "description" -i critical\`
-3. **User preference discovered** → \`icm store -t preferences -c "description" -i critical\`
+3. **User preference discovered** → \`icm store -t ${workspace}-preferences -c "description" -i critical\`
 4. **Task completed** → \`icm store -t ${workspace}-context -c "summary" -i high\`
 5. **Exact configuration / endpoint / service** → \`icm facts set "${workspace}" "key" "value"\``,
     copilot: `### Store — MANDATORY triggers
-1. **Error resolved** → \`icm store -t errors-resolved -c "description" -i high\`
+1. **Error resolved** → \`icm store -t ${workspace}-errors-resolved -c "description" -i high\`
 2. **Architecture/design decision** → \`icm store -t ${workspace}-decisions -c "description" -i critical\`
-3. **User preference discovered** → \`icm store -t preferences -c "description" -i critical\`
+3. **User preference discovered** → \`icm store -t ${workspace}-preferences -c "description" -i critical\`
 4. **Significant task completed** → \`icm store -t ${workspace}-context -c "summary" -i high\``,
   }
 }
