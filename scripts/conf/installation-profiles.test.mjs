@@ -65,3 +65,33 @@ test('BIC-2026-005: install and external-smoke guidance preserve the Core-defaul
     assert.match(smokePlan, /-Profile dashboard/)
   }
 })
+
+// Un instalador no emite dos veces la misma fase.
+//
+// El 2026-09-17 `cb22dc0` dejó `setup.ps1` con la sentencia `if ($answer
+// -notmatch '...` abierta y las 650 líneas del cuerpo COMPLETO del instalador
+// empalmadas adentro: el archivo pasó de 1672 a 2411 líneas y cada fase, de
+// `Phase 1: Tools` a `Phase 7`, quedó duplicada. El instalador de Windows no
+// parseaba.
+//
+// Ninguna suite lo vio. Las tres que leen `setup.ps1` —ésta incluida— lo hacen
+// con `assert.match`, y un duplicado matchea exactamente igual de bien que el
+// original: doce tests en verde sobre un archivo roto. Contar es la pregunta
+// que `match` no puede hacer.
+test('BIC-2026-005: ningún instalador emite la misma fase dos veces', () => {
+  const duplicadas = (fuente, patron) => {
+    const cuenta = new Map()
+    for (const m of fuente.matchAll(patron)) {
+      const fase = m[1].trim()
+      cuenta.set(fase, (cuenta.get(fase) ?? 0) + 1)
+    }
+    return [...cuenta.entries()].filter(([, n]) => n > 1).map(([fase, n]) => `${fase} ×${n}`)
+  }
+
+  assert.deepEqual(duplicadas(WINDOWS, /Write-Header "(Phase [^"]+)"/g), [])
+  assert.deepEqual(duplicadas(POSIX, /^header "(Phase [^"]+)"/gm), [])
+
+  // El banner de entrada delimita una corrida. Dos bannres son dos corridas.
+  const banners = WINDOWS.match(/Write-Header "AOI → \$ProjectName"/g) ?? []
+  assert.equal(banners.length, 1, `setup.ps1 abre ${banners.length} corridas`)
+})
