@@ -108,6 +108,66 @@ EOF
   find "$target" -type d -empty -delete 2>/dev/null || true
 }
 
+# Orden canónico de los harness. Es el orden en que se normaliza una selección,
+# y existe por una razón concreta: el aviso de reinstalación compara la cadena
+# guardada contra la nueva, así que sin un orden fijo `claude,copilot` y
+# `copilot,claude` —la misma elección— se reportaban como un cambio de harness.
+HARNESS_CANONICAL_ORDER="copilot claude cursor antigravity cline"
+
+# Normaliza una selección a una lista canónica separada por comas.
+#
+# Acepta comas o espacios, en cualquier caja y en cualquier orden, y devuelve
+# siempre la misma cadena para la misma elección. `all` gana sobre todo lo demás
+# y elegir los cinco colapsa a `all`, porque son la misma instalación y el
+# manifiesto merece una sola forma de decirlo.
+#
+# Un nombre desconocido FALLA en vez de ignorarse. Antes `--harness copilto` no
+# erraba: caía al pruning, que compara con `!=`, y borraba en silencio los cinco
+# harness por un typo de una letra.
+normalize_harness_selection() {
+  local raw item known wanted="" ordered="" contados=0
+
+  raw="$(printf '%s' "$1" | tr 'A-Z' 'a-z' | tr ',' ' ')"
+
+  for item in $raw; do
+    case " $HARNESS_CANONICAL_ORDER all " in
+      *" $item "*) ;;
+      *) printf 'unknown harness: %s\n' "$item" >&2; return 1 ;;
+    esac
+    if [ "$item" = "all" ]; then printf 'all\n'; return 0; fi
+    case " $wanted " in
+      *" $item "*) ;;
+      *) wanted="$wanted $item" ;;
+    esac
+  done
+
+  if [ -z "${wanted# }" ]; then printf 'all\n'; return 0; fi
+
+  for known in $HARNESS_CANONICAL_ORDER; do
+    case " $wanted " in
+      *" $known "*) ordered="$ordered,$known"; contados=$((contados + 1)) ;;
+    esac
+  done
+
+  if [ "$contados" -eq 5 ]; then printf 'all\n'; return 0; fi
+  printf '%s\n' "${ordered#,}"
+}
+
+# ¿La selección incluye este harness?
+#
+# Reemplaza a `[ "$sel" != "claude" ]`, que sobre una lista es una comparación
+# de cadena entera: con `copilot,claude` esa prueba daba verdadera para AMBOS y
+# el pruning borraba justo los dos que el operador había pedido.
+harness_selected() {
+  local selection="$1" candidate="$2"
+
+  [ "$selection" = "all" ] && return 0
+  case ",$selection," in
+    *",$candidate,"*) return 0 ;;
+  esac
+  return 1
+}
+
 prune_unselected_harness_files() {
   local target_dir="$1"
   local selected_harness="$2"
@@ -117,25 +177,25 @@ prune_unselected_harness_files() {
     return 0
   fi
 
-  if [ "$selected_harness" != "claude" ]; then
+  if ! harness_selected "$selected_harness" claude; then
     prune_path_if_pristine "$target_dir/CLAUDE.md" "$ref/CLAUDE.md"
   fi
 
-  if [ "$selected_harness" != "cursor" ]; then
+  if ! harness_selected "$selected_harness" cursor; then
     prune_path_if_pristine "$target_dir/.cursorrules" "$ref/.cursorrules"
     prune_path_if_pristine "$target_dir/.cursor" "$ref/.cursor"
   fi
 
-  if [ "$selected_harness" != "antigravity" ]; then
+  if ! harness_selected "$selected_harness" antigravity; then
     prune_path_if_pristine "$target_dir/AGENTS.md" "$ref/AGENTS.md"
     prune_path_if_pristine "$target_dir/.agents" "$ref/.agents"
   fi
 
-  if [ "$selected_harness" != "cline" ]; then
+  if ! harness_selected "$selected_harness" cline; then
     prune_path_if_pristine "$target_dir/.clinerules" "$ref/.clinerules"
   fi
 
-  if [ "$selected_harness" != "copilot" ]; then
+  if ! harness_selected "$selected_harness" copilot; then
     prune_path_if_pristine "$target_dir/.github/copilot-instructions.md" "$ref/.github/copilot-instructions.md"
   fi
 }
@@ -487,6 +547,16 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Valida y normaliza lo que llegó por bandera ANTES de que nadie lo use.
+#
+# Sin esto `--harness copilto` no erraba: el valor caía al pruning, que comparaba
+# con `!=`, y un typo de una letra borraba los cinco harness sin decir nada. Un
+# nombre que no existe detiene la instalación.
+if ! SELECTED_HARNESS="$(normalize_harness_selection "$SELECTED_HARNESS")"; then
+  err "Valid harness names: ${HARNESS_CANONICAL_ORDER// /, }, all (comma-separated)"
+  exit 1
+fi
+
 PROFILE_INCLUDES_ADVANCED=0
 PROFILE_INCLUDES_DASHBOARD=0
 case "$INSTALLATION_PROFILE" in
@@ -540,23 +610,30 @@ STDOUT_IS_TTY=0; [ -t 1 ] && STDOUT_IS_TTY=1
 
 if [ "$(harness_prompt_enabled "$STDIN_IS_TTY" "$STDOUT_IS_TTY" "$AUTO_YES" "$HARNESS_EXPLICIT")" = "1" ]; then
   echo ""
-  echo "🤖 Choose target AI assistant(s) for rule compilation:"
-  echo "  1) Universal / All (Copilot, Claude, Cursor, Antigravity, Cline) [Default]"
-  echo "  2) GitHub Copilot only"
-  echo "  3) Claude Code only"
-  echo "  4) Cursor only"
-  echo "  5) Antigravity / Gemini only"
-  echo "  6) Cline / Roo Code only"
-  printf "Select [1-6] (default 1): "
-  read -r H_CHOICE
-  case "$H_CHOICE" in
-    2) SELECTED_HARNESS="copilot" ;;
-    3) SELECTED_HARNESS="claude" ;;
-    4) SELECTED_HARNESS="cursor" ;;
-    5) SELECTED_HARNESS="antigravity" ;;
-    6) SELECTED_HARNESS="cline" ;;
-    *) SELECTED_HARNESS="all" ;;
-  esac
+  echo "🤖 Select the AI assistants to compile rules for:"
+  echo ""
+
+  HARNESS_PICKED=""
+  for _entry in "copilot:GitHub Copilot" "claude:Claude Code" "cursor:Cursor" "antigravity:Antigravity / Gemini" "cline:Cline / Roo Code"; do
+    _key="${_entry%%:*}"
+    printf "  %-24s [Y/n] " "${_entry#*:}?"
+    read -r _answer
+    case "$_answer" in
+      [nN]|[nN][oO]) ;;
+      *) HARNESS_PICKED="$HARNESS_PICKED,$_key" ;;
+    esac
+  done
+
+  # Decir que no a los cinco no es una instalación sin reglas: es casi seguro un
+  # dedo pesado en la tecla n. Un workspace sin ninguna superficie compilada no
+  # tiene AOI, así que la degradación segura es `all` y decirlo en voz alta.
+  if [ -z "$HARNESS_PICKED" ]; then
+    warn "No assistant selected — keeping Universal / All."
+    SELECTED_HARNESS="all"
+  else
+    SELECTED_HARNESS="$(normalize_harness_selection "${HARNESS_PICKED#,}")"
+  fi
+  ok "Selected harness: $SELECTED_HARNESS"
 fi
 
 # Tilde expansion without `eval`.

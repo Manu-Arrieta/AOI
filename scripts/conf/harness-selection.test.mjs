@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
@@ -94,5 +95,146 @@ describe('harness_prompt_enabled decide si el operador puede elegir', () => {
     assert.doesNotMatch(gate[0], /\[ -t 1 \]/, 'el `-t 1` volvió adentro de la sustitución')
     assert.match(gate[0], /"\$STDOUT_IS_TTY"/, 'la compuerta dejó de usar el hecho capturado')
     assert.match(SETUP, /STDOUT_IS_TTY=0; \[ -t 1 \] && STDOUT_IS_TTY=1/, 'nadie captura ya si stdout es terminal')
+  })
+})
+
+/** Extrae una función de `setup.sh` por nombre, para ejecutar el código real. */
+function shellFn(nombre) {
+  const m = SETUP.match(new RegExp(`^${nombre}\\(\\) \\{[\\s\\S]*?\\n\\}`, 'm'))
+  assert.ok(m, `setup.sh ya no define ${nombre}()`)
+  return m[0]
+}
+
+const ORDEN = SETUP.match(/^HARNESS_CANONICAL_ORDER="[^"]*"/m)
+const NORMALIZE = () => `${ORDEN[0]}\n${shellFn('normalize_harness_selection')}`
+
+/** Corre `normalize_harness_selection` real. Devuelve {out, code}. */
+function normalizar(valor) {
+  try {
+    const out = execFileSync('bash', ['-c', `${NORMALIZE()}; normalize_harness_selection "$1"`, 'x', valor],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
+    return { out: out.trim(), code: 0 }
+  } catch (e) {
+    return { out: (e.stderr ?? '').toString().trim(), code: e.status }
+  }
+}
+
+describe('normalize_harness_selection da una sola forma a cada elección', () => {
+  assert.ok(ORDEN, 'setup.sh ya no declara HARNESS_CANONICAL_ORDER')
+
+  it('ordena canónicamente, y por eso un reinstall no inventa un cambio', () => {
+    // El aviso de reinstalación compara la cadena guardada contra la nueva. Sin
+    // orden fijo, `claude,copilot` y `copilot,claude` —la MISMA elección— se
+    // reportaban como si el operador hubiera cambiado de harness.
+    assert.equal(normalizar('claude,copilot').out, 'copilot,claude')
+    assert.equal(normalizar('copilot,claude').out, 'copilot,claude')
+  })
+
+  it('acepta espacios o comas, en cualquier caja, y deduplica', () => {
+    assert.equal(normalizar('CLAUDE , Claude  claude').out, 'claude')
+    assert.equal(normalizar('Cline Cursor').out, 'cursor,cline')
+  })
+
+  it('colapsa los cinco a "all", que es la misma instalación', () => {
+    assert.equal(normalizar('copilot,claude,cursor,antigravity,cline').out, 'all')
+    assert.equal(normalizar('all,claude').out, 'all')
+  })
+
+  it('una selección vacía es "all", no una instalación sin reglas', () => {
+    assert.equal(normalizar('').out, 'all')
+  })
+
+  it('RECHAZA un nombre desconocido en vez de ignorarlo', () => {
+    // `--harness copilto` no erraba: caía al pruning, que comparaba con `!=`, y
+    // un typo de una letra borraba los cinco harness sin decir nada.
+    const r = normalizar('copilto')
+    assert.notEqual(r.code, 0, 'un harness inexistente ya no detiene la instalación')
+    assert.match(r.out, /unknown harness: copilto/)
+  })
+})
+
+describe('el pruning respeta una selección múltiple', () => {
+  const ENTORNO = [
+    shellFn('prune_path_if_pristine'),
+    shellFn('harness_selected'),
+    shellFn('prune_unselected_harness_files'),
+    'HARNESS_KEPT=""',
+  ].join('\n')
+
+  /** Arma un árbol y su referencia idéntica, prunea, y lista lo que quedó. */
+  function podar(seleccion) {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-harness-'))
+    const archivos = ['CLAUDE.md', 'AGENTS.md', '.clinerules', '.cursorrules', '.github/copilot-instructions.md']
+    for (const base of ['target', 'ref']) {
+      for (const rel of archivos) {
+        const full = path.join(root, base, rel)
+        fs.mkdirSync(path.dirname(full), { recursive: true })
+        fs.writeFileSync(full, `contenido de ${rel}\n`)
+      }
+    }
+
+    execFileSync('bash', ['-c',
+      `${ENTORNO}; prune_unselected_harness_files "$1/target" "$2" "$1/ref"`, 'x', root, seleccion],
+      { encoding: 'utf8' })
+
+    const vivos = archivos.filter((rel) => fs.existsSync(path.join(root, 'target', rel)))
+    fs.rmSync(root, { recursive: true, force: true })
+    return vivos
+  }
+
+  it('deja en pie EXACTAMENTE los harness elegidos', () => {
+    // La regresión que esto guarda: el pruning comparaba `[ "$sel" != "claude" ]`
+    // contra la cadena entera, así que con `copilot,claude` esa prueba daba
+    // verdadera para AMBOS y borraba justo los dos que el operador pidió.
+    assert.deepEqual(podar('copilot,claude').sort(),
+      ['.github/copilot-instructions.md', 'CLAUDE.md'].sort())
+  })
+
+  it('con uno solo se comporta como siempre', () => {
+    assert.deepEqual(podar('claude'), ['CLAUDE.md'])
+  })
+
+  it('con "all" no toca nada', () => {
+    assert.equal(podar('all').length, 5)
+  })
+})
+
+/**
+ * Paridad con el instalador de Windows.
+ *
+ * PowerShell no se puede EJECUTAR en la máquina donde corre esta suite, así que
+ * la cobertura es estática — el mismo trato que `windows-installer-parity`.
+ * Vale decirlo sin adornos: esto prueba que el código está escrito, no que
+ * corre. Hasta este cambio `setup.ps1` no tenía menú alguno, de modo que quien
+ * instalara desde PowerShell jamás pudo elegir harness.
+ */
+describe('setup.ps1 ofrece la misma elección que setup.sh', () => {
+  const PS1 = fs.readFileSync(path.join(REPO, 'setup.ps1'), 'utf8')
+
+  it('declara el mismo orden canónico, o las dos plataformas normalizan distinto', () => {
+    const orden = ORDEN[0].match(/"([^"]*)"/)[1].trim().split(/\s+/)
+    const declarado = PS1.match(/\$script:HarnessCanonicalOrder = @\(([^)]*)\)/)
+    assert.ok(declarado, 'setup.ps1 no declara HarnessCanonicalOrder')
+    assert.deepEqual(declarado[1].match(/"([^"]+)"/g).map((s) => s.replaceAll('"', '')), orden)
+  })
+
+  it('tiene el menú toggle que Windows no tenía', () => {
+    assert.match(PS1, /Select the AI assistants to compile rules for/)
+    assert.match(PS1, /\[Y\/n\]/)
+  })
+
+  it('no pregunta si la salida está redirigida, porque el prompt no se vería', () => {
+    // El mismo criterio que `harness_prompt_enabled`: hacen falta los DOS
+    // extremos, o la instalación espera una respuesta que nadie ve que le piden.
+    assert.match(PS1, /IsInputRedirected\s*-and\s*-not\s*\[Console\]::IsOutputRedirected/)
+  })
+
+  it('prunea por pertenencia, no por comparación de cadena entera', () => {
+    assert.match(PS1, /Test-HarnessSelected -Selection \$SelectedHarness -Candidate \$h/)
+    assert.doesNotMatch(PS1, /\$h -ne \$SelectedHarness/, 'volvió la comparación que borraba lo elegido')
+  })
+
+  it('rechaza un nombre desconocido en vez de ignorarlo', () => {
+    assert.match(PS1, /throw "unknown harness: \$item"/)
   })
 })
