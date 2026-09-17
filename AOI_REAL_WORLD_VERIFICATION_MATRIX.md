@@ -1496,6 +1496,42 @@ prosa fija y no los mecanismos de compresión.
 > estimador. Por eso las comparaciones de esta tabla son válidas aunque los absolutos
 > tengan un margen.
 
+### Ciclo 2026-09-17 — la primera corrida sobre el perfil por defecto
+
+Ejecutado en `/Users/equinox/Desktop/AOI TESTS/install-v2.5.2-48-g6904216`, instalación
+limpia hecha con `setup.sh --profile core`, que es el perfil por defecto.
+
+**Ninguna corrida anterior de esta tabla se hizo ahí, y no por elección.** El benchmark
+crasheaba con ENOENT en la Fase 3: `sdd-stress-suite.mjs` leía
+`aoi_apps/agentic-ops-dashboard/server/utils/resource-operations.ts` con un
+`readFileSync` pelado, y un perfil `core` o `advanced` borra todo el árbol `aoi_apps`.
+Toda línea base previa salió del repo de desarrollo o de una instalación `dashboard`
+— árboles que el producto no entrega. Corregido en `91cec84`.
+
+| Métrica | Valor | Contra la base anterior |
+| :--- | ---: | :--- |
+| Reducción neta del payload | **75,1%** | primera medición en el perfil real |
+| Consumo base estimado | 19.201 | — |
+| Consumo AOI | 4.789 | — |
+| Payload fijo literal (7 fases) | **105.466** | +42 contra 105.424 de `50fae70` |
+| Fidelidad | 4 real · 2 fixture · 1 omitida | declarada, no inferida |
+
+Los +42 tokens son atribuibles y se aceptan a sabiendas: `fix/prefix-every-icm-topic`
+alarga `preferences` a `{WORKSPACE}-preferences` dentro de las instructions, que se
+cuentan en el payload fijo. El intercambio es 42 tokens por ciclo contra 114 memorias
+que estaban cayendo en un cubo global compartido por todos los proyectos de la máquina.
+
+**Condición que esta corrida estableció por primera vez:** `pnpm test` sale 0 dentro de
+una instalación de perfil core. Nunca lo había hecho. Cuatro defectos de una misma
+familia lo impedían — tests y scripts que asumen la forma del repo de desarrollo y se
+rompen donde el producto vive: `85d9102`, `91cec84`, `c37042f`/`b53182d` y `4203526`.
+`pnpm aoi:doctor` da 15/15 y la paridad verifica 321 archivos byte a byte.
+
+> [!IMPORTANT]
+> Correr la suite sólo en el repo de desarrollo es un control insuficiente **por
+> construcción**, no por descuido. Los cuatro defectos pasaban ahí y fallaban en una
+> instalación. Todo ciclo futuro corre la suite en los dos árboles.
+
 ### Línea Base de Costo Fijo de Infraestructura — Ciclo 2026-09-08
 
 > [!IMPORTANT]
