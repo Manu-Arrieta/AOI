@@ -124,16 +124,53 @@ describe('wired as pre-commit, the override is unreachable — which is why it m
 describe('the installer wires the guard where the marker can be read', () => {
   const SETUP = fs.readFileSync(path.join(REPO, 'setup.sh'), 'utf8')
   const TEARDOWN = fs.readFileSync(path.join(REPO, 'teardown.sh'), 'utf8')
+  const GUARD_INSTALLER = fs.readFileSync(
+    path.join(REPO, 'scripts/multi-harness/install-git-guard.mjs'),
+    'utf8'
+  )
 
   it('installs it as commit-msg', () => {
-    assert.match(SETUP, /PROJECT_GITHOOK="\$HOOKS_DIR\/commit-msg"/)
+    assert.match(GUARD_INSTALLER, /COMMIT_MSG = path\.join\(HOOKS_DIR, 'commit-msg'\)/)
   })
 
   it('retires a pre-commit wiring an older AOI left behind', () => {
     // Left in place it runs first and blocks, so the override stays
     // unreachable no matter how correct the new hook is.
-    assert.match(SETUP, /OLD_PRECOMMIT="\$HOOKS_DIR\/pre-commit"/)
-    assert.match(SETUP, /grep -q "pre-commit-aoi-guard\.sh" "\$OLD_PRECOMMIT"/)
+    assert.match(GUARD_INSTALLER, /LEGACY_PRECOMMIT = path\.join\(HOOKS_DIR, 'pre-commit'\)/)
+    assert.match(GUARD_INSTALLER, /legacyBody\.includes\(MARKER\)/)
+  })
+
+  it('is wired outside every installation-profile branch', () => {
+    // The regression, and the reason the two assertions above moved their
+    // target. They used to read `setup.sh` and were satisfied by the wiring
+    // existing there as TEXT — but it sat inside the
+    // `PROFILE_INCLUDES_ADVANCED` branch, while the guard script is
+    // parity-governed and reaches EVERY profile through the scaffold merge.
+    //
+    // So a `core` install received the script and never the hook: executable,
+    // documented as blocking commits, and unable to run. Two `/init` runs
+    // reported it green. Asserting that a string exists in an installer is not
+    // asserting that the thing it describes ever happens.
+    assert.doesNotMatch(SETUP, /PROJECT_GITHOOK=/, 'el cableado volvió a setup.sh')
+
+    const advancedBlock = SETUP.slice(
+      SETUP.indexOf('PROFILE_INCLUDES_ADVANCED" -eq 1'),
+      SETUP.indexOf('Phase 1.8')
+    )
+    assert.ok(advancedBlock.length > 0, 'no se pudo aislar el branch advanced')
+    // Asserted against CODE, not prose. The block legitimately mentions
+    // `commit-msg` in the comment that explains why the wiring left, so a
+    // blanket /commit-msg/ match reports a regression that is not there. What
+    // must not reappear is the hook-directory manipulation itself.
+    assert.doesNotMatch(
+      advancedBlock,
+      /HOOKS_DIR=|PROJECT_GITHOOK/,
+      'el cableado del guard está otra vez dentro del branch advanced, que el perfil core saltea'
+    )
+
+    // And the module that does own it is invoked with no profile condition
+    // between it and the top level.
+    assert.match(SETUP, /node "\$SCRIPT_DIR\/scripts\/multi-harness\/install-hooks\.mjs"/)
   })
 
   it('teardown sweeps both hook names', () => {

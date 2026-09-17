@@ -15,6 +15,9 @@
  *     on every install.
  *   - The hook backup overwrote an existing `.aoi-bak`, discarding the
  *     ORIGINAL hook AOI first displaced in favour of whatever replaced it.
+ *     (The wiring itself now lives in `install-git-guard.mjs` — it used to sit
+ *     inside `setup.sh`'s advanced-only branch, so a `core` install got the
+ *     guard script and never the hook. The invariant moved with it.)
  *   - `specify init` ran with stdin inherited. `2>/dev/null` hides the error
  *     output, not the input: with no terminal behind it, the prompt waited for
  *     an answer nobody could give. Measured: 6:44 hung on a headless run, with
@@ -32,6 +35,10 @@ import { describe, it } from 'node:test'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const SETUP = fs.readFileSync(path.join(REPO, 'setup.sh'), 'utf8')
+const GUARD_INSTALLER = fs.readFileSync(
+  path.join(REPO, 'scripts/multi-harness/install-git-guard.mjs'),
+  'utf8'
+)
 
 /** Non-comment lines of the installer. */
 const live = SETUP.split('\n').filter((l) => !/^\s*#/.test(l))
@@ -88,11 +95,17 @@ describe('the installer only removes what it created', () => {
   })
 
   it('never discards an existing hook backup', () => {
-    const idx = SETUP.indexOf('cp "$PROJECT_GITHOOK" "$PROJECT_GITHOOK.aoi-bak"')
-    assert.ok(idx > 0)
-    const before = SETUP.slice(Math.max(0, idx - 500), idx)
-    assert.match(before, /if \[ -f "\$PROJECT_GITHOOK\.aoi-bak" \]; then/)
-    assert.match(before, /mv "\$PROJECT_GITHOOK\.aoi-bak"/)
+    // Asserted against the wiring's new owner. This used to read `setup.sh`,
+    // and moving the target is the point: the invariant is about the ORDER of
+    // two operations — preserve the earlier backup BEFORE displacing the
+    // current hook — and it has to hold wherever the wiring lives. Reading the
+    // old file after the move would have left the invariant untested while
+    // still looking asserted.
+    const idx = GUARD_INSTALLER.indexOf('fs.renameSync(hook, bak)')
+    assert.ok(idx > 0, 'no se encontró el respaldo del hook existente')
+    const before = GUARD_INSTALLER.slice(0, idx)
+    assert.match(before, /if \(fs\.existsSync\(bak\)\) \{/)
+    assert.match(before, /fs\.renameSync\(bak,/)
   })
 })
 

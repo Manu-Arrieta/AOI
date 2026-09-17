@@ -1,13 +1,13 @@
 /**
  * scripts/doctor-checks.mjs
  *
- * The six individual health checks the diagnostic runs.
+ * The individual health checks the diagnostic runs.
  *
  * Split out of `aoi-doctor.mjs` when that file sat at 317 LOC against the
  * 300 limit — and the split is the right shape anyway, not a way to satisfy
  * a number. Each function here answers ONE question about the workspace and
  * returns a status with its reason; `aoi-doctor.mjs` keeps the part that
- * turns six answers into one verdict for the Owner. Those are two different
+ * turns those answers into one verdict for the Owner. Those are two different
  * jobs, and the mutation probe made the difference visible: the verdict was
  * the unconstrained half.
  *

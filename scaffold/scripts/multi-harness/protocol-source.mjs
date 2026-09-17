@@ -156,6 +156,18 @@ export function readStoreTriggers(repoRoot) {
 /**
  * Renders the store-trigger block every harness file carries.
  *
+ * Both topics are `{workspace}-X`, NEVER `X-{workspace}`. Two authorities fix
+ * that order, neither a preference: `isWorkspaceScopedTopic` — in
+ * `memory-sync/icm-scope-loaders.mjs` — is `topic.startsWith(`${workspace}-`)`,
+ * so `context-AOI` is NOT AOI's; and protocol section 1 names the topic
+ * `{WORKSPACE}-context`.
+ *
+ * This emitted the reversed form for both `context` and `decisions`. Measured
+ * in the shared DB: `context-AOI` 256 against `AOI-context` 3, and
+ * `decisions-AOI` 59 against `AOI-decisions` 2. The generator wrote the drift,
+ * so every agent that obeyed it deepened it — while the recall line in the same
+ * generated file already said `AOI-context`.
+ *
  * @param {Record<string,string>} levels from readStoreTriggers
  * @param {string} workspace
  * @returns {string} '' when the protocol could not be read
@@ -168,8 +180,8 @@ export function renderStoreTriggers(levels, workspace) {
   return [
     `### Store Triggers (MANDATORY) — derivado de \`${ICM_PROTOCOL}\``,
     '',
-    `\`icm store -t <topic> -c "<description>" -i <importance>\` · topics: \`decisions-${workspace}\`,`,
-    `\`context-${workspace}\`, \`errors-resolved\`, \`preferences\`.`,
+    `\`icm store -t <topic> -c "<description>" -i <importance>\` · topics: \`${workspace}-decisions\`,`,
+    `\`${workspace}-context\`, \`errors-resolved\`, \`preferences\`.`,
     '',
     ...present.map((l) => `- \`-i ${l}\` → ${levels[l]}`),
     '',
@@ -242,15 +254,15 @@ export function fallbackStoreTriggers(workspace) {
   return {
     claude: `### Store Triggers (MANDATORY)
 1. **Error resolved** → \`icm store -t errors-resolved -c "description" -i high -k "keyword1,keyword2"\`
-2. **Architecture / Design decision** → \`icm store -t decisions-${workspace} -c "description" -i critical\`
+2. **Architecture / Design decision** → \`icm store -t ${workspace}-decisions -c "description" -i critical\`
 3. **User preference discovered** → \`icm store -t preferences -c "description" -i critical\`
-4. **Task completed** → \`icm store -t context-${workspace} -c "summary" -i high\`
+4. **Task completed** → \`icm store -t ${workspace}-context -c "summary" -i high\`
 5. **Exact configuration / endpoint / service** → \`icm facts set "${workspace}" "key" "value"\``,
     copilot: `### Store — MANDATORY triggers
 1. **Error resolved** → \`icm store -t errors-resolved -c "description" -i high\`
-2. **Architecture/design decision** → \`icm store -t decisions-${workspace} -c "description" -i critical\`
+2. **Architecture/design decision** → \`icm store -t ${workspace}-decisions -c "description" -i critical\`
 3. **User preference discovered** → \`icm store -t preferences -c "description" -i critical\`
-4. **Significant task completed** → \`icm store -t context-${workspace} -c "summary" -i high\``,
+4. **Significant task completed** → \`icm store -t ${workspace}-context -c "summary" -i high\``,
   }
 }
 

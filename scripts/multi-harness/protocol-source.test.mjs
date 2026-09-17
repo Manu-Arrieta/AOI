@@ -4,8 +4,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
-import { ICM_PROTOCOL, prunePathIfPristine, readMcpActivation, readStoreTriggers, renderMcpActivation, renderStoreTriggers } from './protocol-source.mjs'
+import { ICM_PROTOCOL, fallbackStoreTriggers, prunePathIfPristine, readMcpActivation, readStoreTriggers, renderMcpActivation, renderStoreTriggers } from './protocol-source.mjs'
 import { generateClaudeMd, generateCopilotInstructions } from './compile-rules.mjs'
+import { isWorkspaceScopedTopic } from '../memory-sync/icm-scope-loaders.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
@@ -40,6 +41,43 @@ describe('the harness surfaces are derived from the protocol, not copied', () =>
     for (const text of [claude, copilot]) {
       assert.doesNotMatch(text, /decisi[oó]n de arquitectura[^\n]*-i high/i)
       assert.doesNotMatch(text, /Architecture[^\n]*-i high/i)
+    }
+  })
+
+  it('names the store topics the way the scoping rule reads them', () => {
+    // `{ws}-X`, never `X-{ws}`. The generator emitted the reversed form for both
+    // `context` and `decisions`, so a memory stored by obeying the instruction
+    // landed OUTSIDE its own workspace's scope. Measured in the shared DB:
+    // `context-AOI` 256 against `AOI-context` 3, `decisions-AOI` 59 against
+    // `AOI-decisions` 2 — the generator wrote the drift and every agent that
+    // followed it deepened it.
+    //
+    // Asserted against `isWorkspaceScopedTopic` — the rule that CONSUMES these
+    // names — rather than against a literal, so generator and rule cannot drift
+    // apart in silence. A literal here would still pass if the rule changed.
+    const WS = 'AOI'
+    const fallback = fallbackStoreTriggers(WS)
+    const surfaces = [
+      ['CLAUDE.md', generateClaudeMd({ workspace: WS, repoRoot: REPO })],
+      ['copilot-instructions.md', generateCopilotInstructions({ workspace: WS, repoRoot: REPO })],
+      // El fallback también, porque es el camino de degradación: si nombra los
+      // topics al revés, la degradación reintroduce el defecto que arregló el fix.
+      ['fallback claude', fallback.claude],
+      ['fallback copilot', fallback.copilot],
+    ]
+
+    for (const [name, text] of surfaces) {
+      for (const topic of [`${WS}-context`, `${WS}-decisions`]) {
+        assert.ok(text.includes(topic), `${name} no nombra ${topic}`)
+        assert.equal(isWorkspaceScopedTopic(topic, WS), true, `${topic} tiene que contar como del workspace`)
+      }
+
+      for (const reversed of [`context-${WS}`, `decisions-${WS}`]) {
+        // El prefijo invertido no sólo "se ve raro": la regla lo rechaza, y eso
+        // es lo que hace que el nombre sea un defecto y no una preferencia.
+        assert.equal(isWorkspaceScopedTopic(reversed, WS), false, `${reversed} no debería ser scoped`)
+        assert.equal(text.includes(reversed), false, `${name} volvió al prefijo invertido: ${reversed}`)
+      }
     }
   })
 

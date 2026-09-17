@@ -263,13 +263,38 @@ Check `.github/copilot-instructions.md` contains:
 - `<!-- icm:start -->` / `<!-- icm:end -->` block
 - MCP tool activation section
 
-### Step 13: Verify Git Hooks
+### Step 13: Verify the Git Guard Is WIRED
 
-Check `.githooks/pre-commit-aoi-guard.sh` exists and is executable:
+Do NOT settle for `test -x` on the script. That is precisely how this step used
+to pass while the guard was inert.
+
+The guard script is parity-governed and arrives through the scaffold merge in
+EVERY profile. The hook that actually runs it lived in `setup.sh`'s
+`PROFILE_INCLUDES_ADVANCED` branch — so a `core` install received the script and
+never the wiring, and the guard was installed, executable, documented as blocking
+commits, and unable to fire. Two `/init` runs reported it green.
+
+Audit the WIRING, not the file:
 
 ```bash
-test -x .githooks/pre-commit-aoi-guard.sh && echo "OK" || echo "MISSING"
+node scripts/multi-harness/install-git-guard.mjs --audit
 ```
+
+It exits 1 when the guard is unreachable, naming the reason: script absent, not
+executable, `commit-msg` absent, `commit-msg` not invoking the guard, or
+`core.hooksPath` diverting git away from `.git/hooks/`.
+
+If it fails in an installed workspace, wire it:
+
+```bash
+node scripts/multi-harness/install-git-guard.mjs
+```
+
+In AOI's own development repository the same audit prints "(no es un workspace
+instalado — informativo)" and exits 0, and `pnpm aoi:hooks` reports it as a
+warning rather than a failure. That asymmetry is deliberate: `.git/hooks/` is
+never versioned, so a fresh clone has no `commit-msg` and must not be failed for
+something it cannot carry.
 
 ### Step 14: Verify Constitution
 

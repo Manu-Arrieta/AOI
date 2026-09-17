@@ -949,13 +949,17 @@ else
   warn "scripts/install-headroom.sh no encontrado junto a setup.sh — saltando Phase 1.6"
 fi
 
-# ── Phase 1.7: AOI Headroom integration (wrapper + managed-files guard) ────────
+# ── Phase 1.7: AOI Headroom integration (wrapper + guard seed) ─────────────────
 header "Phase 1.7: AOI Headroom integration (obligatorio)"
 
-# Install the mandatory Copilot CLI wrapper into the target project, and the
-# pre-commit guard that blocks `headroom learn` overwriting AOI-managed files.
-# Without these, Headroom is installed but the SDD agent pipeline can bypass it,
-# which violates the mandatory policy.
+# Install the mandatory Copilot CLI wrapper into the target project, and seed
+# the managed-files guard that blocks `headroom learn` overwriting AOI-managed
+# files. Without these, Headroom is installed but the SDD agent pipeline can
+# bypass it, which violates the mandatory policy.
+#
+# The guard's WIRING is not done here — it used to be, inside this advanced-only
+# branch, which is what left every `core` install with an inert guard. See the
+# note at the end of this branch.
 
 WRAP_SRC="$SCRIPT_DIR/scripts/aoi-headroom-wrap.sh"
 GUARD_SRC="$SCRIPT_DIR/.githooks/pre-commit-aoi-guard.sh"
@@ -969,9 +973,9 @@ mkdir -p "$PROJECT_PATH/scripts"
 mkdir -p "$PROJECT_PATH/.githooks"
 
 # Both files are governed and both travel inside the scaffold, so the merge
-# below already owns them. They are seeded here only because this phase wires
-# the hook and the wrapper, which run earlier than the merge and need the file
-# to exist.
+# below already owns them. They are seeded here only so the wrapper exists
+# before the merge runs; the guard's own wiring happens later, outside this
+# profile branch (see the note at the end of it).
 #
 # Seeded, not overwritten. A plain `cp` here wrote AOI's version over the
 # owner's BEFORE the comparator read the tree, so the comparator saw its own
@@ -1006,72 +1010,25 @@ EOF_SHIM
 chmod +x "$PROJECT_PATH/scripts/bin/aoi-copilot"
 ok "Installed aoi-copilot shim → PROJECT/scripts/bin/"
 
-# Wire the guard as `commit-msg`, chaining any hook the project already had.
+# NOTE: the managed-files guard used to be wired as `commit-msg` right here,
+# and this placement WAS the bug. The whole branch is skipped unless the profile
+# includes `advanced`, while `.githooks/pre-commit-aoi-guard.sh` is
+# parity-governed and arrives through the scaffold merge in EVERY profile. A
+# `core` install therefore received the guard and never the hook: executable,
+# documented as blocking commits, and unable to run. Its own error text told the
+# operator to "Reinstalar AOI", a remedy that cannot work, because a reinstall
+# takes this same skipped branch.
 #
-# It used to be wired as `pre-commit`, and that is the one hook which cannot
-# do this job: git writes the message only after pre-commit succeeds, so the
-# guard read the PREVIOUS commit's subject. The `[aoi-managed-ok]` override its
-# own error message instructs the operator to use was therefore inoperative,
-# and its `git log -1` fallback approved today's diff whenever yesterday's
-# commit happened to carry the marker. `commit-msg` receives the message file
-# as $1, the index is already final there, and a non-zero exit still aborts.
-HOOKS_DIR="$PROJECT_PATH/.git/hooks"
-PROJECT_GITHOOK="$HOOKS_DIR/commit-msg"
-if [[ -d "$PROJECT_PATH/.git" ]]; then
-  mkdir -p "$HOOKS_DIR"
-
-  # Retire the pre-commit wiring a previous AOI left behind. Left in place it
-  # blocks first, before commit-msg ever runs, so the override would stay
-  # unreachable no matter how correct the new hook is. Only OUR hook is
-  # touched: one the operator wrote is left exactly as it is.
-  OLD_PRECOMMIT="$HOOKS_DIR/pre-commit"
-  if [[ -f "$OLD_PRECOMMIT" ]] && grep -q "pre-commit-aoi-guard.sh" "$OLD_PRECOMMIT"; then
-    if [[ -f "$HOOKS_DIR/pre-commit.aoi-bak" ]]; then
-      mv "$HOOKS_DIR/pre-commit.aoi-bak" "$OLD_PRECOMMIT"
-      ok "Restaurado el pre-commit propio del proyecto (el guard se movió a commit-msg)"
-    else
-      rm -f "$OLD_PRECOMMIT"
-      ok "Retirado el guard de pre-commit (se movió a commit-msg, donde el marcador funciona)"
-    fi
-  fi
-
-  if [[ -f "$PROJECT_GITHOOK" ]]; then
-    if ! grep -q "pre-commit-aoi-guard.sh" "$PROJECT_GITHOOK"; then
-      # A previous chain may already have left a .aoi-bak. Overwriting it
-      # discards the ORIGINAL hook — the one AOI first displaced — in favour
-      # of whatever replaced it since. Nothing is thrown away here.
-      if [ -f "$PROJECT_GITHOOK.aoi-bak" ]; then
-        mv "$PROJECT_GITHOOK.aoi-bak" "$PROJECT_GITHOOK.aoi-bak.$(date -u +%Y%m%dT%H%M%SZ)"
-        warn "Ya había un $(basename "$PROJECT_GITHOOK").aoi-bak — se conservó con marca de tiempo"
-      fi
-      cp "$PROJECT_GITHOOK" "$PROJECT_GITHOOK.aoi-bak"
-      cat > "$PROJECT_GITHOOK" <<'EOF_COMMITMSG'
-#!/usr/bin/env bash
-# AOI bootstrap chain: run guard first, then delegate to project commit-msg.
-SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
-bash "$SELF_DIR/../../.githooks/pre-commit-aoi-guard.sh" "$@" || exit $?
-if [ -f "$SELF_DIR/commit-msg.aoi-bak" ]; then
-  exec bash "$SELF_DIR/commit-msg.aoi-bak" "$@"
-fi
-exit 0
-EOF_COMMITMSG
-      chmod +x "$PROJECT_GITHOOK"
-      ok "Chained AOI guard into existing commit-msg hook"
-    else
-      ok "AOI guard already chained into commit-msg (skipped)"
-    fi
-  else
-    cp "$GUARD_SRC" "$PROJECT_GITHOOK"
-    chmod +x "$PROJECT_GITHOOK"
-    ok "Installed AOI guard → .git/hooks/commit-msg"
-  fi
+# Measured on a real `core` install: `.git/hooks/commit-msg` absent, and this
+# branch having run would have left `scripts/bin/aoi-copilot` behind — the one
+# artifact here with no governed counterpart — which was also absent.
+#
+# The wiring now lives in `scripts/multi-harness/install-git-guard.mjs`, called
+# further down OUTSIDE every profile branch, next to the harness-hook wiring
+# that has the same failure shape one layer up.
 else
-  info "Target project is not a git repo — AOI guard will activate once 'git init' runs."
-  info "    When ready, run: ln -sf ../../.githooks/pre-commit-aoi-guard.sh .git/hooks/commit-msg"
-fi
-
-else
-  info "Core profile: advanced Headroom integration and its git hook are not installed."
+  info "Core profile: la integración Headroom (wrapper + compresión) no se instala."
+  info "            El guard de managed-files SÍ se cablea: no depende del perfil."
 fi
 
 # ── Phase 1.8: Codebase Memory MCP (Advanced, workspace-local only) ────────

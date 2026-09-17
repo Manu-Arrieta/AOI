@@ -28,6 +28,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { auditGitGuard, installGitGuard, isInstalledWorkspace } from './install-git-guard.mjs'
 
 const HOOKS_DIR = '.github/hooks'
 const CLAUDE_SETTINGS = '.claude/settings.json'
@@ -166,32 +167,101 @@ export function auditHookWiring(root) {
   return { declared, wired, orphaned, broken }
 }
 
-function main() {
-  const root = process.cwd()
-  const declarations = readDeclarations(root)
-  if (declarations.length === 0) {
-    console.log('No hay declaraciones en .github/hooks/ — nada que cablear.')
-    return
+/**
+ * Wires the git guard, or reports why it is unreachable.
+ *
+ * Kept next to the harness hooks because it is the same failure shape one layer
+ * down. The guard script is governed and travels inside the scaffold, so every
+ * profile receives it — but the wiring lived in `setup.sh`'s
+ * `PROFILE_INCLUDES_ADVANCED` branch, so a `core` install received the script
+ * and never the hook. The result was a guard that is installed, executable,
+ * documented as blocking commits, and unable to ever run.
+ *
+ * @returns {boolean} whether an installed workspace was left unguarded
+ */
+function reportGitGuard(root, { audit }) {
+  const r = auditGitGuard(root)
+
+  if (!r.gitRepo) {
+    console.log('  — Guard de git: no es un repo git todavía (se activa con git init).')
+    return false
   }
 
-  if (process.argv.includes('--audit')) {
+  if (!audit) {
+    const res = installGitGuard(root)
+    console.log(`✅ Guard de git → .git/hooks/commit-msg${res.changed ? '' : ' (ya estaba cableado)'}`)
+    for (const a of res.actions) console.log(`   · ${a}`)
+    return false
+  }
+
+  if (r.reachable) {
+    console.log('  ✅ Guard de git: cableado como commit-msg y alcanzable')
+    return false
+  }
+
+  const why = !r.guardPresent
+    ? '.githooks/pre-commit-aoi-guard.sh no existe'
+    : !r.guardExecutable
+      ? '.githooks/pre-commit-aoi-guard.sh no es ejecutable'
+      : !r.hookPresent
+        ? '.git/hooks/commit-msg no existe — el guard no puede bloquear nada'
+        : !r.hookReferencesGuard
+          ? '.git/hooks/commit-msg no invoca el guard'
+          : r.hooksPath
+            ? `core.hooksPath='${r.hooksPath}' — git deja de leer .git/hooks/`
+            : 'causa desconocida'
+
+  // Hard only where an installer ran and therefore promised the wiring. The
+  // hook lives under `.git/`, which git never versions: a fresh clone and CI
+  // have no `commit-msg` and never will, so gating unconditionally would fail
+  // for a non-defect and teach contributors to bypass the gate.
+  const enforce = isInstalledWorkspace(root)
+  const line = `  ❌ Guard de git: ${why}`
+  if (enforce) console.error(line)
+  else console.log(`${line}   (no es un workspace instalado — informativo)`)
+  return enforce
+}
+
+function main() {
+  const root = process.cwd()
+  const audit = process.argv.includes('--audit')
+  const declarations = readDeclarations(root)
+
+  if (audit) {
     const r = auditHookWiring(root)
     console.log('=== AOI Hook Wiring ===\n')
-    console.log('  .github/hooks/ es la convención de Copilot: una declaración acá ya la carga.')
-    console.log('  Lo que se audita es Claude Code y que los scripts existan y sean ejecutables.\n')
-    for (const s of r.wired) console.log(`  ✅ ${s}`)
-    for (const s of r.orphaned) console.error(`  ❌ ${s} — no llega a Claude Code`)
-    for (const s of r.broken) console.error(`  ❌ ${s}`)
+    if (declarations.length > 0) {
+      console.log('  .github/hooks/ es la convención de Copilot: una declaración acá ya la carga.')
+      console.log('  Lo que se audita es Claude Code y que los scripts existan y sean ejecutables.\n')
+      for (const s of r.wired) console.log(`  ✅ ${s}`)
+      for (const s of r.orphaned) console.error(`  ❌ ${s} — no llega a Claude Code`)
+      for (const s of r.broken) console.error(`  ❌ ${s}`)
+    } else {
+      console.log('  — no hay declaraciones en .github/hooks/')
+    }
+
+    const gitGuardUnreachable = reportGitGuard(root, { audit: true })
+
     if (r.orphaned.length > 0 || r.broken.length > 0) {
       console.error('\nUn hook que nadie carga es una regla que el agente cree activa y no lo está.')
+      process.exit(1)
+    }
+    if (gitGuardUnreachable) {
+      console.error('\nEl guard de git está instalado pero no cablea, así que no bloquea nada.')
+      console.error('Arreglo: node scripts/multi-harness/install-git-guard.mjs')
       process.exit(1)
     }
     console.log('\n✅ Cada declaración llega a la configuración de un harness.')
     return
   }
 
-  const written = installClaudeHooks(root, declarations)
-  console.log(`✅ ${declarations.length} declaración(es) → ${written}`)
+  if (declarations.length > 0) {
+    const written = installClaudeHooks(root, declarations)
+    console.log(`✅ ${declarations.length} declaración(es) → ${written}`)
+  } else {
+    console.log('No hay declaraciones en .github/hooks/ — nada que cablear.')
+  }
+  reportGitGuard(root, { audit: false })
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {

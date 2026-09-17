@@ -32,6 +32,7 @@ import {
   MANDATORY_BINARIES,
   RECOMMENDED_BINARIES,
 } from './doctor-checks.mjs'
+import { checkHookWiring } from './multi-harness/check-hook-wiring.mjs'
 
 // Re-exported so callers that imported them from here keep working, and so
 // the doctor's public surface stays one import for a consumer.
@@ -83,6 +84,7 @@ export async function runAoiDoctor(options = {}) {
   const governanceCheck = checkMemoryGovernance(repoRoot)
   const resourcesCheck = checkResourcesStructure(repoRoot)
   const harnessCheck = checkMultiHarnessRules(repoRoot)
+  const hookWiringCheck = checkHookWiring(repoRoot)
   // Lee la base compartida de ICM, así que necesita el mismo `execFn` que se
   // inyecta en los tests — sin él la compuerta quedaría fuera de todo test y
   // volvería a hablarle a la base real durante la suite.
@@ -177,6 +179,17 @@ export async function runAoiDoctor(options = {}) {
       status: harnessCheck.status,
       details: harnessCheck.details,
       mandatory: false,
+    },
+    {
+      category: 'Multi-Harness',
+      name: 'Hook Wiring (harness + managed-files guard)',
+      status: hookWiringCheck.status,
+      details: hookWiringCheck.details,
+      // Obligatorio, y seguro: el check sólo devuelve FAILED en un workspace
+      // instalado, donde un instalador prometió el cableado. En el repo de
+      // desarrollo —cuyo `.git/hooks/` nunca se versiona— devuelve WARNING, así
+      // que un clon fresco y CI no fallan por algo que no es un defecto.
+      mandatory: true,
     },
     {
       category: 'Scaffold Mirror',
