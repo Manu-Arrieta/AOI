@@ -1,10 +1,14 @@
 import { defineEventHandler } from 'h3'
-import { runAoiDoctor } from '../../../../scripts/aoi-doctor.mjs'
+
+import { loadAoiModule } from '../utils/load-aoi-module'
 import { resolveWorkspaceRoot } from '../utils/workspace-root'
 
 export default defineEventHandler(async () => {
   try {
     const repoRoot = resolveWorkspaceRoot()
+    const { runAoiDoctor } = await loadAoiModule<{
+      runAoiDoctor: (options: { repoRoot: string }) => Promise<any>
+    }>('scripts/aoi-doctor.mjs')
     const report = await runAoiDoctor({ repoRoot })
 
     return {

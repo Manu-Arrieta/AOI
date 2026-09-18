@@ -1,6 +1,6 @@
 import { defineEventHandler } from 'h3'
-import { createCoeffectRegistry } from '../../../../scripts/spatiotemporal-runtime/coeffect-resolver.mjs'
-import { createFiberRuntime } from '../../../../scripts/spatiotemporal-runtime/fiber-lifecycle.mjs'
+
+import { loadAoiModule } from '../utils/load-aoi-module'
 
 let globalRegistry: any = null
 let globalRuntime: any = null
@@ -13,11 +13,20 @@ const OBSERVABILITY = Object.freeze({
   note: 'Seeded local Fiber model; it does not observe agent execution, file writes, or rollback outcomes.',
 })
 
-function getRuntime() {
+async function getRuntime() {
   if (!globalRuntime) {
+    const [{ createCoeffectRegistry }, { createFiberRuntime }] = await Promise.all([
+      loadAoiModule<{ createCoeffectRegistry: () => any }>(
+        'scripts/spatiotemporal-runtime/coeffect-resolver.mjs'
+      ),
+      loadAoiModule<{ createFiberRuntime: (registry: any) => any }>(
+        'scripts/spatiotemporal-runtime/fiber-lifecycle.mjs'
+      ),
+    ])
+
     globalRegistry = createCoeffectRegistry()
     globalRuntime = createFiberRuntime(globalRegistry)
-    
+
     // Seed a synthetic local model for UI observability; not agent telemetry.
     globalRuntime.instantiate({
       name: 'supervisor-fiber',
@@ -40,8 +49,8 @@ function getRuntime() {
   return { registry: globalRegistry, runtime: globalRuntime }
 }
 
-export default defineEventHandler(() => {
-  const { runtime, registry } = getRuntime()
+export default defineEventHandler(async () => {
+  const { runtime, registry } = await getRuntime()
   const fibers = runtime.getAllFibers()
 
   return {
