@@ -35,10 +35,33 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
+import { isDevelopmentRepo } from '../scaffold/governed-paths.mjs'
 import { parseFactTable } from './contract-facts.mjs'
 
 /** Dónde vive el blueprint y sus diagramas dentro del WORKSPACE, según el prompt. */
 export const BLUEPRINT_DIR = '.blueprints'
+
+/**
+ * El workspace que se audita cuando nadie lo nombra.
+ *
+ * `--workspace` existe por una razón correcta: en el repositorio fuente el gate
+ * y el blueprint viven en árboles distintos —el gate corre acá, el blueprint es
+ * del Owner— así que sin la ruta no hay nada que auditar, y la ausencia de
+ * auditoría no puede leerse como cumplimiento.
+ *
+ * Ese razonamiento vale sólo donde los dos árboles difieren. En una instalación
+ * son el MISMO árbol, y exigir el flag ahí convertía la invocación por defecto
+ * —`pnpm aoi:blueprint-gate`, que es la que el script de package.json declara—
+ * en una que jamás podía ver el artefacto aunque estuviera al lado: medido
+ * sobre un SBC con su diagrama ya entregado en `.blueprints/<SBC>/diagrams/`,
+ * la compuerta reportaba la obligación y ningún artefacto, y por lo tanto no
+ * podía enforcear nada. El flag pasaba de salvaguarda a punto ciego.
+ *
+ * El marcador que separa los dos casos es el mismo que usa el resto de AOI.
+ */
+export function implicitWorkspace(cwd = process.cwd()) {
+  return isDevelopmentRepo(cwd) ? '' : cwd
+}
 
 /**
  * Decide si un blueprint debe diagramas, y si la obligación puede exigirse.
@@ -133,7 +156,7 @@ export function auditDiagramArtifacts(workspaceRoot, sbcId) {
  * @param {string[]} argv
  * @returns {{ positional: string[], workspaceRoot: string, dbPath: string, record: boolean }}
  */
-export function parseGateArgs(argv = []) {
+export function parseGateArgs(argv = [], cwd = process.cwd()) {
   const flags = { '--workspace': '', '--db': '' }
   const KNOWN_BOOLEAN = new Set(['--record'])
   const positional = []
@@ -155,7 +178,9 @@ export function parseGateArgs(argv = []) {
 
   return {
     positional,
-    workspaceRoot: flags['--workspace'],
+    // Un `--workspace` explícito gana siempre; el implícito sólo cubre el caso
+    // en que el árbol auditado es inequívocamente el que corre la compuerta.
+    workspaceRoot: flags['--workspace'] || implicitWorkspace(cwd),
     dbPath: flags['--db'],
     record: argv.includes('--record'),
   }

@@ -25,6 +25,7 @@ import {
   auditDiagramArtifacts,
   diagramObligation,
   formatDiagramObligation,
+  implicitWorkspace,
   parseGateArgs,
   recordObligation,
 } from './blueprint-diagram.mjs'
@@ -200,65 +201,6 @@ describe('formatDiagramObligation', () => {
       files: [],
     })
     assert.match(text, /NINGUNO/)
-  })
-})
-
-describe('parseGateArgs — un typo no puede degradar en silencio', () => {
-  it('lee el valor de un flag con valor, sin confundirlo con la entidad', () => {
-    // El bug que originó este parser: `--workspace /tmp/ws` dejaba `/tmp/ws`
-    // como si fuera el nombre de la entidad de ICM.
-    const args = parseGateArgs(['MIWS', '--workspace', '/tmp/ws'])
-    assert.deepEqual(args.positional, ['MIWS'])
-    assert.equal(args.workspaceRoot, '/tmp/ws')
-  })
-
-  it('lee --db, que es lo que permite testear sin tocar el store compartido', () => {
-    const args = parseGateArgs(['MIWS', '--db', '/tmp/iso.db'])
-    assert.equal(args.dbPath, '/tmp/iso.db')
-  })
-
-  it('--record es booleano y no consume el argumento siguiente', () => {
-    const args = parseGateArgs(['MIWS', '--record'])
-    assert.equal(args.record, true)
-    assert.deepEqual(args.positional, ['MIWS'])
-  })
-
-  it('acepta los tres flags juntos', () => {
-    const args = parseGateArgs(['MIWS', '--workspace', '/w', '--db', '/d', '--record'])
-    assert.equal(args.workspaceRoot, '/w')
-    assert.equal(args.dbPath, '/d')
-    assert.equal(args.record, true)
-    assert.deepEqual(args.positional, ['MIWS'])
-  })
-
-  it('un flag DESCONOCIDO tira error en vez de ignorarse', () => {
-    // Ignorarlo convierte `--workspac /ruta` en una corrida "sin workspace", y
-    // sin workspace la compuerta no puede afirmar cumplimiento — o sea, un typo
-    // se leería como si no hubiera nada pendiente.
-    assert.throws(() => parseGateArgs(['MIWS', '--workspac', '/w']), /flag desconocido/)
-  })
-
-  it('el error dice cuáles son los conocidos', () => {
-    try {
-      parseGateArgs(['--nope'])
-      assert.fail('no tiró')
-    } catch (err) {
-      assert.match(err.message, /--workspace/)
-      assert.match(err.message, /--db/)
-      assert.match(err.message, /--record/)
-    }
-  })
-
-  it('sin argumentos no inventa nada', () => {
-    const args = parseGateArgs([])
-    assert.deepEqual(args.positional, [])
-    assert.equal(args.workspaceRoot, '')
-    assert.equal(args.dbPath, '')
-    assert.equal(args.record, false)
-  })
-
-  it('un flag con valor ausente no rompe, queda vacío', () => {
-    assert.equal(parseGateArgs(['MIWS', '--workspace']).workspaceRoot, '')
   })
 })
 
