@@ -3,7 +3,8 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { describe, it } from 'node:test'
-import { collectTestSources, dropUnreachableTests } from './test-reachability.mjs'
+import { collectTestSources, dropAoiOwnedTests, dropUnreachableTests } from './test-reachability.mjs'
+import { auditInvariantCoverage } from './invariant-gate.mjs'
 
 /** A workspace whose vitest config only collects `test/**`. */
 function workspace() {
@@ -58,6 +59,61 @@ describe('a test no runner collects counts for nothing', () => {
     fs.writeFileSync(path.join(root, 'scaffold/test/mirror.test.ts'), `it('BIC-1:never.1', () => {})`)
 
     assert.equal(collectTestSources(root).filter((s) => s.file.includes('scaffold')).length, 0)
+    clean(root)
+  })
+})
+
+/**
+ * Un árbol con la forma de una instalación de AOI: los tests de AOI bajo una
+ * ruta gobernada, el del Owner afuera. `setup.sh` es lo único que distingue el
+ * repo fuente de una instalación, igual que en `validate-srp.mjs`.
+ */
+function installedWorkspace({ development = false } = {}) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-bic-ns-'))
+  fs.mkdirSync(path.join(root, 'scripts/sdd-lifecycle'), { recursive: true })
+  fs.mkdirSync(path.join(root, 'tests'), { recursive: true })
+  if (development) fs.writeFileSync(path.join(root, 'setup.sh'), '#!/usr/bin/env bash\n')
+  fs.writeFileSync(
+    path.join(root, 'scripts/sdd-lifecycle/behavioral-probes.test.mjs'),
+    `it('BIC-2026-001:never.1 charges the exact literal payload for every phase', () => {})`
+  )
+  fs.writeFileSync(path.join(root, 'tests/owner.test.mjs'), `it('algo del Owner', () => {})`)
+  return root
+}
+
+const REGLA_DEL_OWNER = [
+  { tag: 'BIC-2026-001:never.1', kind: 'never', statement: 'Ninguna VPS acepta SSH como root' },
+]
+
+describe('el BIC del producto no se cubre con un test de AOI que comparte número', () => {
+  it('descarta los tests de AOI cuando corre dentro de una instalación', () => {
+    // Medido en una instalación real: la regla "ninguna VPS acepta SSH como
+    // root", sin una sola prueba escrita, quedaba cubierta por un `it()` de AOI
+    // titulado "charges the exact literal payload for every phase". El veredicto
+    // dependía del número del identificador, no de que existiera un test.
+    const root = installedWorkspace()
+
+    const { kept, dropped } = dropAoiOwnedTests(root, collectTestSources(root))
+    const audit = auditInvariantCoverage(REGLA_DEL_OWNER, kept)
+
+    assert.equal(dropped.length, 1, 'el test de AOI siguió contando como evidencia del contrato del Owner')
+    assert.match(dropped[0], /behavioral-probes\.test\.mjs$/)
+    assert.equal(audit.status, 'FAILED')
+    assert.equal(audit.covered.length, 0)
+    assert.match(kept.map((s) => s.file).join(), /tests\/owner\.test\.mjs$/, 'el test del Owner también se descartó')
+    clean(root)
+  })
+
+  it('en el repo fuente NO descarta nada: ahí los BIC de scripts/ son los del producto', () => {
+    // Control negativo. Un filtro que corre siempre deja al gate sin nada que
+    // medir sobre AOI, que es exactamente el caso en el que hoy funciona bien.
+    const root = installedWorkspace({ development: true })
+
+    const { kept, dropped } = dropAoiOwnedTests(root, collectTestSources(root))
+    const audit = auditInvariantCoverage(REGLA_DEL_OWNER, kept)
+
+    assert.deepEqual(dropped, [])
+    assert.equal(audit.status, 'PASSED')
     clean(root)
   })
 })
