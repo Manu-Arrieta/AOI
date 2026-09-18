@@ -8,6 +8,18 @@ import { COVERAGE, coverageFor } from './behavioral-coverage.mjs'
 import { assemblePhaseContext } from './assemble-phase-context.mjs'
 import { SDD_PHASES, phaseContextCost } from './context-budget.mjs'
 import { estimateTokens } from './token-accounting.mjs'
+import { isDevelopmentRepo } from '../scaffold/governed-paths.mjs'
+/**
+ * Las afirmaciones sobre el ESPEJO sólo valen en el repositorio de desarrollo.
+ *
+ * `setup.sh` retira `scaffold/` del destino desde que el Owner zanjó que el
+ * andamio no se queda instalado, pero estos tests viajan igual y se ejecutan en
+ * cada workspace. Medido el 2026-09-18 en una instalación real: cinco casos
+ * repartidos en cuatro archivos dejaban `pnpm test` —el contrato bajo el que AOI
+ * shippea— en rojo permanente por un directorio ausente, no por un defecto del
+ * Owner.
+ */
+
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
@@ -60,6 +72,7 @@ describe('assembled context equals what the budget reports', () => {
   })
 
   it('BIC-2026-001:never.3 keeps every affected module byte-identical in scaffold', () => {
+    if (!isDevelopmentRepo(ROOT)) return
     const governed = [
       'scripts/sdd-lifecycle/sdd-phases.mjs',
       'scripts/sdd-lifecycle/assemble-phase-context.mjs',
