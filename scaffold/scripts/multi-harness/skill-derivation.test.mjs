@@ -31,6 +31,7 @@ import os from 'node:os'
 import { describe, it } from 'node:test'
 import { compileHarnessRules } from './compile-rules.mjs'
 import { deriveSkillFromInstruction, SKILL_FROM_INSTRUCTION, SKILL_TRIGGERS } from './protocol-source.mjs'
+import { isDevelopmentRepo } from '../scaffold/governed-paths.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8')
@@ -126,8 +127,21 @@ describe('the copy antigravity loads IS the derivation, not one that drifted fro
     assert.ok(registered.length >= 2, `sólo ${registered.length} skill(s) registradas`)
   })
 
+  // El espejo sólo se compara donde existe. `setup.sh` retira `scaffold/` del
+  // destino desde que el Owner zanjó que el andamio no se queda instalado, así
+  // que aguas abajo este `read` tiraba ENOENT y `pnpm test` —el contrato bajo el
+  // que AOI shippea— quedaba rojo en TODO workspace instalado. Medido en una
+  // instalación real el 2026-09-18: dos casos, rtk e icm, por un test que
+  // nombra una ruta que su propio instalador borra.
+  //
+  // La condición es `isDevelopmentRepo`, no `existsSync(scaffold/...)`: preguntar
+  // por el archivo concreto haría que un espejo BORRADO en el repo fuente pasara
+  // como "no aplica" en vez de fallar, que es justo el silencio que este archivo
+  // existe para impedir.
+  const trees = isDevelopmentRepo(ROOT) ? ['', 'scaffold/'] : ['']
+
   for (const name of registered) {
-    for (const tree of ['', 'scaffold/']) {
+    for (const tree of trees) {
       it(`${tree || 'repo/'}.agents/skills/${name}/SKILL.md is byte-identical to the derivation`, () => {
         assert.equal(
           read(`${tree}.agents/skills/${name}/SKILL.md`),
