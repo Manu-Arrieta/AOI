@@ -20,7 +20,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { findOrphanTests } from '../scaffold/validate-test-globs.mjs'
-import { DEFAULT_SYNC_PATHS } from '../scaffold/validate-scaffold-parity.mjs'
+import { isAoiGovernedPath, isDevelopmentRepo } from '../scaffold/governed-paths.mjs'
 
 const TEST_EXTENSIONS = new Set(['.mjs', '.js', '.ts', '.tsx', '.jsx', '.vue', '.py', '.go', '.rs'])
 // `scaffold` is a byte-for-byte mirror, not an authoritative test tree: counting
@@ -148,8 +148,8 @@ export function dropUnreachableTests(root, sources) {
  *
  * El criterio es el mismo que `validate-srp.mjs`, `validate-test-globs.mjs` y
  * `undocumented-commands.mjs` ya aplican: las invariantes de AOI juzgan el
- * código de AOI, no el del Owner. La lista de rutas gobernadas es la que ya
- * declara el espejo, así que una ruta nueva no necesita registrarse dos veces.
+ * código de AOI, no el del Owner. Quién responde esa pregunta es
+ * `governed-paths.mjs`, una sola vez para las dos compuertas.
  *
  * @param {string} installRoot raíz donde AOI está instalado (o el repo fuente)
  * @param {Array<{file: string, content: string}>} sources
@@ -158,18 +158,15 @@ export function dropUnreachableTests(root, sources) {
 export function dropAoiOwnedTests(installRoot, sources) {
   // En el repo fuente todo `scripts/` es código de AOI y sus BIC son los del
   // producto: filtrarlos acá dejaría al gate sin nada que medir sobre sí mismo.
-  if (!installRoot || fs.existsSync(path.join(installRoot, 'setup.sh'))) {
+  if (!installRoot || isDevelopmentRepo(installRoot)) {
     return { kept: sources, dropped: [] }
   }
 
-  const governed = DEFAULT_SYNC_PATHS.map((entry) => path.resolve(installRoot, entry))
   const kept = []
   const dropped = []
 
   for (const source of sources) {
-    const abs = path.resolve(source.file)
-    const isAoiOwned = governed.some((g) => abs === g || abs.startsWith(g + path.sep))
-    if (isAoiOwned) dropped.push(source.file)
+    if (isAoiGovernedPath(installRoot, source.file)) dropped.push(source.file)
     else kept.push(source)
   }
 

@@ -87,13 +87,34 @@ describe('listSourceFiles', () => {
     fs.rmSync(root, { recursive: true, force: true })
   })
 
+  // Este caso afirmaba lo mismo, y su fixture construía `scaffold/scripts/aoi.mjs`
+  // DENTRO del destino. Ese árbol no existe: desde que el Owner zanjó que el
+  // andamio no se queda instalado, `setup.sh` borra `scaffold/` del workspace.
+  // La condición de prueba aceptaba justo el atajo que la compuerta necesitaba
+  // prohibir, así que su verde no decía nada — medido en un árbol sin espejo,
+  // `listSourceFiles` devolvía CERO archivos y el ratchet imprimía igual
+  // "No new SRP violations". Qué está gobernado se responde con la lista
+  // declarada del espejo, no con un directorio que se retira.
   it("audits only governed files in an installed workspace, not the owner's own", () => {
     const root = treeWith(
-      { 'scripts/aoi.mjs': 5, 'scaffold/scripts/aoi.mjs': 5, 'scripts/owner-script.mjs': 5 },
+      { 'scripts/sdd-lifecycle/gate.mjs': 5, 'scripts/owner-script.mjs': 5 },
       { devRepo: false }
     )
 
-    assert.deepEqual(listSourceFiles(root), ['scripts/aoi.mjs'])
+    assert.deepEqual(listSourceFiles(root), ['scripts/sdd-lifecycle/gate.mjs'])
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+
+  it('una instalación no trae el espejo, y el ratchet tiene que medir igual', () => {
+    // El enunciado end-to-end del defecto: sin espejo en el destino, la
+    // compuerta no reportaba "no sé" — no reportaba nada, y el verde de una
+    // auditoría sobre cero archivos se lee como cobertura completa.
+    const root = treeWith({ 'scripts/sdd-lifecycle/enorme.mjs': 400 }, { devRepo: false })
+
+    const report = auditSrp(root, {})
+
+    assert.equal(report.scanned, 1, 'la auditoría corrió sobre cero archivos y dio verde')
+    assert.deepEqual(report.added, [{ file: 'scripts/sdd-lifecycle/enorme.mjs', lines: 400 }])
     fs.rmSync(root, { recursive: true, force: true })
   })
 })
