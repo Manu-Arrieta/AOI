@@ -42,6 +42,34 @@ let SANDBOX = ''
 const runGate = (script) => runGateIn(SANDBOX, script)
 const withViolation = (relFile, mutate, script) => withViolationIn(SANDBOX, relFile, mutate, script)
 
+/**
+ * Siembra un archivo en la copia y, SÓLO si el árbol tiene espejo, su copia
+ * gobernada.
+ *
+ * Escribía las dos siempre, y eso hacía a estos casos exclusivos del repositorio
+ * de desarrollo sin decirlo: `setup.sh` retira `scaffold/` del destino desde que
+ * el Owner zanjó que el andamio no se queda instalado, así que aguas abajo el
+ * `writeFileSync` al espejo tiraba ENOENT. Medido en una instalación real el
+ * 2026-09-18: dos de estos casos reventaban antes de llegar a ejecutar la
+ * compuerta que dicen probar, y `pnpm test` —el contrato bajo el que AOI
+ * shippea— quedaba en rojo permanente en TODO workspace instalado, por un
+ * fixture, no por un defecto del Owner.
+ */
+function sembrar(rel, body) {
+  fs.writeFileSync(path.join(SANDBOX, rel), body)
+  const espejo = path.join(SANDBOX, 'scaffold', rel)
+  if (fs.existsSync(path.dirname(espejo))) fs.writeFileSync(espejo, body)
+}
+
+/** Deshace `sembrar`, con o sin espejo. */
+function desembrar(rel) {
+  fs.rmSync(path.join(SANDBOX, rel), { force: true })
+  fs.rmSync(path.join(SANDBOX, 'scaffold', rel), { force: true })
+}
+
+/** El Principio I sólo rige en el repo fuente, y su compuerta sale 0 fuera de él. */
+const esRepoFuente = () => fs.existsSync(path.join(SANDBOX, 'setup.sh'))
+
 describe('cada compuerta sale distinto de cero ante la violación que dice cazar', () => {
   before(() => {
     SANDBOX = sandboxFrom(REPO, 'aoi-gates-')
@@ -115,13 +143,11 @@ describe('cada compuerta sale distinto de cero ante la violación que dice cazar
   it('srp catches a file over the 300 LOC limit', () => {
     const rel = 'scripts/sdd-lifecycle/gordo-de-prueba.mjs'
     const body = Array.from({ length: 400 }, (_, i) => `const x${i} = ${i}`).join('\n')
-    fs.writeFileSync(path.join(SANDBOX, rel), body)
-    fs.writeFileSync(path.join(SANDBOX, 'scaffold', rel), body)
+    sembrar(rel, body)
     try {
       assert.notEqual(runGate('scripts/scaffold/validate-srp.mjs'), 0)
     } finally {
-      fs.rmSync(path.join(SANDBOX, rel), { force: true })
-      fs.rmSync(path.join(SANDBOX, 'scaffold', rel), { force: true })
+      desembrar(rel)
     }
   })
 
@@ -146,6 +172,9 @@ describe('cada compuerta sale distinto de cero ante la violación que dice cazar
   // existen para prevenir, vuelta contra ellas mismas.
 
   it('parity catches a governed file that drifted from its mirror', () => {
+    // Sin espejo no hay Principio I que violar: la compuerta lo dice y sale 0.
+    // Afirmar lo contrario aguas abajo es exigirle que caze algo inexistente.
+    if (!esRepoFuente()) return
     const code = withViolation(
       'CLAUDE.md',
       (full, original) => fs.writeFileSync(full, `${original}\n<!-- deriva inyectada -->\n`),
@@ -157,13 +186,11 @@ describe('cada compuerta sale distinto de cero ante la violación que dice cazar
   it('reachability catches a source file that nothing ever loads', () => {
     const rel = 'scripts/sdd-lifecycle/huerfano-de-prueba.mjs'
     const body = 'export const nadieMeImporta = 1\n'
-    fs.writeFileSync(path.join(SANDBOX, rel), body)
-    fs.writeFileSync(path.join(SANDBOX, 'scaffold', rel), body)
+    sembrar(rel, body)
     try {
       assert.notEqual(runGate('scripts/scaffold/source-reachability.mjs'), 0, 'un archivo que nada carga pasó como alcanzable')
     } finally {
-      fs.rmSync(path.join(SANDBOX, rel), { force: true })
-      fs.rmSync(path.join(SANDBOX, 'scaffold', rel), { force: true })
+      desembrar(rel)
     }
   })
 

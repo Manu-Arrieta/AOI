@@ -111,8 +111,23 @@ export function enlacesRotos(root) {
   return rotos.sort()
 }
 
+/**
+ * True cuando el árbol auditado es el repositorio de AOI y no una instalación.
+ *
+ * Las dos afirmaciones de abajo son sobre el REPOSITORIO, pero `REPO` se
+ * resuelve desde la ubicación de este archivo, y en un workspace instalado eso
+ * apunta a la raíz del Owner — donde el protocolo SÍ vive, porque su lugar es
+ * `AOI TESTS`. Medido el 2026-09-18 en una instalación real: la compuerta
+ * denunciaba como "tercera copia sin gobernar" al protocolo en su casa, y
+ * `pnpm test` quedaba en rojo permanente en todo workspace instalado. Es
+ * exactamente la patología que el comentario de arriba describe para
+ * `.conf/conflicts/`, repetida un nivel más arriba.
+ */
+const esRepoDeAoi = () => fs.existsSync(path.join(REPO, 'setup.sh'))
+
 describe('el protocolo de verificación no vive en este repositorio', () => {
   it('no queda ninguna copia: su lugar es el workspace de verificación', () => {
+    if (!esRepoDeAoi()) return
     assert.deepEqual(
       copiasDelProtocolo(REPO),
       [...GOBERNADAS].sort(),
@@ -123,6 +138,7 @@ describe('el protocolo de verificación no vive en este repositorio', () => {
 
 describe('todo enlace al protocolo resuelve', () => {
   it('ningún README ni documento apunta a una ruta inexistente', () => {
+    if (!esRepoDeAoi()) return
     assert.deepEqual(enlacesRotos(REPO), [], 'hay enlaces al protocolo que no resuelven')
   })
 })
