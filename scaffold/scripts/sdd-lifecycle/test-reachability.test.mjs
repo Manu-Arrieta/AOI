@@ -117,3 +117,40 @@ describe('el BIC del producto no se cubre con un test de AOI que comparte númer
     clean(root)
   })
 })
+
+describe('qué es un espejo, y qué sólo comparte su nombre', () => {
+  it('no cuenta la copia byte a byte que `.conf/snapshots/` guarda en el destino', () => {
+    // Medido en una instalación real el 2026-09-18, con `dropAoiOwnedTests` ya
+    // puesto: `setup.sh` retira `scaffold/` del destino, pero `.conf/snapshots/`
+    // conserva 114 archivos de test copiados, y esa ruta no está gobernada. Un
+    // contrato del Owner sin una sola prueba seguía dando PASSED, acreditado por
+    // `.conf/snapshots/scripts/sdd-lifecycle/behavioral-probes.test.mjs`.
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-conf-'))
+    fs.mkdirSync(path.join(root, '.conf/snapshots/scripts/sdd-lifecycle'), { recursive: true })
+    fs.writeFileSync(
+      path.join(root, '.conf/snapshots/scripts/sdd-lifecycle/probes.test.mjs'),
+      `it('BIC-2026-001:never.1 algo de AOI', () => {})`
+    )
+
+    assert.deepEqual(collectTestSources(root), [])
+    clean(root)
+  })
+
+  it('`scripts/scaffold/` es fuente real, no el espejo: sus tests cuentan', () => {
+    // El espejo es `scaffold/` en la RAÍZ. Estaba excluido por NOMBRE, así que
+    // se llevaba puesta el área que contiene las compuertas: medido en este
+    // árbol, 0 de 142 tests colectados venían de ahí, y el test que cita
+    // `BIC-2026-001:never.3` no podía acreditar la regla. Es el mismo error de
+    // anclaje que `validate-srp.mjs` documenta en `MIRROR_DIR`.
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-anchor-'))
+    fs.mkdirSync(path.join(root, 'scripts/scaffold'), { recursive: true })
+    fs.mkdirSync(path.join(root, 'scaffold/scripts'), { recursive: true })
+    fs.writeFileSync(path.join(root, 'scripts/scaffold/gate.test.mjs'), `it('BIC-9:never.1', () => {})`)
+    fs.writeFileSync(path.join(root, 'scaffold/scripts/copia.test.mjs'), `it('BIC-9:never.1', () => {})`)
+
+    const files = collectTestSources(root).map((s) => path.relative(root, s.file))
+
+    assert.deepEqual(files, ['scripts/scaffold/gate.test.mjs'])
+    clean(root)
+  })
+})
