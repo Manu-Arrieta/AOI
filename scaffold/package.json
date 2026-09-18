@@ -45,6 +45,7 @@
     "aoi:invariant-gate": "node scripts/sdd-lifecycle/invariant-gate.mjs --exit-code",
     "aoi:blueprint-gate": "node scripts/sdd-lifecycle/blueprint-gate.mjs",
     "aoi:archify": "node scripts/archify-path.mjs",
+    "aoi:installed-suite": "node scripts/scaffold/installed-suite.mjs",
     "aoi:stress-sdd": "node scripts/sdd-lifecycle/sdd-stress-suite.mjs",
     "aoi:context": "node scripts/sdd-lifecycle/assemble-phase-context.mjs",
     "aoi:probes": "node scripts/sdd-lifecycle/behavioral-runner.mjs --emit",
