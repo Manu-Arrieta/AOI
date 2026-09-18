@@ -185,6 +185,13 @@ while IFS= read -r -d '' scaffold_file; do
   if [[ "$scaffold_hash" == "$stored_hash" ]]; then
     # Scaffold unchanged → SKIP (regardless of user changes)
     skip_files+=("$rel_path")
+  elif [[ "$current_hash" == "$scaffold_hash" ]]; then
+    # Both moved and landed on the SAME content → nothing to merge. This fell
+    # to the conflict branch before, which sent the operator to
+    # .conf/conflicts/ to reconcile two byte-identical files. It is the exact
+    # shape a hand-applied upstream fix leaves behind. A false conflict is
+    # indistinguishable from a real one, so it costs the real ones their signal.
+    skip_files+=("$rel_path")
   elif [[ "$current_hash" == "$stored_hash" ]]; then
     # Scaffold changed, user did NOT modify → AUTO-UPDATE
     update_files+=("$rel_path")

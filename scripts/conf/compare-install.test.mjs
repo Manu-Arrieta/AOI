@@ -65,6 +65,9 @@ function runComparison(profile = 'dashboard') {
   write(scaffold, 'clashing.md', 'scaffold-v2\n')
   write(project, 'clashing.md', 'user-edit\n')
   write(scaffold, 'arrived.md', 'brand new\n')
+  // converged.md  — scaffold changed AND user changed, to the SAME content -> skip
+  write(scaffold, 'converged.md', 'both landed here\n')
+  write(project, 'converged.md', 'both landed here\n')
 
   // aoi_apps/ is governed like any other tree. The dashboard file AOI ships is
   // upgradable; the file an SDD cycle implemented exists only in the project
@@ -87,6 +90,7 @@ function runComparison(profile = 'dashboard') {
       'untouched.md': sha256('same\n'),
       'upgraded.md': sha256('v1\n'),
       'clashing.md': sha256('scaffold-v1\n'),
+      'converged.md': sha256('what AOI shipped before both sides moved\n'),
       'aoi_apps/dashboard/server/utils/aoi-owned.ts': sha256('v1\n'),
       'retired.md': sha256('shipped by an older AOI\n'),
       'retired-edited.md': sha256('what AOI originally shipped\n'),
@@ -125,10 +129,23 @@ describe('compare-install.sh', () => {
   it('classifies every file into the correct bucket', () => {
     const parsed = JSON.parse(runComparison())
 
-    assert.deepEqual(parsed.skip, ['untouched.md'])
+    assert.deepEqual(parsed.skip, ['converged.md', 'untouched.md'])
     assert.deepEqual(parsed.auto_update, ['aoi_apps/dashboard/server/utils/aoi-owned.ts', 'upgraded.md'])
     assert.deepEqual(parsed.conflict, ['clashing.md'])
     assert.deepEqual(parsed.new, ['arrived.md'])
+  })
+
+  it('does not invent a conflict when both sides moved to the same content', () => {
+    const parsed = JSON.parse(runComparison())
+
+    // This is what a fix applied by hand upstream and copied downstream leaves
+    // behind: the scaffold moved, the project moved, and they agree. Read as a
+    // conflict it sent the operator to .conf/conflicts/ to reconcile two
+    // byte-identical files — and a false conflict is indistinguishable from a
+    // real one, so it costs the real ones their signal.
+    assert.ok(parsed.skip.includes('converged.md'), 'un archivo ya convergido debe ser skip')
+    assert.ok(!parsed.conflict.includes('converged.md'), 'conflicto inventado sobre contenido idéntico')
+    assert.ok(!parsed.auto_update.includes('converged.md'), 'no hay nada que copiar: ya son iguales')
   })
 
   it('upgrades AOI-owned files inside aoi_apps instead of replacing the whole tree', () => {
