@@ -378,11 +378,22 @@ make the installer treat AOI's own dashboard as the downstream project.
 
 ### Step 18: Summary & Workspace Health Diagnostic
 
-Compile and synchronize multi-harness instruction adapters:
+Compile and synchronize multi-harness instruction adapters. The harness set was
+chosen at install time and `setup.sh` pruned the files of the ones not chosen,
+so compiling `all` here recreates exactly those files. Read the selection:
+
 ```bash
-node scripts/multi-harness/compile-rules.mjs --harness "all" --workspace "$WORKSPACE"
-icm facts set "$WORKSPACE" "harness.selected" "all"
+HARNESS=$(icm facts get "$WORKSPACE" "harness.selected" 2>/dev/null)
+[ -z "$HARNESS" ] && HARNESS=all
+node scripts/multi-harness/compile-rules.mjs --harness "$HARNESS" --workspace "$WORKSPACE"
 ```
+
+Test the value, not the exit code: inside `$(...)` the status read back is the
+substitution's, not `icm`'s.
+
+Do NOT `icm facts set harness.selected` here. `setup.sh` owns that fact; writing
+`all` over it erases the operator's choice and makes the next reinstall announce
+a harness change that never happened.
 
 Run the automated 360° health diagnostic:
 ```bash
@@ -397,7 +408,7 @@ Present a comprehensive checklist:
 ✅ ICM: bootstrapped ({WORKSPACE}-context + {WORKSPACE}-architecture)
 ✅ Facts: exact configuration keys registered
 ✅ Briefing: fast wake-up pack generated
-✅ Multi-Harness: rules compiled for all target assistants (Copilot, Claude, Cursor, Antigravity, Cline)
+✅ Multi-Harness: rules compiled for the selected assistants ({$HARNESS})
 ✅ AOI Doctor: 360° health diagnostic PASSED
 ✅ Directories: .tasks/ .sandboxes/ .resources/
 ✅ spec-kit: Copilot integration installed
