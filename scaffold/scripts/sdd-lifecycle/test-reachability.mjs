@@ -23,9 +23,30 @@ import { findOrphanTests } from '../scaffold/validate-test-globs.mjs'
 import { isAoiGovernedPath, isDevelopmentRepo } from '../scaffold/governed-paths.mjs'
 
 const TEST_EXTENSIONS = new Set(['.mjs', '.js', '.ts', '.tsx', '.jsx', '.vue', '.py', '.go', '.rs'])
-// `scaffold` is a byte-for-byte mirror, not an authoritative test tree: counting
-// it would let a mirrored copy satisfy a contract on its own.
-const SKIP_DIRS = new Set(['node_modules', '.git', '.nuxt', '.output', 'dist', 'build', 'coverage', 'scaffold'])
+const SKIP_DIRS = new Set(['node_modules', '.git', '.nuxt', '.output', 'dist', 'build', 'coverage'])
+
+/**
+ * Los espejos, como RUTA desde la raíz del barrido — nunca como nombre de directorio.
+ *
+ * Un espejo copiado byte a byte no es un árbol de tests con autoridad: contarlo
+ * deja que una copia satisfaga un contrato por su cuenta. Pero `scaffold` vivía
+ * acá como NOMBRE, y eso es el mismo error anclado al revés que ya se pagó dos
+ * veces en este repositorio —`validate-srp.mjs` con `MIRROR_DIR`, y la sonda de
+ * mutación—: el espejo es `scaffold/` en la raíz, pero `scripts/scaffold/` es
+ * fuente real y comparte el nombre. Medido el 2026-09-18 en este árbol: de 142
+ * tests colectados, CERO eran de `scripts/scaffold/`, el área que contiene las
+ * compuertas, y `BIC-2026-001:never.3` no podía acreditarse con el test que lo
+ * cita ahí.
+ *
+ * `.conf` entra por lo medido en una instalación real el mismo día, y es el
+ * defecto más grave de los dos. `setup.sh` retira `scaffold/` del destino, pero
+ * `.conf/snapshots/` guarda una copia byte a byte de todo lo que AOI instaló —114
+ * archivos de test— y esa copia NO cae bajo ninguna ruta gobernada, así que
+ * sobrevivía al filtro de `dropAoiOwnedTests`. Con el filtro ya puesto, un
+ * contrato del Owner sin una sola prueba seguía dando PASSED, acreditado por
+ * `.conf/snapshots/scripts/sdd-lifecycle/behavioral-probes.test.mjs`.
+ */
+const MIRROR_DIRS = new Set(['scaffold', '.conf'])
 
 /**
  * Recursively collects test file contents under a directory.
@@ -58,6 +79,9 @@ export function collectTestSources(dir) {
       const full = path.join(current, entry.name)
 
       if (entry.isDirectory()) {
+        // Anclado a la raíz del barrido: `scripts/scaffold/` comparte nombre con
+        // el espejo y no es uno.
+        if (MIRROR_DIRS.has(path.relative(dir, full))) continue
         walk(full)
         continue
       }
