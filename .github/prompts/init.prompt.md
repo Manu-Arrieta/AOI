@@ -254,7 +254,7 @@ Check `.vscode/mcp.json`:
 jq '.servers | keys' .vscode/mcp.json
 ```
 
-Expected servers: `icm`, `codebase-memory`. Report missing servers.
+Expected servers: `icm`, `codebase-memory-mcp`. Report missing servers.
 
 ### Step 12: Verify copilot-instructions.md
 
