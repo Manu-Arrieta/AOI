@@ -12,6 +12,32 @@ const SCRIPT = path.join(path.dirname(fileURLToPath(import.meta.url)), 'compare-
 const sha256 = (text) => `sha256:${crypto.createHash('sha256').update(text).digest('hex')}`
 
 /**
+ * Every directory the owner accumulates work in, as `is_protected_path` in
+ * compare-install.sh names them.
+ *
+ * The fixture used to seed `.tasks/` alone, and so did the assertion. The other
+ * three were named in a `case` branch and measured by nobody — delete
+ * `.resources/*` from that branch and the whole suite stays green while a
+ * reinstall starts eating the owner's constitution and user stories. A
+ * protection nobody tests is one commit from not existing.
+ *
+ * Each file here is recorded in the previous checksums with a hash that MATCHES
+ * what the project holds, which is the dangerous shape on purpose: pristine and
+ * absent from the current scaffold is exactly what qualifies a file for
+ * removal, so only `is_protected_path` stands between these and `rm -f`.
+ */
+const STATE_DIR_FILES = Object.freeze({
+  '.tasks/registry.md': 'the owner task registry\n',
+  '.resources/constitution.md': 'the owner resource governance\n',
+  '.resources/userstories/us-001.md': 'a user story the owner wrote\n',
+  '.sandboxes/blueprint/manifest.json': '{"sandbox":"owner"}\n',
+  '.conf/install-manifest.json': '{"profile":"dashboard"}\n',
+})
+
+/** The distinct state directories the files above stand for. */
+const STATE_DIRS = Object.freeze([...new Set(Object.keys(STATE_DIR_FILES).map((f) => `${f.split('/')[0]}/`))])
+
+/**
  * Builds a scaffold + installed-project pair covering all four classifications,
  * then runs compare-install.sh against it with the SYSTEM bash.
  */
@@ -52,7 +78,7 @@ function runComparison(profile = 'dashboard') {
   // anything under a state directory is off limits whatever its hash says.
   write(project, 'retired.md', 'shipped by an older AOI\n')
   write(project, 'retired-edited.md', 'owner rewrote this\n')
-  write(project, '.tasks/registry.md', 'the owner task registry\n')
+  for (const [rel, body] of Object.entries(STATE_DIR_FILES)) write(project, rel, body)
 
   const checksums = {
     $schema: 'aoi-conf-checksums-v1',
@@ -64,7 +90,7 @@ function runComparison(profile = 'dashboard') {
       'aoi_apps/dashboard/server/utils/aoi-owned.ts': sha256('v1\n'),
       'retired.md': sha256('shipped by an older AOI\n'),
       'retired-edited.md': sha256('what AOI originally shipped\n'),
-      '.tasks/registry.md': sha256('the owner task registry\n'),
+      ...Object.fromEntries(Object.entries(STATE_DIR_FILES).map(([rel, body]) => [rel, sha256(body)])),
     },
   }
   const checksumsPath = path.join(root, 'checksums.json')
@@ -151,17 +177,33 @@ describe('compare-install.sh', () => {
 
     assert.deepEqual(parsed.orphan_modified, ['retired-edited.md'])
 
-    // .tasks/ is the owner's accumulated work. It must not appear in ANY
-    // bucket, not even as a reported orphan — there is no scenario where the
-    // installer decides something about it.
+    // A state directory holds the owner's accumulated work. It must not appear
+    // in ANY bucket, not even as a reported orphan — there is no scenario where
+    // the installer decides something about it.
     const everything = [
       ...parsed.skip, ...parsed.auto_update, ...parsed.conflict,
       ...parsed.new, ...parsed.orphan, ...parsed.orphan_modified,
     ]
-    assert.ok(
-      !everything.some((f) => f.startsWith('.tasks/')),
-      'a state directory leaked into the installer decision set'
-    )
+    for (const dir of STATE_DIRS) {
+      const leaked = everything.filter((f) => f.startsWith(dir))
+      assert.deepEqual(leaked, [], `${dir} leaked into the installer decision set: ${leaked.join(', ')}`)
+    }
+  })
+
+  it('protects every state directory is_protected_path names, not just the tested one', () => {
+    // Reads the branch itself, so dropping a directory from it fails here even
+    // if someone also deletes the fixture that would have caught it. The list
+    // above and the list in the script are one rule in two places; this is
+    // what keeps them from drifting apart in silence.
+    const branch = fs.readFileSync(SCRIPT, 'utf8').match(/is_protected_path\(\)\s*\{[\s\S]*?\n\}/)
+    assert.ok(branch, 'is_protected_path disappeared from compare-install.sh')
+
+    for (const dir of STATE_DIRS) {
+      assert.ok(
+        branch[0].includes(`${dir}*`),
+        `${dir} is no longer protected by is_protected_path — a reinstall can delete the owner's work there`
+      )
+    }
   })
 
   it('snapshot-conf.sh writes a manifest that is valid JSON even with banner-style tool output', () => {
