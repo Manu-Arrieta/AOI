@@ -22,7 +22,7 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
-import { DEFAULT_SYNC_PATHS } from './validate-scaffold-parity.mjs'
+import { DEFAULT_SYNC_PATHS } from './sync-paths.mjs'
 
 /**
  * True cuando `root` es el repositorio de desarrollo y no un workspace instalado.
