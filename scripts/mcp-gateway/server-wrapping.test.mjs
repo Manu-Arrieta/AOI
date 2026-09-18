@@ -19,6 +19,18 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { describe, it, after } from 'node:test'
 import { auditServerWrapping, generateCompactSignature, validateGatewayConfig } from './setup-mcp-gateway.mjs'
+import { isDevelopmentRepo } from '../scaffold/governed-paths.mjs'
+/**
+ * Las afirmaciones sobre el ESPEJO sólo valen en el repositorio de desarrollo.
+ *
+ * `setup.sh` retira `scaffold/` del destino desde que el Owner zanjó que el
+ * andamio no se queda instalado, pero estos tests viajan igual y se ejecutan en
+ * cada workspace. Medido el 2026-09-18 en una instalación real: cinco casos
+ * repartidos en cuatro archivos dejaban `pnpm test` —el contrato bajo el que AOI
+ * shippea— en rojo permanente por un directorio ausente, no por un defecto del
+ * Owner.
+ */
+
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
@@ -32,6 +44,7 @@ describe('every MCP server this workspace registers goes through the compressor'
   })
 
   it('the scaffold ships the same wiring, so a fresh install starts wrapped', () => {
+    if (!isDevelopmentRepo(REPO)) return
     // An install that begins unwrapped never gets noticed: nothing fails, the
     // schemas are just paid in full forever.
     const mcp = JSON.parse(fs.readFileSync(path.join(REPO, 'scaffold/.vscode/mcp.json'), 'utf8'))
@@ -39,6 +52,7 @@ describe('every MCP server this workspace registers goes through the compressor'
   })
 
   it('the scaffold carries no absolute path from the machine that built it', () => {
+    if (!isDevelopmentRepo(REPO)) return
     // A hardcoded /Users/<name>/ in the scaffold ships to every workspace and
     // resolves nowhere. Caught once by reading; pinned here so it cannot come
     // back through a regenerated config.
