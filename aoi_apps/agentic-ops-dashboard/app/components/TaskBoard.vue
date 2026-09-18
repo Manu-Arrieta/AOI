@@ -104,29 +104,32 @@ const filteredTasks = computed(() => {
     return `${year}-${month}-${day}`
   }
 
+  const todayStr = getLocalDateString()
+
   if (dateFilter.value === 'today') {
-    const todayStr = getLocalDateString()
-    list = list.filter(t => t.created && t.created === todayStr)
+    list = list.filter(t => t.created === todayStr)
   } else if (dateFilter.value === 'week') {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const oneWeekAgo = today.getTime() - 7 * 24 * 60 * 60 * 1000
+    const now = new Date()
+    const dayOfWeek = now.getDay()
+    const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+    const monday = new Date(now)
+    monday.setDate(now.getDate() - diffToMonday)
+    monday.setHours(0, 0, 0, 0)
+    
     list = list.filter(t => {
       const d = parseLocalDate(t.created)
-      return d && d.getTime() >= oneWeekAgo
+      return d ? d >= monday : false
     })
   }
 
-  const getMs = (dateStr: string) => {
-    const d = parseLocalDate(dateStr)
-    return d ? d.getTime() : 0
-  }
-
-  if (dateFilter.value === 'oldest') {
-    list.sort((a, b) => getMs(a.created) - getMs(b.created))
-  } else {
-    list.sort((a, b) => getMs(b.created) - getMs(a.created))
-  }
+  list.sort((a, b) => {
+    const dateA = a.created || ''
+    const dateB = b.created || ''
+    if (dateFilter.value === 'oldest') {
+      return dateA.localeCompare(dateB)
+    }
+    return dateB.localeCompare(dateA)
+  })
 
   return list
 })
@@ -184,115 +187,140 @@ function toggleLane(lane: BoardLaneView) {
 </script>
 
 <template>
-  <div class="surface-panel surface-panel-board">
-    <header class="panel-header">
-      <div>
-        <p class="eyebrow">{{ messages.taskBoard.eyebrow }}</p>
-        <h2>{{ messages.taskBoard.title }}</h2>
-      </div>
-      <UBadge color="neutral" variant="outline">
-        {{ props.tasks.length }} {{ messages.taskBoard.trackedTasks }}
-      </UBadge>
-    </header>
+  <div class="space-y-4">
+    <!-- Board Header & Filters Card -->
+    <UCard variant="outline" class="backdrop-blur-md">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <p class="text-xs font-mono font-semibold uppercase tracking-wider text-primary">
+              {{ messages.taskBoard.eyebrow }}
+            </p>
+            <UBadge color="neutral" variant="soft" size="xs">
+              {{ messages.taskBoard.boardMode }}
+            </UBadge>
+          </div>
+          <h2 class="text-lg font-bold text-neutral-900 dark:text-white mt-0.5">
+            {{ messages.taskBoard.title }}
+          </h2>
+          <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+            {{ messages.taskBoard.boardCopy }}
+          </p>
+        </div>
 
-    <div class="task-board-meta">
-      <UBadge color="neutral" variant="soft">{{ messages.taskBoard.boardMode }}</UBadge>
-      <p>{{ messages.taskBoard.boardCopy }}</p>
-    </div>
+        <UBadge color="neutral" variant="outline" size="sm">
+          {{ props.tasks.length }} {{ messages.taskBoard.trackedTasks }}
+        </UBadge>
+      </div>
 
-    <!-- Tablero Filters -->
-    <div class="task-board-filters">
-      <div class="filter-group">
-        <span class="filter-label">{{ messages.common.filterByFeature }}</span>
-        <USelect
-          v-model="selectedFeatureFilter"
-          :items="featureItems"
-          class="filter-select w-44"
-          size="sm"
-        />
-      </div>
-      <div class="filter-group">
-        <span class="filter-label">{{ messages.common.filterByRelation }}</span>
-        <USelect
-          v-model="selectedRelationFilter"
-          :items="relationItems"
-          class="filter-select w-56"
-          size="sm"
-        />
-      </div>
-      <div class="filter-group">
-        <span class="filter-label">{{ messages.common.sortByDate }}</span>
-        <USelect
-          v-model="dateFilter"
-          :items="dateItems"
-          class="filter-select w-44"
-          size="sm"
-        />
-      </div>
-    </div>
+      <!-- Filters Toolbar -->
+      <div class="flex flex-wrap items-center gap-3 pt-3 mt-3 border-t border-neutral-200 dark:border-neutral-800">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-neutral-500">{{ messages.common.filterByFeature }}:</span>
+          <USelect
+            v-model="selectedFeatureFilter"
+            :items="featureItems"
+            class="w-40"
+            size="sm"
+          />
+        </div>
 
-    <p v-if="props.loading && !props.tasks.length" class="panel-empty">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-neutral-500">{{ messages.common.filterByRelation }}:</span>
+          <USelect
+            v-model="selectedRelationFilter"
+            :items="relationItems"
+            class="w-48"
+            size="sm"
+          />
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-neutral-500">{{ messages.common.sortByDate }}:</span>
+          <USelect
+            v-model="dateFilter"
+            :items="dateItems"
+            class="w-36"
+            size="sm"
+          />
+        </div>
+      </div>
+    </UCard>
+
+    <div v-if="props.loading && !props.tasks.length" class="py-12 text-center text-neutral-400 font-mono text-xs">
+      <UIcon name="i-lucide-loader-circle" class="animate-spin inline-block mr-2 w-4 h-4 text-primary" />
       {{ messages.taskBoard.refreshing }}
-    </p>
-    <p v-else-if="!props.tasks.length" class="panel-empty">
-      {{ messages.taskBoard.empty }}
-    </p>
+    </div>
 
-    <div v-else class="task-board-canvas" :class="{ 'task-board-canvas-updating': props.loading }">
-      <div class="task-board-lane-grid">
-        <section
+    <div v-else-if="!props.tasks.length" class="py-12 text-center text-neutral-400 font-mono text-xs">
+      {{ messages.taskBoard.empty }}
+    </div>
+
+    <!-- Kanban Lanes Canvas -->
+    <div v-else class="overflow-x-auto pb-4">
+      <div class="flex items-start gap-4 min-w-max">
+        <div
           v-for="lane in boardLanes"
           :key="lane.id"
+          class="flex flex-col rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100/60 dark:bg-neutral-900/50 backdrop-blur-md transition-all duration-300"
           :class="[
-            'task-board-lane',
-            `task-board-lane-${lane.id}`,
-            { 'task-board-lane-collapsed': isLaneCollapsed(lane) },
+            isLaneCollapsed(lane) ? 'w-20' : 'w-72 sm:w-80'
           ]"
         >
-          <header class="task-board-lane-head">
-            <div class="task-board-lane-kicker">
-              <span class="task-board-lane-symbol">{{ lane.symbol }}</span>
-              <span class="task-board-lane-name">{{ lane.label }}</span>
+          <!-- Lane Header -->
+          <div class="p-3 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-sm shrink-0">{{ lane.symbol }}</span>
+              <span v-if="!isLaneCollapsed(lane)" class="font-semibold text-xs text-neutral-900 dark:text-white truncate">
+                {{ lane.label }}
+              </span>
             </div>
-            <div class="task-board-lane-actions">
-              <UBadge class="task-board-lane-count" color="neutral" variant="outline" size="sm">
+
+            <div class="flex items-center gap-1.5 shrink-0">
+              <UBadge color="neutral" variant="outline" size="xs">
                 {{ lane.tasks.length }}
               </UBadge>
               <UButton
-                class="task-board-lane-toggle"
                 color="neutral"
                 variant="ghost"
                 size="xs"
                 :icon="isLaneCollapsed(lane) ? 'i-lucide-panel-right-open' : 'i-lucide-panel-right-close'"
                 :aria-label="isLaneCollapsed(lane) ? messages.taskBoard.expandLane : messages.taskBoard.collapseLane"
-                :title="isLaneCollapsed(lane) ? messages.taskBoard.expandLane : messages.taskBoard.collapseLane"
                 @click="toggleLane(lane)"
               />
             </div>
-          </header>
+          </div>
 
-          <div v-if="!isLaneCollapsed(lane)" class="task-board-lane-body">
-            <p class="task-board-lane-copy">{{ lane.copy }}</p>
+          <!-- Lane Body -->
+          <div v-if="!isLaneCollapsed(lane)" class="p-3 space-y-3 flex-1 flex flex-col min-h-[300px]">
+            <p class="text-[11px] text-neutral-500 dark:text-neutral-400">
+              {{ lane.copy }}
+            </p>
 
-            <TransitionGroup v-if="lane.tasks.length" name="task-lane" tag="div" class="task-board-lane-list">
-              <button
+            <div v-if="lane.tasks.length" class="space-y-2.5 flex-1">
+              <div
                 v-for="task in lane.tasks"
                 :key="task.id"
-                :class="['task-card-button', resolveTaskButtonClass(task.id)]"
-                type="button"
+                role="button"
+                tabindex="0"
+                class="w-full text-left outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
+                :class="resolveTaskButtonClass(task.id)"
                 @click="emit('select', task.id)"
+                @keydown.enter="emit('select', task.id)"
               >
                 <TaskSummaryCard
                   :task="task"
                   :selected="task.id === props.selectedTaskId"
                   :changed="Boolean(resolveTaskChange(task.id))"
                 />
-              </button>
-            </TransitionGroup>
+              </div>
+            </div>
 
-            <p v-else class="task-board-lane-empty">{{ messages.taskBoard.laneEmpty }}</p>
+            <div v-else class="py-8 text-center text-neutral-400 font-mono text-xs italic">
+              {{ messages.taskBoard.laneEmpty }}
+            </div>
           </div>
-        </section>
+        </div>
       </div>
     </div>
   </div>

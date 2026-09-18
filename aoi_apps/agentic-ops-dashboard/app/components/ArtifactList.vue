@@ -30,9 +30,11 @@ function kindIcon(kind: string) {
 
     <ul v-else class="artifact-list">
       <li v-for="artifact in artifacts" :key="artifact.path">
-        <button
+        <UButton
           :class="['artifact-item', { 'artifact-item-selected': artifact.path === selectedPath }]"
-          type="button"
+          :color="artifact.path === selectedPath ? 'primary' : 'neutral'"
+          :variant="artifact.path === selectedPath ? 'soft' : 'ghost'"
+          block
           @click="emit('select', artifact.path)"
         >
           <span class="artifact-item-copy">
@@ -41,7 +43,7 @@ function kindIcon(kind: string) {
             <small>{{ artifact.path }}</small>
           </span>
           <UBadge color="neutral" variant="outline" size="sm">{{ artifact.kind }}</UBadge>
-        </button>
+        </UButton>
       </li>
     </ul>
   </div>

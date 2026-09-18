@@ -58,72 +58,103 @@ function getStateBadgeColor(state: string): 'success' | 'warning' | 'error' | 'n
 </script>
 
 <template>
-  <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur-md">
-    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-      <div class="flex items-center gap-3">
-        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400">
-          <UIcon name="i-lucide-layers" class="h-5 w-5" />
+  <UCard variant="outline" class="backdrop-blur-md">
+    <template #header>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <UIcon name="i-lucide-layers" class="h-5 w-5" />
+          </div>
+          <div>
+            <h3 class="font-semibold text-neutral-900 dark:text-white">Spatiotemporal Fiber Runtime</h3>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Synthetic local model — not live agent execution</p>
+          </div>
         </div>
-        <div>
-          <h3 class="font-semibold text-slate-100">Spatiotemporal Fiber Runtime</h3>
-          <p class="text-xs text-slate-400">Synthetic local model — not live agent execution</p>
-        </div>
+        <UButton
+          size="xs"
+          variant="ghost"
+          color="neutral"
+          icon="i-lucide-refresh-cw"
+          :loading="loading"
+          @click="fetchFibers"
+        >
+          Refresh
+        </UButton>
       </div>
-      <UButton
-        size="xs"
-        variant="ghost"
-        color="neutral"
-        icon="i-lucide-refresh-cw"
-        :loading="loading"
-        @click="fetchFibers"
-      >
-        Refresh
-      </UButton>
+    </template>
+
+    <div v-if="loading && !data" class="space-y-3">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <USkeleton class="h-20 w-full rounded-xl" />
+        <USkeleton class="h-20 w-full rounded-xl" />
+        <USkeleton class="h-20 w-full rounded-xl" />
+      </div>
+      <USkeleton class="h-12 w-full rounded-lg" />
+      <USkeleton class="h-12 w-full rounded-lg" />
     </div>
 
-    <div v-if="data" class="mt-4 grid grid-cols-3 gap-3">
-      <div class="rounded-lg bg-slate-950/40 p-3 border border-slate-800/60">
-        <div class="text-xs text-slate-400">Active Fibers</div>
-        <div class="text-xl font-bold text-emerald-400">{{ data.metrics.activeFibers }} / {{ data.metrics.totalFibers }}</div>
-      </div>
-      <div class="rounded-lg bg-slate-950/40 p-3 border border-slate-800/60">
-        <div class="text-xs text-slate-400">Provided Coeffects</div>
-        <div class="text-xl font-bold text-indigo-400">{{ data.metrics.providedKeys.length }}</div>
-      </div>
-      <div class="rounded-lg bg-slate-950/40 p-3 border border-slate-800/60">
-        <div class="text-xs text-slate-400">Observability source</div>
-        <div class="text-sm font-semibold text-cyan-400">Synthetic local</div>
-      </div>
-    </div>
+    <template v-else-if="data">
+      <!-- Telemetry Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <UCard variant="subtle" :ui="{ body: 'p-3 sm:p-4' }">
+          <div class="text-xs text-neutral-500 dark:text-neutral-400">Active Fibers</div>
+          <div class="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+            {{ data.metrics.activeFibers }} / {{ data.metrics.totalFibers }}
+          </div>
+        </UCard>
 
-    <p v-if="data" class="mt-3 text-xs text-slate-500">
-      {{ data.observability.note }}
-    </p>
+        <UCard variant="subtle" :ui="{ body: 'p-3 sm:p-4' }">
+          <div class="text-xs text-neutral-500 dark:text-neutral-400">Provided Coeffects</div>
+          <div class="text-xl font-bold text-primary mt-1">
+            {{ data.metrics.providedKeys.length }}
+          </div>
+        </UCard>
 
-    <div class="mt-4 space-y-2">
-      <div
-        v-for="fiber in data?.fibers ?? []"
-        :key="fiber.uid"
-        class="flex items-center justify-between rounded-lg border border-slate-800/80 bg-slate-950/30 px-3 py-2 text-sm"
-      >
-        <div class="flex items-center gap-2">
-          <UBadge size="xs" :color="getStateBadgeColor(fiber.state)" variant="subtle">
-            {{ fiber.state }}
-          </UBadge>
-          <span class="font-mono text-xs text-slate-200">{{ fiber.name }}</span>
-          <span v-if="fiber.inject.length" class="text-xs text-slate-500">
-            (injects: {{ fiber.inject.join(', ') }})
-          </span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span v-if="fiber.provides.length" class="rounded bg-indigo-950/40 px-1.5 py-0.5 font-mono text-[10px] text-indigo-300">
-            + {{ fiber.provides.join(', ') }}
-          </span>
-          <span class="text-xs text-slate-400">
-            {{ fiber.activeEffects }} effects
-          </span>
+        <UCard variant="subtle" :ui="{ body: 'p-3 sm:p-4' }">
+          <div class="text-xs text-neutral-500 dark:text-neutral-400">Observability source</div>
+          <div class="text-sm font-semibold text-cyan-600 dark:text-cyan-400 mt-1">
+            Synthetic local
+          </div>
+        </UCard>
+      </div>
+
+      <p class="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
+        {{ data.observability.note }}
+      </p>
+
+      <!-- Fiber State Items -->
+      <div class="mt-4 space-y-2">
+        <div
+          v-for="fiber in data.fibers"
+          :key="fiber.uid"
+          class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 px-3 py-2.5 text-sm"
+        >
+          <div class="flex items-center gap-2">
+            <UBadge size="xs" :color="getStateBadgeColor(fiber.state)" variant="subtle">
+              {{ fiber.state }}
+            </UBadge>
+            <span class="font-mono text-xs font-semibold text-neutral-800 dark:text-neutral-200">{{ fiber.name }}</span>
+            <span v-if="fiber.inject.length" class="text-xs text-neutral-500">
+              (injects: {{ fiber.inject.join(', ') }})
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <UBadge
+              v-if="fiber.provides.length"
+              color="primary"
+              variant="soft"
+              size="xs"
+              class="font-mono"
+            >
+              + {{ fiber.provides.join(', ') }}
+            </UBadge>
+            <span class="text-xs text-neutral-500 dark:text-neutral-400 font-mono">
+              {{ fiber.activeEffects }} effects
+            </span>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
+    </template>
+  </UCard>
 </template>

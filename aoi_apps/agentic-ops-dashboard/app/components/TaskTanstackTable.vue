@@ -1,14 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, h } from 'vue'
-import {
-  useVueTable,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  type ColumnDef,
-  type SortingState,
-} from '@tanstack/vue-table'
+import { computed, ref } from 'vue'
+import type { TableColumn } from '@nuxt/ui'
+import type { SortingState } from '@tanstack/vue-table'
 
 import { useLocale } from '../composables/useLocale'
 import type { TaskRecord } from '~/shared/types'
@@ -30,20 +23,13 @@ const emit = defineEmits<{
 
 const { messages } = useLocale()
 const globalFilter = ref('')
-// `owner`, not `role`. The component was written against a `TaskItem` type
-// that does not exist in shared/types.ts, reading `featureName` and `role` —
-// two fields the registry parser never produces. TypeScript never caught it
-// because the phantom import is a type-only import that esbuild strips, and
-// no test ever mounted the component. In the running dashboard the Feature
-// column therefore printed the literal 'General' for every row, the Assigned
-// Role column printed 'general', and the role facet had exactly one option.
-// The sibling views, TaskBoard and TaskSummaryCard, always used `feature` and
-// `owner`; only this table invented its own names.
 const ownerFilter = ref('all')
 const statusFilter = ref('all')
 const sorting = ref<SortingState>([])
+const page = ref(1)
+const pageSize = 8
 
-/** Filtered data source based on facet selectors */
+/** Filtered data source based on facet selectors and search */
 const filteredData = computed(() => {
   return props.tasks.filter((task) => {
     if (ownerFilter.value !== 'all' && task.owner !== ownerFilter.value) {
@@ -52,9 +38,26 @@ const filteredData = computed(() => {
     if (statusFilter.value !== 'all' && task.status !== statusFilter.value) {
       return false
     }
+    if (globalFilter.value) {
+      const q = globalFilter.value.toLowerCase()
+      const matchId = task.id.toLowerCase().includes(q)
+      const matchTitle = task.title.toLowerCase().includes(q)
+      const matchFeature = (task.feature || '').toLowerCase().includes(q)
+      const matchOwner = (task.owner || '').toLowerCase().includes(q)
+      if (!matchId && !matchTitle && !matchFeature && !matchOwner) {
+        return false
+      }
+    }
     return true
   })
 })
+
+const paginatedData = computed(() => {
+  const start = (page.value - 1) * pageSize
+  return filteredData.value.slice(start, start + pageSize)
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredData.value.length / pageSize)))
 
 /** Owner badge color mapping */
 function getOwnerBadgeColor(role?: string): 'neutral' | 'info' | 'warning' | 'success' | 'secondary' {
@@ -76,64 +79,33 @@ function getStatusBadgeColor(status: string): 'neutral' | 'info' | 'warning' | '
   return 'neutral'
 }
 
-// Columns definition for TanStack Table
-const columns: ColumnDef<TaskRecord>[] = [
+// Columns definition for TanStack Table / Nuxt UI UTable
+const columns: TableColumn<TaskRecord>[] = [
   {
     accessorKey: 'id',
     header: 'Task ID',
-    cell: (info) => info.getValue(),
   },
   {
     accessorKey: 'title',
     header: 'Title',
-    cell: (info) => info.getValue(),
   },
   {
     accessorKey: 'feature',
     header: 'Feature',
-    cell: (info) => info.getValue() || 'General',
   },
   {
     accessorKey: 'owner',
     header: 'Owner',
-    cell: (info) => info.getValue() || 'general',
   },
   {
     accessorKey: 'status',
     header: 'Status',
-    cell: (info) => info.getValue(),
+  },
+  {
+    id: 'actions',
+    header: 'Actions',
   },
 ]
-
-const table = useVueTable({
-  get data() {
-    return filteredData.value
-  },
-  columns,
-  state: {
-    get globalFilter() {
-      return globalFilter.value
-    },
-    get sorting() {
-      return sorting.value
-    },
-  },
-  onSortingChange: (updaterOrValue) => {
-    sorting.value = typeof updaterOrValue === 'function' ? updaterOrValue(sorting.value) : updaterOrValue
-  },
-  onGlobalFilterChange: (updaterOrValue) => {
-    globalFilter.value = typeof updaterOrValue === 'function' ? updaterOrValue(globalFilter.value) : updaterOrValue
-  },
-  getCoreRowModel: getCoreRowModel(),
-  getFilteredRowModel: getFilteredRowModel(),
-  getPaginationRowModel: getPaginationRowModel(),
-  getSortedRowModel: getSortedRowModel(),
-  initialState: {
-    pagination: {
-      pageSize: 8,
-    },
-  },
-})
 
 // Unique owner options for filter dropdown
 const ownerOptions = computed(() => {
@@ -155,170 +127,147 @@ const statusOptions = computed(() => {
 </script>
 
 <template>
-  <div class="tanstack-task-matrix flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-xl ring-1 ring-white/5">
+  <UCard variant="outline" class="backdrop-blur-xl">
     <!-- Toolbar: Search & Facet Filters -->
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div class="flex flex-1 items-center gap-2 min-w-[240px]">
-        <UInput
-          v-model="globalFilter"
-          icon="i-lucide-search"
-          placeholder="Filter tasks by ID, title, files..."
-          class="w-full"
-          size="sm"
-        />
+    <template #header>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-1 items-center gap-2 min-w-[240px]">
+          <UInput
+            v-model="globalFilter"
+            icon="i-lucide-search"
+            placeholder="Filter tasks by ID, title, feature..."
+            class="w-full"
+            size="sm"
+          />
+        </div>
+
+        <div class="flex items-center gap-2">
+          <USelect
+            v-model="ownerFilter"
+            :items="ownerOptions"
+            size="sm"
+            class="w-36"
+          />
+          <USelect
+            v-model="statusFilter"
+            :items="statusOptions"
+            size="sm"
+            class="w-40"
+          />
+        </div>
       </div>
+    </template>
 
-      <div class="flex items-center gap-2">
-        <USelect
-          v-model="ownerFilter"
-          :items="ownerOptions"
-          size="sm"
-          class="w-36"
-        />
-        <USelect
-          v-model="statusFilter"
-          :items="statusOptions"
-          size="sm"
-          class="w-40"
-        />
-      </div>
-    </div>
+    <!-- Data Table -->
+    <UTable
+      :data="paginatedData"
+      :columns="columns"
+      class="text-xs"
+      :ui="{
+        tr: 'cursor-pointer hover:bg-neutral-100/50 dark:hover:bg-neutral-800/40 transition-colors',
+      }"
+      @select="(row: any) => emit('select', row.original.id)"
+    >
+      <template #id-cell="{ row }">
+        <span
+          class="font-mono font-semibold"
+          :class="props.selectedTaskId === row.original.id ? 'text-primary underline font-bold' : 'text-primary'"
+        >
+          {{ row.original.id }}
+        </span>
+      </template>
 
-    <!-- Data Table Container -->
-    <div class="overflow-x-auto rounded-lg border border-slate-800 bg-slate-950/40">
-      <table class="w-full text-left text-xs border-collapse">
-        <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
-          <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-            <th
-              v-for="header in headerGroup.headers"
-              :key="header.id"
-              class="px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors"
-              @click="header.column.getToggleSortingHandler()?.($event)"
-            >
-              <div class="flex items-center gap-1">
-                <span>{{ header.column.columnDef.header }}</span>
-                <UIcon
-                  v-if="header.column.getIsSorted() === 'asc'"
-                  name="i-lucide-arrow-up"
-                  class="text-primary w-3 h-3"
-                />
-                <UIcon
-                  v-else-if="header.column.getIsSorted() === 'desc'"
-                  name="i-lucide-arrow-down"
-                  class="text-primary w-3 h-3"
-                />
-              </div>
-            </th>
-            <th class="px-4 py-3 text-right">Actions</th>
-          </tr>
-        </thead>
+      <template #title-cell="{ row }">
+        <span class="font-medium text-neutral-900 dark:text-neutral-100 max-w-xs truncate block">
+          {{ row.original.title }}
+        </span>
+      </template>
 
-        <tbody class="divide-y divide-slate-800/60">
-          <tr v-if="!table.getRowModel().rows.length">
-            <td colspan="6" class="px-4 py-8 text-center text-slate-500 italic">
-              No tasks matching current filters.
-            </td>
-          </tr>
+      <template #feature-cell="{ row }">
+        <span class="inline-flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 whitespace-nowrap">
+          <UIcon name="i-lucide-layers" class="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+          {{ row.original.feature || 'General' }}
+        </span>
+      </template>
 
-          <tr
-            v-for="row in table.getRowModel().rows"
-            :key="row.id"
-            class="hover:bg-slate-800/40 transition-colors cursor-pointer"
-            :class="{ 'bg-primary-950/30 border-l-2 border-primary-500': props.selectedTaskId === row.original.id }"
+      <template #owner-cell="{ row }">
+        <UBadge
+          :color="getOwnerBadgeColor(row.original.owner)"
+          variant="subtle"
+          size="xs"
+        >
+          @{{ row.original.owner || 'general' }}
+        </UBadge>
+      </template>
+
+      <template #status-cell="{ row }">
+        <UBadge
+          :color="getStatusBadgeColor(row.original.status)"
+          variant="outline"
+          size="xs"
+        >
+          {{ row.original.status }}
+        </UBadge>
+      </template>
+
+      <template #actions-cell="{ row }">
+        <div class="text-right" @click.stop>
+          <UButton
+            size="xs"
+            variant="ghost"
+            color="neutral"
+            icon="i-lucide-external-link"
             @click="emit('select', row.original.id)"
           >
-            <!-- ID -->
-            <td class="px-4 py-3 font-mono font-semibold text-primary-400 whitespace-nowrap">
-              {{ row.original.id }}
-            </td>
+            Inspect
+          </UButton>
+        </div>
+      </template>
 
-            <!-- Title -->
-            <td class="px-4 py-3 font-medium text-slate-200 max-w-xs truncate">
-              {{ row.original.title }}
-            </td>
-
-            <!-- Feature -->
-            <td class="px-4 py-3 text-slate-400 whitespace-nowrap">
-              <span class="inline-flex items-center gap-1">
-                <UIcon name="i-lucide-layers" class="w-3.5 h-3.5 text-slate-500" />
-                {{ row.original.feature || 'General' }}
-              </span>
-            </td>
-
-            <!-- Owner -->
-            <td class="px-4 py-3 whitespace-nowrap">
-              <UBadge
-                :color="getOwnerBadgeColor(row.original.owner)"
-                variant="subtle"
-                size="xs"
-              >
-                @{{ row.original.owner || 'general' }}
-              </UBadge>
-            </td>
-
-            <!-- Status -->
-            <td class="px-4 py-3 whitespace-nowrap">
-              <UBadge
-                :color="getStatusBadgeColor(row.original.status)"
-                variant="outline"
-                size="xs"
-              >
-                {{ row.original.status }}
-              </UBadge>
-            </td>
-
-            <!-- Action button -->
-            <td class="px-4 py-3 text-right whitespace-nowrap" @click.stop>
-              <UButton
-                size="xs"
-                variant="ghost"
-                color="neutral"
-                icon="i-lucide-external-link"
-                @click="emit('select', row.original.id)"
-              >
-                Inspect
-              </UButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+      <template #empty>
+        <div class="py-8 text-center text-neutral-400 font-mono text-xs italic">
+          No tasks matching current filters.
+        </div>
+      </template>
+    </UTable>
 
     <!-- Pagination Footer -->
-    <div class="flex items-center justify-between gap-2 text-xs text-slate-400 pt-1">
-      <div class="flex items-center gap-1">
-        <span>Showing</span>
-        <strong class="text-slate-200">{{ table.getRowModel().rows.length }}</strong>
-        <span>of</span>
-        <strong class="text-slate-200">{{ filteredData.length }}</strong>
-        <span>tasks</span>
-      </div>
+    <template #footer>
+      <div class="flex items-center justify-between gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+        <div class="flex items-center gap-1">
+          <span>Showing</span>
+          <strong class="text-neutral-900 dark:text-white font-mono">{{ paginatedData.length }}</strong>
+          <span>of</span>
+          <strong class="text-neutral-900 dark:text-white font-mono">{{ filteredData.length }}</strong>
+          <span>tasks</span>
+        </div>
 
-      <div class="flex items-center gap-2">
-        <UButton
-          size="xs"
-          variant="outline"
-          color="neutral"
-          icon="i-lucide-chevron-left"
-          :disabled="!table.getCanPreviousPage()"
-          @click="table.previousPage()"
-        >
-          Prev
-        </UButton>
-        <span class="font-mono text-slate-300">
-          Page {{ table.getState().pagination.pageIndex + 1 }} of {{ Math.max(1, table.getPageCount()) }}
-        </span>
-        <UButton
-          size="xs"
-          variant="outline"
-          color="neutral"
-          icon="i-lucide-chevron-right"
-          :disabled="!table.getCanNextPage()"
-          @click="table.nextPage()"
-        >
-          Next
-        </UButton>
+        <div class="flex items-center gap-2">
+          <UButton
+            size="xs"
+            variant="outline"
+            color="neutral"
+            icon="i-lucide-chevron-left"
+            :disabled="page <= 1"
+            @click="page = Math.max(1, page - 1)"
+          >
+            Prev
+          </UButton>
+          <span class="font-mono text-neutral-700 dark:text-neutral-300">
+            Page {{ page }} of {{ totalPages }}
+          </span>
+          <UButton
+            size="xs"
+            variant="outline"
+            color="neutral"
+            icon="i-lucide-chevron-right"
+            :disabled="page >= totalPages"
+            @click="page = Math.min(totalPages, page + 1)"
+          >
+            Next
+          </UButton>
+        </div>
       </div>
-    </div>
-  </div>
+    </template>
+  </UCard>
 </template>

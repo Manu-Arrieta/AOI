@@ -104,61 +104,78 @@ function formatToolList(request: TokenUsageSummary['recentRequests'][number]) {
 }
 
 /** Returns a subtle color class depending on the model family */
-function modelChipColor(model: string) {
+function modelChipColor(model: string): 'warning' | 'success' | 'info' | 'primary' | 'neutral' {
   if (model.includes('claude'))  return 'warning'
   if (model.includes('gpt'))     return 'success'
   if (model.includes('gemini'))  return 'info'
-  if (model.includes('deepseek') || model.includes('qwen') || model.includes('kimi')) return 'secondary'
+  if (model.includes('deepseek') || model.includes('qwen') || model.includes('kimi')) return 'primary'
   return 'neutral'
 }
 </script>
 
 <template>
-  <div class="surface-panel token-usage-panel">
-    <header class="panel-header">
-      <div>
-        <p class="eyebrow">{{ messages.tokenMetrics.eyebrow }}</p>
-        <h2>{{ messages.tokenMetrics.title }}</h2>
-      </div>
-      <div class="token-usage-state">
-        <UBadge color="neutral" variant="outline">{{ statusLabel }}</UBadge>
-        <USwitch
-          :model-value="isEnabled"
-          :loading="props.loading"
-          size="sm"
-          @update:model-value="emit('toggle', $event)"
-        />
-      </div>
-    </header>
+  <UCard variant="outline" class="backdrop-blur-md">
+    <template #header>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <p class="text-xs font-mono font-semibold uppercase tracking-wider text-primary">
+            {{ messages.tokenMetrics.eyebrow }}
+          </p>
+          <h2 class="text-lg font-bold text-neutral-900 dark:text-white mt-1">
+            {{ messages.tokenMetrics.title }}
+          </h2>
+          <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+            {{ messages.tokenMetrics.copy }}
+          </p>
+        </div>
 
-    <p class="token-usage-copy">{{ messages.tokenMetrics.copy }}</p>
-    <p class="token-usage-toggle-note">{{ messages.tokenMetrics.sourceNote }}</p>
+        <div class="flex items-center gap-3">
+          <UBadge color="neutral" variant="outline" size="sm">
+            {{ statusLabel }}
+          </UBadge>
+          <USwitch
+            :model-value="isEnabled"
+            :loading="props.loading"
+            size="sm"
+            @update:model-value="emit('toggle', $event)"
+          />
+        </div>
+      </div>
+      <p class="text-[11px] text-neutral-400 mt-2 font-mono">
+        {{ messages.tokenMetrics.sourceNote }}
+      </p>
+    </template>
 
     <UAlert
       v-if="props.errorMessage"
-      class="error-banner"
+      class="mb-4"
       color="error"
       icon="i-lucide-triangle-alert"
       variant="subtle"
       :description="messages.tokenMetrics.loadError"
     />
 
-    <div v-if="props.loading && !props.summary" class="token-usage-empty">
-      <p>{{ messages.common.refreshing }}</p>
+    <div v-if="props.loading && !props.summary" class="py-12 text-center text-neutral-400 font-mono text-xs">
+      <UIcon name="i-lucide-loader-circle" class="animate-spin inline-block mr-2 w-4 h-4 text-primary" />
+      {{ messages.common.refreshing }}
     </div>
 
-    <div v-else-if="props.summary?.status === 'disabled'" class="token-usage-empty">
-      <UIcon name="i-lucide-eye-off" class="token-usage-empty-icon" />
-      <p>{{ messages.tokenMetrics.disabledTitle }}</p>
-      <p class="token-usage-toggle-note">{{ messages.tokenMetrics.disabledCopy }}</p>
-      <div class="hero-button-row" style="justify-content: center;">
-        <UButton color="neutral" variant="solid" icon="i-lucide-activity" @click="emit('toggle', true)">
+    <div v-else-if="props.summary?.status === 'disabled'" class="py-16 text-center space-y-3">
+      <UIcon name="i-lucide-eye-off" class="w-8 h-8 text-neutral-400 mx-auto" />
+      <h3 class="font-bold text-neutral-900 dark:text-white text-base">
+        {{ messages.tokenMetrics.disabledTitle }}
+      </h3>
+      <p class="text-xs text-neutral-500 max-w-md mx-auto">
+        {{ messages.tokenMetrics.disabledCopy }}
+      </p>
+      <div class="pt-2">
+        <UButton color="primary" variant="solid" icon="i-lucide-activity" @click="emit('toggle', true)">
           {{ messages.tokenMetrics.enable }}
         </UButton>
       </div>
     </div>
 
-    <div v-else class="token-usage-shell">
+    <div v-else class="space-y-6">
       <UAlert
         v-if="props.summary?.status === 'missing-source'"
         color="warning"
@@ -167,193 +184,200 @@ function modelChipColor(model: string) {
         :description="messages.tokenMetrics.missingSource"
       />
 
-      <!-- Summary cards -->
-      <div class="metric-grid token-usage-summary-grid">
-        <article v-for="card in totalCards" :key="card.label" class="metric-card">
-          <span>
-            <UIcon :name="card.icon" style="vertical-align: middle; margin-right: 0.3em;" />
+      <!-- Summary KPI Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <UCard
+          v-for="card in totalCards"
+          :key="card.label"
+          variant="subtle"
+          :ui="{ body: 'p-3.5 space-y-1' }"
+        >
+          <span class="text-[11px] text-neutral-500 flex items-center gap-1.5 font-medium">
+            <UIcon :name="card.icon" class="w-3.5 h-3.5 text-primary" />
             {{ card.label }}
           </span>
-          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem;">
-            <strong>{{ card.value }}</strong>
+          <div class="flex items-baseline justify-between gap-2">
+            <strong class="text-base sm:text-lg font-bold font-mono text-neutral-900 dark:text-white">
+              {{ card.value }}
+            </strong>
             <UBadge v-if="card.badge" :color="card.badgeColor" variant="subtle" size="xs">
               {{ card.badge }}
             </UBadge>
           </div>
-        </article>
+        </UCard>
       </div>
 
-      <!-- Breakdown sections -->
-      <div class="token-usage-section-grid">
+      <!-- Breakdown Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <!-- Top Agents -->
-        <section class="token-usage-section">
-          <header>
-            <div>
-              <p class="eyebrow">{{ messages.tokenMetrics.breakdown }}</p>
-              <h3>{{ messages.tokenMetrics.topAgents }}</h3>
-            </div>
-          </header>
-          <p v-if="!topAgents.length" class="panel-empty-tight">{{ messages.tokenMetrics.noData }}</p>
-          <div v-else>
-            <div v-for="row in topAgents" :key="row.key" class="token-usage-row">
-              <div class="token-usage-row-label">
-                <strong>{{ row.label }}</strong>
-                <small>{{ formatNumber(row.requestCount) }} {{ messages.tokenMetrics.requests }}</small>
+        <UCard variant="subtle" :ui="{ body: 'space-y-3 p-4' }">
+          <div class="border-b border-neutral-200 dark:border-neutral-800 pb-2">
+            <p class="text-[10px] font-mono font-semibold uppercase tracking-wider text-primary">
+              {{ messages.tokenMetrics.breakdown }}
+            </p>
+            <h3 class="font-bold text-sm text-neutral-900 dark:text-white">
+              {{ messages.tokenMetrics.topAgents }}
+            </h3>
+          </div>
+          <p v-if="!topAgents.length" class="text-xs text-neutral-400 italic py-2">{{ messages.tokenMetrics.noData }}</p>
+          <div v-else class="space-y-2.5">
+            <div v-for="row in topAgents" :key="row.key" class="space-y-1 text-xs">
+              <div class="flex items-center justify-between">
+                <strong class="text-neutral-800 dark:text-neutral-200">{{ row.label }}</strong>
+                <span class="font-mono text-neutral-500">{{ formatNumber(row.inputTokens + row.outputTokens) }} t</span>
               </div>
-              <div class="token-usage-row-value">
-                <strong>{{ formatNumber(row.inputTokens + row.outputTokens) }}</strong>
-                <small>{{ messages.tokenMetrics.tokens }}</small>
-              </div>
+              <UProgress color="primary" size="xs" :model-value="rowPct(row)" />
             </div>
           </div>
-        </section>
+        </UCard>
 
         <!-- Top Models -->
-        <section class="token-usage-section">
-          <header>
-            <div>
-              <p class="eyebrow">{{ messages.tokenMetrics.breakdown }}</p>
-              <h3>{{ messages.tokenMetrics.topModels }}</h3>
-            </div>
-          </header>
-          <p v-if="!topModels.length" class="panel-empty-tight">{{ messages.tokenMetrics.noData }}</p>
-          <div v-else>
-            <div v-for="row in topModels" :key="row.key" class="token-usage-row">
-              <div class="token-usage-row-label">
-                <UBadge :color="modelChipColor(row.key)" variant="subtle" size="sm">
+        <UCard variant="subtle" :ui="{ body: 'space-y-3 p-4' }">
+          <div class="border-b border-neutral-200 dark:border-neutral-800 pb-2">
+            <p class="text-[10px] font-mono font-semibold uppercase tracking-wider text-primary">
+              {{ messages.tokenMetrics.breakdown }}
+            </p>
+            <h3 class="font-bold text-sm text-neutral-900 dark:text-white">
+              {{ messages.tokenMetrics.topModels }}
+            </h3>
+          </div>
+          <p v-if="!topModels.length" class="text-xs text-neutral-400 italic py-2">{{ messages.tokenMetrics.noData }}</p>
+          <div v-else class="space-y-2.5">
+            <div v-for="row in topModels" :key="row.key" class="space-y-1 text-xs">
+              <div class="flex items-center justify-between">
+                <UBadge :color="modelChipColor(row.key)" variant="subtle" size="xs">
                   {{ row.label }}
                 </UBadge>
-                <small>{{ formatNumber(row.requestCount) }} {{ messages.tokenMetrics.requests }}</small>
+                <span class="font-mono text-neutral-500">{{ formatNumber(row.inputTokens + row.outputTokens) }} t</span>
               </div>
-              <div class="token-usage-row-value">
-                <strong>{{ formatNumber(row.inputTokens + row.outputTokens) }}</strong>
-                <small>{{ messages.tokenMetrics.tokens }}</small>
-              </div>
+              <UProgress color="primary" size="xs" :model-value="rowPct(row)" />
             </div>
           </div>
-        </section>
+        </UCard>
 
         <!-- Top Prompts -->
-        <section class="token-usage-section">
-          <header>
-            <div>
-              <p class="eyebrow">{{ messages.tokenMetrics.breakdown }}</p>
-              <h3>{{ messages.tokenMetrics.topPrompts }}</h3>
-            </div>
-          </header>
-          <p v-if="!topPrompts.length" class="panel-empty-tight">{{ messages.tokenMetrics.noData }}</p>
-          <div v-else>
-            <div v-for="row in topPrompts" :key="row.key" class="token-usage-row">
-              <div class="token-usage-row-label">
-                <strong>{{ row.label }}</strong>
-                <small>{{ formatNumber(row.requestCount) }} {{ messages.tokenMetrics.requests }}</small>
+        <UCard variant="subtle" :ui="{ body: 'space-y-3 p-4' }">
+          <div class="border-b border-neutral-200 dark:border-neutral-800 pb-2">
+            <p class="text-[10px] font-mono font-semibold uppercase tracking-wider text-primary">
+              {{ messages.tokenMetrics.breakdown }}
+            </p>
+            <h3 class="font-bold text-sm text-neutral-900 dark:text-white">
+              {{ messages.tokenMetrics.topPrompts }}
+            </h3>
+          </div>
+          <p v-if="!topPrompts.length" class="text-xs text-neutral-400 italic py-2">{{ messages.tokenMetrics.noData }}</p>
+          <div v-else class="space-y-2.5">
+            <div v-for="row in topPrompts" :key="row.key" class="space-y-1 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="text-neutral-800 dark:text-neutral-200 truncate max-w-[160px]">{{ row.label }}</span>
+                <span class="font-mono text-neutral-500">{{ formatNumber(row.inputTokens + row.outputTokens) }} t</span>
               </div>
-              <div class="token-usage-row-value">
-                <strong>{{ formatNumber(row.inputTokens + row.outputTokens) }}</strong>
-                <small>{{ messages.tokenMetrics.tokens }}</small>
-              </div>
+              <UProgress color="primary" size="xs" :model-value="rowPct(row)" />
             </div>
           </div>
-        </section>
+        </UCard>
 
         <!-- Top Tasks -->
-        <section class="token-usage-section">
-          <header>
-            <div>
-              <p class="eyebrow">{{ messages.tokenMetrics.taskBreakdown }}</p>
-              <h3>{{ messages.tokenMetrics.topTask }}</h3>
-            </div>
-          </header>
-          <p v-if="!topTasks.length" class="panel-empty-tight">{{ messages.tokenMetrics.noData }}</p>
-          <div v-else>
-            <div v-for="row in topTasks" :key="row.key" class="token-usage-row">
-              <div class="token-usage-row-label">
-                <UBadge color="neutral" variant="outline" size="sm" class="task-id-badge">
+        <UCard variant="subtle" :ui="{ body: 'space-y-3 p-4' }">
+          <div class="border-b border-neutral-200 dark:border-neutral-800 pb-2">
+            <p class="text-[10px] font-mono font-semibold uppercase tracking-wider text-primary">
+              {{ messages.tokenMetrics.taskBreakdown }}
+            </p>
+            <h3 class="font-bold text-sm text-neutral-900 dark:text-white">
+              {{ messages.tokenMetrics.topTask }}
+            </h3>
+          </div>
+          <p v-if="!topTasks.length" class="text-xs text-neutral-400 italic py-2">{{ messages.tokenMetrics.noData }}</p>
+          <div v-else class="space-y-2.5">
+            <div v-for="row in topTasks" :key="row.key" class="space-y-1 text-xs">
+              <div class="flex items-center justify-between">
+                <UBadge color="neutral" variant="outline" size="xs" class="font-mono">
                   {{ row.label }}
                 </UBadge>
-                <small>{{ formatNumber(row.requestCount) }} {{ messages.tokenMetrics.requests }}</small>
+                <span class="font-mono text-neutral-500">{{ formatNumber(row.inputTokens + row.outputTokens) }} t</span>
               </div>
-              <div class="token-usage-row-value">
-                <strong>{{ formatNumber(row.inputTokens + row.outputTokens) }}</strong>
-                <small>{{ messages.tokenMetrics.tokens }}</small>
-              </div>
+              <UProgress color="primary" size="xs" :model-value="rowPct(row)" />
             </div>
           </div>
-        </section>
+        </UCard>
 
-        <!-- Top Tools (estimated) -->
-        <section class="token-usage-section">
-          <header>
-            <div>
-              <p class="eyebrow">{{ messages.tokenMetrics.estimated }}</p>
-              <h3>{{ messages.tokenMetrics.topTools }}</h3>
-            </div>
-          </header>
-          <p v-if="!topTools.length" class="panel-empty-tight">{{ messages.tokenMetrics.noData }}</p>
-          <div v-else>
-            <div v-for="row in topTools" :key="row.key" class="token-usage-row">
-              <div class="token-usage-row-label">
-                <strong>{{ row.label }}</strong>
-                <small>{{ formatNumber(row.callCount) }} {{ messages.tokenMetrics.calls }}</small>
+        <!-- Top Tools -->
+        <UCard variant="subtle" :ui="{ body: 'space-y-3 p-4' }">
+          <div class="border-b border-neutral-200 dark:border-neutral-800 pb-2">
+            <p class="text-[10px] font-mono font-semibold uppercase tracking-wider text-primary">
+              {{ messages.tokenMetrics.estimated }}
+            </p>
+            <h3 class="font-bold text-sm text-neutral-900 dark:text-white">
+              {{ messages.tokenMetrics.topTools }}
+            </h3>
+          </div>
+          <p v-if="!topTools.length" class="text-xs text-neutral-400 italic py-2">{{ messages.tokenMetrics.noData }}</p>
+          <div v-else class="space-y-2.5">
+            <div v-for="row in topTools" :key="row.key" class="space-y-1 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-neutral-800 dark:text-neutral-200 truncate max-w-[160px]">{{ row.label }}</span>
+                <span class="font-mono text-neutral-500">{{ formatNumber(row.inputTokens + row.outputTokens) }} t</span>
               </div>
-              <div class="token-usage-row-value">
-                <strong>{{ formatNumber(row.inputTokens + row.outputTokens) }}</strong>
-                <small>{{ messages.tokenMetrics.tokens }}</small>
-              </div>
+              <UProgress color="primary" size="xs" :model-value="rowPct(row)" />
             </div>
           </div>
-        </section>
+        </UCard>
       </div>
 
-      <!-- Recent requests -->
-      <section class="token-usage-section token-usage-section-wide">
-        <header>
-          <div>
-            <p class="eyebrow">{{ messages.tokenMetrics.activity }}</p>
-            <h3>{{ messages.tokenMetrics.recentRequests }}</h3>
-          </div>
-        </header>
+      <!-- Recent Requests List -->
+      <UCard variant="outline" :ui="{ body: 'space-y-3 p-4' }">
+        <div class="border-b border-neutral-200 dark:border-neutral-800 pb-2">
+          <p class="text-[10px] font-mono font-semibold uppercase tracking-wider text-primary">
+            {{ messages.tokenMetrics.activity }}
+          </p>
+          <h3 class="font-bold text-sm text-neutral-900 dark:text-white">
+            {{ messages.tokenMetrics.recentRequests }}
+          </h3>
+        </div>
 
-        <p v-if="!recentRequests.length" class="panel-empty-tight">{{ messages.tokenMetrics.noData }}</p>
-        <div v-else class="token-usage-request-list">
-          <article v-for="request in recentRequests" :key="request.requestId" class="token-usage-request">
-            <div class="token-usage-request-top">
-              <div>
-                <strong>
-                  <UBadge :color="modelChipColor(request.model)" variant="subtle" size="sm">
-                    {{ request.model }}
-                  </UBadge>
-                </strong>
-                <p>{{ formatTimestamp(request.timestamp) }}</p>
+        <p v-if="!recentRequests.length" class="text-xs text-neutral-400 italic py-2">{{ messages.tokenMetrics.noData }}</p>
+        <div v-else class="space-y-3">
+          <UCard
+            v-for="request in recentRequests"
+            :key="request.requestId"
+            variant="subtle"
+            :ui="{ body: 'p-3 space-y-2' }"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-2">
+                <UBadge :color="modelChipColor(request.model)" variant="subtle" size="xs">
+                  {{ request.model }}
+                </UBadge>
+                <span class="text-neutral-400 font-mono text-[11px]">{{ formatTimestamp(request.timestamp) }}</span>
               </div>
-              <UBadge color="neutral" variant="outline">
-                {{ formatNumber(request.inputTokens + request.outputTokens) }} {{ messages.tokenMetrics.tokens }}
+              <UBadge color="neutral" variant="outline" size="xs" class="font-mono">
+                {{ formatNumber(request.inputTokens + request.outputTokens) }} tokens
               </UBadge>
             </div>
 
-            <div class="token-usage-request-copy">
-              <p>{{ messages.tokenMetrics.requestPrompt }} · {{ request.promptName ?? messages.tokenMetrics.directChat }}</p>
-              <p>{{ messages.tokenMetrics.requestAgent }} · {{ request.agentName ?? messages.tokenMetrics.unattributed }}</p>
-              <p>{{ messages.tokenMetrics.requestTools }} · {{ formatToolList(request) }}</p>
+            <div class="text-[11px] text-neutral-600 dark:text-neutral-400 space-y-0.5 font-mono">
+              <p><span class="opacity-70">{{ messages.tokenMetrics.requestPrompt }}:</span> {{ request.promptName ?? messages.tokenMetrics.directChat }}</p>
+              <p><span class="opacity-70">{{ messages.tokenMetrics.requestAgent }}:</span> {{ request.agentName ?? messages.tokenMetrics.unattributed }}</p>
+              <p><span class="opacity-70">{{ messages.tokenMetrics.requestTools }}:</span> {{ formatToolList(request) }}</p>
             </div>
 
-            <div class="token-usage-request-metrics">
-              <article>
-                <span>{{ messages.tokenMetrics.inputTokens }}</span>
-                <strong>{{ formatNumber(request.inputTokens) }}</strong>
-              </article>
-              <article>
-                <span>{{ messages.tokenMetrics.outputTokens }}</span>
-                <strong>{{ formatNumber(request.outputTokens) }}</strong>
-              </article>
-              <article>
-                <span>{{ messages.tokenMetrics.cachedTokens }}</span>
-                <strong>{{ formatNumber(request.cachedTokens) }}</strong>
-              </article>
+            <div class="grid grid-cols-3 gap-2 pt-1 border-t border-neutral-200/60 dark:border-neutral-800/60 text-[11px] font-mono">
+              <div>
+                <span class="text-neutral-400 block">{{ messages.tokenMetrics.inputTokens }}</span>
+                <strong class="text-neutral-800 dark:text-neutral-200">{{ formatNumber(request.inputTokens) }}</strong>
+              </div>
+              <div>
+                <span class="text-neutral-400 block">{{ messages.tokenMetrics.outputTokens }}</span>
+                <strong class="text-neutral-800 dark:text-neutral-200">{{ formatNumber(request.outputTokens) }}</strong>
+              </div>
+              <div>
+                <span class="text-neutral-400 block">{{ messages.tokenMetrics.cachedTokens }}</span>
+                <strong class="text-neutral-800 dark:text-neutral-200">{{ formatNumber(request.cachedTokens) }}</strong>
+              </div>
             </div>
-          </article>
+          </UCard>
         </div>
-      </section>
+      </UCard>
     </div>
-  </div>
+  </UCard>
 </template>

@@ -245,123 +245,145 @@ watch(activeWorkspaceView, (view) => {
 </script>
 
 <template>
-  <main class="ops-shell">
-    <!-- ── Hero ─────────────────────────────────────────────── -->
-    <section class="landing-shell">
-      <div class="landing-hero-card">
-        <!-- Top bar -->
-        <div class="landing-hero-bar">
-          <div class="landing-badge-row">
-            <UBadge color="neutral" variant="soft">
-              <UIcon name="i-lucide-cpu" style="margin-right: 0.3em;" />
-              {{ messages.landing.hero.badge }}
-            </UBadge>
-            <span class="landing-release-chip">{{ messages.landing.workspace.badge }}</span>
+  <main class="ops-shell max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <!-- ── Hero Landing Card ─────────────────────────────────── -->
+    <UCard
+      variant="outline"
+      class="backdrop-blur-xl bg-white/85 dark:bg-neutral-900/85 rounded-3xl shadow-sm border border-neutral-200/80 dark:border-neutral-800"
+      :ui="{ body: 'p-6 sm:p-8 space-y-6' }"
+    >
+      <!-- Top bar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-neutral-200/70 dark:border-neutral-800">
+        <div class="flex items-center gap-2">
+          <UBadge color="primary" variant="subtle" size="sm">
+            <UIcon name="i-lucide-cpu" class="mr-1.5" />
+            {{ messages.landing.hero.badge }}
+          </UBadge>
+          <UBadge color="neutral" variant="outline" size="sm">
+            {{ messages.landing.workspace.badge }}
+          </UBadge>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono text-neutral-500">{{ messages.common.language }}:</span>
+          <UTabs
+            v-model="localeSelection"
+            color="primary"
+            size="sm"
+            variant="link"
+            :content="false"
+            :items="localeItems"
+          />
+        </div>
+      </div>
+
+      <!-- Hero grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- Left: copy & workstreams -->
+        <div class="lg:col-span-7 space-y-4">
+          <div>
+            <p class="text-xs font-mono font-semibold uppercase tracking-wider text-primary">
+              {{ messages.landing.workspace.eyebrow }}
+            </p>
+            <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black text-neutral-900 dark:text-white tracking-tight mt-1">
+              {{ messages.landing.workspace.dashboardTitle }}
+            </h1>
           </div>
-          <div class="locale-switcher-shell">
-            <span class="locale-label">{{ messages.common.language }}</span>
-            <UTabs
-              v-model="localeSelection"
-              color="neutral"
-              size="sm"
-              variant="link"
-              :content="false"
-              :items="localeItems"
-              class="locale-tabs"
-            />
+
+          <p class="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed max-w-2xl">
+            {{ messages.landing.workspace.copy }}
+          </p>
+
+          <div v-if="workstreamItems.length" class="space-y-2 pt-2">
+            <span class="text-xs font-mono text-neutral-500 block uppercase tracking-wider">
+              {{ messages.landing.trust.workstreams }}
+            </span>
+            <div class="flex flex-wrap gap-2">
+              <UBadge
+                v-for="feature in workstreamItems"
+                :key="feature.slug"
+                color="neutral"
+                variant="subtle"
+                size="sm"
+              >
+                <UIcon name="i-lucide-layers" class="mr-1 opacity-70" />
+                {{ feature.slug }} · {{ feature.statusLabel }}
+              </UBadge>
+            </div>
           </div>
         </div>
 
-        <!-- Hero grid -->
-        <div class="landing-hero-grid">
-          <!-- Left: copy -->
-          <div class="landing-copy-column">
-            <div>
-              <p class="eyebrow">{{ messages.landing.workspace.eyebrow }}</p>
-              <h1 class="landing-title">{{ messages.landing.workspace.dashboardTitle }}</h1>
-            </div>
-
-            <p class="landing-copy">{{ messages.landing.workspace.copy }}</p>
-
-            <div v-if="workstreamItems.length" class="landing-workstream-row">
-              <span class="landing-workstream-label">{{ messages.landing.trust.workstreams }}</span>
-              <div class="landing-workstream-pills">
-                <UBadge
-                  v-for="feature in workstreamItems"
-                  :key="feature.slug"
-                  color="neutral"
-                  variant="outline"
-                  class="landing-workstream-chip"
-                >
-                  {{ feature.slug }} · {{ feature.statusLabel }}
-                </UBadge>
-              </div>
-            </div>
+        <!-- Right: Telemetry KPI cards + Realtime Signal -->
+        <div class="lg:col-span-5 space-y-3">
+          <div class="grid grid-cols-2 gap-2.5">
+            <UCard
+              v-for="item in heroTelemetry"
+              :key="item.label"
+              variant="subtle"
+              :ui="{ body: 'p-3 space-y-1' }"
+            >
+              <span class="text-[11px] text-neutral-500 flex items-center gap-1.5">
+                <UIcon :name="item.icon" class="w-3.5 h-3.5 text-primary" />
+                {{ item.label }}
+              </span>
+              <strong class="text-base font-bold font-mono text-neutral-900 dark:text-white block">
+                {{ item.value }}
+              </strong>
+            </UCard>
           </div>
 
-          <!-- Right: stats + signal -->
-          <div class="dashboard-overview-side">
-            <div class="dashboard-overview-stats">
-              <div
-                v-for="item in heroTelemetry"
-                :key="item.label"
-                class="overview-stat-card"
-              >
-                <span>
-                  <UIcon :name="item.icon" style="vertical-align: middle; margin-right: 0.3em;" />
-                  {{ item.label }}
-                </span>
-                <strong>{{ item.value }}</strong>
+          <!-- Realtime Signal Card -->
+          <UCard variant="outline" :ui="{ body: 'p-4 space-y-2.5' }">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <p class="text-[10px] font-mono uppercase tracking-wider text-neutral-400">
+                  {{ messages.landing.capabilities.streamEyebrow }}
+                </p>
+                <strong class="text-xs font-semibold text-neutral-900 dark:text-white flex items-center gap-1.5 mt-0.5">
+                  <span class="w-2 h-2 rounded-full" :class="lastEvent ? 'bg-emerald-500 animate-pulse' : 'bg-neutral-400'" />
+                  {{ lastEvent ? messages.landing.capabilities.live : messages.landing.capabilities.standby }}
+                </strong>
               </div>
+              <UBadge color="neutral" variant="outline" size="xs">
+                {{ selectedFeatureStatus ?? messages.detail.noFeatureStatus }}
+              </UBadge>
             </div>
 
-            <div class="overview-signal-card">
-              <div class="overview-signal-head">
-                <div>
-                  <p class="overview-card-label">{{ messages.landing.capabilities.streamEyebrow }}</p>
-                  <strong>
-                    {{ lastEvent ? messages.landing.capabilities.live : messages.landing.capabilities.standby }}
-                  </strong>
-                </div>
-                <UBadge color="neutral" variant="outline">
-                  {{ selectedFeatureStatus ?? messages.detail.noFeatureStatus }}
-                </UBadge>
-              </div>
-
-              <p>{{ liveSignal }}</p>
-              <UProgress
-                color="neutral"
-                size="xs"
-                status
-                :model-value="activeTaskRatio"
-              />
-              <small>{{ messages.landing.hero.baseline }}</small>
-            </div>
-          </div>
+            <p class="text-xs text-neutral-600 dark:text-neutral-300 font-mono truncate" :title="liveSignal">
+              {{ liveSignal }}
+            </p>
+            <UProgress
+              color="primary"
+              size="xs"
+              :model-value="activeTaskRatio"
+            />
+            <small class="text-[10px] text-neutral-400 font-mono block">
+              {{ messages.landing.hero.baseline }}
+            </small>
+          </UCard>
         </div>
       </div>
 
       <UAlert
         v-if="translatedErrorMessage"
-        class="error-banner"
         color="error"
         icon="i-lucide-triangle-alert"
         variant="subtle"
         :description="translatedErrorMessage"
       />
-    </section>
+    </UCard>
 
-    <!-- ── Workspace dashboard ───────────────────────────────── -->
-    <section class="workspace-dashboard-shell">
+    <!-- ── Workspace Operations Dashboard ──────────────────────── -->
+    <section class="space-y-4">
       <!-- Main navbar -->
       <UDashboardNavbar
-        class="workspace-dashboard-navbar"
         icon="i-lucide-layout-dashboard"
         :title="messages.landing.workspace.dashboardTitle"
+        class="border border-neutral-200 dark:border-neutral-800 rounded-2xl bg-white/70 dark:bg-neutral-900/70 backdrop-blur-md px-4 py-2.5"
       >
         <template #leading>
-          <UBadge color="neutral" variant="soft">
-            <UIcon name="i-lucide-folder" style="margin-right: 0.3em;" />
+          <UBadge color="neutral" variant="soft" size="sm">
+            <UIcon name="i-lucide-folder" class="mr-1.5" />
             {{ snapshot?.workspaceName || messages.landing.workspace.badge }}
           </UBadge>
         </template>
@@ -378,132 +400,104 @@ watch(activeWorkspaceView, (view) => {
           >
             {{ messages.landing.workspace.currentTask }} · {{ selectedTask.id }}
           </UButton>
-          <UBadge v-else color="neutral" variant="outline">
+          <UBadge v-else color="neutral" variant="outline" size="sm">
             {{ messages.landing.workspace.currentTask }} · {{ messages.landing.numbers.noSelection }}
           </UBadge>
-          <UBadge color="neutral" variant="outline">
+          <UBadge color="neutral" variant="outline" size="sm">
             {{ messages.landing.workspace.currentStatus }} · {{ selectedFeatureStatus ?? messages.detail.noFeatureStatus }}
           </UBadge>
         </template>
       </UDashboardNavbar>
 
-      <!-- Toolbar -->
-      <UDashboardToolbar class="workspace-dashboard-toolbar">
+      <!-- View Navigation Toolbar -->
+      <UDashboardToolbar class="border border-neutral-200 dark:border-neutral-800 rounded-2xl bg-white/70 dark:bg-neutral-900/70 backdrop-blur-md px-4 py-2">
         <template #left>
-          <div class="workspace-toolbar-copy">
-            <p>{{ messages.landing.workspace.stageEyebrow }}</p>
-            <strong>{{ activeWorkspaceViewMeta.title }}</strong>
+          <div class="hidden sm:block">
+            <p class="text-[10px] font-mono text-neutral-400 uppercase tracking-wider">{{ messages.landing.workspace.stageEyebrow }}</p>
+            <strong class="text-xs font-bold text-neutral-900 dark:text-white">{{ activeWorkspaceViewMeta.title }}</strong>
           </div>
         </template>
 
         <template #default>
           <UTabs
             v-model="activeWorkspaceView"
-            color="neutral"
+            color="primary"
             size="sm"
             variant="link"
             :content="false"
             :items="workspaceViewItems"
-            class="workspace-view-tabs"
           />
         </template>
 
         <template #right>
-          <div class="hero-button-row workspace-toolbar-actions">
-            <UButton
-              color="neutral"
-              icon="i-lucide-refresh-cw"
-              variant="solid"
-              size="sm"
-              :loading="isActiveWorkspaceViewLoading"
-              @click="handleActiveWorkspaceViewRefresh"
-            >
-              {{ isActiveWorkspaceViewLoading ? messages.common.refreshing : messages.common.refresh }}
-            </UButton>
-          </div>
+          <UButton
+            color="primary"
+            icon="i-lucide-refresh-cw"
+            variant="solid"
+            size="sm"
+            :loading="isActiveWorkspaceViewLoading"
+            @click="handleActiveWorkspaceViewRefresh"
+          >
+            {{ isActiveWorkspaceViewLoading ? messages.common.refreshing : messages.common.refresh }}
+          </UButton>
         </template>
       </UDashboardToolbar>
 
-      <!-- Stage -->
-      <UDashboardGroup
-        class="workspace-stage-layout"
-        as="section"
-        :ui="{ base: 'relative inset-auto flex flex-col overflow-visible' }"
-      >
-        <UDashboardPanel
-          class="workspace-stage-panel"
-          id="stage"
-          :ui="{ root: 'min-h-[30rem] sm:min-h-[34rem] lg:min-h-[44rem]', body: 'p-0 sm:p-0' }"
-        >
-          <template #header>
-            <UDashboardNavbar class="workspace-stage-navbar" :title="activeWorkspaceViewMeta.title">
-              <template #leading>
-                <UBadge color="neutral" variant="soft">{{ activeWorkspaceViewMeta.eyebrow }}</UBadge>
-              </template>
-              <template #right>
-                <UBadge color="neutral" variant="outline">{{ activeWorkspaceViewMeta.badge }}</UBadge>
-              </template>
-            </UDashboardNavbar>
-          </template>
+      <!-- Main Stage View Container -->
+      <div class="min-h-[30rem] sm:min-h-[36rem]">
+        <TaskBoard
+          v-if="activeWorkspaceView === 'tasks'"
+          :tasks="snapshot?.tasks ?? []"
+          :selected-task-id="selectedTaskId"
+          :loading="isLoading"
+          :task-changes="taskChanges"
+          @select="handleTaskSelection"
+        />
 
-          <template #body>
-            <div class="workspace-panel-anchor workspace-panel-stage">
-              <TaskBoard
-                v-if="activeWorkspaceView === 'tasks'"
-                :tasks="snapshot?.tasks ?? []"
-                :selected-task-id="selectedTaskId"
-                :loading="isLoading"
-                :task-changes="taskChanges"
-                @select="handleTaskSelection"
-              />
+        <TaskTanstackTable
+          v-else-if="activeWorkspaceView === 'table'"
+          :tasks="snapshot?.tasks ?? []"
+          :selected-task-id="selectedTaskId"
+          @select="handleTaskSelection"
+        />
 
-              <TaskTanstackTable
-                v-else-if="activeWorkspaceView === 'table'"
-                :tasks="snapshot?.tasks ?? []"
-                :selected-task-id="selectedTaskId"
-                @select="handleTaskSelection"
-              />
+        <ResourceExplorer
+          v-else-if="activeWorkspaceView === 'resources'"
+          :resources="snapshot?.resources ?? []"
+          :busy="isMutatingResources"
+          @create="openResourceDialog('create', $event)"
+          @move="openResourceDialog('move', $event)"
+          @delete="openResourceDialog('delete', $event)"
+        />
 
-              <ResourceExplorer
-                v-else-if="activeWorkspaceView === 'resources'"
-                :resources="snapshot?.resources ?? []"
-                :busy="isMutatingResources"
-                @create="openResourceDialog('create', $event)"
-                @move="openResourceDialog('move', $event)"
-                @delete="openResourceDialog('delete', $event)"
-              />
+        <MemoirGraphViewer
+          v-else-if="activeWorkspaceView === 'memoir'"
+        />
 
-              <MemoirGraphViewer
-                v-else-if="activeWorkspaceView === 'memoir'"
-              />
+        <FactsExplorer
+          v-else-if="activeWorkspaceView === 'facts'"
+        />
 
-              <FactsExplorer
-                v-else-if="activeWorkspaceView === 'facts'"
-              />
+        <TokenUsagePanel
+          v-else
+          :summary="tokenUsageSummary"
+          :loading="isTokenUsageLoading"
+          :error-message="tokenUsageError"
+          @toggle="handleTokenObservabilityToggle"
+        />
+      </div>
 
-              <TokenUsagePanel
-                v-else
-                :summary="tokenUsageSummary"
-                :loading="isTokenUsageLoading"
-                :error-message="tokenUsageError"
-                @toggle="handleTokenObservabilityToggle"
-              />
-            </div>
-          </template>
-        </UDashboardPanel>
-      </UDashboardGroup>
-
-      <!-- Task detail modal -->
+      <!-- Task Detail Modal -->
       <UModal
         v-model:open="isTaskDetailModalOpen"
         scrollable
         :title="selectedTask?.id ?? messages.detail.selectTask"
         :description="selectedTask?.title ?? messages.detail.empty"
         :ui="{
-          content: 'w-[calc(100vw-2rem)] max-w-7xl rounded-[28px]',
-          header: 'min-h-0 px-4 py-4 sm:px-6',
-          body: 'p-0',
-          footer: 'justify-end px-4 pb-4 sm:px-6 sm:pb-6',
+          content: 'w-[calc(100vw-2rem)] max-w-6xl rounded-3xl',
+          header: 'px-6 py-4 border-b border-neutral-200 dark:border-neutral-800',
+          body: 'p-6',
+          footer: 'justify-end px-6 py-4 border-t border-neutral-200 dark:border-neutral-800',
         }"
       >
         <template #body>
@@ -524,7 +518,7 @@ watch(activeWorkspaceView, (view) => {
       </UModal>
     </section>
 
-    <!-- Resource action dialog -->
+    <!-- Resource Action Dialog -->
     <ResourceActionDialog
       :open="Boolean(dialogMode)"
       :mode="dialogMode"

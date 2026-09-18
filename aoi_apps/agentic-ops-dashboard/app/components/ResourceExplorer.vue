@@ -25,7 +25,7 @@ const emit = defineEmits<{
 
 const { messages } = useLocale()
 
-// ── Summary counts (still used for the overview strip) ────────────────────────
+// ── Summary counts ────────────────────────────────────────────────────────────
 const flattenedResources = computed(() => flattenResources(props.resources))
 const directoryCount = computed(() => flattenedResources.value.filter((n) => n.kind === 'directory').length)
 const fileCount = computed(() => flattenedResources.value.filter((n) => n.kind === 'file').length)
@@ -84,66 +84,64 @@ function getDirectoryActions(item: FolderTreeItem): ContextMenuItem[][] {
 </script>
 
 <template>
-  <div class="surface-panel resource-panel-shell">
-    <header class="panel-header">
-      <div>
-        <p class="eyebrow">{{ messages.resources.eyebrow }}</p>
-        <h2>{{ messages.resources.title }}</h2>
+  <UCard variant="outline" class="backdrop-blur-md">
+    <template #header>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <p class="text-xs font-mono font-semibold uppercase tracking-wider text-primary">
+            {{ messages.resources.eyebrow }}
+          </p>
+          <h2 class="text-lg font-bold text-neutral-900 dark:text-white mt-1">
+            {{ messages.resources.title }}
+          </h2>
+          <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+            {{ messages.resources.copy }}
+          </p>
+        </div>
+
+        <UButton
+          color="primary"
+          icon="i-lucide-folder-plus"
+          variant="solid"
+          size="sm"
+          :disabled="busy"
+          @click="emit('create', '.resources')"
+        >
+          {{ messages.resources.newFolder }}
+        </UButton>
       </div>
-      <UButton
-        color="neutral"
-        icon="i-lucide-folder-plus"
-        variant="outline"
-        size="sm"
-        :disabled="busy"
-        @click="emit('create', '.resources')"
-      >
-        {{ messages.resources.newFolder }}
-      </UButton>
-    </header>
 
-    <p class="resource-copy">{{ messages.resources.copy }}</p>
-
-    <section class="resource-overview">
-      <div class="resource-summary-strip">
-        <UBadge color="neutral" variant="soft">
+      <!-- Resource Summary Strip -->
+      <div class="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-neutral-200 dark:border-neutral-800">
+        <UBadge color="neutral" variant="soft" size="xs">
           {{ messages.resources.totalNodes }} · {{ flattenedResources.length }}
         </UBadge>
-        <UBadge color="neutral" variant="outline">
+        <UBadge color="neutral" variant="outline" size="xs">
           {{ messages.resources.folders }} · {{ directoryCount }}
         </UBadge>
-        <UBadge color="neutral" variant="outline">
+        <UBadge color="neutral" variant="outline" size="xs">
           {{ messages.resources.files }} · {{ fileCount }}
         </UBadge>
-        <UBadge color="neutral" variant="outline">
+        <UBadge color="neutral" variant="outline" size="xs">
           {{ messages.resources.protected }} · {{ protectedDirectoryCount }}
         </UBadge>
-      </div>
-    </section>
-
-    <section class="resource-workspace">
-      <UDashboardToolbar class="resource-toolbar">
-        <template #left>
-          <div class="resource-toolbar-copy">
-            <p>{{ messages.resources.operationsEyebrow }}</p>
-            <strong>{{ messages.resources.operationsTitle }}</strong>
-          </div>
-        </template>
-        <template #right>
-          <UBadge color="neutral" variant="outline">
+        <div class="ml-auto">
+          <UBadge :color="busy ? 'warning' : 'success'" variant="subtle" size="xs">
+            <span class="w-1.5 h-1.5 rounded-full mr-1.5" :class="busy ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'" />
             {{ busy ? messages.resources.busy : messages.resources.ready }}
           </UBadge>
-        </template>
-      </UDashboardToolbar>
-
-      <div v-if="!flattenedResources.length" class="panel-empty">
-        {{ messages.resources.empty }}
+        </div>
       </div>
+    </template>
 
+    <div v-if="!flattenedResources.length" class="py-12 text-center text-neutral-400 font-mono text-xs">
+      {{ messages.resources.empty }}
+    </div>
+
+    <div v-else class="p-2 sm:p-3 bg-neutral-50 dark:bg-neutral-950/40 rounded-xl border border-neutral-200 dark:border-neutral-800/80">
       <UTree
-        v-else
         :items="explorerTreeItems"
-        class="re-explorer-tree"
+        class="text-xs font-mono"
       >
         <!-- Directory node — wrapped in UContextMenu for right-click actions -->
         <template #item="{ item, handleToggle }">
@@ -152,40 +150,32 @@ function getDirectoryActions(item: FolderTreeItem): ContextMenuItem[][] {
             :items="getDirectoryActions(item as FolderTreeItem)"
           >
             <div
-              class="re-tree-node re-tree-node--dir"
+              class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 cursor-pointer transition-colors"
               @click="handleToggle"
             >
-              <div class="re-tree-node-leading">
-                <UIcon :name="item.icon" class="re-tree-icon" />
-                <UBadge color="neutral" :variant="getNodeBadgeVariant(item as FolderTreeItem)" size="sm">
-                  {{ getNodeStateLabel(item as FolderTreeItem) }}
-                </UBadge>
-              </div>
-              <div class="re-tree-node-copy">
-                <strong>{{ item.label }}</strong>
-                <small>{{ item.path }}</small>
-              </div>
+              <UIcon :name="item.icon" class="w-4 h-4 text-primary shrink-0" />
+              <strong class="text-neutral-900 dark:text-neutral-100 font-semibold">{{ item.label }}</strong>
+              <UBadge color="neutral" :variant="getNodeBadgeVariant(item as FolderTreeItem)" size="xs" class="ml-1">
+                {{ getNodeStateLabel(item as FolderTreeItem) }}
+              </UBadge>
+              <small class="text-neutral-400 dark:text-neutral-500 ml-auto truncate max-w-[200px]">{{ item.path }}</small>
             </div>
           </UContextMenu>
 
           <!-- File node — no context menu, no toggle -->
           <div
             v-else
-            class="re-tree-node re-tree-node--file"
+            class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-neutral-200/40 dark:hover:bg-neutral-800/40 transition-colors"
           >
-            <div class="re-tree-node-leading">
-              <UIcon :name="item.icon" class="re-tree-icon re-tree-icon--file" />
-              <UBadge color="neutral" variant="outline" size="sm">
-                {{ getNodeStateLabel(item as FolderTreeItem) }}
-              </UBadge>
-            </div>
-            <div class="re-tree-node-copy">
-              <strong>{{ item.label }}</strong>
-              <small>{{ item.path }}</small>
-            </div>
+            <UIcon :name="item.icon" class="w-4 h-4 text-neutral-400 shrink-0" />
+            <span class="text-neutral-700 dark:text-neutral-300">{{ item.label }}</span>
+            <UBadge color="neutral" variant="outline" size="xs" class="ml-1">
+              {{ getNodeStateLabel(item as FolderTreeItem) }}
+            </UBadge>
+            <small class="text-neutral-400 dark:text-neutral-500 ml-auto truncate max-w-[200px]">{{ item.path }}</small>
           </div>
         </template>
       </UTree>
-    </section>
-  </div>
+    </div>
+  </UCard>
 </template>
