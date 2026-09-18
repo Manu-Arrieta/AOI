@@ -66,11 +66,46 @@ describe('claude-project-guide area table', () => {
   })
 
   it('describes every area this repository actually ships', () => {
-    // Keeps AREA_OWNERSHIP honest in the only tree where all areas exist.
     const repoRoot = path.resolve(import.meta.dirname, '..', '..')
     const undescribed = discoverAreas(repoRoot).filter((area) => !(area in AREA_OWNERSHIP))
 
     assert.deepEqual(undescribed, [], `sin descripción en AREA_OWNERSHIP: ${undescribed.join(', ')}`)
+  })
+
+  it('describes the areas only the INSTALLER creates, which this tree never has', (t) => {
+    // The assertion above used to carry the comment "the only tree where all
+    // areas exist". It is not: setup.sh writes `scripts/bin/aoi-copilot` into
+    // every workspace it installs, and this repository has no `bin/` for
+    // discoverAreas to find. So `bin` went undescribed here and the compiled
+    // guide shipped "(undescribed — add it to AREA_OWNERSHIP)" to every
+    // installation, where the assertion above then failed on a tree the
+    // development repo could not reproduce.
+    //
+    // Reading setup.sh closes that blind spot at the source: an area the
+    // installer starts creating tomorrow fails here, upstream, on the commit
+    // that adds it — instead of downstream, on someone else's workspace.
+    const repoRoot = path.resolve(import.meta.dirname, '..', '..')
+
+    // Only the source repository has an installer to read. Asserting here
+    // unconditionally is the very mistake this test exists to prevent — the
+    // first draft did exactly that and died with ENOENT on setup.sh in an
+    // installed workspace, one screen after being written to stop tests from
+    // assuming the development tree.
+    if (!isDevelopmentRepo(repoRoot)) {
+      t.skip('sin setup.sh: una instalación no tiene instalador que leer')
+      return
+    }
+
+    const installer = fs.readFileSync(path.join(repoRoot, 'setup.sh'), 'utf8')
+
+    const created = [...installer.matchAll(/\$PROJECT_PATH\/scripts\/([A-Za-z0-9._-]+)/g)]
+      .map((m) => m[1])
+      .filter((entry) => !entry.includes('.'))
+
+    assert.ok(created.includes('bin'), 'el instalador dejó de crear scripts/bin — actualizá esta aserción')
+
+    const undescribed = [...new Set(created)].filter((area) => !(area in AREA_OWNERSHIP))
+    assert.deepEqual(undescribed, [], `el instalador crea scripts/${undescribed.join(', ')} y AREA_OWNERSHIP no lo describe`)
   })
 
   it('reads the development-repository marker from the tree', () => {

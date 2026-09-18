@@ -110,6 +110,11 @@ export const AREA_OWNERSHIP = {
   'spatiotemporal-runtime': 'Fiber lifecycle, revertible effects, coeffects, transactional HMR',
   'mcp-gateway': 'the MCP compression proxy and its zero-disabled-tools invariant',
   conf: "installed-workspace configuration AOI owns without overwriting the Owner's",
+  // Exists only downstream: setup.sh writes the `aoi-copilot` shim into every
+  // workspace it installs, and this repository never has the directory. That is
+  // why it went undescribed — the test that keeps this table honest read the
+  // development tree, where the area cannot appear.
+  bin: 'the `aoi-copilot` shim the installer writes, routing calls through the Headroom wrapper',
 }
 
 /**

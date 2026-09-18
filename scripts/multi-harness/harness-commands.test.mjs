@@ -4,6 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { describe, it } from 'node:test'
 
+import { isDevelopmentRepo } from './claude-project-guide.mjs'
 import {
   COMMAND_TARGETS,
   PROMPTS_DIR,
@@ -113,13 +114,39 @@ describe('harness command registration', () => {
   })
 
   it('registers every prompt this repository actually ships', () => {
+    // The two directories used to be named literally and required
+    // unconditionally. That reads as a stronger assertion than it is, and it
+    // was wrong in both directions at once.
+    //
+    // Too strict downstream: a workspace materialises only the harnesses it was
+    // installed with — migarajeapp chose copilot, claude and antigravity, so it
+    // has no `.cursor/commands/` and the test demanded a directory the operator
+    // deliberately did not ask for. `pnpm test` was red in that installation
+    // over a harness nobody selected.
+    //
+    // Too lax upstream: a third entry added to COMMAND_TARGETS would have gone
+    // unchecked forever, because the loop never read the table it is meant to
+    // protect. Driving it from COMMAND_TARGETS fixes that at the same time.
     const repoRoot = path.resolve(import.meta.dirname, '..', '..')
     const names = listPromptNames(repoRoot)
 
     assert.ok(names.includes('init'))
-    for (const name of names) {
-      assert.ok(fs.existsSync(path.join(repoRoot, '.claude', 'commands', `${name}.md`)), `falta /${name} en Claude`)
-      assert.ok(fs.existsSync(path.join(repoRoot, '.cursor', 'commands', `${name}.md`)), `falta /${name} en Cursor`)
+
+    const targets = Object.entries(COMMAND_TARGETS)
+      .map(([harness, target]) => ({ harness, dir: path.join(repoRoot, target.dir) }))
+
+    // Upstream every harness ships, so a missing directory is a defect rather
+    // than a choice. Without this, an installed tree's leniency would leak back
+    // here and the assertion below could pass over nothing at all.
+    if (isDevelopmentRepo(repoRoot)) {
+      const missing = targets.filter((t) => !fs.existsSync(t.dir)).map((t) => t.harness)
+      assert.deepEqual(missing, [], `el repo de desarrollo no registra comandos para: ${missing.join(', ')}`)
+    }
+
+    for (const { harness, dir } of targets.filter((t) => fs.existsSync(t.dir))) {
+      for (const name of names) {
+        assert.ok(fs.existsSync(path.join(dir, `${name}.md`)), `falta /${name} en ${harness}`)
+      }
     }
   })
 })
