@@ -12,11 +12,30 @@
  *
  * The four checks that read the workspace itself live in
  * `doctor-state-checks.test.mjs`.
+ *
+ * Los chequeos de Archify se sumaron acá —y no sólo en
+ * `scripts/conf/archify-candidate-parity.test.mjs`— porque el área `scripts`
+ * muta los `.mjs` de la raíz y corre `scripts/*.test.mjs`: un test que vive en
+ * `scripts/conf/` no mata ni un mutante de `archify-checks.mjs`. Medido: al
+ * extraer esas funciones de `doctor-checks.mjs` el área cayó de 81% a 78% por
+ * exactamente eso. La paridad con los instaladores sigue en `conf`; acá se fija
+ * el contrato de la detección.
  */
 
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import { describe, it } from 'node:test'
-import { checkBinaries, checkIcmHealth, MANDATORY_BINARIES, RECOMMENDED_BINARIES } from './doctor-checks.mjs'
+import {
+  checkArchifySkill,
+  checkBinaries,
+  checkIcmHealth,
+  findArchifyRenderer,
+  MANDATORY_BINARIES,
+  RECOMMENDED_BINARIES,
+} from './doctor-checks.mjs'
+import { ARCHIFY_RENDERER_CANDIDATES } from './archify-checks.mjs'
 
 describe('checkBinaries separates what blocks from what merely warns', () => {
   const found = async () => ({ stdout: '/usr/local/bin/x\n', stderr: '' })
@@ -66,9 +85,124 @@ describe('checkBinaries separates what blocks from what merely warns', () => {
     assert.equal(r.status, 'WARNING')
   })
 
-  it('ships ICM as the only mandatory tool, per the Owner', () => {
-    assert.deepEqual(MANDATORY_BINARIES.map((b) => b.name), ['icm'])
+  // This used to read "ships ICM as the only mandatory tool, per the Owner" and
+  // pinned `['icm']` exactly — attributing to the Owner the opposite of the
+  // Owner's policy, and freezing it so the drift could never be corrected
+  // without the suite objecting. Every token-saving tool is mandatory; Headroom
+  // is the single declared exception.
+  it('marks every token-saving tool mandatory, per the Owner', () => {
+    const mandatory = MANDATORY_BINARIES.map((b) => b.name)
+    for (const saving of ['icm', 'rtk', 'codebase-memory-mcp']) {
+      assert.ok(mandatory.includes(saving), `${saving} debe ser obligatoria`)
+    }
+  })
+
+  // The negative control. Without it the assertion above is satisfied by a list
+  // that marks EVERYTHING mandatory, which would erase the one exception the
+  // policy actually grants and make the test vacuous.
+  it('keeps Headroom as the one tool whose absence never condemns a workspace', () => {
+    const mandatory = MANDATORY_BINARIES.map((b) => b.name)
+    assert.ok(!mandatory.includes('headroom'), 'Headroom es la única excepción declarada')
     assert.ok(RECOMMENDED_BINARIES.some((b) => b.name === 'headroom'))
+  })
+})
+
+/** Un HOME temporal, borrado al cerrar el test. */
+function tempHome(t) {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-doctor-archify-'))
+  t.after(() => fs.rmSync(home, { recursive: true, force: true }))
+  return home
+}
+
+/** Escribe un renderizador en `rel`, debajo de `home`. */
+function plant(home, rel) {
+  const abs = path.join(home, rel)
+  fs.mkdirSync(path.dirname(abs), { recursive: true })
+  fs.writeFileSync(abs, '// renderer\n')
+  return abs
+}
+
+describe('findArchifyRenderer localiza el renderizador por la ruta, no por el PATH', () => {
+  it('devuelve la ruta absoluta de la primera candidata presente', (t) => {
+    const home = tempHome(t)
+    const expected = plant(home, ARCHIFY_RENDERER_CANDIDATES[0])
+    assert.equal(findArchifyRenderer(home), expected)
+  })
+
+  it('encuentra cada una de las cuatro, una por vez', (t) => {
+    // Una por una y no todas juntas: con todas presentes, tres de las cuatro
+    // rutas podrian estar mal escritas y el test pasaria igual.
+    for (const rel of ARCHIFY_RENDERER_CANDIDATES) {
+      const home = tempHome(t)
+      const expected = plant(home, rel)
+      assert.equal(findArchifyRenderer(home), expected, `no encontro ${rel}`)
+    }
+  })
+
+  it('respeta la precedencia: la primera gana cuando hay varias', (t) => {
+    const home = tempHome(t)
+    for (const rel of ARCHIFY_RENDERER_CANDIDATES) plant(home, rel)
+    assert.equal(findArchifyRenderer(home), path.join(home, ARCHIFY_RENDERER_CANDIDATES[0]))
+  })
+
+  it('devuelve cadena vacía cuando no está, en vez de inventar una ruta', (t) => {
+    // Devolver la candidata descartada convertiría una ausencia en un
+    // veredicto positivo, y el doctor diría PASSED sin renderizador.
+    assert.equal(findArchifyRenderer(tempHome(t)), '')
+  })
+})
+
+describe('checkArchifySkill degrada a WARNING en vez de bloquear', () => {
+  it('PASSED con la ruta cuando el renderizador existe', (t) => {
+    const home = tempHome(t)
+    const expected = plant(home, ARCHIFY_RENDERER_CANDIDATES[0])
+    const result = checkArchifySkill(home)
+    assert.equal(result.status, 'PASSED')
+    assert.equal(result.details, expected)
+  })
+
+  it('WARNING —nunca FAILED— y dice cómo instalarlo', (t) => {
+    // Archify es una skill de terceros, no un binario de AOI: su ausencia
+    // degrada una compuerta opcional, no rompe el sistema.
+    const result = checkArchifySkill(tempHome(t))
+    assert.equal(result.status, 'WARNING')
+    assert.match(result.details, /install-archify\.sh/)
+  })
+})
+
+describe('el doctor le pregunta al sistema en el vocabulario del sistema', () => {
+  it('usa `which` fuera de Windows y `where` dentro', async () => {
+    const calls = []
+    const spy = async (cmd, args) => {
+      calls.push([cmd, ...args])
+      return { stdout: '/usr/local/bin/icm\n', stderr: '' }
+    }
+    await checkBinaries([{ name: 'icm', description: 'x' }], spy)
+
+    // La expectativa se calcula acá, en el test, y no se importa: el archivo de
+    // test no se muta, así que si el ternario de la fuente se invierte, la
+    // fuente pregunta por `where` en macOS mientras esta línea espera `which`.
+    const expected = process.platform === 'win32' ? 'where' : 'which'
+    assert.equal(calls[0][0], expected)
+    assert.equal(calls[0][1], 'icm')
+  })
+})
+
+describe('checkIcmHealth nombra la última línea, y tiene respaldo', () => {
+  const withStdout = (stdout) => async () => ({ stdout, stderr: '' })
+
+  it('reporta la última línea de la salida de `icm doctor`', async () => {
+    const r = await checkIcmHealth(withStdout('Database integrity: ok\nAll hooks healthy'))
+    assert.equal(r.status, 'PASSED')
+    assert.equal(r.details, 'All hooks healthy')
+  })
+
+  it('cae al respaldo cuando la salida sólo trae espacios', async () => {
+    // `trim()` deja la cadena vacía, `split` devuelve [''], y `pop()` es falsy.
+    // Sin el `||` el reporte saldría con un `details` vacío, que en el resumen
+    // se lee como un chequeo que no diagnosticó nada.
+    const r = await checkIcmHealth(withStdout('   \n  '))
+    assert.equal(r.details, 'ICM doctor check complete')
   })
 })
 

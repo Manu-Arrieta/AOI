@@ -214,3 +214,56 @@ describe('checkMultiHarnessRules counts the adapters that exist', () => {
     clean(root)
   })
 })
+
+/**
+ * Los `details` de las dos ramas limpias.
+ *
+ * Faltaban, y esa ausencia tenía costo medido: con el ternario de cada `details`
+ * invertido —el mensaje de "todo consistente" saliendo cuando hay problemas y
+ * al revés— el área `scripts` bajaba de 81% a 78% por supervivientes, no por
+ * código nuevo. Un veredicto que nombra el número equivocado es peor que uno
+ * que no lo nombra.
+ */
+describe('los veredictos nombran lo que verificaron', () => {
+  const registry = (rows) =>
+    `# Registry\n\n| TASK-ID | Feature | Title |\n| :-- | :-- | :-- |\n${rows}\n`
+
+  it('el registry limpio dice cuántas tareas verificó', () => {
+    const root = tree({
+      '.tasks/registry.md': registry('| TASK-2026-001 | pagos | x |'),
+      '.tasks/pagos/TASK-2026-001': null,
+    })
+    assert.equal(checkTaskRegistry(root).details, '1 task(s) verified in registry')
+    clean(root)
+  })
+
+  it('el registry con inconsistencias dice cuántas', () => {
+    const root = tree({ '.tasks/registry.md': registry('| TASK-2026-001 | pagos | x |') })
+    assert.equal(checkTaskRegistry(root).details, '1 registry inconsistencies')
+    clean(root)
+  })
+
+  it('una fila sin la barra inicial es prosa, no una tarea', () => {
+    // La barra inicial es lo que vuelve a la línea una fila de tabla. Sin ella
+    // es texto suelto, y contarla haría que el doctor buscara en disco la
+    // carpeta de algo que nadie declaró como tarea.
+    const root = tree({
+      '.tasks/registry.md': '# Registry\n\n## Tasks\n\nTASK-2026-999 | pagos | x\n',
+    })
+    const r = checkTaskRegistry(root)
+    assert.equal(r.taskCount, 0)
+    assert.equal(r.status, 'PASSED')
+    clean(root)
+  })
+
+  it('governance limpio dice cuántos workspaces revisó', () => {
+    const root = tree({
+      '.specify/memory/versions/active.json': JSON.stringify({
+        workspaceStates: { 'mi-ws': { activeVersionId: 'v1.0.0' } },
+      }),
+      '.specify/memory/versions/manifests/mi-ws/v1.0.0.json': '{}',
+    })
+    assert.equal(checkMemoryGovernance(root).details, '1 workspace state(s) consistent')
+    clean(root)
+  })
+})

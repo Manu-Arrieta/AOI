@@ -75,6 +75,13 @@ const MIRROR_DIR = 'scaffold'
  * repository by a wide margin, and 928 test lines sit beside it, so the seam is
  * very likely real rather than cosmetic.
  *
+ * Una entrada ya salió, y el ratchet la reclamó él mismo con STALE BUDGET:
+ * `validate-scaffold-parity.mjs` estaba a UNA línea del tope el 2026-09-18,
+ * cuando hubo que gobernar cuatro archivos más, y la lista de rutas se mudó a
+ * `sync-paths.mjs`. El corte no fue para bajar el número: una lista de rutas y
+ * un algoritmo de comparación byte a byte son dos cosas, y más de un módulo
+ * necesita la primera sin la segunda. Pagar la deuda fue la consecuencia.
+ *
  * Sizes are as `validateFileSizes` counts them, which is the same count
  * `/sdd-verify` reports. That is one more than `wc -l` for a file ending in a
  * newline; using the gate's own measure keeps the two from disagreeing.
@@ -82,7 +89,6 @@ const MIRROR_DIR = 'scaffold'
 export const LEGACY_BUDGET = {
   'scripts/scaffold/mutation-probe.mjs': 1143,
   'scripts/scaffold/mutation-probe.test.mjs': 928,
-  'scripts/scaffold/validate-scaffold-parity.mjs': 327,
   'scripts/scaffold/validate-test-globs.mjs': 355,
   'scripts/scaffold/validate-test-globs.test.mjs': 359,
 }
