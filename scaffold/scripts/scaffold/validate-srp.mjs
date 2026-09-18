@@ -28,6 +28,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { validateFileSizes } from '../sdd-lifecycle/mechanical-verify-union.mjs'
+import { isAoiGovernedPath, isDevelopmentRepo } from './governed-paths.mjs'
 
 export const MAX_LOC = 300
 const SOURCE_EXTENSIONS = new Set(['.mjs', '.js', '.ts'])
@@ -96,7 +97,7 @@ export const LEGACY_BUDGET = {
  * files are audited, which is precisely the set mirrored under scaffold/.
  */
 export function listSourceFiles(root, dir = 'scripts') {
-  const governedOnly = !fs.existsSync(path.join(root, 'setup.sh'))
+  const governedOnly = !isDevelopmentRepo(root)
   const out = []
   const walk = (current) => {
     let entries = []
@@ -126,14 +127,14 @@ export function listSourceFiles(root, dir = 'scripts') {
         if (target.isDirectory()) walk(full)
         else if (SOURCE_EXTENSIONS.has(path.extname(entry.name))) {
           const rel = path.relative(root, full)
-          if (!governedOnly || fs.existsSync(path.join(root, 'scaffold', rel))) out.push(rel)
+          if (!governedOnly || isAoiGovernedPath(root, full)) out.push(rel)
         }
         continue
       }
       if (entry.isDirectory()) walk(full)
       else if (SOURCE_EXTENSIONS.has(path.extname(entry.name))) {
         const rel = path.relative(root, full)
-        if (governedOnly && !fs.existsSync(path.join(root, 'scaffold', rel))) continue
+        if (governedOnly && !isAoiGovernedPath(root, full)) continue
         out.push(rel)
       }
     }
