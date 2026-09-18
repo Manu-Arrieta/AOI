@@ -14,7 +14,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { collectTestSources, dropUnreachableTests } from './test-reachability.mjs'
+import { collectTestSources, dropAoiOwnedTests, dropUnreachableTests } from './test-reachability.mjs'
 import { acquireRules } from './invariant-gate-preconditions.mjs'
 
 // Re-exported: collecting test sources moved to test-reachability.mjs when this
@@ -165,7 +165,15 @@ export async function main() {
   // "¿leí algo?" y los tres caminos de entrada. Acá sólo importa que salga.
   const { rules } = acquireRules({ factsFile, entity, bicFilter })
 
-  const { kept, dropped, determinable, reason } = dropUnreachableTests(testsDir, collectTestSources(testsDir))
+  // Los tests que AOI instala citan los tags de AOI, y el match es una inclusión
+  // literal de cadena: sin sacarlos, un BIC del producto que comparta número con
+  // uno de AOI se reporta enforced sin que exista una sola prueba suya. La raíz
+  // se deduce de dónde vive ESTE archivo, no de `cwd`, porque lo que hay que
+  // ubicar es la instalación de AOI que se está ejecutando.
+  const installRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
+  const { kept: ownerSources, dropped: aoiOwned } = dropAoiOwnedTests(installRoot, collectTestSources(testsDir))
+
+  const { kept, dropped, determinable, reason } = dropUnreachableTests(testsDir, ownerSources)
 
   // Si la alcanzabilidad es INDETERMINADA, un archivo que ningún runner colecta es
   // indistinguible de evidencia — y el gate no puede certificar cobertura con eso.
@@ -182,6 +190,14 @@ export async function main() {
         'Arreglá el package.json del árbol que estás auditando, o pasá --facts-file si querés auditar sólo el contrato.\n'
     )
     process.exit(2)
+  }
+
+  if (aoiOwned.length > 0) {
+    // Dicho en voz alta: un contrato que queda sin cubrir porque su única cita
+    // estaba en un test de AOI se parece demasiado a uno que nadie escribió.
+    process.stderr.write(
+      `ℹ️  ${aoiOwned.length} test(s) de AOI excluido(s) del barrido: sus tags son de AOI, no del contrato de este workspace.\n`
+    )
   }
 
   if (dropped.length > 0) {

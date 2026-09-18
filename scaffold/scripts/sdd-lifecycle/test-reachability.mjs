@@ -20,6 +20,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { findOrphanTests } from '../scaffold/validate-test-globs.mjs'
+import { DEFAULT_SYNC_PATHS } from '../scaffold/validate-scaffold-parity.mjs'
 
 const TEST_EXTENSIONS = new Set(['.mjs', '.js', '.ts', '.tsx', '.jsx', '.vue', '.py', '.go', '.rs'])
 // `scaffold` is a byte-for-byte mirror, not an authoritative test tree: counting
@@ -124,4 +125,53 @@ export function dropUnreachableTests(root, sources) {
     else kept.push(s)
   }
   return { kept, dropped, determinable: true, reason: '' }
+}
+
+/**
+ * Partitions test sources into the Owner's own tests and AOI's installed ones.
+ *
+ * Los tags del BIC viven en un espacio de nombres plano y la cobertura se
+ * resuelve con una inclusión literal de cadena, así que dos contratos que
+ * comparten número son la misma cadena para el gate. En el repo de desarrollo
+ * eso es correcto: ahí los `BIC-2026-00X` SON los del producto. Aguas abajo no:
+ * AOI instala en `scripts/` sus propios tests, que citan sus propios tags, y un
+ * BIC del producto numerado dentro del rango que AOI ya ocupa queda "cubierto"
+ * por pruebas que asertan algo ajeno.
+ *
+ * Medido el 2026-09-18 en una instalación real: la regla *"ninguna de las dos
+ * VPS acepta una sesión SSH como root"*, sin una sola prueba escrita, quedó
+ * cubierta por un `it()` de AOI titulado *"charges the exact literal payload for
+ * every phase"*. El veredicto dependía del NÚMERO del identificador, no de que
+ * existiera un test: renumerar el mismo contrato a `BIC-2026-101` lo hacía
+ * fallar. Y como `/sdd-frame` prescribe numerar desde el primer id libre, el
+ * primer BIC de todo workspace nuevo cae justo en `001`.
+ *
+ * El criterio es el mismo que `validate-srp.mjs`, `validate-test-globs.mjs` y
+ * `undocumented-commands.mjs` ya aplican: las invariantes de AOI juzgan el
+ * código de AOI, no el del Owner. La lista de rutas gobernadas es la que ya
+ * declara el espejo, así que una ruta nueva no necesita registrarse dos veces.
+ *
+ * @param {string} installRoot raíz donde AOI está instalado (o el repo fuente)
+ * @param {Array<{file: string, content: string}>} sources
+ * @returns {{ kept: Array, dropped: string[] }}
+ */
+export function dropAoiOwnedTests(installRoot, sources) {
+  // En el repo fuente todo `scripts/` es código de AOI y sus BIC son los del
+  // producto: filtrarlos acá dejaría al gate sin nada que medir sobre sí mismo.
+  if (!installRoot || fs.existsSync(path.join(installRoot, 'setup.sh'))) {
+    return { kept: sources, dropped: [] }
+  }
+
+  const governed = DEFAULT_SYNC_PATHS.map((entry) => path.resolve(installRoot, entry))
+  const kept = []
+  const dropped = []
+
+  for (const source of sources) {
+    const abs = path.resolve(source.file)
+    const isAoiOwned = governed.some((g) => abs === g || abs.startsWith(g + path.sep))
+    if (isAoiOwned) dropped.push(source.file)
+    else kept.push(source)
+  }
+
+  return { kept, dropped }
 }
