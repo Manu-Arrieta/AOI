@@ -4,12 +4,15 @@ import { marked } from 'marked'
 import type { ArtifactRecord } from '~/shared/types'
 
 import { useLocale } from '../composables/useLocale'
+import { resolveArtifactSddMeta } from '../utils/sdd-artifacts'
 
 const props = defineProps<{ artifact: ArtifactRecord | null }>()
 
 const { messages } = useLocale()
 const copied = ref(false)
 const viewMode = ref<'rendered' | 'raw'>('rendered')
+
+const sddMeta = computed(() => (props.artifact ? resolveArtifactSddMeta(props.artifact.name) : null))
 
 const isMarkdown = computed(() => {
   const ext = props.artifact?.extension?.toLowerCase()
@@ -53,6 +56,16 @@ function copyContent() {
           <h3 class="font-semibold text-sm text-neutral-900 dark:text-white">
             {{ messages.artifactsPanel.preview }}
           </h3>
+          <UBadge
+            v-if="sddMeta?.gate"
+            :color="sddMeta.gateBadgeColor ?? 'warning'"
+            variant="subtle"
+            size="xs"
+            class="font-mono hidden sm:inline-flex"
+          >
+            <UIcon :name="sddMeta.icon" class="mr-1 w-3 h-3" />
+            {{ sddMeta.gate }}
+          </UBadge>
         </div>
 
         <div class="flex items-center gap-2">
