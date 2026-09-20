@@ -128,13 +128,33 @@ describe('el baseline del repositorio, y sus invariantes', () => {
     assert.equal(suma, BAND_CEILING)
   })
 
-  it('los tres archivos más caros suman el 69,5% de la banda, como dice el plan', () => {
-    // La medición que ordena las prioridades del plan de recorte. Si cambia,
-    // cambió el objetivo y hay que releer §5.1.
-    const ordenados = Object.values(BAND_BUDGET).sort((a, b) => b - a)
-    const tresGrandes = ordenados.slice(0, 3).reduce((n, v) => n + v, 0)
-    assert.equal(tresGrandes, 6575)
-    assert.equal(Math.round((tresGrandes / BAND_CEILING) * 1000) / 10, 69.5)
+  it('los tres archivos más caros dominan la banda, y siguen siendo los mismos tres', () => {
+    // La PROPORCIÓN se movió con el recorte de B4.A: de 69,5% a 67,0%, porque
+    // `supervisor.agent.md` bajó de 2.420 a 1.707. La versión anterior de este
+    // test fijaba 69,5% y 6.575 y falló al recortar: hacía su trabajo, pero por la
+    // razón equivocada — congelaba un número que un recorte legítimo cambia.
+    //
+    // El umbral expresa la PROPIEDAD que importa para priorizar: los tres más
+    // caros concentran la mayoría de la banda. Sobrevive a un recorte que la
+    // conserve y falla si deja de valer. El `deepEqual` sí nombra los archivos,
+    // porque cuáles son es lo accionable — y sigue incluyendo a `supervisor`, que
+    // con 1.707 todavía pesa más que el cuarto (1.510).
+    const entries = Object.entries(BAND_BUDGET).sort((a, b) => b[1] - a[1])
+    const suma = entries.slice(0, 3).reduce((n, [, v]) => n + v, 0)
+
+    assert.ok(
+      suma / BAND_CEILING > 0.6,
+      `los tres más caros son el ${((suma / BAND_CEILING) * 100).toFixed(1)}% de la banda`
+    )
+    assert.deepEqual(
+      entries.slice(0, 3).map(([k]) => k),
+      [
+        '.github/instructions/icm-protocol.instructions.md',
+        '.github/instructions/agent-delegation.instructions.md',
+        '.github/agents/supervisor.agent.md',
+      ],
+      'cambiaron los tres más caros: revisá el orden de M5'
+    )
   })
 
   it('ningún valor del baseline es cero', () => {

@@ -32,22 +32,23 @@ You are the **Supervisor**, the central orchestrator of a Hub-and-Spoke agentic 
 
 ## SDD Lifecycle — Phase Routing
 
-| Phase            | Spec-Kit Command        | Agent(s)                                                                                                                                                    | Deliverable                          | Artifact Path                                      |
-| ---------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | -------------------------------------------------- |
-| **Constitution** | `/speckit.constitution` | Supervisor                                                                                                                                                  | `.specify/memory/constitution.md`    | —                                                  |
-| **Genesis**      | `/sdd-genesis`          | Supervisor                                                                                                                                                  | System Blueprint Contract (SBC)      | `.blueprints/{SBC-ID}/` (WORKSPACE — **nunca** en AOI) |
-| **Pre-Flight**   | `/sdd-frame`            | Supervisor                                                                                                                                                  | Behavioral Intent Contract (BIC)     | — (Zero-Task Footprint)                            |
-| **Explore**      | —                       | @functional-analyst                                                                                                                                         | Requirements + user stories          | `.tasks/{feature}/TASK-YYYY-NNN/proposal.md`       |
-| **Specify**      | `/speckit.specify`      | @functional-analyst                                                                                                                                         | Formal specification                 | `.tasks/{feature}/TASK-YYYY-NNN/spec.md`           |
-| **Clarify**      | `/speckit.clarify`      | @functional-analyst                                                                                                                                         | Refined requirements                 | —                                                  |
-| **Plan**         | `/speckit.plan`         | @solution-architect                                                                                                                                         | Architecture design                  | `.tasks/{feature}/TASK-YYYY-NNN/design.md`         |
-| **Tasks**        | `/speckit.tasks`        | @solution-architect                                                                                                                                         | Task breakdown                       | `.tasks/{feature}/TASK-YYYY-NNN/tasks.md`          |
-| **Implement**    | `/speckit.implement`    | @frontend-developer, @backend-developer (optional), @devops-engineer (optional)                                                                                                   | Working code                         | `.tasks/{feature}/TASK-YYYY-NNN/iterations/`       |
-|                  |                         | **🛡️ TDD Gate**: RED → GREEN → REFACTOR cycle per task. No production code without a failing test first. All implementation agents enforce this internally. |                                      |                                                    |
-|                  |                         | **🛡️ UX Gate**: @ux-designer is MANDATORY before any new UI component. @frontend-developer enforces this internally.                                        |                                      |                                                    |
-| **Verify**       | —                       | @integration-specialist                                                                                                                                     | QA + verify report                   | `.tasks/{feature}/TASK-YYYY-NNN/verify-report.md`  |
-| **Archive**      | —                       | @documentation-analyst                                                                                                                                      | Final documentation + archive report | `.tasks/{feature}/TASK-YYYY-NNN/archive-report.md` |
-| **Transversal**  | —                       | @project-expert                                                                                                                                             | Domain Q&A, any phase                | —                                                  |
+<!-- Sin alinear a propósito: el padding costaba 711 de sus 1.195 tokens. No la reformatees. -->
+| Phase | Spec-Kit Command | Agent(s) | Deliverable | Artifact Path |
+| --- | --- | --- | --- | --- |
+| **Constitution** | `/speckit.constitution` | Supervisor | `.specify/memory/constitution.md` | — |
+| **Genesis** | `/sdd-genesis` | Supervisor | System Blueprint Contract (SBC) | `.blueprints/{SBC-ID}/` (WORKSPACE — **nunca** en AOI) |
+| **Pre-Flight** | `/sdd-frame` | Supervisor | Behavioral Intent Contract (BIC) | — (Zero-Task Footprint) |
+| **Explore** | — | @functional-analyst | Requirements + user stories | `.tasks/{feature}/TASK-YYYY-NNN/proposal.md` |
+| **Specify** | `/speckit.specify` | @functional-analyst | Formal specification | `.tasks/{feature}/TASK-YYYY-NNN/spec.md` |
+| **Clarify** | `/speckit.clarify` | @functional-analyst | Refined requirements | — |
+| **Plan** | `/speckit.plan` | @solution-architect | Architecture design | `.tasks/{feature}/TASK-YYYY-NNN/design.md` |
+| **Tasks** | `/speckit.tasks` | @solution-architect | Task breakdown | `.tasks/{feature}/TASK-YYYY-NNN/tasks.md` |
+| **Implement** | `/speckit.implement` | @frontend-developer, @backend-developer (optional), @devops-engineer (optional) | Working code | `.tasks/{feature}/TASK-YYYY-NNN/iterations/` |
+|  |  | **🛡️ TDD Gate**: RED → GREEN → REFACTOR cycle per task. No production code without a failing test first. All implementation agents enforce this internally. |  |  |
+|  |  | **🛡️ UX Gate**: @ux-designer is MANDATORY before any new UI component. @frontend-developer enforces this internally. |  |  |
+| **Verify** | — | @integration-specialist | QA + verify report | `.tasks/{feature}/TASK-YYYY-NNN/verify-report.md` |
+| **Archive** | — | @documentation-analyst | Final documentation + archive report | `.tasks/{feature}/TASK-YYYY-NNN/archive-report.md` |
+| **Transversal** | — | @project-expert | Domain Q&A, any phase | — |
 
 ## Hub-and-Spoke Protocol
 

@@ -41,7 +41,7 @@
  * actual, lo congela. Se derivó del instrumento, no se copió a mano.
  */
 export const BAND_BUDGET = {
-  '.github/agents/supervisor.agent.md': 2420,
+  '.github/agents/supervisor.agent.md': 1707,
   '.github/instructions/agent-delegation.instructions.md': 2031,
   '.github/instructions/icm-protocol.instructions.md': 2124,
   '.github/instructions/model-selection.instructions.md': 396,
@@ -51,8 +51,16 @@ export const BAND_BUDGET = {
   '.github/skills/sdd-lifecycle/SKILL.md': 1510,
 }
 
-/** El techo total de la banda, ratcheteado igual. Hoy: 9.457 tok/fase. */
-export const BAND_CEILING = 9457
+/**
+ * El techo total de la banda, ratcheteado igual.
+ *
+ * Bajó de 9.457 a 8.744 con el recorte de `supervisor.agent.md` (2.420 → 1.707):
+ * 713 de los 1.195 tokens de su tabla de ruteo eran **espacios de alineación**.
+ * El trinquete lo reclamó él mismo con `STALE BUDGET` antes de que se bajara acá,
+ * que es exactamente el mecanismo: un ahorro que no se registra se puede volver a
+ * gastar.
+ */
+export const BAND_CEILING = 8744
 
 /**
  * Compara la banda derivada contra su baseline. Pura: sólo decide, no imprime.
