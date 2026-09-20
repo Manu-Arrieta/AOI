@@ -3,10 +3,29 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, it } from 'node:test'
+import { after, describe, it } from 'node:test'
 import { GUARD_RELATIVE, auditGitGuard, installGitGuard, isInstalledWorkspace, readHooksPath } from './install-git-guard.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
+
+/**
+ * Every throwaway tree this file has made, so the end-of-file sweep can remove
+ * any that survived.
+ *
+ * Los tests llaman a `clean()` en su camino feliz, y eso alcanza mientras todo
+ * pase. Una aserción que falla se lleva el `clean()` puesto: el `fs.rmSync`
+ * nunca corre y el directorio queda. Medido antes de este arreglo: **+1 por
+ * corrida durante 20 corridas**, más rápido de lo que un test individual se
+ * lee. Y un caso creaba el workspace dentro de la aserción, así que ni
+ * siquiera tenía un `clean()` que perder.
+ *
+ * Parchear el sitio que se olvidó habría arreglado el síntoma de hoy y ninguno
+ * de mañana, porque el olvido es la forma del bug, no su instancia. La lista
+ * más el barrido del final es la red que no depende de que cada test se
+ * acuerde — la misma tercera capa que `mutation-probe.mjs` usa para las copias
+ * que un `SIGKILL` deja atrás.
+ */
+const created = []
 
 /**
  * A throwaway tree. `git: true` gives it a `.git` directory (the hook only
@@ -14,6 +33,7 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
  */
 function workspace({ git = true, guard = true, files = {} } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-gitguard-'))
+  created.push(root)
   if (git) fs.mkdirSync(path.join(root, '.git', 'hooks'), { recursive: true })
   if (guard) {
     const full = path.join(root, GUARD_RELATIVE)
@@ -30,6 +50,12 @@ function workspace({ git = true, guard = true, files = {} } = {}) {
 }
 
 const clean = (root) => fs.rmSync(root, { recursive: true, force: true })
+
+// La red: se lleva lo que los tests limpiaron y también lo que no pudieron.
+// `force` hace que volver a borrar un root ya limpio sea inofensivo.
+after(() => {
+  for (const root of created) clean(root)
+})
 const hookOf = (root) => path.join(root, '.git', 'hooks', 'commit-msg')
 const read = (root, rel) => fs.readFileSync(path.join(root, rel), 'utf8')
 
@@ -258,6 +284,9 @@ describe('telling an installed workspace from the development repository', () =>
 
 describe('reading core.hooksPath', () => {
   it('returns an empty string when git cannot answer', () => {
-    assert.equal(readHooksPath(workspace({ git: false }), () => { throw new Error('no git') }), '')
+    // El workspace se creaba DENTRO de la aserción: sin variable no había
+    // `clean()` posible, y cada corrida dejaba un directorio vivo.
+    const root = workspace({ git: false })
+    assert.equal(readHooksPath(root, () => { throw new Error('no git') }), '')
   })
 })
