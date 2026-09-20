@@ -54,10 +54,15 @@ export const PROSE_DIRS = [
 
 /**
  * Narrative prose: explanatory docs that legitimately use illustrative
- * shorthand (`@backend` for @backend-developer), npm scopes (`@scope/pkg`) and
- * the MCP gateway's compressed tool names (`icm_store`), none of which resolve
- * to a file. Only unambiguous references are checked here: script paths and
- * slash commands, which have no shorthand convention.
+ * shorthand (`@backend` for @backend-developer) and npm scopes (`@scope/pkg`),
+ * neither of which resolves to a file. Historically this list also had to
+ * tolerate `icm_store` — a name that appeared in `mcp-gateway.config.json` and
+ * in benchmarks describing it, and that named no tool the server publishes.
+ * That config now declares real tool names (measured 2026-09-19), so the
+ * tolerance is for the shorthand that is still legitimate, not for a phantom.
+ *
+ * Only unambiguous references are checked here: script paths and slash
+ * commands, which have no shorthand convention.
  */
 export const NARRATIVE_DIRS = ['docs', 'wiki']
 
