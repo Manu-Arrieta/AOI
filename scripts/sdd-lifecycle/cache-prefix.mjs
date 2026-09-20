@@ -31,7 +31,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { CACHE_BUSTER_PATTERNS } from '../multi-harness/cache-guard.mjs'
 import { assemblePhaseContext } from './assemble-phase-context.mjs'
-import { auditContextBudget, SDD_PHASES } from './context-budget.mjs'
+import { auditBandBudget } from './band-budget.mjs'
+import { auditContextBudget, formatHarnessAdapters, SDD_PHASES } from './context-budget.mjs'
 import { read } from './instruction-scope.mjs'
 
 /** Anthropic bills a cache read at a tenth of an input token. */
@@ -230,13 +231,22 @@ function main() {
 
   console.log('=== AOI Cache Prefix Economics ===\n')
   console.log(formatCacheReport(part, { payloadFloor: budget.payloadFloor }))
+  // La masa de adaptadores se calculaba desde siempre y no la mostraba ningún
+  // camino de producción: `formatHarnessAdapters` existía, estaba testeado y
+  // tenía su mensaje de alcance redactado. Son 3.722 tokens que el reporte
+  // excluía sin decirlo.
+  console.log(`\n${formatHarnessAdapters(budget.adapters, budget.floor)}`)
   console.log(`\nHuella de la masa repetida: ${surfaceDigest(root, part.universal)}`)
   console.log('Tomala antes y despues de un ciclo real: si cambia, algo reescribio')
   console.log('una superficie siempre inyectada y no hay cache que sobreviva a eso.')
 
   const all = [...part.universal, ...part.repeated, ...part.once]
   const reloaded = [...part.universal, ...part.repeated]
-  const failures = [...auditRepeatedMass(root, reloaded), ...auditMidCycleRewrites(root, all)]
+  const failures = [
+    ...auditRepeatedMass(root, reloaded),
+    ...auditMidCycleRewrites(root, all),
+    ...auditBandBudget(part.universal),
+  ]
   if (failures.length > 0) {
     console.error('')
     for (const f of failures) console.error(`❌ ${f}`)
