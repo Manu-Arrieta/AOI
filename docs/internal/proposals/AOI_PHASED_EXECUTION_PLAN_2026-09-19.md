@@ -1031,11 +1031,43 @@ líneas sustantivas del bloque:  26
 de ellas, literales en el instruction: 0
 ```
 
-**Cero líneas compartidas.** Son dos textos independientes que pueden divergir sin que nada lo note:
-recortar el instruction no toca lo que ve Claude Code, y al revés tampoco. El generador
-(`claude-project-guide.mjs`) escribe su propia versión a mano, así que la regla «el protocolo se escribe
-una vez» **no se cumple para el harness de Claude**. Unificar eso es un cambio propio —la sección difiere
-en audiencia y en longitud, no es una copia literal— y queda declarado, no hecho.
+**Cero líneas compartidas.** Pero antes de proponer unificarlas hay que ver **qué cubre cada una**, y ahí
+el hallazgo se da vuelta:
+
+| Hito de la doctrina | `icm-protocol` (2.124) | Sección de `CLAUDE.md` (592) |
+| :--- | :---: | :---: |
+| `icm store` · `icm recall` · `icm facts set` · `icm wake-up` | sí | **sí** |
+| Los cuatro niveles (`critical`/`high`/`medium`/`low`) | sí | **sí** |
+| Los cinco métodos (Memories · Memoirs · Facts · Feedback · Transcripts) | sí | no |
+| Las familias de herramientas MCP (`icm_memory_*`, `icm_memoir_*`, …) | sí | no |
+
+No es una copia accidental: es **un reparto por audiencia**. Claude Code paga su `CLAUDE.md` en cada
+turno, así que recibe el **subconjunto operativo** —los comandos que va a escribir y los niveles que va
+a elegir—; Copilot recibe además **el modelo completo**, porque su instruction se carga por fase y no en
+cada turno del mismo modo.
+
+Unificar sería una **regresión**: `CLAUDE.md` crecería los ~1.530 tok de diferencia en el harness que
+más paga por su configuración.
+
+#### Y la divergencia peligrosa ya estaba fijada
+
+Lo que sí podría doler no es la separación sino **que las dos se contradigan**. Eso está cubierto, y por
+el incidente que efectivamente ocurrió: `protocol-source.test.mjs:21` —«`CLAUDE.md` and
+`copilot-instructions` agree with the protocol on every level»— exige que cada nivel coincida con el
+protocolo, y su comentario documenta la causa:
+
+> *the generated CLAUDE.md said `-i high` for an architecture decision while the protocol said
+> `critical`. Both surfaces are always in context, so an agent read both on every task.*
+
+O sea que la parte que puede divergir de forma dañina —la única que un agente lee en las dos
+superficies a la vez— **ya tiene su aserción**. Los cinco métodos y las familias de herramientas no
+necesitan estar en las dos, porque `CLAUDE.md` no los usa.
+
+> **Corrijo lo que escribí más arriba en este mismo apartado.** Afirmé que unificar la doctrina «es un
+> cambio propio». Es falso dos veces: unificar sería una regresión de 1.530 tok, y la única divergencia
+> que importa ya estaba pinneada. Encontré una duplicación real y la leí como defecto sin medir qué
+> cubría cada lado — el mismo error que el `saving 90%` de `sdd-apply` y el «1 leak por install» de
+> `setup.sh`: **un número o una estructura que se lee como problema hasta que se la mide.**
 
 #### Lo que sigue sin poder observarse
 
