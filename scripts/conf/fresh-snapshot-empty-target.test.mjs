@@ -70,6 +70,12 @@ const BLOCK = snapshotBlock()
 function snapshotFlag(projectPath, isReinstall = 0) {
   const script = `
     warn() { :; }
+    # Extraer el bloque extrae también sus OBLIGACIONES. El bloque hace \`mktemp\`,
+    # y en setup.sh ese temporal lo borra el \`trap cleanup_temp_files EXIT\`, que
+    # vive FUERA del slice que este test recorta. Sin reponerlo acá, cada llamada
+    # deja un \`aoi-preinstalacion.XXXXXX\` de 0 bytes en \$TMPDIR: medido 2026-09-20,
+    # **4 por corrida de \`pnpm test\`** y sin techo — 419 acumulados.
+    trap 'rm -f "\${FRESH_SNAPSHOT:-}"' EXIT
     IS_REINSTALL="$2"
     PROJECT_PATH="$1"
 ${BLOCK}
