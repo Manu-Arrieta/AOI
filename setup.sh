@@ -15,6 +15,34 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCAFFOLD_DIR="$SCRIPT_DIR/scaffold"
 
+# ── Limpieza de temporales en CUALQUIER salida ───────────────────────
+#
+# Este instalador crea cinco artefactos temporales y tenía cinco `rm` al
+# final del camino feliz. Eso alcanza mientras todo salga bien: un `set -e`
+# que aborta, un Ctrl-C, o cualquier `exit` intermedio se llevan puesto el
+# `rm` y el archivo sobrevive.
+#
+# Medido el 2026-09-19: **48 `aoi-preinstalacion.XXXXXX` de 0 bytes**
+# acumulados en el temp del sistema. Y una corrida limpia de punta a punta
+# deja el contador igual — o sea que el goteo NO viene del install que
+# termina, viene de los que no terminan. Ese es el motivo del trap y no de
+# mover los `rm`: el problema no es dónde están, es que dependen de llegar.
+#
+# Es la misma forma que la fuga ya corregida del probe de mutación: limpiar
+# al final del camino feliz no es limpiar, es limpiar condicionalmente.
+#
+# `EXIT` cubre la salida normal, la de `set -e` y la de los handlers de señal
+# de abajo, que sólo fijan el código y delegan en este. `|| true` mantiene la
+# limpieza fuera del alcance de `set -e`: un `rm` que falle no puede cambiar
+# el veredicto del instalador. Una variable que nunca se asignó expande a
+# vacío y `rm -f ""` es un no-op verificado.
+cleanup_temp_files() {
+  rm -f "${FRESH_SNAPSHOT:-}" "${FRESH_RESTORE:-}" "${COMPARE_STDERR:-}" "${DASHBOARD_INSTALL_LOG:-}" 2>/dev/null || true
+}
+trap cleanup_temp_files EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
 # ── Colors ──────────────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 BLUE='\033[0;34m'; BOLD='\033[1m'; NC='\033[0m'
@@ -265,6 +293,12 @@ sanitize_ps1_for_windows_powershell5() {
   tmp_base="$(mktemp "$source_dir/aoi-setup-XXXXXX" 2>/dev/null || mktemp)"
   target_path="${tmp_base}.ps1"
   stage_path="${tmp_base}.stage"
+  # El archivo que `mktemp` crea NO se usa: existe sólo para dar dos nombres
+  # únicos. Ninguno de los caminos de abajo lo borraba, así que quedaba un
+  # `aoi-setup-XXXXXX` huérfano por invocación — en el DIRECTORIO DEL
+  # REPOSITORIO, porque `mktemp` lo crea en `$source_dir` y no en `$TMPDIR`.
+  # Se borra acá, donde ya no hace falta y antes de cualquier `return`.
+  rm -f "$tmp_base"
   touch "$target_path" "$stage_path"
   if [ -z "$target_path" ] || [ ! -f "$target_path" ] || [ -z "$stage_path" ]; then
     err "sanitize_ps1_for_windows_powershell5: could not create tempfile"
