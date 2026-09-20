@@ -126,30 +126,6 @@ After the subagent returns, verify:
 | `speckit.git.remote` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | Implementación |
 | `speckit.git.validate` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | Implementación |
 
----
-
-## Example: Invoking `solution-architect`
-
-```ts
-runSubagent({
-  agentName: "solution-architect",
-  model: "Qwen 3.7 plus - Provider - Alibaba",
-  description: "Design architecture and task plan",
-  prompt: `Workspace: {PROJECT}, {ABSOLUTE_PATH}
-Feature: {FEATURE}, TASK-{ID}
-ICM topic: sdd-{PROJECT}-{FEATURE}-TASK-{ID}
-
-FIRST: Read your skill file at .github/agents/solution-architect.agent.md.
-Follow its Session Start protocol (activate MCP tool groups, recall ICM context).
-Do NOT skip this step.
-
-THEN: Create design.md and plan.md for [...].
-Read the proposal first. Follow your SDD Plan phase protocol exactly.
-
-Relevant files: [...]
-Expected output: [...]`,
-});
-```
 
 ---
 

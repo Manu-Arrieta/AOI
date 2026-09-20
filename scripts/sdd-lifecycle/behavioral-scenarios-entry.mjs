@@ -58,7 +58,12 @@ export const ENTRY_PROBES = [
     scenario:
       'Vas a delegar en @solution-architect. ¿Exactamente qué valor de modelo pasás en runSubagent, ' +
       'y cuál es su fallback? Respondé solo con los dos valores.',
-    expected: /Qwen\s*3\.7\s*plus/i,
+    // El sufijo es obligatorio: sin `(customendpoint)` la llamada falla con
+    // "Requested model not found" para los 27 agentes, que es exactamente lo que
+    // documenta la nota del registro. El patrón anterior —sólo el nombre del
+    // modelo— aceptaba las dos formas, así que la sonda dejaba pasar la
+    // respuesta que rompe la delegación.
+    expected: /Qwen\s*3\.7\s*plus.*customendpoint/i,
   },
   {
     id: 'service-discovery-method',
