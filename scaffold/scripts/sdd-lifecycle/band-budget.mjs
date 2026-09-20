@@ -41,7 +41,7 @@
  * actual, lo congela. Se derivó del instrumento, no se copió a mano.
  */
 export const BAND_BUDGET = {
-  '.github/agents/supervisor.agent.md': 1707,
+  '.github/agents/supervisor.agent.md': 1577,
   '.github/instructions/agent-delegation.instructions.md': 1860,
   '.github/instructions/icm-protocol.instructions.md': 2124,
   '.github/instructions/model-selection.instructions.md': 396,
@@ -74,8 +74,15 @@ export const BAND_BUDGET = {
  * archivo: pasaba a `runSubagent` el valor del picker sin el sufijo del
  * transporte, que la nota de dos secciones arriba documenta como fallido para
  * los 27 agentes. Redundante con el template del Step 2 y equivocado a la vez.
+ *
+ * Bajó de 8.213 a 8.083 con el de `supervisor.agent.md` (1.707 → 1.577). Fue el
+ * bloque #1 de M5: las columnas `Spec-Kit Command` y `Artifact Path` de su tabla de
+ * ruteo. Ninguna de las dos era informacion propia —cada prompt nombra su comando,
+ * y el artefacto por fase vive en `phase-handoffs.mjs` y en el arbol de
+ * `sdd-lifecycle/SKILL.md`— y la columna `Deliverable` **se quedo**: sus
+ * descripciones («Requirements + user stories») existen solo ahi.
  */
-export const BAND_CEILING = 8213
+export const BAND_CEILING = 8083
 
 /**
  * Compara la banda derivada contra su baseline. Pura: sólo decide, no imprime.

@@ -202,4 +202,18 @@ export const ENTRY_PROBES = [
     // débil y subiría el tripwire de `behavioral-probes.test.mjs` para nada.
     expected: /constitution/i,
   },
+  {
+    id: 'spec-kit-command-per-phase',
+    cut: 'La columna Spec-Kit Command salió de la tabla de ruteo del supervisor',
+    phase: 'Phase_2_FF',
+    prompt: '.github/prompts/sdd-ff.prompt.md',
+    scenario:
+      'En esta fase corren tres comandos de spec-kit, uno por sub-fase. ¿Cuál corresponde a la sub-fase ' +
+      'Specify? Respondé solo con el comando.',
+    // La sonda existe porque el supervisor dejó de listar el comando por fase, y
+    // de esa columna el único dato que no estaba en otro lado era el MAPEO. La
+    // evidencia sigue estando en el prompt de la fase —`/speckit.specify`—, así
+    // que se verifica contra el contexto ensamblado y no hace falta un modelo.
+    expected: /\/speckit\.specify/i,
+  },
 ]

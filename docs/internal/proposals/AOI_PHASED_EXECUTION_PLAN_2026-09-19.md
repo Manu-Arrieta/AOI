@@ -521,6 +521,8 @@ cada bloque no se declara al escribir, se **mide** después de la edición y la 
 | **B4.A** | `2.420` tok · `16.940`/ciclo | quitar el padding de la tabla de ruteo | **`1.707` tok · `11.949`/ciclo** · banda `9.457 → 8.744`/fase · ciclo **`105.466 → 100.545`** | **−4.921/ciclo** | `a48f43cd31f14b6f` → **`1a990169267eb204`** | 2026-09-19 |
 | **B4.B** | `1.510` tok · `10.570`/ciclo | padding + columna derivable + B/D/A redundante | **`1.155` tok · `8.085`/ciclo** · banda `8.744 → 8.389`/fase · ciclo **`100.545 → 98.060`** | **−2.485/ciclo** | `1a990169267eb204` → **`b09415441e545056`** | 2026-09-19 |
 | **B4.C** | `2.031` tok · `14.217`/ciclo | el `Example`, redundante y equivocado | **`1.861` tok · `13.027`/ciclo** · banda `8.389 → 8.219`/fase · ciclo **`98.060 → 96.870`** | **−1.190/ciclo** | `b09415441e545056` → **`b189f6d1759e11ae`** | 2026-09-19 |
+| **M5 #1** | `1.707` tok · `11.949`/ciclo | las 2 columnas derivables de la tabla de ruteo | **`1.577` tok · `11.039`/ciclo** · banda `8.213 → 8.083`/fase · ciclo **`57.491 → 56.581`** | **−130/fase = −910/ciclo** | `b36d8cc8a308948f` → **`a3ff2655f9d9e8c7`** | 2026-09-20 |
+
 | **B5** | `105.466`/ciclo (modelo de Copilot) | medición | **(a) medida** — la banda llega a **1 de 6** harnesses, y **la banda son dos poblaciones**: 4.709 inyectados en el prefijo · 3.504 por invocación · **(b) medida** — cache real: **98,3%** global, pero **98,8% en Deepseek y 1,4% en GLM** · **(c) medida** — `ast-skeletonizer`: 64,1% sobre 241 archivos, 47,4% sobre fuentes | (a) **acota el premio** y parte la banda en dos · (b) **invierte la decisión por agente** | `4d1260941eb3392d` | 2026-09-20 |
 | **Claims + Qwen** | banda `8.219`/fase · ciclo `96.870` · huella `b189f6d1759e11ae` | los 3 claims vivos y un modelo que no existe | banda **`8.213`** · ciclo **`96.897`** · huella **`b36d8cc8a308948f`** | **+27** neto | `b189f6d1759e11ae` → **`b36d8cc8a308948f`** | 2026-09-20 |
 
@@ -550,6 +552,62 @@ saber contra qué HEAD se midió).
 **El ANTES de cada recorte se lee del trinquete de B1**, no del plan. Los números del plan son
 órdenes de magnitud para priorizar `[PLAN §7.2.3]`.
 
+### 9.19. M5 #1 ejecutado: dos columnas, no tres — el plan se equivocaba en una
+
+Es el último bloque que quedaba del plan, y el más grande: **−130 tok/fase = −910/ciclo**.
+
+El plan decía quitar tres columnas de la tabla de ruteo del supervisor —`Spec-Kit Command`, `Deliverable` y
+`Artifact Path`— porque «`phase-handoffs.mjs` ya tiene los artefactos». Medido antes de tocar nada,
+**una de las tres no era derivable**:
+
+| Columna | ¿Derivable? | Dónde vive la información |
+| :--- | :--- | :--- |
+| `Spec-Kit Command` | **Sí** | Cada prompt nombra el suyo (`/speckit.specify` en `sdd-ff.prompt.md`) |
+| `Artifact Path` | **Sí** | El nombre por fase en `HANDOFFS` y en el árbol de `sdd-lifecycle/SKILL.md`; `.specify/memory/constitution.md` en **11** archivos; `.blueprints/{SBC_ID}/` en el prompt de Genesis, con tabla propia |
+| **`Deliverable`** | **NO** | «Requirements + user stories» existe **una sola vez en el repositorio**: acá |
+
+El último dato salió de contar ocurrencias, no de razonar: `rg -Fc` sobre `.github/` da **1** para tres de
+las descripciones. La columna dice **qué** produce la fase —el nombre del artefacto no lo dice: `proposal.md`
+no contiene «Requirements + user stories»—, y eso no está en `HANDOFFS`, que lista nombres de archivo.
+
+**Resultado: se quitaron dos.** Tabla `457 → 292` tok, archivo `1.707 → 1.577`.
+
+#### Cómo se verificó cada una, en vez de confiar en el plan
+
+| Verificación | Resultado |
+| :--- | :--- |
+| **Lectores** (paso 1 del procedimiento) | Sólo `lifecycle-wiring.test.mjs` parsea la tabla, **por rangos** entre dos anclas, y sus aserciones necesitan **la fase y el agente** — ninguna de las tres columnas |
+| Las tres columnas, nombradas por algún test | **Ninguno** |
+| Los 4 literales que el test exige (`Intent Gate`, `Flexible Archive Gate`, `proposal.md`, `implementation-plan.md`) | Los cuatro **sobreviven fuera de la tabla** (sección de compuertas) |
+| Optar por hojistear el prefijo repetido en vez de quitar la columna | Rinde **39** contra **113**: el prefijo no era el costo, los nombres sí |
+
+#### Los dos controles negativos
+
+| Mutación | Rojo esperado | Obtenido |
+| :--- | :--- | :--- |
+| Borrar la fila de `Plan` | El test la nombra | `names the responsible agent for every phase of the lifecycle` **falla** |
+| Quitarle `(optional)` a `@backend-developer` | El test lo nombra | `keeps the two things the roster carried and nothing else did` **falla** |
+
+#### Y una nota que se fusionó
+
+La tabla ya tenía una nota (la del padding de B4.A, que costaba 711 tok). Al agregar la propia, eran dos
+por 88 tok para proteger 165 de ahorro. Se fusionaron en una de **59**, que dice las dos cosas: no
+re-alinear y no reponer las columnas.
+
+#### La sonda que cierra el corte
+
+El único dato que la columna quitada cargaba sin sustituto era **el mapeo comando↔sub-fase**. Se registró
+`spec-kit-command-per-phase` —«¿cuál corresponde a la sub-fase Specify?»— que se verifica contra el contexto
+ensamblado porque `/speckit.specify` está en el prompt de la fase. **Sin `forbidden`**, para no subir el
+tripwire de sondas prohibitorias por una sonda que sí es exigible.
+
+> **El plan proyectó 500 tok para este bloque y el real fue 130.** No por conservador: proyectó quitar tres
+> columnas de una tabla que entera mide 457, y una de las tres era contenido único. **El número salió del
+> orden de magnitud, no de una medición** — el mismo defecto que el `~500` de §7.2.3 y que el
+> `saving 90%`. El procedimiento de 8 pasos existe para esto, y el paso 3 («probar que el claim único
+> sobrevive») es el que encontró la columna que no había que tocar.
+
+---
 ### 9.18. La revisión de §9.17 encontró siete defectos en mi propia medición
 
 §9.17 lo escribí con números propios y lo mandé a un lente adversarial. **Encontró siete problemas, y los
