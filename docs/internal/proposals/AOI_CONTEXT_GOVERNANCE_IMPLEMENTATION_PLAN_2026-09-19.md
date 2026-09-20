@@ -1947,7 +1947,24 @@ roto** (un comentario con timestamp en la primera línea de un archivo de la ban
 | `cache_read_input_tokens` | idem |
 | `cache_creation_input_tokens` | idem |
 | Latencia por fase | instrumentación del harness |
-| `surfaceDigest` antes y después | `cache-prefix.mjs` — para probar que **el contenido no cambió**, sólo el orden |
+| `surfaceDigest` **excluyendo el archivo del buster** | `cache-prefix.mjs` — ver la nota de abajo: el digest crudo NO sirve como control |
+
+> **Corregido el 2026-09-20: el digest crudo no podía probar lo que este control le pedía.** La fila
+> decía «para probar que el contenido no cambió», y el buster **es** un cambio de contenido —un
+> comentario con timestamp en la primera línea—, así que `surfaceDigest` cambiaba por construcción.
+> Medido: crudo `ca6d300d753ef536` → `87ea8344628474e4`.
+>
+> La corrección no necesita código nuevo, porque `surfaceDigest(root, rows)` ya recibe las filas:
+>
+> ```js
+> const sinBuster = rows.filter((r) => r.source !== ARCHIVO_DEL_BUSTER)
+> surfaceDigest(root, sinBuster)   // idéntico entre las dos corridas → nada más cambió
+> ```
+>
+> Verificado con las dos mitades: excluyendo el archivo del buster el digest queda **idéntico**
+> (`27a5b91d4e4421fd` en las dos corridas), y modificando **otro** archivo lo detecta. O sea que el
+> control prueba la propiedad que se le pedía —«nada cambió salvo lo deliberado»— en vez de cambiar
+> por la variable que debía mantener constante.
 
 **Qué decide.** Si hay caché efectivo → el esfuerzo va a la **masa por fase** (17.681 de prompts
 + 10.570 de speckit + 5.466 propios), porque **nunca se cachea**. Si no hay caché → la **banda

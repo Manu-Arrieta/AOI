@@ -928,9 +928,18 @@ constante.** Correrlo como está escrito daría dos corridas con digests distint
 tendría que elegir entre atribuir la diferencia al caché o al contenido — que es la ambigüedad que el
 control existe para eliminar.
 
-La corrección es acotada y queda **propuesta, no aplicada**: el digest tiene que ser invariante al buster
-—calculado sobre una copia normalizada, o con el buster en una superficie que esté en el prompt y no en la
-banda—. Cambiarlo es cambiar el instrumento, y el instrumento tiene tests propios.
+La corrección no necesita tocar el instrumento, y ése fue el error de mi primera lectura: **`surfaceDigest(root, rows)` ya recibe las filas**, así que alcanza con excluir el archivo del buster.
+
+```js
+const sinBuster = rows.filter((r) => r.source !== ARCHIVO_DEL_BUSTER)
+surfaceDigest(root, sinBuster)   // idéntico entre las dos corridas → nada más cambió
+```
+
+Verificado con las dos mitades: excluyendo ese archivo el digest queda **idéntico** (`27a5b91d4e4421fd` en las dos corridas), y modificando **otro** archivo lo detecta. O sea que el control prueba la propiedad que se le pedía —«nada cambió salvo lo deliberado»— en vez de cambiar por la variable que debía mantener constante.
+
+**Y la propiedad quedó fijada en `cache-prefix.test.mjs`**, porque el protocolo ahora **depende** de ella: `excluir una fila vuelve el digest insensible a ESE archivo, y sólo a ese`. Las dos mitades están en el caso, y por eso el control negativo de este test es doble: si `surfaceDigest` dejara de leer el contenido, caen **3 casos** —el nuevo y los dos que ya verificaban que se mueve ante una edición.
+
+> **Corregido el 2026-09-20 en los dos documentos.** Yo había escrito que «cambiarlo es cambiar el instrumento, y el instrumento tiene tests propios»: era cierto para la corrección que imaginé —un digest normalizado dentro de `cache-prefix.mjs`— y falso para ésta, que usa la firma que el instrumento **ya** tiene. Antes de concluir que algo exige tocar un instrumento, conviene mirar si su firma ya admite el caso.
 
 La otra mitad de (b), los contadores `cache_read_input_tokens` y `cache_creation_input_tokens`, sí es
 estrictamente inobtenible acá: son de la respuesta del proveedor.

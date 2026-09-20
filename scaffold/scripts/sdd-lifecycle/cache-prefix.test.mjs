@@ -182,6 +182,37 @@ describe('the digest', () => {
     assert.notEqual(surfaceDigest(root, rows), before)
     fs.rmSync(root, { recursive: true, force: true })
   })
+
+  it('excluir una fila vuelve el digest insensible a ESE archivo, y sólo a ese', () => {
+    // El protocolo de medición de régimen de caché (`[PLAN §8.4(b)]`) inyecta un
+    // buster —un timestamp en la primera línea de un archivo de la banda— y
+    // necesita probar que NADA MÁS cambió. El digest crudo no puede: cambia por
+    // construcción, porque el buster es una edición real. La corrección usa la
+    // firma que `surfaceDigest` ya tiene, filtrando la fila del archivo tocado.
+    //
+    // Ese protocolo depende de esta propiedad, así que se fija acá. Las dos
+    // mitades importan: sin la segunda, un digest que ignorara TODOS los cambios
+    // pasaría el test y no controlaría nada.
+    const A = '.github/instructions/a.instructions.md'
+    const B = '.github/instructions/b.instructions.md'
+    const root = workspace({ [A]: 'contenido A', [B]: 'contenido B' })
+    const rows = [{ source: A, tokens: 2 }, { source: B, tokens: 2 }]
+    const todas = () => surfaceDigest(root, rows)
+    const sinA = () => surfaceDigest(root, rows.filter((r) => r.source !== A))
+
+    const crudoAntes = todas()
+    const filtradoAntes = sinA()
+
+    fs.writeFileSync(path.join(root, A), '<!-- timestamp -->\ncontenido A')
+
+    assert.notEqual(todas(), crudoAntes, 'el digest crudo tiene que moverse: el buster es una edición real')
+    assert.equal(sinA(), filtradoAntes, 'excluyendo el archivo del buster el digest tiene que quedar idéntico')
+
+    // Y la otra dirección: excluir A no puede volver ciego el digest a B.
+    fs.writeFileSync(path.join(root, B), 'contenido B modificado')
+    assert.notEqual(sinA(), filtradoAntes, 'el filtro no puede tapar un cambio en otro archivo')
+    fs.rmSync(root, { recursive: true, force: true })
+  })
 })
 
 describe('the load map counts phases, not occurrences', () => {
