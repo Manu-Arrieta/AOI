@@ -42,7 +42,7 @@
  */
 export const BAND_BUDGET = {
   '.github/agents/supervisor.agent.md': 1707,
-  '.github/instructions/agent-delegation.instructions.md': 2031,
+  '.github/instructions/agent-delegation.instructions.md': 1861,
   '.github/instructions/icm-protocol.instructions.md': 2124,
   '.github/instructions/model-selection.instructions.md': 396,
   '.github/instructions/rtk.instructions.md': 334,
@@ -67,8 +67,15 @@ export const BAND_BUDGET = {
  * mismas siete fases—. La octava, leer la constitución, no existe en ninguna de
  * las otras nueve fuentes: se quedó, y con ella un puntero a donde viven las
  * otras siete.
+ *
+ * Bajó de 8.389 a 8.219 con el de `agent-delegation.instructions.md` (2.031 →
+ * 1.861). Ahí el recorte no fue por tamaño —este archivo no tenía padding— sino
+ * porque su bloque `Example` era la única pieza que **contradecía** al propio
+ * archivo: pasaba a `runSubagent` el valor del picker sin el sufijo del
+ * transporte, que la nota de dos secciones arriba documenta como fallido para
+ * los 27 agentes. Redundante con el template del Step 2 y equivocado a la vez.
  */
-export const BAND_CEILING = 8389
+export const BAND_CEILING = 8219
 
 /**
  * Compara la banda derivada contra su baseline. Pura: sólo decide, no imprime.
