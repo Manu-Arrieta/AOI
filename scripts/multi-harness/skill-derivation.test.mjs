@@ -36,6 +36,31 @@ import { isDevelopmentRepo } from '../scaffold/governed-paths.mjs'
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8')
 
+/**
+ * Lo que el compilador ESCRIBE para antigravity, en un árbol temporal.
+ *
+ * Contra esto y no contra el espejo: `test:parity` compara root y `scaffold/`,
+ * y las dos copias pueden estar igual de viejas —coinciden entre sí, y la
+ * compuerta queda verde sobre un artefacto obsoleto—.
+ */
+function compiledAntigravitySkills(names) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-derive-gate-'))
+  try {
+    for (const rel of ['.github/instructions', '.github/skills']) {
+      fs.cpSync(path.join(ROOT, rel), path.join(tmp, rel), { recursive: true })
+    }
+    compileHarnessRules(tmp, ['antigravity'], 'AOI')
+    return new Map(
+      names.map((name) => {
+        const out = path.join(tmp, '.agents', 'skills', name, 'SKILL.md')
+        return [name, fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : null]
+      })
+    )
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
 describe('a shrunk skill and its derivation are registered together', () => {
   const skillsDir = path.join(ROOT, '.github/skills')
   const skills = fs
@@ -176,23 +201,10 @@ describe('compile-rules DERIVES the antigravity copy instead of mirroring it', (
   // silently is the exact defect it was written to catch, pointed at itself.
   let written = null
   function compiledOutput() {
+    // El trabajo lo hace el helper, fuera de este cuerpo: acá sólo se cachea.
     if (written) return written
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-derive-gate-'))
-    try {
-      for (const rel of ['.github/instructions', '.github/skills']) {
-        fs.cpSync(path.join(ROOT, rel), path.join(tmp, rel), { recursive: true })
-      }
-      compileHarnessRules(tmp, ['antigravity'], 'AOI')
-      written = new Map(
-        registered.map((name) => {
-          const out = path.join(tmp, '.agents', 'skills', name, 'SKILL.md')
-          return [name, fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : null]
-        })
-      )
-      return written
-    } finally {
-      fs.rmSync(tmp, { recursive: true, force: true })
-    }
+    written = compiledAntigravitySkills(registered)
+    return written
   }
 
   for (const name of registered) {
@@ -243,4 +255,33 @@ describe('/init verifica exactamente las skills que el repositorio envía', () =
     assert.ok(m, 'desapareció la línea que declara cuántas skills verificar')
     assert.equal(Number(m[1]), enDisco().length, 'el conteo del prompt quedó desfasado del disco')
   })
+})
+
+describe('cada skill tiene su copia compilada al día, no sólo las derivadas', () => {
+  // El GAP que esto cierra, medido el 2026-09-19. Los bloques de arriba cubren
+  // las skills DERIVADAS y la lista de `/init`; ninguno abre la copia compilada
+  // del resto. Se recortó `skills/sdd-lifecycle/SKILL.md` y antigravity siguió
+  // con el texto viejo mientras `pnpm test` daba verde DOS veces: el recorte
+  // llegó a Copilot y no a antigravity, y nada lo dijo.
+  const skills = fs
+    .readdirSync(path.join(ROOT, '.github/skills'), { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
+
+  let written = null
+  const compiled = () => (written ??= compiledAntigravitySkills(skills))
+
+  it('encuentra las skills, así la compuerta no es vacía', () => {
+    assert.ok(skills.length >= 5, `sólo ${skills.length} skills`)
+  })
+
+  for (const name of skills) {
+    it(`.agents/skills/${name}/SKILL.md es lo que el compilador escribe`, () => {
+      assert.equal(
+        read(`.agents/skills/${name}/SKILL.md`),
+        compiled().get(name),
+        `.agents/skills/${name}/SKILL.md quedó viejo: se editó la skill sin correr \`pnpm aoi:sync-rules\``
+      )
+    })
+  }
 })
