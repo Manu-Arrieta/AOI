@@ -33,24 +33,18 @@ import { probe } from './mutation-probe.mjs'
  * verifier's exit-code line was the first one repaid.
  */
 export const MUTATION_FLOOR = {
-  // 68 → 69 en la cuarta pasada. No es que el área haya mejorado sola: la
-  // lente adversarial midió que `isTurnSuperseded` tumbaba el diagnóstico de un
-  // archivo con la corrida de OTRO, y que dos turnos sin `id` no se tumbaban
-  // nunca. Los casos que fijan las dos correcciones matan más mutantes.
+  // 68 → 71 → 73, y las dos últimas subidas vinieron con el conteo: 90 → 105 →
+  // 113 mutantes. 71 salió de separar la CLI de `context-tombstone.mjs` (el
+  // módulo cruzaba el Invariante 5) y 73 de validar la forma de cada turno. Sus
+  // seis sobrevivientes iniciales se curaron uno por uno —dos eran mutantes
+  // EQUIVALENTES en `[lt→lte]` de índices de bucle, que se matan quitando el
+  // operador en vez de agregando un caso— y queda el par de la guardia de
+  // entrypoint, el mismo que sobrevive en `detect-base-project.mjs`.
   //
-  // 69 → 71. Medido 2026-09-19 tras separar la superficie CLI de
-  // `context-tombstone.mjs` a su propio archivo (188 LOC, para que el módulo no
-  // cruzara el Invariante 5). El archivo nuevo trajo sus 15 mutantes y el score
-  // subió igual: **105 mutantes**, 30 sobreviven. Los seis que sobrevivían al
-  // principio se curaron uno por uno —dos eran mutantes EQUIVALENTES en `[lt→lte]`
-  // de índices de bucle, que se matan quitando el operador en vez de agregando un
-  // caso— y queda uno: el par de la guardia de entrypoint, el mismo que sobrevive
-  // en `detect-base-project.mjs`.
-  //
-  // La lección de esta subida: yo tenía anotado 72% y la medición dio **71%**.
-  // Subir un piso con el número recordado lo habría dejado inalcanzable por un
-  // punto, que es el defecto de `scripts/memory-sync` en miniatura.
-  'scripts/subagent-context': 71,
+  // La lección de la primera: yo tenía anotado 72% y la medición dio **71%**.
+  // Subir un piso con el número recordado lo deja inalcanzable por un punto, que
+  // es `scripts/memory-sync` en miniatura.
+  'scripts/subagent-context': 73,
   // 86 → 88. Los casos de contención de `assertSandboxPath` —barra invertida,
   // `..` que vuelve adentro, nombre de sandbox que no es un segmento— matan
   // mutantes del guard que antes sobrevivían porque ningún test le daba la
@@ -77,30 +71,16 @@ export const MUTATION_FLOOR = {
   // Los 11 que quedan son el manejo de fallas del CLI de ICM (`ok`, `error.code`,
   // `allowFailure`): necesitan un `icm` que falle a demanda. Declarado, no
   // perseguido.
-  // 67 → 68. Los casos de la guardia de ancho de `buildArchiveClosure` (paso
-  // 7.4) matan mutantes que antes sobrevían. Los mutantes del área subieron de
-  // 229 a 249 por el código nuevo, y el score subió igual.
+  // Tres subidas, todas CON el conteo y no contra él: 229 → 249 → 330 → 336
+  // mutantes, y 67 → 68 → 69 → 70. Un archivo nuevo baja el porcentaje aunque
+  // no se toque nada viejo (`write-base-project.mjs` llevó `sandbox` de 88% a
+  // 82%), así que subir con el conteo es lo único que prueba que la cobertura no
+  // se diluyó. Las dos últimas vinieron de B0/B1 y de darle su `main` a
+  // `synthesize-stubs`.
   //
-  // 68 → 69. Medido 2026-09-19, después de que B0 (`audit-task-artifacts.mjs`)
-  // y B1 (`band-budget.mjs`) agregaran código al área: **330 mutantes** —de 249—
-  // y **101 sobrevivientes**, 69%. El score subió CON el conteo de mutantes, que
-  // es la dirección que importa: el código nuevo vino con sus propios casos, así
-  // que no diluyó la cobertura existente. Verificar esto era el punto de correr
-  // el área después de esas dos ramas, porque un archivo nuevo baja el porcentaje
-  // aunque no se toque nada viejo —pasó con `write-base-project.mjs` en
-  // `scripts/sandbox`, 88% → 82%—.
-  //
-  // La advertencia vigente: seis suites de esta área spawnean procesos y dos
-  // nombran `icm`. Eso es superficie para dependencia del entorno, y el
-  // precedente de `scripts/memory-sync` es que un piso medido en una sola
-  // máquina puede ser inalcanzable en CI. Si CI mide 68 acá, el piso es 68: el
-  // valor REPRODUCIDO manda sobre el mejor visto.
-  //
-  // 69 → 70. Medido 2026-09-20, después de darle su `main` a `synthesize-stubs`
-  // y de conectar las dos mitades del andamiaje: **336 mutantes** —de 330— y 102
-  // sobrevivientes. Otra vez subió CON el conteo, que es la única dirección que
-  // prueba algo: el CLI y el caso de la forma de cada turno trajeron sus
-  // propios tests, y ésos matan mutantes del código nuevo.
+  // Advertencia vigente: seis suites del área spawnean procesos y dos nombran
+  // `icm` — superficie para dependencia del entorno. Si CI mide 69, el piso es
+  // 69: manda el valor REPRODUCIDO, no el mejor visto.
   'scripts/sdd-lifecycle': 70,
   // Shell. The installer machinery is where the most destructive defects of
   // the audit lived, so leaving it unmeasured left the worst code in the
