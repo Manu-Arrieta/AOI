@@ -530,6 +530,83 @@ saber contra qué HEAD se midió).
 **El ANTES de cada recorte se lee del trinquete de B1**, no del plan. Los números del plan son
 órdenes de magnitud para priorizar `[PLAN §7.2.3]`.
 
+### 9.8. El ratchet de mutación: B0 y B1 no diluyeron la cobertura
+
+Era la única verificación que podía forzar rehacer trabajo después de mergear, y por eso se corrió
+contra el árbol final y no contra las ramas: `scripts/sdd-lifecycle` es donde B0 y B1 agregaron
+código, y **un archivo nuevo baja el porcentaje aunque no se toque nada viejo** — pasó con
+`write-base-project.mjs`, que llevó `scripts/sandbox` de 88% a 82%.
+
+```text
+scripts/sdd-lifecycle ... 69% (piso 68) · 330 mutantes · 101 sobreviven
+```
+
+**El score subió con el conteo de mutantes.** De 249 a **330** mutantes, y de 68% a **69%**: el
+código nuevo vino con sus propios casos, así que no diluyó lo que ya había. El piso pasó a 69.
+
+#### El costo, medido por primera vez para esta área
+
+La tabla de costos que existía decía `sandbox` ~1 min · `multi-harness` ~2,5 min · `scaffold`
+~17 min. **`sdd-lifecycle` no estaba**, y es la más cara de todas: **~45 min**. Los factores,
+todos medidos o leídos de la fuente:
+
+| Factor | Valor | De dónde sale |
+| :--- | ---: | :--- |
+| Mutantes | **330** | `areaSources` + `mutationsFor` sobre 37 archivos |
+| Tests por mutante | **32 archivos / 381 tests** | el glob es `scripts/sdd-lifecycle/*.test.mjs` |
+| Procesos por corrida | ~44 | `--test-isolation=process` |
+| Spawns totales | **~14.500** | 330 × 44 |
+| Timeout por mutante | `min(120s, max(15s, baseline × 10))` | `mutationTimeout` |
+
+Con una suite de ~3 s el timeout queda en **30 s**. Un mutante que cuelga —invertir un límite de
+bucle no falla, gira— cuesta 10× lo que uno que falla. El piso teórico del área es 330 × 3 s ≈
+**16,5 min**; los otros ~28 son cuelgues. El docblock del probe ya lo decía con estas palabras:
+*"which is how a probe over a one-second suite ends up taking an hour"*.
+
+Dos cosas que conviene no repetir:
+
+1. **No hay progreso incremental.** Imprime el nombre del área y el número recién al final. 45
+   minutos sin señal, y `ps` mostrando `%CPU 0.0` (es un promedio, no una señal de que se colgó —
+   lo que lo confirma es que los hijos avanzan).
+2. **Y yo lo empeoré**: corrí instalaciones limpias, la cadena entera y el doctor en paralelo. La
+   carga llegó a 6,05. Además de estirar cada corrida, puede empujar mutantes de borde más allá
+   del timeout — y esos se cuentan como **muertos**, así que contamina el número que se está
+   midiendo. El probe es un instrumento de CI: no se lo corre con la máquina haciendo otra cosa.
+
+#### Y la segunda área: `subagent-context`, donde el número recordado estaba mal
+
+```text
+scripts/subagent-context ... 71% (piso 69) · 105 mutantes · 30 sobreviven
+```
+
+B2 separó la superficie CLI de `context-tombstone.mjs` a su propio archivo (188 LOC) para que el
+módulo no cruzara el Invariante 5. El archivo nuevo trajo **15 mutantes** —de 90 a 105— y el score
+subió igual: **69% → 71%**, piso nuevo 71.
+
+Los seis sobrevivientes que había al agregarlo se curaron uno por uno, y dos de ellos valen la pena
+porque **no se matan con un test más**:
+
+| Sobreviviente | Por qué sobrevivía | Cómo se mató |
+| :--- | :--- | :--- |
+| `[lt→lte]` en un índice de bucle | **Mutante equivalente**: `i < n` e `i <= n` no cambian el resultado de un bucle bien formado | Quitando el operador del código, no agregando un caso |
+| default `dryRun = false` | Todos los tests lo pasaban explícito, así que el default nunca se ejercitaba | Un caso que **omite el argumento** |
+| guarda de división por cero | Ningún test con `tokensBefore = 0` | Un caso con la entrada que la guarda existe para atrapar |
+
+Queda **uno**: el par de la guardia de entrypoint (`argv[1] && path.resolve(...) === ...`). Es
+coherente con la línea base —el mismo par sobrevive en `detect-base-project.mjs`— y no vale un test
+de subproceso por un punto de porcentaje.
+
+> **Acá el número recordado estaba mal, y eso importa más que la subida.** Yo tenía anotado 72% y
+> la medición dio **71%**. Subir el piso con el valor de memoria lo habría dejado inalcanzable por
+> un punto — que es el defecto de `scripts/memory-sync` en miniatura: allí el piso se había fijado
+> en 93% cuando CI sólo podía llegar a 91%, y quedó rojo dos días. **Un piso se sube con la
+> medición delante, nunca con la que uno recuerda.**
+
+---
+La primera corrida se descartó a los 40 minutos por una razón aparte: había arrancado **antes** de
+B4.B y B4.C, así que su resultado habría sido sobre un árbol que ya no existía.
+
+---
 ### 9.7. Dos compuertas que nombraban lo que no podían ver
 
 Las dos salieron de B5 y son la misma forma: **un mecanismo que declara cubrir algo y no lo alcanza**, con

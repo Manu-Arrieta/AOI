@@ -37,7 +37,20 @@ export const MUTATION_FLOOR = {
   // lente adversarial midió que `isTurnSuperseded` tumbaba el diagnóstico de un
   // archivo con la corrida de OTRO, y que dos turnos sin `id` no se tumbaban
   // nunca. Los casos que fijan las dos correcciones matan más mutantes.
-  'scripts/subagent-context': 69,
+  //
+  // 69 → 71. Medido 2026-09-19 tras separar la superficie CLI de
+  // `context-tombstone.mjs` a su propio archivo (188 LOC, para que el módulo no
+  // cruzara el Invariante 5). El archivo nuevo trajo sus 15 mutantes y el score
+  // subió igual: **105 mutantes**, 30 sobreviven. Los seis que sobrevivían al
+  // principio se curaron uno por uno —dos eran mutantes EQUIVALENTES en `[lt→lte]`
+  // de índices de bucle, que se matan quitando el operador en vez de agregando un
+  // caso— y queda uno: el par de la guardia de entrypoint, el mismo que sobrevive
+  // en `detect-base-project.mjs`.
+  //
+  // La lección de esta subida: yo tenía anotado 72% y la medición dio **71%**.
+  // Subir un piso con el número recordado lo habría dejado inalcanzable por un
+  // punto, que es el defecto de `scripts/memory-sync` en miniatura.
+  'scripts/subagent-context': 71,
   // 86 → 88. Los casos de contención de `assertSandboxPath` —barra invertida,
   // `..` que vuelve adentro, nombre de sandbox que no es un segmento— matan
   // mutantes del guard que antes sobrevivían porque ningún test le daba la
