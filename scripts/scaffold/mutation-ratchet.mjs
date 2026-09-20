@@ -95,7 +95,13 @@ export const MUTATION_FLOOR = {
   // precedente de `scripts/memory-sync` es que un piso medido en una sola
   // máquina puede ser inalcanzable en CI. Si CI mide 68 acá, el piso es 68: el
   // valor REPRODUCIDO manda sobre el mejor visto.
-  'scripts/sdd-lifecycle': 69,
+  //
+  // 69 → 70. Medido 2026-09-20, después de darle su `main` a `synthesize-stubs`
+  // y de conectar las dos mitades del andamiaje: **336 mutantes** —de 330— y 102
+  // sobrevivientes. Otra vez subió CON el conteo, que es la única dirección que
+  // prueba algo: el CLI y el caso de la forma de cada turno trajeron sus
+  // propios tests, y ésos matan mutantes del código nuevo.
+  'scripts/sdd-lifecycle': 70,
   // Shell. The installer machinery is where the most destructive defects of
   // the audit lived, so leaving it unmeasured left the worst code in the
   // project outside the only check that asks whether its tests bind.

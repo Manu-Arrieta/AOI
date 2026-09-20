@@ -58,7 +58,7 @@ export function supersededPairs(turns) {
  * entrada, en vez de matando un subproceso.
  *
  * @param {{ file: string, threshold?: number }} opts
- * @returns {{ applied: boolean, reason?: string, turns: number, tombstoned: number,
+ * @returns {{ applied: boolean, reason?: string, turns: number, unusable: number, tombstoned: number,
  *   tokensBefore: number, tokensAfter: number, icm: Array<object>, result: Array<object> }}
  */
 export function runTombstone(opts) {
@@ -66,6 +66,21 @@ export function runTombstone(opts) {
   const turns = Array.isArray(raw) ? raw : raw?.turns
   if (!Array.isArray(turns)) {
     throw new Error(`${opts.file}: se esperaba un array de turnos, o un objeto con "turns"`)
+  }
+
+  // La forma de cada TURNO no se miraba: se validaba el contenedor y nada más.
+  // Medido el 2026-09-20 con `[{"foo":"bar"}]`: exit 0, "Turnos: 1, Tumbados:
+  // 0, Ahorro: 0 (0.0%)", y el input devuelto como si fuera el resultado. Una
+  // corrida que NO HIZO NADA era indistinguible de una que no encontró nada
+  // para tumbar — y `isTurnSuperseded` ramifica sobre `tool`, así que un turno
+  // sin ese campo no puede tumbar ni ser tumbado por más vueltas que dé.
+  const unusable = turns.filter((t) => !t || typeof t !== 'object' || typeof t.tool !== 'string')
+  if (turns.length > 1 && unusable.length === turns.length) {
+    throw new Error(
+      `${opts.file}: los ${turns.length} turnos carecen de "tool". Sin ese campo ninguno puede ` +
+        'superar a otro, así que el reporte diría "0%" y parecería que no había nada que tumbar. ' +
+        'Se espera un array de { id, turnNumber, tool, target?, content, summary? }.'
+    )
   }
 
   const threshold = opts.threshold ?? 0
@@ -78,6 +93,7 @@ export function runTombstone(opts) {
       applied: false,
       reason: `${turns.length} turno(s) <= --threshold ${threshold}: no se toca nada`,
       turns: turns.length,
+      unusable: unusable.length,
       tombstoned: 0,
       tokensBefore,
       tokensAfter: tokensBefore,
@@ -90,6 +106,7 @@ export function runTombstone(opts) {
   return {
     applied: true,
     turns: turns.length,
+    unusable: unusable.length,
     tombstoned: result.filter((t) => t.isTombstone).length,
     tokensBefore,
     tokensAfter: result.reduce((n, t) => n + estimateTokens(t?.content ?? ''), 0),
@@ -116,6 +133,15 @@ export function formatTombstoneReport(r, { dryRun = false } = {}) {
   if (r.icm.length > 0) {
     lines.push('', `Errores resueltos a persistir en ICM: ${r.icm.length}`)
     for (const rec of r.icm) lines.push(`  [${rec.topic}] ${rec.content}`)
+  }
+  // Un "0%" con datos inutilizables se lee como "no había nada que tumbar".
+  // Decir cuántos turnos no se pueden usar es la diferencia entre un ahorro
+  // real y una entrada que nunca podía dar otra cosa.
+  if (r.unusable > 0) {
+    lines.push(
+      '',
+      `Turnos sin "tool": ${r.unusable} de ${r.turns} — esos no pueden tumbar ni ser tumbados.`
+    )
   }
   if (!r.applied) lines.push('', `No se aplico: ${r.reason}`)
   else if (dryRun) lines.push('', 'Dry run: no se escribio nada.')

@@ -19,7 +19,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { after, describe, it } from 'node:test'
-import { formatTombstoneReport } from './context-tombstone-cli.mjs'
+import { formatTombstoneReport, runTombstone } from './context-tombstone-cli.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const CLI = path.join(HERE, 'context-tombstone-cli.mjs')
@@ -252,5 +252,35 @@ describe('formatTombstoneReport, ramas que el CLI no alcanza', () => {
   it('sin aplicar, dice por que', () => {
     const out = formatTombstoneReport(report({ applied: false, reason: 'pocos turnos' }))
     assert.match(out, /No se aplico: pocos turnos/)
+  })
+
+  it('dice cuantos turnos no tienen forma, y calla cuando no hay ninguno', () => {
+    // La mitad que faltaba en el resto del archivo: la AUSENCIA. Sin ella, un
+    // guard que la imprima siempre pasaria.
+    assert.match(formatTombstoneReport(report({ unusable: 1 })), /sin "tool": 1 de 2/)
+    assert.doesNotMatch(formatTombstoneReport(report({ unusable: 0 })), /sin "tool"/)
+  })
+})
+
+describe('la forma de cada turno, que no se miraba', () => {
+  // Medido el 2026-09-20: `[{"foo":"bar"}]` daba exit 0 con "Ahorro: 0 (0.0%)"
+  // y el input devuelto como resultado. Se validaba el CONTENEDOR y nada mas:
+  // una corrida que no hizo nada se leia igual que una sin nada que tumbar.
+  it('falla cuando NINGUN turno declara tool, y nombra la forma esperada', () => {
+    const { file } = turnsFile([{ foo: 'bar' }, { baz: 1 }])
+    assert.throws(() => runTombstone({ file }), /tool/)
+  })
+
+  it('un solo turno sin tool no es error: no hay nada que tumbar', () => {
+    const { file } = turnsFile([{ foo: 'bar' }])
+    assert.equal(runTombstone({ file }).unusable, 1)
+  })
+
+  it('con algunos usables cuenta los que no lo son, sin fallar', () => {
+    const { file } = turnsFile([...TURNS, { foo: 'bar' }])
+    const r = runTombstone({ file })
+    assert.equal(r.turns, TURNS.length + 1)
+    assert.equal(r.unusable, 1)
+    assert.equal(r.tombstoned, 2, 'los turnos usables tienen que seguir tumbandose')
   })
 })

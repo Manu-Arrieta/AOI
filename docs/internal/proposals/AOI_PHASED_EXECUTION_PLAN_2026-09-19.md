@@ -591,6 +591,37 @@ compuerta, y su valor hoy sería **preventivo puro**: los dos defectos reales qu
 están cerrados. Si se construye, tiene que reconocer los cuatro idiomas y excluir los tests —y eso
 es un diseño con su propio contrato de tests, no las ~20 LOC que estimé.
 
+#### Y el GAP #2 escondía un tercer defecto: la forma de cada turno
+
+`context-tombstone` lee un `turns.json` que ningún productor del ciclo genera, y el prompt lo
+declara paso **MANDATORY** sin decir de dónde sale ni qué forma tiene. Al medirlo apareció algo más
+concreto:
+
+```text
+$ node .../context-tombstone-cli.mjs --file bad.json      # [{"foo":"bar"}]
+Turnos:         1
+Tumbados:       0
+Ahorro:         0 (0.0%)
+exit=0                                  ← y devuelve el input como si fuera el resultado
+```
+
+Se validaba el **contenedor** (array, u objeto con `turns`) y **nunca los turnos**. Y `isTurnSuperseded`
+ramifica sobre `tool`: un turno sin ese campo no puede tumbar ni ser tumbado por más vueltas que dé.
+Así que **una corrida que no hizo nada era indistinguible de una que no encontró nada para tumbar**,
+y el paso obligatorio del prompt podía reportar un `0%` tranquilizador sobre datos inservibles.
+
+El arreglo marca la diferencia que el reporte no hacía:
+
+| Entrada | Antes | Ahora |
+| :--- | :--- | :--- |
+| Todos los turnos sin `tool` | exit 0 · "Ahorro: 0 (0.0%)" | **exit 1** nombrando la forma esperada |
+| Algunos sin `tool` | silencio | `Turnos sin "tool": 1 de 2` |
+| Un solo turno | exit 0 | exit 0 *(correcto: no hay par posible)* |
+
+Cierra el GAP #2 por donde se podía cerrar sin inventar una decisión de producto: el CLI no puede
+producir el `turns.json` —los turnos viven en el harness—, pero ahora **dice qué espera de él**, y lo
+dice en el punto de falla. Inventar un exportador de turnos es una feature, y necesita saber el
+formato de cada harness; eso sigue siendo una decisión, no un pendiente.
 > Vale registrar el patrón: **de los cuatro GAPs que reporté, uno era más chico de lo que dije
 > (el CLI), dos eran el mismo defecto (CLI + docblock, vistos desde dos lados) y uno no debía
 > existir** (la compuerta). Medir antes de construir dio la vuelta a dos de los cuatro.
