@@ -521,7 +521,7 @@ cada bloque no se declara al escribir, se **mide** después de la edición y la 
 | **B4.A** | `2.420` tok · `16.940`/ciclo | quitar el padding de la tabla de ruteo | **`1.707` tok · `11.949`/ciclo** · banda `9.457 → 8.744`/fase · ciclo **`105.466 → 100.545`** | **−4.921/ciclo** | `a48f43cd31f14b6f` → **`1a990169267eb204`** | 2026-09-19 |
 | **B4.B** | `1.510` tok · `10.570`/ciclo | padding + columna derivable + B/D/A redundante | **`1.155` tok · `8.085`/ciclo** · banda `8.744 → 8.389`/fase · ciclo **`100.545 → 98.060`** | **−2.485/ciclo** | `1a990169267eb204` → **`b09415441e545056`** | 2026-09-19 |
 | **B4.C** | `2.031` tok · `14.217`/ciclo | el `Example`, redundante y equivocado | **`1.861` tok · `13.027`/ciclo** · banda `8.389 → 8.219`/fase · ciclo **`98.060 → 96.870`** | **−1.190/ciclo** | `b09415441e545056` → **`b189f6d1759e11ae`** | 2026-09-19 |
-| **B5** | `105.466`/ciclo (modelo de Copilot) | medición | **(a) respondida por medición** — la banda llega a **1 de 6** harnesses: editar `icm-protocol` propaga sólo a `.agents/skills/icm/SKILL.md` · **(b) protocolo corregido** — el digest filtrado por fila, con las dos mitades fijadas en test · **(c) medida** — `ast-skeletonizer`: **64,1%** sobre 241 archivos, **47,4%** sobre fuentes | (a) **acota el premio**: ×7 es sólo Copilot · (c) ninguno | `4d1260941eb3392d` | 2026-09-20 |
+| **B5** | `105.466`/ciclo (modelo de Copilot) | medición | **(a) medida** — la banda llega a **1 de 6** harnesses, y **la banda son dos poblaciones**: 4.709 inyectados en el prefijo · 3.504 por invocación · **(b) medida** — cache real: **98,3%** global, pero **98,8% en Deepseek y 1,4% en GLM** · **(c) medida** — `ast-skeletonizer`: 64,1% sobre 241 archivos, 47,4% sobre fuentes | (a) **acota el premio** y parte la banda en dos · (b) **invierte la decisión por agente** | `4d1260941eb3392d` | 2026-09-20 |
 
 **Las tres columnas que no se negocian:** el valor **medido** (no estimado), la **huella** de la
 masa repetida (si cambia, cambió la entrada y el delta no es comparable), y la **fecha** (para
@@ -530,6 +530,99 @@ saber contra qué HEAD se midió).
 **El ANTES de cada recorte se lee del trinquete de B1**, no del plan. Los números del plan son
 órdenes de magnitud para priorizar `[PLAN §7.2.3]`.
 
+### 9.13. B5(b) medida, y con ella una corrección al modelo de la banda
+
+Declaré B5(b) inobtenible: *«los contadores viven en la respuesta del proveedor, no en el árbol»*. Es
+cierto que no están en el árbol — pero **la respuesta del proveedor está registrada en esta máquina**. Los
+debug logs de Copilot guardan, por petición, `inputTokens`, `outputTokens` y `cachedTokens`.
+
+#### El cache es real, y masivo
+
+```text
+peticiones con contadores: 1000
+input total:   248.533.855
+cached total:  244.321.578
+TASA GLOBAL:   98,3%      mediana 99,8% · p10 96,7%
+```
+
+Sólo 10 de 1000 peticiones tenían `cachedTokens = 0`. La pregunta de B5(b) —«¿el prefijo se cachea?»—
+tiene respuesta: **sí, y casi por completo.**
+
+#### Y por MODELO, que es donde se da vuelta
+
+| Modelo | Peticiones | Input | Tasa de cache | Sin cache |
+| :--- | ---: | ---: | ---: | ---: |
+| `deepseek-flash` | 947 | 244.534.343 | **98,8%** | 0 |
+| `MiniMax-M3` | 25 | 2.419.352 | 85,2% | 0 |
+| `gpt-5.6-luna` | 20 | 1.774.752 | 90,3% | 1 |
+| **`z-ai/glm-5.3`** | 10 | 805.821 | **1,4%** | **9 de 10** |
+
+**El modelo de implementación casi no cachea.** Y el plan decía qué implica eso:
+
+> *Si hay caché efectivo → el esfuerzo va a la masa por fase, porque nunca se cachea. Si no hay caché →
+> la banda universal es la mina.* `[PLAN §8.4(b)]`
+
+Con el dato por modelo, la respuesta no es una: **es una por agente**. Para los agentes de razonamiento
+(Deepseek, 98,8%) la banda es casi gratis y el esfuerzo va a la masa por fase. Para los de implementación
+(GLM, 1,4%) la banda **sigue costando precio lleno en cada fase** y es la mina. Y el de implementación es
+el que escribe el código del ciclo: la fase más cara.
+
+El precio relativo del cacheado confirma la dirección donde hay tabla: en `models.json`, `cache_read_price`
+es **10% del `input_price`** en casi todos los modelos, 2,5% en uno, 50% en `gpt-4`. Recortar un token de la
+banda en un modelo con cache devuelve una fracción; en GLM, el valor completo.
+
+> Caveat de atribución: Deepseek y GLM son modelos de customendpoint y **no están en la tabla de precios
+> de Copilot**, así que la *tasa* es medida y el *ratio de precio* de esos dos no. La afirmación es «la tasa
+> de cache varía por modelo con un factor de 70×», no «el ahorro es exactamente N».
+
+---
+
+### 9.14. La banda no es una población: son dos, con mecanismos distintos
+
+Buscando el cache apareció la medición que **corrige el modelo sobre el que está construido el plan**. El
+harness guarda el system prompt que envía, así que se puede ver quién está en el prefijo estable.
+
+**60 system prompts, y los 60 tienen exactamente la misma composición:**
+
+```text
+prompt             tok   instructions presentes   agentes/skills presentes
+  system_prompt_0  15012          4/4                      0/4
+  system_prompt_1  13187          4/4                      0/4
+  ...               ...          4/4                      0/4     (60 de 60)
+```
+
+| Población | Archivos | tok | ¿En el prefijo estable? |
+| :--- | :--- | ---: | :--- |
+| **Instructions** | `agent-delegation` · `icm-protocol` · `model-selection` · `rtk` | **4.709** | **Sí, en los 60** |
+| **Agentes y skills** | `supervisor.agent.md` · `icm/SKILL` · `rtk/SKILL` · `sdd-lifecycle/SKILL` | **3.504** | **No, en ninguno** |
+
+La suma cuadra exacta: 4.709 + 3.504 = **8.213**, el baseline. Las dos poblaciones están separadas por el
+mecanismo: `applyTo` inyecta **instruction files**; un `.agent.md` se carga cuando se invoca el agente y
+una `SKILL.md` cuando dispara su trigger.
+
+**Y el supervisor sí aparece — pero en la conversación.** Su ruta y su contenido están en los `main.jsonl`
+(40 archivos con «Hub-and-Spoke Protocol»), o sea en resultados de herramientas cuando alguien lee el
+archivo. Eso no es el prefijo: es contenido de sesión, y no se repite igual en las 7 fases.
+
+#### Qué corrige esto
+
+| Afirmación del plan | Lo medido |
+| :--- | :--- |
+| «La banda son 8 archivos que se cargan en las 7 fases» | **4 se inyectan** en el prefijo; los otros 4 llegan por invocación |
+| El multiplicador ×7 vale para los 8 | Vale limpio para **4**; para el resto es un multiplicador de *referencias*, no de inyección |
+| `BAND_CEILING = 8.213` es «la masa repetida» | Son **dos masas**: 4.709 inyectada y 3.504 por demanda |
+
+Y explica algo que ya estaba medido y sin interpretar: el recorte de **B4.A** bajó `supervisor.agent.md` de
+2.420 a 1.707 —**713 tok, el mayor ahorro individual de todo el conjunto**— y el archivo **no está en el
+prefijo estable**. Su ahorro es real pero de otra clase: se paga cuando el supervisor se lee, no en cada
+petición.
+
+> **El aprendizaje, que es el mismo de todo el ciclo con una vuelta más.** El número `8.213 × 7 = 57.491`
+> se construyó contando **referencias**, y se presentó como inyección. No es que la medición estuviera mal:
+> es que la pregunta «¿cuántas fases lo cargan?» y la pregunta «¿cuántas peticiones lo llevan?» tienen
+> respuestas distintas, y sólo la segunda se puede multiplicar por un precio.
+
+---
 ### 9.12. La fuga que apareció al terminar: extraer un bloque extrae sus obligaciones
 
 Al hacer la limpieza final aparecieron **419 entradas `aoi-*` en `$TMPDIR`** (3,2 MB). La pregunta no

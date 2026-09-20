@@ -74,6 +74,12 @@ export function surfaceLoadMap(root, phases = SDD_PHASES) {
  * sólo a `.agents/skills/icm/SKILL.md` —ni `CLAUDE.md`, ni `AGENTS.md`, ni
  * `.cursorrules`, ni `.clinerules`—, así que el premio de recortar la banda es
  * ×7 en Copilot, ×1 en antigravity (y sólo para `rtk`/`icm`) y **0** en el resto.
+ *
+ * Y el multiplicador cuenta REFERENCIAS, no inyecciones. Medido en 60 system
+ * prompts del harness: los 4 `instructions/` de la banda (4.709 tok) están en el
+ * prefijo estable de los 60, y los 4 agentes/skills (3.504 tok) **en ninguno** —
+ * ésos llegan al invocar el agente o al disparar la skill. Un token del
+ * `supervisor.agent.md` no se paga en cada petición como uno de `rtk`.
  */
 export function partitionSurface(map, phaseCount = SDD_PHASES.length) {
   const rows = [...map].map(([source, e]) => ({
