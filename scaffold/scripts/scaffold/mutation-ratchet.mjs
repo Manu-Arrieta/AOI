@@ -67,7 +67,22 @@ export const MUTATION_FLOOR = {
   // 67 → 68. Los casos de la guardia de ancho de `buildArchiveClosure` (paso
   // 7.4) matan mutantes que antes sobrevían. Los mutantes del área subieron de
   // 229 a 249 por el código nuevo, y el score subió igual.
-  'scripts/sdd-lifecycle': 68,
+  //
+  // 68 → 69. Medido 2026-09-19, después de que B0 (`audit-task-artifacts.mjs`)
+  // y B1 (`band-budget.mjs`) agregaran código al área: **330 mutantes** —de 249—
+  // y **101 sobrevivientes**, 69%. El score subió CON el conteo de mutantes, que
+  // es la dirección que importa: el código nuevo vino con sus propios casos, así
+  // que no diluyó la cobertura existente. Verificar esto era el punto de correr
+  // el área después de esas dos ramas, porque un archivo nuevo baja el porcentaje
+  // aunque no se toque nada viejo —pasó con `write-base-project.mjs` en
+  // `scripts/sandbox`, 88% → 82%—.
+  //
+  // La advertencia vigente: seis suites de esta área spawnean procesos y dos
+  // nombran `icm`. Eso es superficie para dependencia del entorno, y el
+  // precedente de `scripts/memory-sync` es que un piso medido en una sola
+  // máquina puede ser inalcanzable en CI. Si CI mide 68 acá, el piso es 68: el
+  // valor REPRODUCIDO manda sobre el mejor visto.
+  'scripts/sdd-lifecycle': 69,
   // Shell. The installer machinery is where the most destructive defects of
   // the audit lived, so leaving it unmeasured left the worst code in the
   // project outside the only check that asks whether its tests bind.
