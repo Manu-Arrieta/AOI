@@ -32,10 +32,10 @@ bash wiki/deploy-wiki.sh
 ## 📚 Índice de Artículos Disponibles
 
 1. [**01. Estructura y Arquitectura**](01-Estructura-y-Arquitectura.md): Árbol físico, Principio I de Scaffold Mirror y orquestación Hub-and-Spoke.
-2. [**02. Componentes del Sistema**](02-Componentes-del-Sistema.md): Los 27 agentes, runtimes deterministas, Dashboard C2 e ICM v4.
+2. [**02. Componentes del Sistema**](02-Componentes-del-Sistema.md): Los agentes, runtimes deterministas, Dashboard C2 e ICM v4.
 3. [**03. Paradigmas Fundamentales**](03-Paradigmas-Fundamentales.md): Spec-Driven Development, Behavioral Intent Contracts (BIC) y determinismo.
 4. [**04. Estudios y Fundamentos Científicos**](04-Estudios-y-Fundamentos-Cientificos.md): Runtime espaciotemporal ($\partial\Gamma$), efectos algebraicos y teoría de atención LLM.
-5. [**05. Ecosistema de Agentes y Roles**](05-Ecosistema-de-Agentes-y-Roles.md): Catálogo de los 27 agentes, matriz RACI y protocolo TOON.
+5. [**05. Ecosistema de Agentes y Roles**](05-Ecosistema-de-Agentes-y-Roles.md): Catálogo de los agentes, matriz RACI y protocolo TOON.
 6. [**06. Funcionalidades y Herramientas**](06-Funcionalidades-y-Herramientas.md): AOI Doctor, MCP Gateway, Spatiotemporal Engine y sandboxes.
 7. [**07. Ciclo de Vida SDD y Flujo Operativo**](07-Ciclo-de-Vida-SDD-y-Flujo-Operativo.md): Fases Pre-Flight a Archive, compuertas de calidad y estrategias de ejecución.
 8. [**08. Dashboard Operativo C2**](08-Dashboard-Operativo-C2.md): Consola web Nuxt 4, Kanban, TanStack Table, grafo 3D y telemetría.

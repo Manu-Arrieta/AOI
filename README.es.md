@@ -1,12 +1,12 @@
 # AOI — Agentic Operational Infrastructure
 
 > **Convierte cualquier repositorio en un entorno de desarrollo agéntico autónomo, seguro y de altísima eficiencia.**  
-> Diseñado para que humanos e inteligencias artificiales colaboren con memoria infinita, mínimo consumo de tokens y cero pérdida de contexto.
+> Diseñado para que humanos e inteligencias artificiales colaboren con memoria persistente entre sesiones, contexto trazable y consumo de tokens medible.
 
 [![AOI Doctor](https://img.shields.io/badge/AOI_Doctor-360%C2%B0_Healthy-success?style=flat-square&logo=shield)](file:///scripts/aoi-doctor.mjs)
-[![Tests](https://img.shields.io/badge/Tests-134%2F134_Passing-brightgreen?style=flat-square&logo=vitest)](file:///package.json)
-[![Scaffold Parity](https://img.shields.io/badge/Scaffold_Parity-227%2F227_Verified-blue?style=flat-square)](file:///scripts/scaffold/validate-scaffold-parity.mjs)
-[![Multi-Harness](https://img.shields.io/badge/Multi--Harness-5_Assistants-orange?style=flat-square)](file:///scripts/multi-harness/compile-rules.mjs)
+[![Tests](https://img.shields.io/badge/Tests-Verified-brightgreen?style=flat-square&logo=vitest)](file:///package.json)
+[![Scaffold Parity](https://img.shields.io/badge/Scaffold_Parity-Verified-blue?style=flat-square)](file:///scripts/scaffold/validate-scaffold-parity.mjs)
+[![Multi-Harness](https://img.shields.io/badge/Multi--Harness-Verified-orange?style=flat-square)](file:///scripts/multi-harness/compile-rules.mjs)
 [![License](https://img.shields.io/badge/License-MIT-purple?style=flat-square)](file:///LICENSE)
 
 ---
@@ -17,9 +17,9 @@
 
 En lugar de lidiar con chats aislados que olvidan decisiones a los 20 minutos o que consumen millones de tokens innecesarios leyendo repositorios enteros, AOI equipa tu proyecto con:
 
-- **27 Agentes especializados** coordinados en arquitectura Hub-and-Spoke.
+- **Agentes especializados** coordinados en arquitectura Hub-and-Spoke.
 - **5 Métodos de Memoria (ICM v4)**: Recuerdos episódicos, grafos de arquitectura, hechos clave-valor exactos en $O(1)$, correcciones y transcripciones crudas.
-- **Motor Espaciotemporal & Sandboxes**: Ejecución aislada de tareas con reversión atómica de efectos ($\partial\Gamma$) si una prueba falla.
+- **Motor Espaciotemporal & Sandboxes**: Ejecución aislada de tareas con recuperación de efectos registrados ($\partial\Gamma$) si una prueba falla.
 - **Soporte Multi-Harness**: Una sola fuente de verdad para GitHub Copilot, Claude Code, Cursor, Antigravity/Gemini y Cline.
 - **Dashboard Operativo C2**: Tablero Kanban en tiempo real, matriz TanStack, visualizador 3D de dependencias y semáforo de salud 360°.
 
@@ -84,13 +84,13 @@ Una vez instalado en tu proyecto, abrí el chat de tu asistente favorito (ej. Co
 
 ## Los 5 Pilares de AOI
 
-### 1. Ahorro Radical de Tokens (60% al 90%)
+### 1. Eficiencia de Contexto y Tokens
 
 AOI combate el desperdicio de tokens en múltiples niveles:
 
 - **RTK (Rust ToolKit)**: Filtra y comprime la salida de comandos de terminal, tests y builds antes de que lleguen al modelo.
 - **Serialización TOON**: Los subagentes reciben contratos y tareas en una notación tabular ultracompacta (`scripts/subagent-context/`), evitando enviar especificaciones gigantes.
-- **MCP Gateway Proxy**: Comprime los esquemas de herramientas y aplica _Progressive Disclosure_, reduciendo hasta un 85% la sobrecarga en cada turno.
+- **MCP Gateway Proxy**: Enruta cada servidor MCP registrado por `mcp-compressor` y aplica _Progressive Disclosure_. AOI verifica ese enrutamiento, pero no publica una tasa fija de ahorro: depende de los esquemas y la carga del workspace y debe medirse en ese contexto.
 - **Codebase Memory MCP**: Grafo estructural de código en SQLite que reemplaza búsquedas amplias tipo `grep` por consultas semánticas y caminos de llamada exactos.
 
 ### 2. Memoria Persistente que Nunca Olvida (ICM)
@@ -177,9 +177,9 @@ Los agentes de IA pueden fallar o alucinar, pero con AOI **nunca rompen tu repos
 
 ## Ecosistema de Agentes
 
-AOI cuenta con **27 agentes especializados** divididos en roles de ingeniería y utilidades de automatización:
+AOI cuenta con **agentes especializados** divididos en roles de ingeniería y utilidades de automatización:
 
-### Roles de Ingeniería y Arquitectura (13 Agentes)
+### Roles de Ingeniería y Arquitectura
 
 | Agente                        | Fase SDD         | Especialidad                                                                           |
 | :---------------------------- | :--------------- | :------------------------------------------------------------------------------------- |
@@ -197,14 +197,14 @@ AOI cuenta con **27 agentes especializados** divididos en roles de ingeniería y
 | **`@project-analyzer`**       | Transversal      | Auditoría estática y análisis de dependencias del repositorio.                         |
 | **`@project-expert`**         | Transversal      | Asistente contextual con conocimiento integral del proyecto.                           |
 
-### Automatización Spec-Kit (14 Agentes Especializados)
+### Automatización Spec-Kit
 
 Automatizan tareas puntuales del flujo de especificaciones y git:
 `speckit.specify`, `speckit.plan`, `speckit.tasks`, `speckit.implement`, `speckit.analyze`, `speckit.checklist`, `speckit.clarify`, `speckit.constitution`, `speckit.git.initialize`, `speckit.git.feature`, `speckit.git.validate`, `speckit.git.remote`, `speckit.git.commit`, `speckit.taskstoissues`.
 
 ---
 
-## Dashboard de Operaciones en Tiempo Real (C2)
+## Dashboard de Operaciones (C2)
 
 AOI incluye una consola web operativa de alta fidelidad construida en **Nuxt 4** y **NuxtUI**:
 
@@ -240,7 +240,7 @@ AOI Doctor verifica de forma determinista:
 3. **Registro de Tareas**: Coherencia de `.tasks/registry.md`.
 4. **Gobernanza de Memoria**: Punteros canónicos en `.specify/memory/versions/active.json`.
 5. **Multi-Harness**: Estado y paridad de los 5 adaptadores generados.
-6. **Integridad del Mirror Scaffold (Principio I)**: Certificación de paridad byte-por-byte entre los archivos raíz y la plantilla `scaffold/` (227 archivos gobernados).
+6. **Integridad del Mirror Scaffold (Principio I)**: Validación byte-por-byte entre los archivos raíz y la plantilla `scaffold/` mediante `pnpm test:parity`.
 
 ---
 
@@ -283,7 +283,7 @@ AOI Doctor verifica de forma determinista:
 | `pnpm dev:dashboard`       | Inicia el Dashboard de Operaciones en `localhost:3000`.                   |
 | `pnpm aoi:doctor`          | Ejecuta el chequeo integral de salud del repositorio (0 tokens).          |
 | `pnpm aoi:sync-rules`      | Compila y sincroniza reglas para Copilot, Claude, Cursor, Gemini y Cline. |
-| `pnpm test`                | Ejecuta la suite de pruebas automatizadas completa (134 tests).           |
+| `pnpm test`                | Ejecuta la suite de pruebas automatizadas completa.                       |
 | `pnpm test:parity`         | Valida paridad absoluta byte-a-byte entre raíz y `scaffold/`.             |
 | `pnpm test:memory-sync`    | Prueba el versionado y la importación/exportación de memoria.             |
 | `pnpm test:spatiotemporal` | Prueba los efectos reversibles y coefectos en sandboxes.                  |

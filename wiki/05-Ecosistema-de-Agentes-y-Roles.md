@@ -1,10 +1,10 @@
 # 05. Ecosistema de Agentes y Roles
 
-> **Catálogo completo de los 27 agentes especializados de AOI explicado de forma directa: qué hace cada uno, cómo se coordinan y cómo se comunican.**
+> **Catálogo completo de los agentes especializados de AOI explicado de forma directa: qué hace cada uno, cómo se coordinan y cómo se comunican.**
 
 ---
 
-## 💡 En palabras simples: ¿Por qué 27 agentes y no uno solo?
+## 💡 En palabras simples: ¿Por qué varios agentes y no uno solo?
 
 Si tienes que remodelar tu casa, no contratas a una sola persona para que haga de arquitecto, electricista, plomero, pintor, abogado y decorador. Terminarías con cables cerca del agua y un desastre de permisos.
 

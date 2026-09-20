@@ -29,6 +29,7 @@ export const EVIDENCE_PATHS = Object.freeze([
 
 export const PUBLIC_SURFACES = Object.freeze([
   'README.md',
+  'README.es.md',
   'scaffold/README.md',
   'docs/README.md',
   'scripts/mcp-gateway/setup-mcp-gateway.mjs',
@@ -53,7 +54,71 @@ export const PUBLIC_SURFACES = Object.freeze([
 export const PROSE_SURFACES = Object.freeze([
   '.github/instructions',
   '.github/prompts',
+  '.github/skills',
 ])
+
+/**
+ * Las superficies que AOI **publica**, no las que carga.
+ *
+ * La wiki se despliega a GitHub Wiki (`wiki/deploy-wiki.sh`), y es la cara más
+ * pública del proyecto: un porcentaje sin evidencia ahí no lo lee un agente, lo
+ * lee quien está decidiendo si adoptar AOI.
+ *
+ * Se agregó después de medir el 2026-09-20 que **7 de sus 16 archivos** llevaban
+ * claims retirados —13 en total, 7 sólo en `Home.md`—: los badges declaraban
+ * `134/134` tests y `228/228` de paridad cuando los reales eran **1618** y
+ * **421**, más «27 Agentes», «memoria infinita», «reversión atómica» y el rango
+ * «60% al 90%» de R-001. **Ninguna compuerta la miraba**: `PUBLIC_SURFACES` son
+ * cinco archivos fijos y `PROSE_SURFACES` dos directorios que el ciclo inyecta.
+ *
+ * La lección es la del `60–90%` en `rtk.instructions.md`, un escalón más
+ * arriba: **un claim retirado sobrevive donde no se lo busca**, y el lugar donde
+ * no se lo busca es el que menos se edita.
+ */
+export const PUBLISHED_DIRS = Object.freeze(['wiki'])
+
+/**
+ * Los `.md` de un directorio, recursivo: las skills viven en subdirectorios
+ * (`.github/skills/<nombre>/SKILL.md`) y un `readdir` plano no las ve.
+ *
+ * @returns {string[]} rutas relativas a `root`, ordenadas
+ */
+export function listSurfaceFiles(root, dir) {
+  const full = path.join(root, dir)
+  if (!fs.existsSync(full)) return []
+  const found = []
+  const walk = (d) => {
+    for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, entry.name)
+      if (entry.isDirectory()) walk(p)
+      else if (entry.name.endsWith('.md')) found.push(path.relative(root, p))
+    }
+  }
+  walk(full)
+  return found.sort()
+}
+
+/**
+ * Todas las superficies que la compuerta audita, resueltas a rutas de archivo.
+ *
+ * Existe para que el audit y su test pregunten lo mismo: cuando cada uno armaba
+ * la lista por su cuenta, el test podia quedar conforme con un alcance que el
+ * audit no recorria.
+ *
+ * **Lo que NO entra, y por que:** `docs/internal/**`. Los audits, las propuestas
+ * y las notas de release son el **archivo**, y un claim retirado citado ahi es
+ * evidencia de lo que se creia entonces, no una promesa. El ledger dice «retirado
+ * de la presentacion vigente» justamente porque la cita tiene que sobrevivir en
+ * el registro que la retira. Reescribir el archivo para que la compuerta quede
+ * verde borraria la unica prueba de que el claim existio.
+ */
+export function claimSurfaces(root) {
+  return [
+    ...PUBLIC_SURFACES,
+    ...PROSE_SURFACES.flatMap((dir) => listSurfaceFiles(root, dir)),
+    ...PUBLISHED_DIRS.flatMap((dir) => listSurfaceFiles(root, dir)),
+  ].filter((rel) => fs.existsSync(path.join(root, rel)))
+}
 
 /** Claims that require corpus-qualified documentation, never a live promise. */
 export const RETIRED_CLAIMS = Object.freeze([
@@ -97,23 +162,10 @@ export function auditClaimsEvidence(root) {
   }
 
   let scanned = 0
-  for (const surface of PUBLIC_SURFACES) {
-    const full = path.join(root, surface)
-    if (!fs.existsSync(full)) continue
+  for (const surface of claimSurfaces(root)) {
     scanned += 1
-    for (const claim of unsupportedClaims(fs.readFileSync(full, 'utf8'))) {
+    for (const claim of unsupportedClaims(fs.readFileSync(path.join(root, surface), 'utf8'))) {
       errors.push(`${surface} reintroduces retired claim: ${claim}`)
-    }
-  }
-  for (const dir of PROSE_SURFACES) {
-    const full = path.join(root, dir)
-    if (!fs.existsSync(full)) continue
-    for (const name of fs.readdirSync(full).filter((f) => f.endsWith('.md')).sort()) {
-      const rel = `${dir}/${name}`
-      scanned += 1
-      for (const claim of unsupportedClaims(fs.readFileSync(path.join(root, rel), 'utf8'))) {
-        errors.push(`${rel} reintroduces retired claim: ${claim}`)
-      }
     }
   }
   if (scanned === 0) errors.push('no public claim surface was scanned')

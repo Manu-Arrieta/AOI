@@ -47,7 +47,7 @@ export const BAND_BUDGET = {
   '.github/instructions/model-selection.instructions.md': 396,
   '.github/instructions/rtk.instructions.md': 329,
   '.github/skills/icm/SKILL.md': 414,
-  '.github/skills/rtk/SKILL.md': 228,
+  '.github/skills/rtk/SKILL.md': 226,
   '.github/skills/sdd-lifecycle/SKILL.md': 1155,
 }
 
@@ -81,8 +81,15 @@ export const BAND_BUDGET = {
  * y el artefacto por fase vive en `phase-handoffs.mjs` y en el arbol de
  * `sdd-lifecycle/SKILL.md`— y la columna `Deliverable` **se quedo**: sus
  * descripciones («Requirements + user stories») existen solo ahi.
+ *
+ * Bajó de 8.083 a 8.081 al retirar el rango «60-90%» del trigger de
+ * `skills/rtk/SKILL.md` (228 → 226). Esa línea es con la que el agente decide si
+ * carga la skill, así que no era metadata: era el claim retirado R-001 como
+ * promesa viva. La redacción honesta que lo reemplaza quedó **dos tokens más
+ * barata**, no más cara — el primer intento la escribió cinco más caras y este
+ * mismo trinquete lo devolvió en el acto, con la banda en 8.088.
  */
-export const BAND_CEILING = 8083
+export const BAND_CEILING = 8081
 
 /**
  * Compara la banda derivada contra su baseline. Pura: sólo decide, no imprime.

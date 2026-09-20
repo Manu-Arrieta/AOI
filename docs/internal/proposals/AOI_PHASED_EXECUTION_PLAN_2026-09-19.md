@@ -521,7 +521,7 @@ cada bloque no se declara al escribir, se **mide** después de la edición y la 
 | **B4.A** | `2.420` tok · `16.940`/ciclo | quitar el padding de la tabla de ruteo | **`1.707` tok · `11.949`/ciclo** · banda `9.457 → 8.744`/fase · ciclo **`105.466 → 100.545`** | **−4.921/ciclo** | `a48f43cd31f14b6f` → **`1a990169267eb204`** | 2026-09-19 |
 | **B4.B** | `1.510` tok · `10.570`/ciclo | padding + columna derivable + B/D/A redundante | **`1.155` tok · `8.085`/ciclo** · banda `8.744 → 8.389`/fase · ciclo **`100.545 → 98.060`** | **−2.485/ciclo** | `1a990169267eb204` → **`b09415441e545056`** | 2026-09-19 |
 | **B4.C** | `2.031` tok · `14.217`/ciclo | el `Example`, redundante y equivocado | **`1.861` tok · `13.027`/ciclo** · banda `8.389 → 8.219`/fase · ciclo **`98.060 → 96.870`** | **−1.190/ciclo** | `b09415441e545056` → **`b189f6d1759e11ae`** | 2026-09-19 |
-| **M5 #1** | `1.707` tok · `11.949`/ciclo | las 2 columnas derivables de la tabla de ruteo | **`1.577` tok · `11.039`/ciclo** · banda `8.213 → 8.083`/fase · ciclo **`57.491 → 56.581`** | **−130/fase = −910/ciclo** | `b36d8cc8a308948f` → **`a3ff2655f9d9e8c7`** | 2026-09-20 |
+| **M5 #1** | `1.707` tok · `11.949`/ciclo | las 2 columnas derivables de la tabla de ruteo | **`1.577` tok · `11.039`/ciclo** · banda `8.213 → 8.083`/fase · ciclo `57.491 → 56.581` · **payload literal `96.897 → 95.987`** | **−130/fase = −910/ciclo** | `b36d8cc8a308948f` → **`a3ff2655f9d9e8c7`** | 2026-09-20 |
 
 | **B5** | `105.466`/ciclo (modelo de Copilot) | medición | **(a) medida** — la banda llega a **1 de 6** harnesses, y **la banda son dos poblaciones**: 4.709 inyectados en el prefijo · 3.504 por invocación · **(b) medida** — cache real: **98,3%** global, pero **98,8% en Deepseek y 1,4% en GLM** · **(c) medida** — `ast-skeletonizer`: 64,1% sobre 241 archivos, 47,4% sobre fuentes | (a) **acota el premio** y parte la banda en dos · (b) **invierte la decisión por agente** | `4d1260941eb3392d` | 2026-09-20 |
 | **Claims + Qwen** | banda `8.219`/fase · ciclo `96.870` · huella `b189f6d1759e11ae` | los 3 claims vivos y un modelo que no existe | banda **`8.213`** · ciclo **`96.897`** · huella **`b36d8cc8a308948f`** | **+27** neto | `b189f6d1759e11ae` → **`b36d8cc8a308948f`** | 2026-09-20 |
@@ -564,10 +564,14 @@ El plan decía quitar tres columnas de la tabla de ruteo del supervisor —`Spec
 | :--- | :--- | :--- |
 | `Spec-Kit Command` | **Sí** | Cada prompt nombra el suyo (`/speckit.specify` en `sdd-ff.prompt.md`) |
 | `Artifact Path` | **Sí** | El nombre por fase en `HANDOFFS` y en el árbol de `sdd-lifecycle/SKILL.md`; `.specify/memory/constitution.md` en **11** archivos; `.blueprints/{SBC_ID}/` en el prompt de Genesis, con tabla propia |
-| **`Deliverable`** | **NO** | «Requirements + user stories» existe **una sola vez en el repositorio**: acá |
+| **`Deliverable`** | **NO** | «Requirements + user stories» existe **una sola vez como contenido de `.github/`**: acá |
 
-El último dato salió de contar ocurrencias, no de razonar: `rg -Fc` sobre `.github/` da **1** para tres de
-las descripciones. La columna dice **qué** produce la fase —el nombre del artefacto no lo dice: `proposal.md`
+> Nota sobre esa fila: la frase decía «una sola vez **en el repositorio**» y era falsa **por escribirse**.
+> Ahora también aparece en este documento y en el comentario de `band-budget.mjs` — porque los escribí para
+> explicarla. La afirmación que se sostiene es la acotada: en `.github/`, que es lo que el ciclo carga, una
+> sola vez. Un dato puede ser único en el sistema y dejar de serlo en la documentación que lo describe.
+
+El último dato salió de contar ocurrencias, no de razonar: de las 11 descripciones de esa columna, **6 aparecen una sola vez** en `.github/` y **5 no**. La columna dice **qué** produce la fase —el nombre del artefacto no lo dice: `proposal.md`
 no contiene «Requirements + user stories»—, y eso no está en `HANDOFFS`, que lista nombres de archivo.
 
 **Resultado: se quitaron dos.** Tabla `457 → 292` tok, archivo `1.707 → 1.577`.

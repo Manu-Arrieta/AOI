@@ -11,7 +11,7 @@ Imagina que estás construyendo una fábrica automatizada. No pondrías una sola
 ```mermaid
 graph TD
     subgraph Los6Pilares["Los 6 Componentes Fundamentales de AOI"]
-        P1["1. Los 27 Agentes<br>(El equipo de especialistas)"]
+        P1["1. Los Agentes<br>(El equipo de especialistas)"]
         P2["2. Los Runtimes en JS<br>(Las herramientas mecánicas de $0)"]
         P3["3. La Consola C2<br>(La cabina de control con pantallas)"]
         P4["4. La Memoria ICM v4<br>(El cerebro que nunca olvida)"]
@@ -22,7 +22,7 @@ graph TD
 
 | Componente | ¿Qué es para humanos? | ¿Por qué es fundamental? |
 | :--- | :--- | :--- |
-| **1. Enjambre de 27 Agentes** | Un equipo de 27 trabajadores digitales con roles delimitados (uno diseña, otro programa el backend, otro hace tests). | Evita que una sola IA intente hacer todo mal. Cada agente es un experto en su disciplina. |
+| **1. Enjambre de Agentes** | Un equipo de trabajadores digitales con roles delimitados (uno diseña, otro programa el backend, otro hace tests). | Evita que una sola IA intente hacer todo mal. Cada agente es un experto en su disciplina. |
 | **2. Runtimes Deterministas** | Pequeños programas en JavaScript puro que limpian, auditan y verifican archivos en milisegundos. | **Cuestan $0 y consumen 0 tokens.** No le pedimos a una IA que haga matemáticas o revise carpetas; lo hace un script exacto. |
 | **3. Consola Operativa C2** | Un sitio web moderno (`localhost:3000`) con tarjetas tipo Trello/Jira y visualizador 3D. | Ves el estado de las tareas, la salud del proyecto y el dinero ahorrado en tiempo real. |
 | **4. Memoria ICM v4** | Una base de datos SQLite en tu computadora que actúa como el cerebro a largo plazo. | Tu asistente de IA no olvida nada aunque reinicies la computadora o abras un chat nuevo. |
@@ -31,9 +31,9 @@ graph TD
 
 ---
 
-## 🤖 1. El Enjambre de 27 Agentes (Dividido por Misiones)
+## 🤖 1. El Enjambre de Agentes (Dividido por Misiones)
 
-Para entender a los 27 agentes, piensa en una productora de cine o un estudio de desarrollo de software:
+Para entender a los agentes, piensa en una productora de cine o un estudio de desarrollo de software:
 
 ### Los 13 Roles de Ingeniería (Los Creativos y Constructores):
 1. **`@supervisor` (El Director de Orquesta):** Recibe tu pedido, lo divide en partes y le da trabajo a cada especialista.

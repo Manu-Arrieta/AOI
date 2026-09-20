@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { LEDGER, PROSE_SURFACES, REQUIRED_CLAIMS, auditClaimsEvidence, formatClaimsEvidence, unsupportedClaims } from './claims-evidence-ledger.mjs'
+import { LEDGER, PROSE_SURFACES, PUBLISHED_DIRS, REQUIRED_CLAIMS, auditClaimsEvidence, claimSurfaces, formatClaimsEvidence, unsupportedClaims } from './claims-evidence-ledger.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const ROOT_WITH_SCAFFOLD = fs.existsSync(path.join(REPO, 'scaffold', 'package.json')) ? REPO : null
@@ -40,10 +40,14 @@ test('BIC-2026-006: the retired token-saving range matches every form it retired
   assert.deepEqual(unsupportedClaims('ahorra 90% en tests'), [])
 })
 
-test('BIC-2026-006: the scan reaches every instruction and prompt, not a hand-picked list', (t) => {
+test('BIC-2026-006: the scan reaches every public, injected, skill and published surface, not a hand-picked list', (t) => {
   // El claim retirado vivía en `.github/instructions/`, fuera del alcance: el
   // patrón lo nombraba y el archivo existía, pero el escaneo no los encontraba
   // con el otro. La propiedad que se fija es la cobertura, no un número.
+  //
+  // Se extendió el 2026-09-20 al medir que la wiki —desplegada a GitHub Wiki—
+  // llevaba 13 claims retirados en 7 de sus 16 archivos con la compuerta en
+  // verde: `PUBLISHED_DIRS` no existía. La misma propiedad, un directorio más.
   //
   // La guarda es `t.skip` + `return`, no `assert.fail`: `setup.sh` no instala el
   // ledger interno, así que aguas abajo el audit no aplica y `pnpm test` —el
@@ -54,14 +58,28 @@ test('BIC-2026-006: the scan reaches every instruction and prompt, not a hand-pi
     t.skip('installed workspace without internal claims ledger')
     return
   }
-  const prosa = PROSE_SURFACES.flatMap((dir) =>
-    fs.readdirSync(path.join(REPO, dir)).filter((f) => f.endsWith('.md')).map((f) => `${dir}/${f}`)
+  // El resolutor es el mismo que usa el audit: cuando cada uno armaba su lista,
+  // el test podia quedar conforme con un alcance que el audit no recorria.
+  const superficies = claimSurfaces(REPO)
+  assert.ok(superficies.length > 30, `solo ${superficies.length} superficies, la lista quedo corta`)
+  assert.equal(
+    audit.scanned,
+    superficies.length,
+    `el audit recorrio ${audit.scanned} y el resolutor devuelve ${superficies.length}`
   )
-  assert.ok(prosa.length > 20, `sólo ${prosa.length} archivos de prosa, la lista quedó corta`)
-  assert.ok(
-    audit.scanned >= prosa.length,
-    `se escanearon ${audit.scanned} superficies y hay ${prosa.length} archivos de prosa: parte del alcance se perdió`
-  )
+
+  // Cada familia tiene que estar representada: sacar una es el modo en que este
+  // alcance se perdio tres veces —la prosa de `.github/`, la wiki y las skills—.
+  const familias = {
+    'un README publico en espanol': (s) => s.includes('README.es.md'),
+    'la prosa inyectada': (s) => s.some((x) => x.startsWith('.github/instructions/')),
+    'los prompts de comando': (s) => s.some((x) => x.startsWith('.github/prompts/')),
+    'las skills anidadas': (s) => s.some((x) => /^\.github\/skills\/.+\/SKILL\.md$/.test(x)),
+    'la wiki publicada': (s) => s.some((x) => x.startsWith('wiki/')),
+  }
+  for (const [nombre, presente] of Object.entries(familias)) {
+    assert.ok(presente(superficies), `el alcance perdio ${nombre}`)
+  }
 })
 
 test('BIC-2026-006: a missing claim row cannot turn the ledger green', () => {

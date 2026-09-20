@@ -1,6 +1,6 @@
 ---
 name: rtk
-description: RTK CLI proxy for token-optimized command output. Prefix all shell commands with `rtk` to save 60-90% tokens. Use when running terminal commands — builds, tests, git operations, file searches.
+description: RTK CLI proxy that compresses shell command output before it reaches the model. Prefix all shell commands with `rtk`. Use for terminal commands — builds, tests, git operations, searches.
 ---
 
 <!-- Derivado de .github/instructions/rtk.instructions.md por aoi:sync-rules. No editar a mano. -->

@@ -118,7 +118,8 @@ ${body}
 
 /** The `description` line each derived skill announces itself with. */
 export const SKILL_TRIGGERS = {
-  rtk: 'RTK CLI proxy for token-optimized command output. Prefix all shell commands with `rtk` to save 60-90% tokens. Use when running terminal commands — builds, tests, git operations, file searches.',
+  // R-001: el trigger prometía "60-90% tokens"; `rtk gain` mide la tasa real.
+  rtk: 'RTK CLI proxy that compresses shell command output before it reaches the model. Prefix all shell commands with `rtk`. Use for terminal commands — builds, tests, git operations, searches.',
   icm: 'Infinite Context Memory (ICM) protocol — store, recall, exact O(1) facts, memoir graph, feedback, and transcripts across agent sessions. Use when the task involves remembering context, decisions, errors, or project knowledge across sessions.',
 }
 

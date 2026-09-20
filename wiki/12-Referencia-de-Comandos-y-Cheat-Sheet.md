@@ -65,7 +65,7 @@ Ejecútalos en la raíz de tu proyecto:
 | `pnpm aoi:doctor` | Chequeo médico 360° en 0 tokens. |
 | `pnpm aoi:sync-rules` | Sincroniza las reglas de los 5 asistentes de IA. |
 | `pnpm dev:dashboard` | Lanza la consola web en `http://localhost:3000`. |
-| `pnpm test` | Ejecuta la suite de pruebas completa (134 tests). |
+| `pnpm test` | Ejecuta la suite de pruebas completa y todas las compuertas. |
 | `pnpm test:parity` | Revisa que los 228 archivos del molde de instalación estén idénticos al original. |
 | `pnpm build:dashboard` | Compila el dashboard web para producción. |
 

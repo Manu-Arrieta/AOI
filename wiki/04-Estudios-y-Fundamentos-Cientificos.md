@@ -95,4 +95,4 @@ El resultado es inmediato:
 
 ---
 
-> ➡️ Continúa leyendo en [**05. Ecosistema de Agentes y Roles**](05-Ecosistema-de-Agentes-y-Roles) para conocer la función exacta de cada uno de los 27 agentes.
+> ➡️ Continúa leyendo en [**05. Ecosistema de Agentes y Roles**](05-Ecosistema-de-Agentes-y-Roles) para conocer la función exacta de cada agente.

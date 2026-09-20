@@ -10,7 +10,7 @@ Imagina que AOI es un **edificio corporativo de ingeniería de alta precisión**
 
 | Carpeta | Analogía del Mundo Real | ¿Qué hay adentro en cristiano? |
 | :--- | :--- | :--- |
-| **`.github/`** | **La Oficina de Recursos Humanos y Normas** | Aquí viven los perfiles de los 27 agentes (`agents/`), las 6 reglas sagradas del proyecto (`instructions/`) y los comandos de trabajo (`prompts/`). |
+| **`.github/`** | **La Oficina de Recursos Humanos y Normas** | Aquí viven los perfiles de los agentes (`agents/`), las 6 reglas sagradas del proyecto (`instructions/`) y los comandos de trabajo (`prompts/`). |
 | **`.resources/`** | **La Biblioteca de Negocio** | Documentos que explican qué quiere el cliente (historias de usuario y flujos de negocio). No es código ejecutable; es contexto para leer. |
 | **`.specify/`** | **El Estudio de Arquitectura y Archivo** | Guarda las plantillas de diseño técnico y el historial de versiones de la memoria del proyecto (`memory/versions/`). |
 | **`.tasks/`** | **El Tablero de Órdenes de Trabajo** | La lista oficial de tareas (`registry.md`) y las carpetas con los planes de cada funcionalidad individual. |
@@ -26,7 +26,7 @@ Imagina que AOI es un **edificio corporativo de ingeniería de alta precisión**
 ```text
 AOI/
 ├── .github/                      # Recursos Humanos: agentes, reglas y comandos slash
-│   ├── agents/                   # 27 Agentes especializados (Frontend, Backend, QA, etc.)
+│   ├── agents/                   # Agentes especializados (Frontend, Backend, QA, etc.)
 │   ├── instructions/             # 6 Reglas canónicas (fuente de verdad inviolable)
 │   ├── prompts/                  # 30 Comandos slash (/sdd-frame, /sdd-new, /init, etc.)
 │   └── workflows/                # Acciones automáticas de GitHub Actions (CI/CD)
