@@ -250,6 +250,7 @@ inference tokens.
 | \`aoi:reachability\` | a source file no test ever loads |
 | \`aoi:test-globs\` | a declared test glob matching nothing — a suite reporting green over zero assertions |
 | \`aoi:lint-refs\` | prose naming a script or \`/command\` that does not exist |
+| \`aoi:entry-points\` | a script the prose invokes that answers \`node <path>\` with exit 0 and no output — the line is there and the tool does not respond |
 | \`aoi:invariant-gate\` | a Behavioral Intent Contract invariant with no test asserting it |
 | \`aoi:blueprint-gate\` | a System Blueprint Contract left unclosed, or missing its diagram |
 | \`aoi:hooks\` | harness hooks declared but not wired into \`.claude/settings.json\` |

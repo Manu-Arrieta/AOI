@@ -530,6 +530,74 @@ saber contra qué HEAD se midió).
 **El ANTES de cada recorte se lee del trinquete de B1**, no del plan. Los números del plan son
 órdenes de magnitud para priorizar `[PLAN §7.2.3]`.
 
+### 9.10. La compuerta que faltaba: correr el script en vez de leer su nombre
+
+En §9.9 rechacé la compuerta de punto de entrada **por regex**: sobre las 22 rutas que la prosa
+invoca, daba **5 falsos positivos y 0 verdaderos**. El repositorio tiene cuatro idiomas de guarda
+válidos, y uno de los archivos ya tenía el comentario que documentaba el problema.
+
+Pero el rechazo era de la **forma de la compuerta**, no de la pregunta. Y hay otra forma de
+contestarla: **correr el script**.
+
+#### La firma, y por qué no puede tener idiomas
+
+Un CLI de verdad, sin argumentos, o **imprime algo** o **falla**. La tercera opción —exit 0 con
+salida vacía— es el módulo que sólo se lee como librería. Es exactamente lo que hacía
+`synthesize-stubs.mjs` antes de tener `main`: la prosa lo invocaba y no pasaba nada.
+
+Medido sobre las 21 rutas (los `*.test.mjs` se excluyen: varios se invocan en la prosa y no son CLIs):
+
+| Resultado | Rutas | Veredicto |
+| :--- | ---: | :--- |
+| Falla con un mensaje | 8 | CLI con argumento obligatorio |
+| Imprime algo | 12 | Responde |
+| **Exit 0 con salida vacía** | **1** | **Falso positivo** — ver abajo |
+| Exit 0 con salida vacía y sin stdin | **0** | La firma del defecto |
+
+#### El único falso positivo, medido y no supuesto
+
+`diagnostic-distiller.mjs` es un **filtro de tubería**: lee `process.stdin` y emite el resultado. Sin
+stdin no tiene nada que imprimir, y eso es correcto — la prosa lo invoca con `Pipe it through`, no
+con argumentos. Y funciona: medido con una falla realista de 65 líneas, **4.959 → 168 bytes (96,6%)**
+conservando la aserción y la ubicación (`expected 100 to be 60`, `fiber.ts:15:9`).
+
+Así que la firma necesita una cláusula: **exit 0 + salida vacía + NO lee stdin**. Es la única de las
+22 que lee stdin, así que la cláusula tiene exactamente un destinatario y su razón es verificable.
+
+**Falsos positivos con la cláusula: 0.** Verdaderos: 1, y era un defecto real (`synthesize-stubs`,
+ya cerrado). Es el inverso exacto de la versión por regex.
+
+#### Y por qué corre en una copia
+
+**Seis de las 21 mutan el árbol al ejecutarse** —`compile-rules.mjs` recompila 75 archivos de harness,
+`install-hooks.mjs` escribe `.claude/settings.json`, `write-base-project.mjs` escribe el mapa—.
+Correrlas «para ver qué hacen» sobre el repositorio del Owner es el efecto que la compuerta no puede
+tener. La copia desechable es el sandbox, con las mismas exclusiones que usa el probe de mutación
+(`node_modules`, `.git`, `.nuxt`, `.output`, `coverage`, `scaffold`).
+
+#### El costo, medido antes de meterlo en la cadena
+
+```text
+1,16 s  (copia + 21 subprocesos, en una máquina con carga)
+```
+
+Eso no es un instrumento de CI: contra una cadena que corre 1.613 tests, es ruido. Y hay una razón
+de fondo para ponerlo **en** la cadena: una compuerta que no corre por defecto no evita la regresión,
+que es para lo que existe. Las otras tres compuertas del contrato prosa↔script (`aoi:lint-refs`,
+`aoi:tools`, `aoi:audit-protocol`) también están ahí. La propiedad «las compuertas de la cadena no
+spawnean procesos» es cierta en 25 de 26 pasos, no una regla —`test:dashboard` ya spawnea—.
+
+#### Los dos controles, porque uno solo no prueba nada
+
+| Control | Resultado |
+| :--- | :--- |
+| **Sacar la guarda de entrada** de `registry-sync.mjs` | exit **1** nombrando `scripts/sdd-lifecycle/registry-sync.mjs — sale 0 sin imprimir nada` |
+| **Borrar la rama del stdin** del módulo | los tests caen **2 casos**, y la compuerta sale 1 contra el repo por el falso positivo de `diagnostic-distiller` |
+
+El segundo importa tanto como el primero: sin él, la cláusula del stdin podría estar de más y nadie
+lo sabría. Un guard que no tiene su control negativo es una línea de código que se cree.
+
+---
 ### 9.9. Los dos GAPs de punto de entrada: uno cerrado, uno más chico de lo que parecía
 
 Los dos scripts que la prosa invocaba sin que respondieran **están cerrados**. `context-tombstone`
