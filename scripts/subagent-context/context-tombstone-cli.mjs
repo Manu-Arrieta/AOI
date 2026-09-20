@@ -39,14 +39,14 @@ import { estimateTokens } from '../sdd-lifecycle/token-accounting.mjs'
  */
 export function supersededPairs(turns) {
   const pairs = []
-  for (let i = 0; i < turns.length; i++) {
-    for (let j = i + 1; j < turns.length; j++) {
-      if (isTurnSuperseded(turns[i], turns[j])) {
-        pairs.push({ superseded: turns[i], resolution: turns[j] })
-        break
-      }
-    }
-  }
+  // Indices no: con un `for` que compara contra `turns.length`, el mutante
+  // de `<` a `<=` itera una vez mas con un turno `undefined`, y como
+  // `isTurnSuperseded` ya guarda contra eso el mutante es EQUIVALENTE — no hay
+  // test que pueda matarlo. Sin el operador, no hay mutante que sobreviva.
+  turns.forEach((older, i) => {
+    const newer = turns.slice(i + 1).find((candidate) => isTurnSuperseded(older, candidate))
+    if (newer) pairs.push({ superseded: older, resolution: newer })
+  })
   return pairs
 }
 

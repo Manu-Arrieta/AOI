@@ -19,6 +19,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { after, describe, it } from 'node:test'
+import { formatTombstoneReport } from './context-tombstone-cli.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const CLI = path.join(HERE, 'context-tombstone-cli.mjs')
@@ -193,5 +194,63 @@ describe('context-tombstone-cli mide el ahorro que aplica', () => {
     assert.equal(r.code, 0, `${r.stdout}${r.stderr}`)
     assert.match(r.stdout, /Tumbados:\s+2/)
     fs.rmSync(root, { recursive: true, force: true })
+  })
+})
+
+// Los tests de arriba ejercitan todo por el CLI, que es la superficie real.
+// Estos van contra la funcion pura: son las ramas que el CLI nunca alcanza en un
+// caso normal. Medido antes de escribirlos: 6 mutantes sobrevivian en este
+// archivo y el area cayo de 69% a 67%.
+describe('formatTombstoneReport, ramas que el CLI no alcanza', () => {
+  const report = (over = {}) => ({
+    applied: true,
+    turns: 2,
+    tombstoned: 1,
+    tokensBefore: 100,
+    tokensAfter: 40,
+    icm: [],
+    ...over,
+  })
+
+  it('sin el segundo argumento no imprime la linea de dry-run', () => {
+    // El default solo se mata OMITIENDO el argumento. Por el CLI siempre llega
+    // explicito, asi que el mutante false->true sobrevivia: la linea de dry-run
+    // habria aparecido en toda corrida real.
+    const out = formatTombstoneReport(report())
+    assert.doesNotMatch(out, /Dry run/)
+    assert.match(out, /Turnos:\s+2/)
+  })
+
+  it('con dryRun true si la imprime', () => {
+    // La otra direccion: sin esto, un guard que la omita siempre pasaria.
+    assert.match(formatTombstoneReport(report(), { dryRun: true }), /Dry run/)
+  })
+
+  it('con cero tokens antes reporta 0.0%, nunca NaN', () => {
+    // La guarda de division. Sin ella, el caso de 0 tokens calcularia (0/0)*100
+    // y el reporte diria NaN% — un veredicto que no se lee como error, se lee
+    // como dato.
+    const out = formatTombstoneReport(report({ tokensBefore: 0, tokensAfter: 0 }))
+    assert.match(out, /\(0\.0%\)/)
+    assert.doesNotMatch(out, /NaN/)
+  })
+
+  it('sin registros de ICM no imprime el bloque de ICM', () => {
+    // La mitad del contrato que faltaba: asertar la AUSENCIA. Con la guarda
+    // invertida el encabezado salia siempre, prometiendo registros inexistentes.
+    assert.doesNotMatch(formatTombstoneReport(report()), /persistir en ICM/)
+  })
+
+  it('con registros de ICM los imprime, con su topic', () => {
+    const out = formatTombstoneReport(
+      report({ icm: [{ topic: 'errors-resolved', content: 'Resolved x' }] })
+    )
+    assert.match(out, /persistir en ICM: 1/)
+    assert.match(out, /\[errors-resolved\]/)
+  })
+
+  it('sin aplicar, dice por que', () => {
+    const out = formatTombstoneReport(report({ applied: false, reason: 'pocos turnos' }))
+    assert.match(out, /No se aplico: pocos turnos/)
   })
 })
