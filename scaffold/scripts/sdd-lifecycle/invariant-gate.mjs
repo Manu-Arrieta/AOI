@@ -147,9 +147,12 @@ export async function main() {
         '\n--entity se resuelve solo (git remote origin, con fallback a\n' +
         'basename del directorio) cuando no se pasa --entity ni --facts-file.\n' +
         '\nExit codes (with --exit-code):\n' +
-        '  0  PASSED or SKIPPED (no BIC facts for this workspace)\n' +
+        '  0  PASSED, or SKIPPED when --entity is EXPLICIT and the workspace has no bic.* facts\n' +
         '  1  FAILED — a declared invariant or oracle has no test asserting it\n' +
-        '  2  BLOCKED — the contract could not be read (broken ICM toolchain or missing facts file)\n'
+        '  2  BLOCKED — the contract could not be read, OR an INFERRED entity has no\n' +
+        '     bic.* facts. An inferred name cannot tell "this task never ran\n' +
+        '     /sdd-frame" from "I guessed the wrong entity", and SKIPPED would be a\n' +
+        '     silent pass on a guessed name. Pass --entity to assert it.\n'
     )
     process.exit(0)
   }

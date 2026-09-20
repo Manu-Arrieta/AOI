@@ -84,9 +84,20 @@ describe('invariant-gate answers with three distinct exit codes', () => {
     assert.equal(r.code, 0)
     assert.match(r.stdout, /Usage:/)
     // The usage text IS the contract other phases read; all three must be named.
-    for (const line of [/0\s+PASSED or SKIPPED/, /1\s+FAILED/, /2\s+BLOCKED/]) {
+    for (const line of [/0\s+PASSED/, /1\s+FAILED/, /2\s+BLOCKED/]) {
       assert.match(r.stdout, line, `el uso no documenta ${line}`)
     }
+  })
+
+  it('the help does not promise exit 0 for a case the gate blocks', () => {
+    // El texto anterior decía `0  PASSED or SKIPPED (no BIC facts for this
+    // workspace)` y el gate sale 2 en ese caso EXACTO cuando la entidad es
+    // inferida — que es como sale siempre en un workspace que todavía no pasó
+    // por /sdd-frame. La aserción de arriba sólo exigía que la línea existiera,
+    // así que podía mentir para siempre con la compuerta en verde.
+    const r = run(GATE, ['--help'])
+    assert.match(r.stdout, /0\s+PASSED[^\n]*--entity is EXPLICIT/, 'el código 0 no dice que exige --entity')
+    assert.match(r.stdout, /2\s+BLOCKED[^\n]*INFERRED[^\n]*entity has no/m, 'el código 2 no declara el caso de la entidad inferida')
   })
 
   it('BLOCKS with 2 when given neither --entity nor --facts-file', () => {
