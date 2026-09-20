@@ -62,7 +62,7 @@ Hand off to **@integration-specialist** with isolated task context (via `node sc
    - **Un conteo de 0 tests es un FAIL, nunca un pase.** `rtk` comprime la salida del runner a un resumen, y cuando no se colectó ningún archivo ese resumen es `PASS (0) FAIL (0)`: la línea `No test files found` que lo explicaría se pierde en la compresión y el texto se lee verde. El exit code sí dice la verdad. Ante cualquier `(0)`, reejecutá con `rtk proxy` y mirá la salida cruda.
    - **Un test que existe pero ningún runner colecta no cuenta.** `pnpm aoi:test-globs` lo detecta; el Invariant Gate ya descarta esos archivos al cruzar tags.
    - If no test files exist for a task that specified test requirements → mark as TDD FAIL
-5. **Software Principles Gate** — review all new/modified files and report violations:
+5. **Software Principles Gate** — review all new/modified files and report violations. Inspect each one's structure via `node scripts/code-lens/ast-skeletonizer.mjs <file>` before opening a single body: SRP, DIP and DRY read from signatures and imports, and the bodies are where the tokens go. A file's skeleton is enough to answer every question below:
    - **SRP**: Any file >300 LOC? → WARNING (justify or recommend split)
    - **DIP**: Circular imports between modules? → WARNING
    - **DRY**: Code blocks duplicated across 2+ files (>10 lines similar)? → WARNING
