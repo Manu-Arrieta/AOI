@@ -519,7 +519,7 @@ cada bloque no se declara al escribir, se **mide** después de la edición y la 
 | **B2** | `143` LOC · sin CLI · **la invocación del prompt no podía correr** | CLI en archivo propio (188 LOC) | **5 turnos → 2 tumbados · 185 → 31 tok (83,2%)** en el fixture. Módulo del algoritmo **intacto** en 144 LOC | 0 en banda | — | 2026-09-19 |
 | **B3** | `ast-skeletonizer`: 1 superficie · ciclo `105.466` | la invocación al paso 5 de `/sdd-verify` | `ast-skeletonizer`: **2 superficies** · ciclo **`105.532` = +66 tok** (×1, medido) | **+66** de costo fijo | `a48f43cd31f14b6f` (sin cambio) | 2026-09-19 |
 | **B4.A** | `2.420` tok · `16.940`/ciclo | quitar el padding de la tabla de ruteo | **`1.707` tok · `11.949`/ciclo** · banda `9.457 → 8.744`/fase · ciclo **`105.466 → 100.545`** | **−4.921/ciclo** | `a48f43cd31f14b6f` → **`1a990169267eb204`** | 2026-09-19 |
-| **B4.B** | `1.510` tok · `10.570`/ciclo | Phase Gates + B/D/A | *(a completar)* | *(lo captura B1)* | | |
+| **B4.B** | `1.510` tok · `10.570`/ciclo | padding + columna derivable + B/D/A redundante | **`1.155` tok · `8.085`/ciclo** · banda `8.744 → 8.389`/fase · ciclo **`100.545 → 98.060`** | **−2.485/ciclo** | `1a990169267eb204` → **`b09415441e545056`** | 2026-09-19 |
 | **B4.C** | `2.031` tok · `14.217`/ciclo | Example | *(a completar)* | *(lo captura B1)* | | |
 | **B5** | `105.466`/ciclo · `54.398` facturado con caché | medición | *(a completar)* | — | | |
 
@@ -530,6 +530,75 @@ saber contra qué HEAD se midió).
 **El ANTES de cada recorte se lee del trinquete de B1**, no del plan. Los números del plan son
 órdenes de magnitud para priorizar `[PLAN §7.2.3]`.
 
+### 9.4. B4.B: la skill repetía siete de sus ocho reglas, y las repetía en el mismo contexto
+
+El bloque #3 (`Before/During/After`) parecía la parte escrita a mano que ningún agente lee. La
+pregunta correcta no era esa: era **¿existe en otro lado, y en el mismo contexto?**
+
+#### Los tres recortes, y el criterio de cada uno
+
+| Recorte | Ahorro | Por qué es seguro |
+| :--- | ---: | :--- |
+| Padding de las dos tablas | **137 tok** | Markdown no necesita pipes alineados. Igual que en B4.A |
+| Columna `From → To` | **83 tok** | La secuencia de fases está entera en la tabla de ruteo del supervisor, que carga en las mismas 7 fases. **Y el test ya afirmaba ese diseño**: «Routing and gates are the supervisor's responsibility and live nowhere else in one place» |
+| Bloque `Before/During/After` | **128 tok** | 7 de sus 8 reglas están `verbatim` en el Hub-and-Spoke Protocol del supervisor (líneas 55-70), que carga en las mismas 7 fases |
+
+**1.510 → 1.155 tok.** −355 por fase, **−2.485 por ciclo**, banda `8.744 → 8.389`.
+
+#### La regla que se quedó, y por qué
+
+De las ocho reglas del bloque, **siete** viven en el supervisor. La octava —`Read the
+constitution`— no existía en **ninguna de las otras nueve fuentes**. Verificado por `rg` sobre el
+conjunto exacto que `behavioral-probes.test.mjs` fija para la Fase 0, más `sdd-phases.mjs`.
+
+Borrarla habría sido exactamente la falla que este repositorio documenta en `cost-of-compression`:
+**comprimir es donde muere el contenido único**, porque una regla que sólo vive en un archivo se
+ve idéntica a una redundancia hasta que el archivo se va.
+
+Así que el bloque de 185 tokens quedó reducido a 57: la regla única, y un **puntero** a dónde
+viven las otras siete. Un puntero no pierde contenido — el supervisor ya está cargado cuando se
+lee esa línea.
+
+#### El tripwire me corrigió, y tenía razón
+
+Escribí una sonda para el claim único y la corrí. Falló:
+
+```text
+✖ declares which probes remain answer-shaped and therefore un-gated
+  actual: 10   expected: 9
+```
+
+Yo había leído el gate como «la evidencia tiene que estar en el contexto» y me pareció correcto
+—`constitution` **sí** está en las 7 fases, lo verifiqué. Pero el contador no mide `expected`:
+mide `forbidden`. Una sonda que **prohíbe una respuesta equivocada** sólo se puede verificar con un
+modelo, porque `forbidden` describe una **respuesta** y no el contexto del que se la saca.
+
+Y el conteo está **hardcodeado a propósito**. El comentario del test lo dice:
+
+> El conteo es un TRIPWIRE deliberado... sube cuando alguien agrega una sonda de este tipo, y
+> obliga a reconocer que la cobertura conductual creció en la dirección **débil (prohibir)** y no
+> en la **fuerte (exigir)**.
+
+El tripwire funcionó: mi sonda era **más débil de lo necesario**. Le sobraba el `forbidden` porque
+`constitution` es evidencia presente, así que la saqué y la sonda quedó **verificable
+determinísticamente**. El número volvió a 9 sin bajarlo.
+
+> Es la segunda vez en este ciclo que un gate existente rechaza un cambio mío y **tiene razón**.
+> La primera fue el trinquete reclamando `STALE BUDGET`. Vale registrarlo: la infraestructura de
+> verificación de AOI no es ceremonia, y un agente que la trata como obstáculo pierde el aviso.
+
+#### Y un error mío que el reporte tapó
+
+Mi script de depad reportó `−66 tok` en la tabla de topics. **Era falso**: el `slice` por rangos
+dejó la última fila (`Archive`) fuera del rango, sin avisar, y el número salió *más grande* que el
+real. La tabla quedó a medio depad — `| Archive   |` conservaba su padding — y yo lo reporté como
+hecho. Es la misma clase de falla que los rangos de `sed` que ya me habían mordido.
+
+Lo detectó leer el archivo después, no el script. La corrección fue reemplazar el `slice` por un
+pase **idempotente sobre todas las filas**, con la idempotencia como prueba: correrlo dos veces y
+confirmar que el segundo pase no cambia nada.
+
+---
 ### 9.3. B4.A: el ahorro más grande estaba en espacios de alineación
 
 El bloque que el plan marcó como **LIMITADO** —la tabla de ruteo del supervisor, donde un puntero
