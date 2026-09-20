@@ -520,7 +520,7 @@ cada bloque no se declara al escribir, se **mide** después de la edición y la 
 | **B3** | `ast-skeletonizer`: 1 superficie · ciclo `105.466` | la invocación al paso 5 de `/sdd-verify` | `ast-skeletonizer`: **2 superficies** · ciclo **`105.532` = +66 tok** (×1, medido) | **+66** de costo fijo | `a48f43cd31f14b6f` (sin cambio) | 2026-09-19 |
 | **B4.A** | `2.420` tok · `16.940`/ciclo | quitar el padding de la tabla de ruteo | **`1.707` tok · `11.949`/ciclo** · banda `9.457 → 8.744`/fase · ciclo **`105.466 → 100.545`** | **−4.921/ciclo** | `a48f43cd31f14b6f` → **`1a990169267eb204`** | 2026-09-19 |
 | **B4.B** | `1.510` tok · `10.570`/ciclo | padding + columna derivable + B/D/A redundante | **`1.155` tok · `8.085`/ciclo** · banda `8.744 → 8.389`/fase · ciclo **`100.545 → 98.060`** | **−2.485/ciclo** | `1a990169267eb204` → **`b09415441e545056`** | 2026-09-19 |
-| **B4.C** | `2.031` tok · `14.217`/ciclo | Example | *(a completar)* | *(lo captura B1)* | | |
+| **B4.C** | `2.031` tok · `14.217`/ciclo | el `Example`, redundante y equivocado | **`1.861` tok · `13.027`/ciclo** · banda `8.389 → 8.219`/fase · ciclo **`98.060 → 96.870`** | **−1.190/ciclo** | `b09415441e545056` → **`b189f6d1759e11ae`** | 2026-09-19 |
 | **B5** | `105.466`/ciclo · `54.398` facturado con caché | medición | *(a completar)* | — | | |
 
 **Las tres columnas que no se negocian:** el valor **medido** (no estimado), la **huella** de la
@@ -530,6 +530,79 @@ saber contra qué HEAD se midió).
 **El ANTES de cada recorte se lee del trinquete de B1**, no del plan. Los números del plan son
 órdenes de magnitud para priorizar `[PLAN §7.2.3]`.
 
+### 9.5. B4.C: el bloque redundante que además enseñaba a fallar
+
+Este archivo **no tenía padding** —primera vez en las tres ramas—, así que el ahorro tenía que
+venir de otro lado. El bloque que el plan marcó, `Example: Invoking solution-architect`, tenía un
+defecto que el plan no había visto.
+
+#### El `Example` contradice al propio archivo
+
+Dos secciones más arriba, la nota `[!IMPORTANT]` documenta un fallo medido el 2026-09-12:
+
+> Pasar `"Deepseek v4 pro - Provider - Deepseek"` a `runSubagent` devuelve *"Requested model not
+> found"*, y **falla para los 27 agentes de la misma forma**, porque el identificador real lleva el
+> sufijo del transporte...
+
+Y su tabla lista, entre los tres ejemplos, exactamente `Qwen 3.7 plus - Provider - Alibaba` →
+`Qwen 3.7 plus - Provider - Alibaba (customendpoint)`.
+
+El `Example`, 55 líneas más abajo, hacía esto:
+
+```ts
+runSubagent({
+  agentName: "solution-architect",
+  model: "Qwen 3.7 plus - Provider - Alibaba",   // ← sin el sufijo: falla
+```
+
+**El archivo documentaba el fallo, explicaba la causa y después mostraba la forma fallida como el
+ejemplo canónico.** Un agente que copia el ejemplo rompe la delegación en el primer intento, que
+es la misma clase de defecto que la nota denuncia.
+
+#### Por qué se fue entero y no se corrigió
+
+Lo primero que uno piensa es agregarle el sufijo. No hacía falta: el bloque es **redundante de
+punta a punta**.
+
+| Lo que muestra el `Example` | Dónde ya está |
+| :--- | :--- |
+| La forma de la llamada `runSubagent({agentName, model, description, prompt})` | **Step 3**, completa |
+| El template del prompt (Workspace/Feature/ICM topic/FIRST/THEN/TDD/Contracts...) | **Step 2**, verbatim, mismos placeholders |
+| El modelo de `solution-architect` | La tabla del **Registry** |
+
+**No tenía una sola línea propia.** Corregirlo habría dejado 170 tokens de contenido que ya existe
+en el mismo contexto, así que se fue: **2.031 → 1.861 tok**, −1.190 por ciclo.
+
+#### Y la sonda que lo cubría tampoco discriminaba
+
+Al buscar qué protegía ese comportamiento encontré la sonda `model-parameter`, que pregunta el
+valor exacto para `@solution-architect`. Su patrón era:
+
+```js
+expected: /Qwen\s*3\.7\s*plus/i,
+```
+
+Ese patrón matchea **las dos formas** —la que funciona y la que falla—, así que la sonda dejaba
+pasar la respuesta que rompe la delegación. Verificado con las dos cadenas antes de tocarla.
+
+Se endureció a `/Qwen\s*3\.7\s*plus.*customendpoint/i`, que exige el sufijo. Sigue siendo
+determinística: `customendpoint` está en el contexto ensamblado de `Phase_2_FF`, así que el gate de
+evidencia la acepta sin necesidad de un modelo. Y **no subió el tripwire** de sondas prohibitorias,
+porque pasó de aceptar de más a exigir de menos — nunca al revés.
+
+#### Lo que se dejó, y por qué
+
+| Bloque | tok | Decisión |
+| :--- | ---: | :--- |
+| Nota `[!IMPORTANT]` picker vs API | **252** | **Se queda.** Es el aviso que previene un fallo medido en los 27 agentes |
+| `Anti-Patterns` | **153** | **Se queda.** Cubre lo mismo que los Steps, pero en negativo — y son correctos |
+| Nota de la columna ausente | **68** | **Se queda.** Explica una ausencia; evita que alguien la reponga |
+| `Step 2` con su template | **297** | **Se queda.** Es el protocolo que el archivo existe para dictar |
+
+La línea que separó el recorte de la conservación no fue el tamaño: fue **si el bloque contradecía
+al archivo**. El `Example` sí; los `Anti-Patterns` no. Recortar por tamaño habría borrado los dos.
+
+---
 ### 9.4. B4.B: la skill repetía siete de sus ocho reglas, y las repetía en el mismo contexto
 
 El bloque #3 (`Before/During/After`) parecía la parte escrita a mano que ningún agente lee. La
