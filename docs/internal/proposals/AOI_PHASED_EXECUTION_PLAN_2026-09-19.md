@@ -518,7 +518,7 @@ cada bloque no se declara al escribir, se **mide** después de la edición y la 
 | **B1** | banda `9.457`/fase · ciclo `66.199` · huella `a48f43cd31f14b6f` · 3.722 tok de adaptadores **invisibles** | trinquete (`band-budget.mjs`, 103 LOC) + adaptadores impresos | Banda **idéntica**: 8 archivos · `9.457` · `66.199` · huella `a48f43cd31f14b6f`. Adaptadores **visibles**: `3.722 tok = 3,57% del piso` | **0** — protege, no ahorra | `a48f43cd31f14b6f` (sin cambio) | 2026-09-19 |
 | **B2** | `143` LOC · sin CLI · **la invocación del prompt no podía correr** | CLI en archivo propio (188 LOC) | **5 turnos → 2 tumbados · 185 → 31 tok (83,2%)** en el fixture. Módulo del algoritmo **intacto** en 144 LOC | 0 en banda | — | 2026-09-19 |
 | **B3** | `ast-skeletonizer`: 1 superficie · ciclo `105.466` | la invocación al paso 5 de `/sdd-verify` | `ast-skeletonizer`: **2 superficies** · ciclo **`105.532` = +66 tok** (×1, medido) | **+66** de costo fijo | `a48f43cd31f14b6f` (sin cambio) | 2026-09-19 |
-| **B4.A** | `2.420` tok · `16.940`/ciclo | columnas + Session Start | *(a completar)* | *(lo captura B1)* | | |
+| **B4.A** | `2.420` tok · `16.940`/ciclo | quitar el padding de la tabla de ruteo | **`1.707` tok · `11.949`/ciclo** · banda `9.457 → 8.744`/fase · ciclo **`105.466 → 100.545`** | **−4.921/ciclo** | `a48f43cd31f14b6f` → **`1a990169267eb204`** | 2026-09-19 |
 | **B4.B** | `1.510` tok · `10.570`/ciclo | Phase Gates + B/D/A | *(a completar)* | *(lo captura B1)* | | |
 | **B4.C** | `2.031` tok · `14.217`/ciclo | Example | *(a completar)* | *(lo captura B1)* | | |
 | **B5** | `105.466`/ciclo · `54.398` facturado con caché | medición | *(a completar)* | — | | |
@@ -530,6 +530,83 @@ saber contra qué HEAD se midió).
 **El ANTES de cada recorte se lee del trinquete de B1**, no del plan. Los números del plan son
 órdenes de magnitud para priorizar `[PLAN §7.2.3]`.
 
+### 9.3. B4.A: el ahorro más grande estaba en espacios de alineación
+
+El bloque que el plan marcó como **LIMITADO** —la tabla de ruteo del supervisor, donde un puntero
+rompería siete aserciones— resultó ser el mayor ahorro individual de todo el conjunto. Y no por
+quitar columnas.
+
+#### La medición, antes de tocar nada
+
+```text
+TABLA DE RUTEO (lineas 35-50):
+  con padding: 1195 tok
+  sin padding:  484 tok
+  → el padding solo cuesta 711 tok, en 2845 caracteres de espacios
+
+ARCHIVO: 2420 tok · margen al cap G1 (2800): 380
+```
+
+**711 de los 1.195 tokens de esa tabla eran espacios de alineación.** El plan proyectaba ~500 tok
+para todo el bloque quitando columnas derivables; el relleno solo valía más, **y no pierde una
+sola palabra de información**: markdown no necesita que los pipes estén alineados.
+
+| Candidato | Ahorro medido | Riesgo de contrato |
+| :--- | ---: | :--- |
+| **Padding de alineación** | **711 tok** | **Ninguno.** No hay información que perder |
+| Columna `Artifact Path` | 118 tok | Medio: duplica `HANDOFFS`, pero el supervisor la usa para rutear |
+| Columna `Spec-Kit Command` | 49 tok | Medio: cada prompt nombra su propio comando |
+| Bloque `Session Start` completo | 134 tok | Alto: `supervisor-icm-dedup` fija su contenido |
+
+#### Qué se hizo, y qué no
+
+**Sólo el padding.** Es el mayor ahorro y el único con riesgo de contrato **cero**. Las columnas
+quedan para después de medir, y `Session Start` puede no tocarse nunca: 134 tokens no justifican
+arriesgar un contrato que tiene tres tests propios.
+
+El script que lo aplicó **verifica los once contratos antes de escribir** —los siete pares
+fase→agente de `lifecycle-wiring`, los dos `@agente (optional)`, `@project-expert` + `Domain Q&A`,
+las dos compuertas— y **aborta sin tocar el archivo** si alguno falta. No es una edición a mano: es
+una transformación con precondiciones.
+
+**Resultado: 2.420 → 1.707 tok.** −713 por fase, **−4.921 por ciclo**, y la banda baja de 9.457 a
+8.744 por fase.
+
+#### El trinquete hizo su trabajo, en las dos direcciones
+
+1. **Reclamó el recorte.** Al bajar el archivo y no el presupuesto, `cache-prefix.mjs` salió **1**:
+   ```text
+   ❌ STALE BUDGET  .github/agents/supervisor.agent.md bajó a 1707 — bajá el presupuesto en este commit
+   ```
+   Es la regla 2 del trinquete: **un ahorro que no se registra se puede volver a gastar.** El
+   presupuesto se bajó en el mismo commit, y el techo de 9.457 → 8.744.
+
+2. **La huella distinguió los dos casos.** En B1 —que no cambió contenido— la huella quedó
+   idéntica (`a48f43cd31f14b6f`). En B4.A cambió a `1a990169267eb204`. Eso es exactamente para lo
+   que el instrumento existe: distinguir **un reorden de un recorte**.
+
+3. **Y un test falló por la razón correcta.** `band-budget.test.mjs` fijaba que los tres archivos
+   más caros sumaban **69,5%** de la banda, con el número absoluto congelado. Al recortar, la
+   proporción pasó a **67,0%** y el test falló.
+
+   El test estaba mal escrito, no el recorte: **congelaba un número que un recorte legítimo
+   cambia.** Se reescribió para expresar la **propiedad** —los tres más caros concentran más del
+   60%— y para **nombrar** cuáles son, que es lo accionable. Sobrevive a un recorte que conserve la
+   propiedad y falla si deja de valer.
+
+   > **Y me corrigió a mí.** Escribí que `supervisor` había salido del top 3, y es falso: con
+   > **1.707 sigue siendo el tercero**, porque el cuarto (`sdd-lifecycle/SKILL.md`) pesa 1.510.
+   > Lo que se movió fue la **proporción**, no la membresía. Lo había afirmado sin calcular.
+
+#### Por qué esto importa más allá del número
+
+Las cuatro propuestas hermanas discutieron **qué archivos** recortar. Ninguna mencionó que el
+mayor ahorro individual de la banda estaba en **espacios de alineación dentro de una tabla**.
+No es una ironía: es el resultado de medir en vez de estimar — y de que la restricción real
+(siete aserciones que parsean la tabla por rangos) **no bloqueaba el ahorro**, sólo bloqueaba la
+forma obvia de conseguirlo.
+
+---
 ### 9.2. El GAP que la revisión encontró, y que no estaba en el plan
 
 La revisión previa a continuar con B4 buscó GAPs y encontró **un defecto estructural** que
