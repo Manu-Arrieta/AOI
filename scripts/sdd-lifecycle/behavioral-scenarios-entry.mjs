@@ -58,12 +58,17 @@ export const ENTRY_PROBES = [
     scenario:
       'Vas a delegar en @solution-architect. ¿Exactamente qué valor de modelo pasás en runSubagent, ' +
       'y cuál es su fallback? Respondé solo con los dos valores.',
-    // El sufijo es obligatorio: sin `(customendpoint)` la llamada falla con
-    // "Requested model not found" para los 27 agentes, que es exactamente lo que
-    // documenta la nota del registro. El patrón anterior —sólo el nombre del
-    // modelo— aceptaba las dos formas, así que la sonda dejaba pasar la
-    // respuesta que rompe la delegación.
-    expected: /Qwen\s*3\.7\s*plus.*customendpoint/i,
+    // La versión va PINEADA a propósito, y el 2026-09-20 se midió para qué sirve:
+    // el registro declaraba `Qwen 3.7 plus`, que no existe —el disponible es 3.8—,
+    // y esta sonda fue la única cosa en la cadena que lo notó. Corregir el
+    // registro a 3.8 la dejó obsoleta a ella, y ese rojo es el comportamiento
+    // buscado: obliga a que un cambio de modelo pase por una decisión y no por un
+    // descuido. Si un patrón laxo (`3\.\d+`) estuviera acá, el registro podría
+    // apuntar a un modelo inexistente con todo verde.
+    //
+    // El sufijo `(customendpoint)` también es obligatorio: sin él la delegación
+    // falla con "Requested model not found" para los 27 agentes.
+    expected: /Qwen\s*3\.8\s*plus.*customendpoint/i,
   },
   {
     id: 'service-discovery-method',

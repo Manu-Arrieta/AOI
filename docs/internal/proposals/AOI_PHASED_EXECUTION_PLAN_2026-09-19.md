@@ -530,6 +530,94 @@ saber contra qué HEAD se midió).
 **El ANTES de cada recorte se lee del trinquete de B1**, no del plan. Los números del plan son
 órdenes de magnitud para priorizar `[PLAN §7.2.3]`.
 
+### 9.16. La prueba de implementación con DeepSeek y MiniMax: funcionó, y encontró tres defectos
+
+Se corrió una delegación real de implementación con los dos modelos que el Owner indicó —DeepSeek para
+no quedar bloqueado por el endpoint gratuito de GLM— y el resultado fue: **los dos modelos funcionan**, y
+el intento destapó **tres defectos** que ninguna compuerta veía.
+
+#### Los modelos, verificados por ejecución
+
+| Modelo pasado a `runSubagent` | Resultado |
+| :--- | :--- |
+| `Deepseek v4 pro - Provider - Deepseek (customendpoint)` | **Funciona.** Implementó los tests que faltaban |
+| `Minimax M3 - Provider - Minimax (customendpoint)` | **Funciona.** Hizo la revisión adversarial |
+| `Minimax M3 - Provider - Minimax` *(sin sufijo)* | **Falla**: `Requested model not found` |
+
+La tercera línea confirma el aviso de §9.5 con una medición propia: el valor del picker **no** sirve como
+parámetro. Y confirma la forma del defecto que este ciclo viene encontrando: un valor documentado que el
+sistema no acepta.
+
+#### Defecto 1: `Qwen 3.7 plus` no existe
+
+El mensaje de error del modelo inexistente **devuelve la lista autoritativa** de lo que el sistema
+acepta. Comparada contra el registro:
+
+| Modelo declarado en el registro | Veredicto |
+| :--- | :--- |
+| `Deepseek v4 pro - Provider - Deepseek` | existe con sufijo `(customendpoint)` |
+| `Minimax M3 - Provider - Minimax` | existe con sufijo |
+| `Glm5.2 - Provider - Zai` | existe con sufijo |
+| **`Qwen 3.7 plus - Provider - Alibaba`** | **NO EXISTE.** El disponible es **`Qwen 3.8 plus`** |
+
+Lo usaban **`solution-architect`** (fase Plan, dueño de `design.md` y `tasks.md`) y
+**`triage-specialist`** (primer respondedor de bugs). Los dos habrían fallado al delegarse.
+
+Y estaba en **8 lugares**, no en uno: el registro (3 ocurrencias), los dos `.agent.md`, sus dos espejos,
+la config del customendpoint (`scaffold/.vscode/ChatLanguageModel.example.json` — o sea lo que el
+instalador escribe) y este plan. **13 ocurrencias corregidas en 7 archivos.**
+
+**Y lo que lo hacía invisible**: `validate-agent-routing.mjs` verifica que la fila tenga modelo, fallback y
+que el `.agent.md` exista — nunca que el modelo **exista**. La compuerta pregunta si el campo está lleno,
+no si el valor sirve.
+
+#### Defecto 2: la sonda lo atrapó, y ése es su mérito
+
+Al corregir el registro a `3.8`, la cadena **se puso roja** — en
+`behavioral-probes.test.mjs`, el caso `model-parameter`, cuyo patrón era
+`/Qwen\s*3\.7\s*plus.*customendpoint/i`.
+
+Esa sonda la había **endurecido** en B4.C (antes sólo pedía `/Qwen\s*3\.7\s*plus/i`, que aceptaba tanto la
+forma que funciona como la que falla). Que ahora falle es **la conducta buscada**: la versión está
+pineada a propósito, así que un cambio de modelo obliga a pasar por una decisión y no por un descuido.
+Con un patrón laxo (`3\.\d+`) el registro podría apuntar a un modelo inexistente con todo verde — que es
+exactamente lo que acababa de pasar.
+
+#### Defecto 3: la limpieza del sandbox estaba desguardada (lo encontró MiniMax)
+
+La revisión adversarial de MiniMax encontró que **la mitad del trabajo de una compuerta no estaba
+fijada**: quitando el `fs.rmSync(work)` del `finally` de `main()`,
+
+```text
+ℹ tests 12 · pass 12 · fail 0        ← todo verde
+temporales aoi-entrypoint-*: 3       ← uno por caso que corre main
+```
+
+Verificado acá, independientemente. Es la **misma clase** que la fuga de §9.12: una conducta cuyo
+borrado nada nota. Se arregló con un caso que compara el **conjunto** de nombres en `os.tmpdir()` antes
+y después (no el conteo, que puede dar 0 por vacío), y su control negativo hace caer exactamente ese caso.
+
+Y leyó bien un segundo agujero: `sandboxCopy` crea el directorio con `mkdtempSync` y después copia. Si la
+copia falla a mitad (permisos, ENOSPC), `main` nunca recibe el `work` y su `finally` no alcanza al
+directorio huérfano. Ahora la copia se limpia donde se creó, que es el único lugar que la conoce.
+
+#### Y dos errores míos de herramienta, dichos
+
+**`rg -rn` no significa «recursivo + números de línea».** `-r` es `--replace`, o sea que `-rn` =
+`--replace n`. Todas mis búsquedas de la sesión imprimieron el patrón **reemplazado por `n`**. Eso explica
+salidas que parecían mangladas y que atribuí al visor del terminal: `scripts/sdd-lifecycle/...` mostrado
+como `scripts/n/...`, y `aoi-preinstalacion.XXXXXX` como `n.XXXXXX`. Los matches eran reales; la salida
+estaba alterada por mi propio flag.
+
+**Y `--no-ignore` no incluye archivos ocultos.** `.github/` empieza con punto, así que un barrido
+recursivo con `--no-ignore` **no entra ahí** — devolvió 1 archivo cuando había 8. El flag correcto es
+`-uu` (`--no-ignore` + `--hidden`). Con él aparecieron los 8.
+
+Los dos son la misma lección que el resto del ciclo, aplicada a mi propia caja de herramientas: **una
+búsqueda que devuelve poco no prueba ausencia, y un número que no cuadra suele ser del instrumento, no
+del objeto.**
+
+---
 ### 9.13. B5(b) medida, y con ella una corrección al modelo de la banda
 
 Declaré B5(b) inobtenible: *«los contadores viven en la respuesta del proveedor, no en el árbol»*. Es
@@ -1250,15 +1338,17 @@ Dos secciones más arriba, la nota `[!IMPORTANT]` documenta un fallo medido el 2
 > found"*, y **falla para los 27 agentes de la misma forma**, porque el identificador real lleva el
 > sufijo del transporte...
 
-Y su tabla lista, entre los tres ejemplos, exactamente `Qwen 3.7 plus - Provider - Alibaba` →
-`Qwen 3.7 plus - Provider - Alibaba (customendpoint)`.
+Y su tabla lista, entre los tres ejemplos, exactamente `Qwen 3.8 plus - Provider - Alibaba` →
+`Qwen 3.8 plus - Provider - Alibaba (customendpoint)`.
+
+*(Las citas decían `3.7` cuando se escribió esto. Ver §9.16: ese modelo no existía.)*
 
 El `Example`, 55 líneas más abajo, hacía esto:
 
 ```ts
 runSubagent({
   agentName: "solution-architect",
-  model: "Qwen 3.7 plus - Provider - Alibaba",   // ← sin el sufijo: falla
+  model: "Qwen 3.8 plus - Provider - Alibaba",   // ← sin el sufijo: falla
 ```
 
 **El archivo documentaba el fallo, explicaba la causa y después mostraba la forma fallida como el

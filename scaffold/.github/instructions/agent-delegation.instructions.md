@@ -83,7 +83,7 @@ After the subagent returns, verify:
 > | :--- | :--- |
 > | `Deepseek v4 pro - Provider - Deepseek` | `Deepseek v4 pro - Provider - Deepseek (customendpoint)` |
 > | `Glm5.2 - Provider - Zai` | `Glm5.2 - Provider - Zai (customendpoint)` |
-> | `Qwen 3.7 plus - Provider - Alibaba` | `Qwen 3.7 plus - Provider - Alibaba (customendpoint)` |
+> | `Qwen 3.8 plus - Provider - Alibaba` | `Qwen 3.8 plus - Provider - Alibaba (customendpoint)` |
 >
 > Es la misma clase de defecto que la guardia de entry del `mcp-gateway` y los prompts del
 > protocolo: **un valor documentado que no coincide con el que el sistema acepta**. Si un
@@ -94,9 +94,9 @@ After the subagent returns, verify:
 | Agent | `runSubagent` Model Parameter | Fallback (NVIDIA NIM) | Category |
 | :--- | :--- | :--- | :--- |
 | `supervisor` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `solution-architect` | `Qwen 3.7 plus - Provider - Alibaba` | DeepSeek (`deepseek-v4-pro`) | Razonamiento |
+| `solution-architect` | `Qwen 3.8 plus - Provider - Alibaba` | DeepSeek (`deepseek-v4-pro`) | Razonamiento |
 | `functional-analyst` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `triage-specialist` | `Qwen 3.7 plus - Provider - Alibaba` | DeepSeek (`deepseek-v4-pro`) | Razonamiento |
+| `triage-specialist` | `Qwen 3.8 plus - Provider - Alibaba` | DeepSeek (`deepseek-v4-pro`) | Razonamiento |
 | `integration-specialist` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
 | `documentation-analyst` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
 | `project-analyzer` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |

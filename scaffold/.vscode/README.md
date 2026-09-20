@@ -22,7 +22,7 @@ en VS Code como **custom endpoints** para el catálogo AOI.
 | :------- | :------------------- | :---------------------------------------- |
 | DeepSeek | DeepSeek V4 Pro      | 22 agentes (análisis, docs, orquestación) |
 | Zai      | GLM 5.2              | 8 agentes (código, terminal, git)         |
-| Alibaba  | Qwen 3.7 Plus        | 2 agentes (arquitectura, triage)          |
+| Alibaba  | Qwen 3.8 Plus        | 2 agentes (arquitectura, triage)          |
 | MiniMax  | MiniMax M3           | 1 agente (UX/visual)                      |
 | NVIDIA   | Todos los anteriores | Fallback universal cross-provider         |
 | Kimi     | Kimi K2.6            | 0 agentes (sin caso de uso)               |
@@ -137,7 +137,7 @@ Para cada agente que invocás, elegí el modelo en el picker (ver
   `@documentation-analyst`, `@resource-analyst`,
   `@project-analyzer`, `@project-expert` → DeepSeek V4 Pro (DeepSeek)
 - `@frontend-developer`, `@backend-developer`, `@devops-engineer` → GLM 5.2 (Zai)
-- `@solution-architect`, `@triage-specialist` → Qwen 3.7 Plus (Alibaba)
+- `@solution-architect`, `@triage-specialist` → Qwen 3.8 Plus (Alibaba)
 - `@ux-designer` → MiniMax M3 (MiniMax)
 
 ## Forma automática

@@ -70,7 +70,7 @@
     "models": [
       {
         "id": "qwen3.7-plus",
-        "name": "Qwen 3.7 plus - Provider - Alibaba",
+        "name": "Qwen 3.8 plus - Provider - Alibaba",
         "url": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
         "toolCalling": true,
         "vision": true,

@@ -10,7 +10,7 @@ Your job is to **classify, diagnose, and route** any problem the Owner reports, 
 
 ## Model Requirement
 
-> **Model**: `Qwen 3.7 plus - Provider - Alibaba` · **Fallback**: DeepSeek (`deepseek-v4-pro`)
+> **Model**: `Qwen 3.8 plus - Provider - Alibaba` · **Fallback**: DeepSeek (`deepseek-v4-pro`)
 
 ## Session Start — MANDATORY
 

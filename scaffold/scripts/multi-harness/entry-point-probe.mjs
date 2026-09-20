@@ -150,10 +150,19 @@ export function formatEntryPointReport(r) {
 export function sandboxCopy(root) {
   const EXCLUDED = /(?:^|\/)(?:node_modules|\.git|\.nuxt|\.output|coverage|scaffold)(?:\/|$)/
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-entrypoint-'))
-  fs.cpSync(root, work, {
-    recursive: true,
-    filter: (src) => src === root || !EXCLUDED.test(path.relative(root, src)),
-  })
+  try {
+    fs.cpSync(root, work, {
+      recursive: true,
+      filter: (src) => src === root || !EXCLUDED.test(path.relative(root, src)),
+    })
+  } catch (err) {
+    // El `main` sólo borra `work` cuando la copia le DEVOLVIÓ: si `cpSync` falla
+    // a mitad (permisos, ENOSPC), `work` sigue `undefined` y el `finally` no
+    // alcanza al directorio huérfano. Se limpia donde se creó, que es el único
+    // lugar que lo conoce. Medido: sin esto, un fallo de copia deja la copia.
+    fs.rmSync(work, { recursive: true, force: true })
+    throw err
+  }
   return work
 }
 

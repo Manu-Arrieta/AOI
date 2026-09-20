@@ -17,6 +17,7 @@
  */
 
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -31,6 +32,19 @@ import {
 } from './entry-point-probe.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
+
+/** La compuerta como CLI: `main` fija `process.exitCode`, así que se corre afuera. */
+const PROBE = fileURLToPath(new URL('./entry-point-probe.mjs', import.meta.url))
+
+/** El CLI en un subproceso con `cwd` en el fixture: no toca el repo del Owner. */
+function runProbe(root) {
+  try {
+    const out = execFileSync('node', [PROBE], { cwd: root, encoding: 'utf8', timeout: 30000 })
+    return { code: 0, out }
+  } catch (e) {
+    return { code: e.status ?? 1, out: `${e.stdout ?? ''}${e.stderr ?? ''}` }
+  }
+}
 
 /** Un árbol de mentira con prosa y scripts, barrido al final de cada caso. */
 function fixture(prose, scripts) {
@@ -147,5 +161,68 @@ test('este repositorio pasa su propia compuerta', () => {
   assert.ok(scripts.length >= 15, `sólo ${scripts.length} rutas invocadas: la compuerta quedó vacía`)
   for (const rel of scripts) {
     assert.ok(fs.existsSync(path.join(ROOT, rel)), `la prosa invoca ${rel} y no existe`)
+  }
+})
+
+test('main() sale 1 cuando la prosa invoca un script que no responde', () => {
+  // El defecto que esto cierra: `main` fija `process.exitCode = 1` y NINGÚN
+  // caso lo verificaba. Si esa línea desaparece, la compuerta deja de frenar la
+  // cadena y los 9 casos viejos siguen verdes. Acá se corre el CLI de verdad,
+  // con `cwd` en un fixture, porque en proceso `main` copiaría el repo entero.
+  const { root, cleanup } = fixture('node scripts/mudo.mjs\n', { 'mudo.mjs': LIBRERIA })
+  try {
+    const { code, out } = runProbe(root)
+    assert.equal(code, 1, `esperaba exit 1, salió ${code}:\n${out}`)
+    assert.match(out, /NO responden/)
+    assert.match(out, /mudo\.mjs/)
+  } finally {
+    cleanup()
+  }
+})
+
+test('main() sale 1 cuando la prosa nombra una ruta que no existe', () => {
+  const { root, cleanup } = fixture('node scripts/falta.mjs\n', {})
+  try {
+    const { code, out } = runProbe(root)
+    assert.equal(code, 1, `esperaba exit 1, salió ${code}:\n${out}`)
+    assert.match(out, /no existen/)
+    assert.match(out, /falta\.mjs/)
+  } finally {
+    cleanup()
+  }
+})
+
+test('main() sale 0 cuando cada ruta invocada responde', () => {
+  const { root, cleanup } = fixture('node scripts/vivo.mjs\n', { 'vivo.mjs': 'console.log("ok")\n' })
+  try {
+    const { code, out } = runProbe(root)
+    assert.equal(code, 0, `esperaba exit 0, salió ${code}:\n${out}`)
+    assert.match(out, /✅/)
+  } finally {
+    cleanup()
+  }
+})
+
+test('main() borra la copia del sandbox, y eso está fijado', () => {
+  // Medido el 2026-09-20: quitando el `fs.rmSync` del `finally` del módulo, los
+  // 12 casos seguían VERDES y quedaban 3 directorios `aoi-entrypoint-*` —uno por
+  // caso que corre `main`—. La limpieza existía pero nada la fijaba, así que su
+  // pérdida era invisible. Es la misma forma de defecto que el resto del ciclo:
+  // una conducta cuyo borrado ningún caso nota.
+  //
+  // Se compara por CONJUNTO de nombres y no por conteo: un conteo puede dar 0
+  // porque la corrida no llegó a crear nada, que es el verde por vacío.
+  const tmp = os.tmpdir()
+  const previos = new Set(fs.readdirSync(tmp).filter((n) => n.startsWith('aoi-entrypoint-')))
+  const { root, cleanup } = fixture('node scripts/vivo.mjs\n', { 'vivo.mjs': 'console.log("ok")\n' })
+  try {
+    runProbe(root)
+    const nuevos = fs
+      .readdirSync(tmp)
+      .filter((n) => n.startsWith('aoi-entrypoint-'))
+      .filter((n) => !previos.has(n))
+    assert.deepEqual(nuevos, [], `la compuerta dejó ${nuevos.length} copia(s) sin borrar`)
+  } finally {
+    cleanup()
   }
 })
