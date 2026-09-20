@@ -48,7 +48,7 @@ export const BAND_BUDGET = {
   '.github/instructions/rtk.instructions.md': 334,
   '.github/skills/icm/SKILL.md': 414,
   '.github/skills/rtk/SKILL.md': 228,
-  '.github/skills/sdd-lifecycle/SKILL.md': 1510,
+  '.github/skills/sdd-lifecycle/SKILL.md': 1155,
 }
 
 /**
@@ -59,8 +59,16 @@ export const BAND_BUDGET = {
  * El trinquete lo reclamó él mismo con `STALE BUDGET` antes de que se bajara acá,
  * que es exactamente el mecanismo: un ahorro que no se registra se puede volver a
  * gastar.
+ *
+ * Bajó de 8.744 a 8.389 con el de `skills/sdd-lifecycle/SKILL.md` (1.510 →
+ * 1.155). Dos de sus tres tablas no tenían una sola celda que necesitara el
+ * relleno, y su bloque `Before/During/After` repetía verbatim siete de sus ocho
+ * reglas con el Hub-and-Spoke Protocol del supervisor —que se carga en las
+ * mismas siete fases—. La octava, leer la constitución, no existe en ninguna de
+ * las otras nueve fuentes: se quedó, y con ella un puntero a donde viven las
+ * otras siete.
  */
-export const BAND_CEILING = 8744
+export const BAND_CEILING = 8389
 
 /**
  * Compara la banda derivada contra su baseline. Pura: sólo decide, no imprime.

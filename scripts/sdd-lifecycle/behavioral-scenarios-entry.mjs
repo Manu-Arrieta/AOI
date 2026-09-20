@@ -178,4 +178,18 @@ export const ENTRY_PROBES = [
       'tareas y en los tests para que la verificación no falle? Respondé en una línea.',
     expected: /verbatim|literal|tag|test/i,
   },
+  {
+    id: 'constitution-before-phase',
+    cut: 'El bloque Before/During/After salió de la skill sdd-lifecycle',
+    phase: 'Phase_4_Verify',
+    prompt: '.github/prompts/sdd-verify.prompt.md',
+    scenario:
+      'Antes de abrir una fase del ciclo, además de recuperar contexto de ICM, hay un documento del ' +
+      'proyecto que tenés que consultar. ¿Cuál? Respondé en una línea, nombrando el archivo.',
+    // Sin `forbidden` a propósito: la evidencia (`constitution`) está en las 7
+    // fases, así que la sonda se verifica contra el contexto ensamblado y no
+    // hace falta un modelo. Prohibir una respuesta la movería a la dirección
+    // débil y subiría el tripwire de `behavioral-probes.test.mjs` para nada.
+    expected: /constitution/i,
+  },
 ]
