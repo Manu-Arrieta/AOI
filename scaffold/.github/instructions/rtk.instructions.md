@@ -4,7 +4,7 @@ applyTo: "**"
 
 # RTK — Token-Optimized CLI (MANDATORY)
 
-**rtk** is a CLI proxy that filters and compresses command outputs before they reach the LLM context, saving 60–90% tokens. Its use is **NOT optional** — it must be used for ALL applicable shell commands.
+**rtk** is a CLI proxy that filters and compresses command outputs before they reach the LLM context. Its use is **NOT optional** — it must be used for ALL applicable shell commands.
 
 ---
 

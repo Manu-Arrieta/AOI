@@ -42,7 +42,7 @@ si nombra el estado que controla el runtime y el test que demuestra su rechazo.
 
 | ID | Claim anterior | Resolución |
 | :-- | :-- | :-- |
-| R-001 | “60% al 90%” de ahorro de tokens. | Retirado de la presentación vigente: mezclaba mecanismos y corpus de revisiones distintas. |
+| R-001 | “60% al 90%” de ahorro de tokens. | Retirado de la presentación vigente: mezclaba mecanismos y corpus de revisiones distintas. **Retiro verificado el 2026-09-19:** el patrón del gate no detectaba la forma `60–90%` —exigía el `%` pegado al 60— y el claim seguía vivo en `rtk.instructions.md`, fuera del alcance del escaneo. Patrón corregido y alcance extendido a la prosa que se carga siempre; el control negativo reinyecta el claim, el gate falla, y un número sin claim no lo dispara. |
 | R-002 | “Hasta 85%” de reducción de overhead MCP. | Sustituido por C-003 y C-004: el enrutamiento es comprobable, la tasa exige medición contextual. |
 | R-003 | Badges o encabezados con conteos de tests, paridad o agentes. | Sustituidos por estado sin números y comandos ejecutables; los conteos envejecen con cada cambio válido. |
 | R-004 | “Memoria infinita”, “cero pérdida de contexto” y rollback atómico general. | Sustituidos por persistencia entre sesiones, trazabilidad y recuperación de efectos registrados. |
@@ -56,3 +56,11 @@ vigentes tengan fuentes de evidencia existentes y que las superficies públicas
 no reintroduzcan porcentajes universales, conteos de estado ni garantías
 retiradas. La prueba asociada incluye un control negativo con una tasa MCP sin
 evidencia: debe fallar.
+
+El alcance incluye, además de los README, la prosa que el ciclo **inyecta en
+cada fase**: `.github/instructions/` y `.github/prompts/` completos (42
+superficies, contra 5 antes del 2026-09-19). No es una audiencia más amplia sino
+un efecto más directo: un porcentaje sin evidencia en un README se lee, uno en
+una `instruction` se **obedece**. Se recorren los directorios enteros y no una
+lista, porque una lista se desactualiza cuando alguien agrega un archivo y la
+compuerta quedaría verde sobre el nuevo.

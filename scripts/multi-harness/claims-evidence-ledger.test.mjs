@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { LEDGER, REQUIRED_CLAIMS, auditClaimsEvidence, formatClaimsEvidence, unsupportedClaims } from './claims-evidence-ledger.mjs'
+import { LEDGER, PROSE_SURFACES, REQUIRED_CLAIMS, auditClaimsEvidence, formatClaimsEvidence, unsupportedClaims } from './claims-evidence-ledger.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const ROOT_WITH_SCAFFOLD = fs.existsSync(path.join(REPO, 'scaffold', 'package.json')) ? REPO : null
@@ -22,6 +22,46 @@ test('BIC-2026-006: current public claims are evidence-backed and qualified', (t
 test('BIC-2026-006: unsupported universal and stale-count claims are rejected', () => {
   const retired = unsupportedClaims('El Gateway reduce hasta un 85%, AOI ofrece memoria infinita y la suite tiene (134 tests).')
   assert.deepEqual(retired, ['universal MCP saving rate', 'fixed test-count claim', 'infinite-memory guarantee'])
+})
+
+test('BIC-2026-006: the retired token-saving range matches every form it retired', () => {
+  // Esta aserción faltaba, y su ausencia es la razón de que el patrón pudiera
+  // quedar muerto: el ledger retiraba `60–90%` (R-001) y el patrón exigía el
+  // `%` pegado al 60, así que no matcheaba `saving 60–90% tokens` —la forma que
+  // el repositorio realmente usaba— y el claim siguió vivo en una instrucción
+  // que se inyecta en todas las fases. Un patrón sin este test se verifica a sí
+  // mismo.
+  for (const forma of ['saving 60–90% tokens', 'saving 60%–90% tokens', 'ahorro de 60% al 90%', '60% to 90%']) {
+    assert.deepEqual(unsupportedClaims(forma), ['universal token-saving range'], forma)
+  }
+  // Y no marca rangos que nunca se retiraron: un patrón laxo convierte la
+  // compuerta en ruido, y el ruido se termina silenciando.
+  assert.deepEqual(unsupportedClaims('entre 60% y 70% de los casos'), [])
+  assert.deepEqual(unsupportedClaims('ahorra 90% en tests'), [])
+})
+
+test('BIC-2026-006: the scan reaches every instruction and prompt, not a hand-picked list', (t) => {
+  // El claim retirado vivía en `.github/instructions/`, fuera del alcance: el
+  // patrón lo nombraba y el archivo existía, pero el escaneo no los encontraba
+  // con el otro. La propiedad que se fija es la cobertura, no un número.
+  //
+  // La guarda es `t.skip` + `return`, no `assert.fail`: `setup.sh` no instala el
+  // ledger interno, así que aguas abajo el audit no aplica y `pnpm test` —el
+  // contrato bajo el que AOI shippea— quedaría rojo en TODO workspace instalado.
+  // Medido el 2026-09-19 en una instalación real: 581 tests, 1 fallo, mío.
+  const audit = auditClaimsEvidence(REPO)
+  if (!audit.applicable) {
+    t.skip('installed workspace without internal claims ledger')
+    return
+  }
+  const prosa = PROSE_SURFACES.flatMap((dir) =>
+    fs.readdirSync(path.join(REPO, dir)).filter((f) => f.endsWith('.md')).map((f) => `${dir}/${f}`)
+  )
+  assert.ok(prosa.length > 20, `sólo ${prosa.length} archivos de prosa, la lista quedó corta`)
+  assert.ok(
+    audit.scanned >= prosa.length,
+    `se escanearon ${audit.scanned} superficies y hay ${prosa.length} archivos de prosa: parte del alcance se perdió`
+  )
 })
 
 test('BIC-2026-006: a missing claim row cannot turn the ledger green', () => {

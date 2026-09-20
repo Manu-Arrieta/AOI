@@ -76,8 +76,8 @@ After the subagent returns, verify:
 > [!IMPORTANT]
 > **La columna `runSubagent Model Parameter` es lo que muestra el picker, NO el identificador
 > que acepta la API.** Medido el 2026-09-12: pasar `"Deepseek v4 pro - Provider - Deepseek"` a
-> `runSubagent` devuelve *"Requested model not found"*, y **falla para los 27 agentes de la
-> misma forma**, porque el identificador real lleva el sufijo del transporte:
+> `runSubagent` devuelve *"Requested model not found"*, y **falla para todos los agentes por
+> igual**, porque el identificador real lleva el sufijo del transporte:
 >
 > | En el picker (esta tabla) | Lo que acepta `runSubagent` |
 > | :--- | :--- |
