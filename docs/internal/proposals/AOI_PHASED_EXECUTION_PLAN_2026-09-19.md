@@ -521,7 +521,7 @@ cada bloque no se declara al escribir, se **mide** después de la edición y la 
 | **B4.A** | `2.420` tok · `16.940`/ciclo | quitar el padding de la tabla de ruteo | **`1.707` tok · `11.949`/ciclo** · banda `9.457 → 8.744`/fase · ciclo **`105.466 → 100.545`** | **−4.921/ciclo** | `a48f43cd31f14b6f` → **`1a990169267eb204`** | 2026-09-19 |
 | **B4.B** | `1.510` tok · `10.570`/ciclo | padding + columna derivable + B/D/A redundante | **`1.155` tok · `8.085`/ciclo** · banda `8.744 → 8.389`/fase · ciclo **`100.545 → 98.060`** | **−2.485/ciclo** | `1a990169267eb204` → **`b09415441e545056`** | 2026-09-19 |
 | **B4.C** | `2.031` tok · `14.217`/ciclo | el `Example`, redundante y equivocado | **`1.861` tok · `13.027`/ciclo** · banda `8.389 → 8.219`/fase · ciclo **`98.060 → 96.870`** | **−1.190/ciclo** | `b09415441e545056` → **`b189f6d1759e11ae`** | 2026-09-19 |
-| **B5** | `105.466`/ciclo · `54.398` facturado con caché | medición | *(a completar)* | — | | |
+| **B5** | `105.466`/ciclo (modelo de Copilot) | medición | **(a) bloqueada** — necesita una corrida real por harness con contadores del proveedor · **(b) parcial** — se midió el defecto del control negativo, no el caché · **(c) medida** — `ast-skeletonizer`: **64,1%** sobre 241 archivos, **47,4%** sobre fuentes | (c) **ninguno**: es un dato | `4d1260941eb3392d` | 2026-09-19 |
 
 **Las tres columnas que no se negocian:** el valor **medido** (no estimado), la **huella** de la
 masa repetida (si cambia, cambió la entrada y el delta no es comparable), y la **fecha** (para
@@ -530,6 +530,136 @@ saber contra qué HEAD se midió).
 **El ANTES de cada recorte se lee del trinquete de B1**, no del plan. Los números del plan son
 órdenes de magnitud para priorizar `[PLAN §7.2.3]`.
 
+### 9.7. Dos compuertas que nombraban lo que no podían ver
+
+Las dos salieron de B5 y son la misma forma: **un mecanismo que declara cubrir algo y no lo alcanza**, con
+todas las suites en verde. Ninguna se encontró leyendo; las dos aparecieron midiendo.
+
+#### (i) La compuerta de claims nombraba un claim que no podía detectar
+
+El ledger retira `60–90%` como R-001 desde el 2026-09-16. La compuerta tiene un patrón para eso. Y sin
+embargo el claim seguía vivo en `.github/instructions/rtk.instructions.md`, que se inyecta en **las siete**
+fases. Dos capas de silencio:
+
+| Capa | Qué pasaba | Prueba |
+| :--- | :--- | :--- |
+| El patrón | `/60%\s*(?:al\|to\|[-–])\s*90%/` exigía el `%` **pegado al 60**. El repositorio escribe `60–90%` | `unsupportedClaims("saving 60–90% tokens")` → `[]` |
+| El alcance | El escaneo cubría 5 archivos: READMEs y el gateway. Las `instructions` y los prompts no | `scanned: 5` antes, **42** después |
+
+El test que debía sostener el patrón **no lo ejercitaba**: probaba el rango MCP `85%` y el conteo de tests,
+nunca el `60–90%`. Un patrón sin test se verifica a sí mismo.
+
+**Lo que se hizo**: patrón corregido —acepta `60–90%`, `60%–90%` y `60% al 90%`, y sigue sin marcar
+`60% y 70%`—; el escaneo se extendió a `.github/instructions/` y `.github/prompts/` **enteros, no a una
+lista**, porque una lista se desactualiza cuando alguien agrega un archivo y la compuerta quedaría verde
+sobre el nuevo; y los tres claims vivos se corrigieron: el `60–90%` de `rtk`, el `90%` de `sdd-apply`
+(medido: 47% en fuentes, 76% en tests) y el `27 agentes` de `agent-delegation`, que R-003 retira.
+
+El control negativo cierra el círculo: se reinyecta el claim en una `instruction`, la compuerta sale **1**
+nombrando archivo y claim, y un número sin claim no la dispara. Antes del arreglo esa inyección pasaba
+invisible.
+
+#### (ii) La copia de antigravity de cada skill no la verificaba nadie
+
+`compile-rules` no espeja las skills para antigravity: las **compila** a `.agents/skills/<n>/SKILL.md`. El
+test de derivación cubría sólo las dos skills **registradas** como derivadas (`rtk`, `icm`). Para el resto
+—`sdd-lifecycle`, `sdd-entry`, `memory-governance`, `spec-kit-integration`— no había una sola aserción:
+buscar `agents/skills/sdd-lifecycle` en los tests devuelve **cero**.
+
+**Y eso ya había mordido, en este mismo ciclo.** El recorte de B4.B (`skills/sdd-lifecycle/SKILL.md`,
+1.510 → 1.155 tok) llegó a Copilot y **no a antigravity**. `pnpm test` dio verde dos veces seguidas con el
+artefacto viejo, y la razón es la que el propio repo documenta para `CLAUDE.md`: `test:parity` compara root
+contra `scaffold/`, y **las dos copias estaban igual de obsoletas**, así que coincidían entre sí. Se detectó
+porque el recorte de `rtk` obligó a correr `pnpm aoi:sync-rules`, y el diff mostró dos archivos cambiados
+en vez de uno.
+
+Se corrigió de tres maneras: se regeneró lo que estaba viejo, se extrajo el helper que compila a un árbol
+temporal (`compiledAntigravitySkills`) y se agregó una aserción **por skill** que compara la copia en disco
+contra **lo que el compilador escribe**, no contra el espejo. El control negativo —tocar una sola copia— la
+hace fallar nombrando el archivo.
+
+> Esto corrige una afirmación mía: reporté B4.B como verificado end-to-end. La cadena estaba verde, pero
+> verde **sobre un artefacto que no se había propagado**. El aprendizaje es el de siempre: una cadena en
+> verde prueba que las aserciones que existen pasan, no que existan las aserciones que hacen falta.
+
+---
+
+### 9.6. B5: la medición que no se puede hacer acá, y lo que sí se midió
+
+B5 no es una rama: es un dato. De los tres experimentos de `[PLAN §8.4]`, uno resultó ejecutable, uno
+ejecutable a medias, y uno no ejecutable desde este entorno. Decirlo es parte del resultado.
+
+#### (a) ¿Qué carga cada harness? — **BLOQUEADO**
+
+Requiere una corrida real de `/sdd-ff` **por harness**, leyendo qué archivos el modelo reporta haber leído
+y comparándolos contra los ocho de la banda. No hay instrumentación para esto en el repositorio:
+
+```text
+rg -l --no-ignore "cache_read_input_tokens|prompt_tokens" .
+→ docs/internal/proposals/AOI_CONTEXT_GOVERNANCE_IMPLEMENTATION_PLAN_2026-09-19.md   (sólo el plan)
+```
+
+Y los contadores viven en la respuesta del proveedor, no en el árbol. **No puedo producir esta corrida**;
+queda como el único experimento abierto de B5, y es el que decide si el premio es de uno o de los seis
+harnesses. Conviene no inferirlo.
+
+#### (b) ¿El prefijo se cachea? — **el control negativo tiene un defecto, medido**
+
+El protocolo manda **inyectar un comentario con timestamp en la primera línea de un archivo de la banda** y
+usar `surfaceDigest` «para probar que el contenido no cambió». Las dos instrucciones no pueden cumplirse
+juntas, porque `surfaceDigest` hashea el contenido:
+
+```js
+for (const r of [...rows].sort(...)) {
+  h.update(`${r.source}\n`)
+  h.update(read(path.join(root, r.source)))   // ← el contenido entra al hash
+  h.update('\n')
+}
+```
+
+Medido en `/tmp` con dos archivos de prueba: digest `b8557ec6c10bc508` antes, `71d27be6ecbc5c3e` después de
+inyectar el timestamp. **El digest detecta exactamente la variable que el control necesita mantener
+constante.** Correrlo como está escrito daría dos corridas con digests distintos, y el investigador
+tendría que elegir entre atribuir la diferencia al caché o al contenido — que es la ambigüedad que el
+control existe para eliminar.
+
+La corrección es acotada y queda **propuesta, no aplicada**: el digest tiene que ser invariante al buster
+—calculado sobre una copia normalizada, o con el buster en una superficie que esté en el prompt y no en la
+banda—. Cambiarlo es cambiar el instrumento, y el instrumento tiene tests propios.
+
+La otra mitad de (b), los contadores `cache_read_input_tokens` y `cache_creation_input_tokens`, sí es
+estrictamente inobtenible acá: son de la respuesta del proveedor.
+
+#### (c) ¿Cuánto rinde `ast-skeletonizer`? — **MEDIDO**
+
+Era el insumo que el propio plan declaraba faltante: el fixture de `/sdd-ff` del stress-suite es sintético
+(`COMPLEX_TASKS_MD`, tres tareas) y no ejercita la herramienta. Se midió contra el corpus real del
+repositorio con `skeletonizeCode` y el mismo estimador que usa la banda:
+
+| Corpus | Archivos | Tokens completos | Esqueleto | Ahorro | Mediana |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| `scripts/` entero | 241 | 433.981 | 155.899 | **64,1%** | 68,1% |
+| Sólo fuentes (sin `.test.mjs`) | 105 | 188.341 | 99.105 | **47,4%** | 47,7% |
+| Sólo tests | 136 | 245.640 | 56.794 | **76,9%** | 75,7% |
+
+Dos números importan tanto como el ahorro: **7 de 241 archivos no se reducen en absoluto**, y la diferencia
+entre fuentes (47%) y tests (77%) es de treinta puntos. Un subagente implementando código inspecciona
+**fuentes**, no tests: el número que le corresponde es el 47%, no el 64%.
+
+Esto corrobora la medición que el propio módulo ya llevaba escrita en su docblock —mediana 70,6% sobre 239
+archivos, 2026-09-12, con 199 de 239 fuera del rango 85-95% prometido— y es la que refuta el `saving 90%`
+que sobrevivía en `sdd-apply.prompt.md` hasta el arreglo de §9.7. La herramienta rinde; el número que la
+vendía no.
+
+#### Lo que B5 decide, y lo que no
+
+| Decisión | Estado |
+| :--- | :--- |
+| ¿El esfuerzo va a la banda universal o a la masa por fase? | **Sin decidir.** Depende de (b), que está bloqueado |
+| ¿Se puede reclamar el ahorro de B3? | **Sí, con el número medido.** Vale ×1, así que no depende del régimen de caché |
+| ¿Está listo M4? | **Parcialmente.** (c) da la tasa real; (a) decide si los harnesses que no reciben las `instructions` necesitan otra cosa |
+
+---
 ### 9.5. B4.C: el bloque redundante que además enseñaba a fallar
 
 Este archivo **no tenía padding** —primera vez en las tres ramas—, así que el ahorro tenía que
