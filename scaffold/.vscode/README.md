@@ -18,14 +18,24 @@ en VS Code como **custom endpoints** para el catálogo AOI.
 
 ## Proveedores configurados
 
-| Provider | Modelo               | Uso en agentes                            |
-| :------- | :------------------- | :---------------------------------------- |
-| DeepSeek | DeepSeek V4 Pro      | 22 agentes (análisis, docs, orquestación) |
-| Zai      | GLM 5.2              | 8 agentes (código, terminal, git)         |
-| Alibaba  | Qwen 3.8 Plus        | 2 agentes (arquitectura, triage)          |
-| MiniMax  | MiniMax M3           | 1 agente (UX/visual)                      |
-| NVIDIA   | Todos los anteriores | Fallback universal cross-provider         |
-| Kimi     | Kimi K2.6            | 0 agentes (sin caso de uso)               |
+| Provider | Modelo               | Agentes | Uso                               |
+| :------- | :------------------- | ------: | :-------------------------------- |
+| DeepSeek | DeepSeek V4 Pro      |      15 | análisis, docs, orquestación      |
+| Zai      | GLM 5.2              |       9 | código, terminal, git             |
+| Alibaba  | Qwen 3.8 Plus        |       2 | arquitectura, triage              |
+| MiniMax  | MiniMax M3           |       1 | UX/visual                         |
+| Kimi     | Kimi K2.6            |       0 | sin caso de uso                   |
+| NVIDIA   | Todos los anteriores |       — | fallback universal cross-provider |
+
+Los conteos se **derivan** del Agent Registry de
+`agent-delegation.instructions.md` y `pnpm aoi:routing` los verifica: si un agente
+cambia de provider y esta tabla no, la compuerta falla.
+
+> Estas cifras estuvieron mal hasta el 2026-09-20 —decían `22` para DeepSeek y `8`
+> para Zai, sobre un registro de **15** y **9**—, y la suma daba 33 sobre las 27
+> filas del registro. Dimensionar la capacidad de un provider con esos números
+> deja corto al picker en medio de un ciclo: la cuenta que importa es la que se
+> deriva, no la que se copia.
 
 ## Pasos para activarlo (una vez, en tu máquina)
 

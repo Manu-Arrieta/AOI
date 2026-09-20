@@ -69,9 +69,89 @@ export function listAgents(root, dir = AGENTS_DIR) {
 }
 
 /**
+ * La distribución de agentes por provider, derivada del registro.
+ *
+ * Existe porque `.vscode/README.md` publica el mismo reparto en otra proyección
+ * —cuántos agentes dependen de cada provider— y esa copia derivó: hasta el
+ * 2026-09-20 decía `22` para DeepSeek y `8` para Zai sobre un registro de **15**
+ * y **9**, con una suma de 33 sobre las 27 filas. El número no es prosa: es la
+ * instrucción con la que el Owner dimensiona la capacidad de cada provider, y
+ * un reparto mal copiado deja corto al picker en medio de un ciclo.
+ *
+ * @returns {Map<string, number>} provider en minúsculas -> cantidad de agentes
+ */
+export function providerDistribution(rows) {
+  const dist = new Map()
+  for (const { model } of rows.values()) {
+    const m = model.match(/-\s*Provider\s*-\s*(.+)$/i)
+    if (!m) continue
+    const provider = m[1].trim().toLowerCase()
+    dist.set(provider, (dist.get(provider) ?? 0) + 1)
+  }
+  return dist
+}
+
+/** Dónde vive la tabla de providers: raíz instalada, o payload del repo fuente. */
+export const PROVIDER_TABLE_ARTIFACTS = ['.vscode/README.md', 'scaffold/.vscode/README.md']
+
+/**
+ * Lee las filas `| Provider | Modelo | Agentes | Uso |` de la tabla de providers.
+ * Las celdas no numéricas se ignoran: el encabezado, el separador de markdown y
+ * la fila de NVIDIA, que es un fallback y no tiene agentes propios.
+ *
+ * @returns {Map<string, number>} provider en minúsculas -> cantidad declarada
+ */
+export function parseProviderTable(text) {
+  const declared = new Map()
+  for (const line of text.split('\n')) {
+    const cells = line.split('|').map((c) => c.trim())
+    if (cells.length < 5) continue
+    const provider = cells[1]
+    const count = cells[3]
+    if (!/^[A-Za-z]+$/.test(provider)) continue
+    if (!/^\d+$/.test(count)) continue
+    declared.set(provider.toLowerCase(), Number(count))
+  }
+  return declared
+}
+
+/**
+ * Compara la tabla publicada contra la distribución derivada del registro.
+ * Un provider del registro que no está en la tabla es un agente cuya capacidad
+ * el Owner no puede dimensionar; uno de la tabla que el registro no asigna es
+ * capacidad configurada para nadie.
+ *
+ * @returns {string[]} discrepancias, vacías si coinciden
+ */
+export function auditProviderCounts(root, rows) {
+  const full = PROVIDER_TABLE_ARTIFACTS.map((p) => path.join(root, p)).find((p) => fs.existsSync(p))
+  if (!full) return []
+  const rel = path.relative(root, full)
+  const dist = providerDistribution(rows)
+  const declared = parseProviderTable(fs.readFileSync(full, 'utf8'))
+  if (declared.size === 0) return [`TABLA ILEGIBLE  ${rel} existe pero no se le leyó ninguna fila de provider`]
+
+  const problems = []
+  for (const [provider, count] of dist) {
+    if (!declared.has(provider)) {
+      problems.push(`FALTA PROVIDER  ${provider} tiene ${count} agente(s) en el registro y no aparece en ${rel}`)
+    } else if (declared.get(provider) !== count) {
+      problems.push(`CONTEO  ${provider}: ${rel} dice ${declared.get(provider)}, el registro tiene ${count}`)
+    }
+  }
+  for (const [provider, count] of declared) {
+    if (!dist.has(provider) && count !== 0) {
+      problems.push(`PROVIDER FANTASMA  ${rel} declara ${count} agente(s) para ${provider} y el registro no le asigna ninguno`)
+    }
+  }
+  return problems
+}
+
+/**
  * Audits routing integrity.
  * @returns {{ registered: number, unrouted: string[], orphanRows: string[],
- *             missingModel: string[], missingFallback: string[], badSkillPath: string[] }}
+ *             missingModel: string[], missingFallback: string[], badSkillPath: string[],
+ *             providerCountErrors: string[] }}
  */
 export function auditAgentRouting(root) {
   const registryPath = path.join(root, REGISTRY)
@@ -90,7 +170,15 @@ export function auditAgentRouting(root) {
     if (!fs.existsSync(path.join(root, r.skill))) badSkillPath.push(`${agent} -> ${r.skill}`)
   }
 
-  return { registered: rows.size, unrouted, orphanRows, missingModel, missingFallback, badSkillPath }
+  return {
+    registered: rows.size,
+    unrouted,
+    orphanRows,
+    missingModel,
+    missingFallback,
+    badSkillPath,
+    providerCountErrors: auditProviderCounts(root, rows),
+  }
 }
 
 function main() {
@@ -106,6 +194,7 @@ function main() {
     ...r.missingModel.map((a) => `NO MODEL        ${a} has no runSubagent model parameter`),
     ...r.missingFallback.map((a) => `NO FALLBACK     ${a} has no fallback provider`),
     ...r.badSkillPath.map((s) => `BAD SKILL PATH  ${s}`),
+    ...r.providerCountErrors,
   ]
 
   // Zero rows is not "everything resolves"; it is nothing to resolve. An
