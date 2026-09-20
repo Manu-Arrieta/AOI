@@ -521,7 +521,7 @@ cada bloque no se declara al escribir, se **mide** después de la edición y la 
 | **B4.A** | `2.420` tok · `16.940`/ciclo | quitar el padding de la tabla de ruteo | **`1.707` tok · `11.949`/ciclo** · banda `9.457 → 8.744`/fase · ciclo **`105.466 → 100.545`** | **−4.921/ciclo** | `a48f43cd31f14b6f` → **`1a990169267eb204`** | 2026-09-19 |
 | **B4.B** | `1.510` tok · `10.570`/ciclo | padding + columna derivable + B/D/A redundante | **`1.155` tok · `8.085`/ciclo** · banda `8.744 → 8.389`/fase · ciclo **`100.545 → 98.060`** | **−2.485/ciclo** | `1a990169267eb204` → **`b09415441e545056`** | 2026-09-19 |
 | **B4.C** | `2.031` tok · `14.217`/ciclo | el `Example`, redundante y equivocado | **`1.861` tok · `13.027`/ciclo** · banda `8.389 → 8.219`/fase · ciclo **`98.060 → 96.870`** | **−1.190/ciclo** | `b09415441e545056` → **`b189f6d1759e11ae`** | 2026-09-19 |
-| **B5** | `105.466`/ciclo (modelo de Copilot) | medición | **(a) bloqueada** — necesita una corrida real por harness con contadores del proveedor · **(b) parcial** — se midió el defecto del control negativo, no el caché · **(c) medida** — `ast-skeletonizer`: **64,1%** sobre 241 archivos, **47,4%** sobre fuentes | (c) **ninguno**: es un dato | `4d1260941eb3392d` | 2026-09-19 |
+| **B5** | `105.466`/ciclo (modelo de Copilot) | medición | **(a) respondida por medición** — la banda llega a **1 de 6** harnesses: editar `icm-protocol` propaga sólo a `.agents/skills/icm/SKILL.md` · **(b) protocolo corregido** — el digest filtrado por fila, con las dos mitades fijadas en test · **(c) medida** — `ast-skeletonizer`: **64,1%** sobre 241 archivos, **47,4%** sobre fuentes | (a) **acota el premio**: ×7 es sólo Copilot · (c) ninguno | `4d1260941eb3392d` | 2026-09-20 |
 
 **Las tres columnas que no se negocian:** el valor **medido** (no estimado), la **huella** de la
 masa repetida (si cambia, cambió la entrada y el delta no es comparable), y la **fecha** (para
@@ -964,19 +964,86 @@ hace fallar nombrando el archivo.
 B5 no es una rama: es un dato. De los tres experimentos de `[PLAN §8.4]`, uno resultó ejecutable, uno
 ejecutable a medias, y uno no ejecutable desde este entorno. Decirlo es parte del resultado.
 
-#### (a) ¿Qué carga cada harness? — **BLOQUEADO**
+#### (a) ¿Qué carga cada harness? — **RESPONDIDO, y no hacía falta la corrida**
 
-Requiere una corrida real de `/sdd-ff` **por harness**, leyendo qué archivos el modelo reporta haber leído
-y comparándolos contra los ocho de la banda. No hay instrumentación para esto en el repositorio:
+Yo lo declaré bloqueado pidiendo una corrida real por harness con los archivos que el modelo reporta haber
+leído. Estaba pidiendo el instrumento equivocado: **qué recibe cada harness lo determina el mapeo de
+`compile-rules`, que es texto en este repositorio**, y la propagación de un recorte se mide editando una
+línea y viendo qué cambia. Las dos cosas se hicieron.
+
+**El mapeo** (`compile-rules.mjs:212-250`), con el peso de cada salida:
+
+| Harness | Lo que AOI le escribe | tok |
+| :--- | :--- | ---: |
+| Claude Code | `CLAUDE.md` | 2.280 |
+| Cursor | `.cursorrules` · `.cursor/rules/aoi-rules.mdc` | 139 c/u |
+| Antigravity | `AGENTS.md` · `.agents/rules/aoi-rules.md` · `.agents/skills/*` | 262 c/u |
+| Cline | `.clinerules` | 88 |
+| Copilot | `.github/copilot-instructions.md` | 591 |
+
+**Ninguno de esos caminos es `.github/instructions/` ni `.github/prompts/`.** La banda ×7 se arma con el
+`applyTo` de cada instruction, que es convención de VS Code / Copilot: **el repositorio no le entrega esos
+archivos a los otros cinco**. El plan ya lo decía analíticamente en §3.6.2; lo que faltaba era la prueba de
+que un recorte no llega.
+
+**La prueba**: editar `icm-protocol.instructions.md` —2124 tok, el más caro de la banda— y correr
+`pnpm aoi:sync-rules`:
 
 ```text
-rg -l --no-ignore "cache_read_input_tokens|prompt_tokens" .
-→ docs/internal/proposals/AOI_CONTEXT_GOVERNANCE_IMPLEMENTATION_PLAN_2026-09-19.md   (sólo el plan)
+ M .agents/skills/icm/SKILL.md                     ← la copia derivada de antigravity
+ M .github/instructions/icm-protocol.instructions.md
+ M scaffold/.agents/skills/icm/SKILL.md
 ```
 
-Y los contadores viven en la respuesta del proveedor, no en el árbol. **No puedo producir esta corrida**;
-queda como el único experimento abierto de B5, y es el que decide si el premio es de uno o de los seis
-harnesses. Conviene no inferirlo.
+**Tres archivos, y ni `CLAUDE.md`, ni `AGENTS.md`, ni `.cursorrules`, ni `.clinerules`, ni
+`copilot-instructions.md`.** El premio de recortar la banda, medido:
+
+| Harness | Premio de recortar un archivo de la banda |
+| :--- | :--- |
+| **Copilot** | **×7**, el número del trinquete |
+| Antigravity | ×1, y **sólo** para `rtk` e `icm` (los dos registrados como derivados) |
+| Claude Code · Cursor · Cline | **0** |
+
+#### Lo que esto decide, que era la pregunta de B5
+
+B5 existía para decidir **si el esfuerzo va a la banda universal o a la masa por fase**. La respuesta es
+que **la banda es de un solo harness**, así que la elección no es la que el plan planteaba:
+
+| Harness | Dónde conviene el esfuerzo |
+| :--- | :--- |
+| Copilot | La banda ×7 sigue siendo la mina: 57.491/ciclo es real ahí |
+| Claude Code | `claude-project-guide.mjs` → `CLAUDE.md` (2.280), y la masa por fase |
+| Cursor · Cline · Antigravity | Su plantilla (139 / 88 / 262) y la masa por fase |
+
+Los dos recortes que este ciclo hizo **son correctos para Copilot y para nadie más** —salvo `rtk` e `icm`,
+que además bajan la copia de antigravity—. No es un defecto: es que el número se presentaba como universal
+y es de uno de los seis.
+
+#### Y un hallazgo de paso: la doctrina ICM está duplicada
+
+Buscando la propagación apareció esto: **`CLAUDE.md` tiene su propia sección de ICM, y NO deriva de
+`icm-protocol.instructions.md`.**
+
+```text
+instruction icm-protocol:   2.124 tok
+CLAUDE.md, sección ICM:       592 tok
+líneas sustantivas del bloque:  26
+de ellas, literales en el instruction: 0
+```
+
+**Cero líneas compartidas.** Son dos textos independientes que pueden divergir sin que nada lo note:
+recortar el instruction no toca lo que ve Claude Code, y al revés tampoco. El generador
+(`claude-project-guide.mjs`) escribe su propia versión a mano, así que la regla «el protocolo se escribe
+una vez» **no se cumple para el harness de Claude**. Unificar eso es un cambio propio —la sección difiere
+en audiencia y en longitud, no es una copia literal— y queda declarado, no hecho.
+
+#### Lo que sigue sin poder observarse
+
+Lo medido es **qué entrega AOI a cada harness**. Lo que un harness hace con eso en una corrida real no se
+puede observar desde acá, y hay un caso que la medición no cubre: un operador con su editor configurado
+para leer `.github/instructions/` desde Claude Code, o un Copilot que no aplique `applyTo`. La afirmación
+correcta es **«AOI le entrega la banda a un harness»**, no «sólo uno puede cargarla».
+
 
 #### (b) ¿El prefijo se cachea? — **el control negativo tiene un defecto, medido**
 
