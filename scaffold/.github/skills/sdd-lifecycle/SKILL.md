@@ -26,18 +26,19 @@ Every task gets a unique ID: `TASK-{year}-{sequential}`
 
 ## Phase Gates — MANDATORY
 
-| Gate                | From → To            | Who Approves | What Must Exist                                           |
-| ------------------- | -------------------- | ------------ | --------------------------------------------------------- |
-| Genesis Gate        | Genesis → Pre-Flight | Owner        | SBC closed per `blueprint-gate.mjs` (0 tokens); global invariants + boundary crossings persisted as O(1) facts |
-| Intent Gate         | Pre-Flight → Explore | Owner        | BIC calibrated; invariants + oracle persisted as O(1) facts |
-| Proposal Gate       | Explore → Specify    | Owner        | `proposal.md` with acceptance criteria                    |
-| Design Gate         | Specify → Plan     | Owner        | `spec.md` approved, no ambiguity                          |
-| Implementation Gate | Plan → Implement   | Owner        | `design.md` + `tasks.md` complete                         |
-| TDD Gate            | During Implement   | Agent        | RED (failing test) → GREEN (min code) → REFACTOR per task |
-| UX Gate             | During Implement   | @ux-designer | UI component review before any new UI                     |
-| Invariant Gate      | During Verify      | Automatic    | Every BIC `never`/`oracle` tag asserted by a test (`invariant-gate.mjs`, 0 tokens) |
-| Verify Gate         | Implement → Verify | Automatic    | All tasks marked done                                     |
-| Archive Gate        | Verify → Archive   | Owner        | `verify-report.md` with PASS/FAIL                         |
+<!-- Sin la columna From → To: la secuencia de fases esta entera en la tabla de ruteo del supervisor. No la repongas. -->
+| Gate | Who Approves | What Must Exist |
+| --- | --- | --- |
+| Genesis Gate | Owner | SBC closed per `blueprint-gate.mjs` (0 tokens); global invariants + boundary crossings persisted as O(1) facts |
+| Intent Gate | Owner | BIC calibrated; invariants + oracle persisted as O(1) facts |
+| Proposal Gate | Owner | `proposal.md` with acceptance criteria |
+| Design Gate | Owner | `spec.md` approved, no ambiguity |
+| Implementation Gate | Owner | `design.md` + `tasks.md` complete |
+| TDD Gate | Agent | RED (failing test) → GREEN (min code) → REFACTOR per task |
+| UX Gate | @ux-designer | UI component review before any new UI |
+| Invariant Gate | Automatic | Every BIC `never`/`oracle` tag asserted by a test (`invariant-gate.mjs`, 0 tokens) |
+| Verify Gate | Automatic | All tasks marked done |
+| Archive Gate | Owner | `verify-report.md` with PASS/FAIL |
 
 > **Note on Design Gate**: The Design Gate (Specify→Plan, Owner approval) is satisfied jointly with the Implementation Gate at the end of `/sdd-ff`. The Supervisor's `/sdd-ff` command bundles Specify → Plan → Tasks into a single workflow with one Owner approval checkpoint, which serves as both the Design Gate and Implementation Gate. This is a deliberate optimization, not a violation.
 
@@ -62,22 +63,9 @@ Lo que se necesita en cualquier fase es saber a dónde enrutar:
 
 ## Rules ALL Agents Must Follow
 
-### Before Starting Any Phase
-
-1. Recall ICM context for the phase: `icm_memory_recall(query: "pending tasks", topic: "sdd-{WORKSPACE}")`
-2. Check feedback for past mistakes: `icm_feedback_search(query: "{phase}")`
-3. Read the constitution: `.specify/memory/constitution.md`
-
-### During Work
-
-- Every 3-5 tool calls or sub-tasks → store a checkpoint in ICM
-- Architecture decisions → BOTH `icm_memory_store` (episodic) AND `icm_memoir_add_concept` (graph)
-- Errors encountered → `icm_feedback_record` immediately
-
-### After Completing a Phase
-
-- `icm_memory_store(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN", importance: "high")`
-- If topic has 7+ entries → `icm_memory_consolidate(topic)` immediately
+Read the constitution (`.specify/memory/constitution.md`) before opening a phase.
+The per-phase ICM triggers live in `icm-protocol.instructions.md` §8 and the
+Supervisor's Hub-and-Spoke Protocol.
 
 ## Scaffold Mirror Rule
 
@@ -85,12 +73,12 @@ Any change to agents, skills, instructions, or prompts in `.github/` MUST be mir
 
 ## ICM Topics Per Phase
 
-| Phase      | Topic                              | What to Store                                         |
-| ---------- | ---------------------------------- | ----------------------------------------------------- |
-| Pre-Flight | —                                  | Zero-Task Footprint (efímero en diálogo socrático)    |
-| Explore    | `sdd-{WS}-{FEATURE}-TASK-YYYY-NNN` | User intent, constraints, service discovery           |
-| Specify   | same                               | Formal specs, acceptance criteria                     |
-| Plan      | same + `{WS}-architecture`         | Design decisions, tradeoffs, component graph          |
-| Implement | same                               | Progress checkpoints, error resolutions               |
-| Verify    | same + `{WS}-errors-resolved`      | QA findings, spec drift, health audit                 |
-| Archive   | same + `{WS}-session-summaries`    | Final decisions, what was excluded, closure rationale |
+| Phase | Topic | What to Store |
+| --- | --- | --- |
+| Pre-Flight | — | Zero-Task Footprint (efímero en diálogo socrático) |
+| Explore | `sdd-{WS}-{FEATURE}-TASK-YYYY-NNN` | User intent, constraints, service discovery |
+| Specify | same | Formal specs, acceptance criteria |
+| Plan | same + `{WS}-architecture` | Design decisions, tradeoffs, component graph |
+| Implement | same | Progress checkpoints, error resolutions |
+| Verify | same + `{WS}-errors-resolved` | QA findings, spec drift, health audit |
+| Archive | same + `{WS}-session-summaries` | Final decisions, what was excluded, closure rationale |
