@@ -530,6 +530,69 @@ saber contra qué HEAD se midió).
 **El ANTES de cada recorte se lee del trinquete de B1**, no del plan. Los números del plan son
 órdenes de magnitud para priorizar `[PLAN §7.2.3]`.
 
+### 9.11. La clase que NO se puede chequear barato: docblocks que declaran otro shape
+
+Los defectos que este ciclo arregló tienen una forma que se repite: **el docblock dice algo que el
+código no hace**. El de `synthesize-stubs` declaraba cuatro campos que no existían; el encabezado
+prometía un 70-85% sin medición; el `--help` de `invariant-gate` documentaba un caso que la compuerta
+bloquea. Siempre fueron **de a uno**, así que vale preguntar si hay una compuerta para
+la clase.
+
+La respuesta, medida: **no, y no se construye**. Acá queda por qué, para que nadie repita los cuatro
+intentos.
+
+#### Cuatro parseadores, cuatro modos de falso positivo
+
+El chequeo sería: para cada `@returns {{ a, b, c }}`, verificar que el bloque de retorno produzca
+`a`, `b` y `c`. Parece mecánico. No lo es:
+
+| # | Modo de falso positivo | Caso que lo expuso |
+| :-: | :--- | :--- |
+| 1 | `Array<{...}>` anidado se parsea como campos | `declara: applicable, errors, verified, number>` |
+| 2 | El `}` de un `${...}` dentro de un template literal corta el bloque | `protocol-source.mjs:255` — reportaba `copilot` ausente y está |
+| 3 | Propiedad abreviada (`{ positional, workspaceRoot }`) no matchea `nombre:` | `blueprint-diagram.mjs:157` — reportaba `positional` ausente y está |
+| 4 | Propiedad abreviada en **última** posición (`{ findings, ran }`) no matchea `[:,]` | `audit-task-artifacts.mjs:95` — reportaba `ran` ausente y está |
+
+Cada intento arreglaba el modo anterior y aparecía el siguiente. El conteo se movió 5 → 26 → 16 según
+el parser, sobre el **mismo** código: un número que depende de la herramienta que lo mide no mide el
+código.
+
+#### Y los cinco candidatos que verifiqué a mano eran todos falsos
+
+El muestreo, uno por uno contra el código:
+
+| Candidato | Declaración del docblock | Realidad |
+| :--- | :--- | :--- |
+| `reference-integrity.mjs:193` | `status, filesScanned, problems` | El return **tiene** `problems` |
+| `source-reachability.mjs:105` | `unreached, added, stale, scanned` | **Tiene** `unreached`, abreviado |
+| `blueprint-diagram.mjs:157` | `positional, workspaceRoot, dbPath, record` | **Tiene** los cuatro |
+| `protocol-source.mjs:255` | `claude, copilot` | **Tiene** los dos |
+| `audit-task-artifacts.mjs:95` | `id, feature, findings, ran` | **Ejecutado**: devuelve exactamente esos cuatro |
+
+**5/5 falsos positivos.** Una compuerta con 16 candidatos y ese muestreo sería 100% ruido, que es
+exactamente lo que hizo rechazar la versión por regex de §9.9-9.10.
+
+#### Por qué acá NO hay un equivalente conductual
+
+Para los puntos de entrada la salida fue cambiar de análisis estático a **correr el script**: una
+pregunta que se contesta con un subproceso no necesita entender el idioma del código. La versión
+conductual de *este* chequeo sería llamar a cada función y mirar las claves de lo que devuelve —y eso
+funcionó perfecto en el único caso donde se pudo: `auditTask` se llamó con un fixture de tres líneas
+y sus claves coincidieron.
+
+Pero **no se generaliza**: para llamar a `parseGateArgs` hay que saber qué `argv` probar, y para
+`auditProtectionIntegrity` dónde apuntar el `root`. Cada función necesita una entrada pensada, o sea
+un test. Y un test por función es lo que la clase ya tiene por otro lado: los 43 docblocks con shape
+están en módulos mayormente cubiertos, así que un return que se desviara del contrato lo atraparía la
+suite que ya existe.
+
+> **El aprendizaje, que es lo que queda.** Medir la clase costó cuatro parseadores y cinco
+> verificaciones a mano, y el resultado fue «no se puede barato». **Ese es un resultado, no un
+> fracaso**: es la misma forma que el rechazo de §9.9, con la diferencia de que ahí existía un
+> sustituto conductual y acá no. Lo que no corresponde es publicar la compuerta igual —con 16
+> candidatos y 5/5 falsos— para tener una casilla verde más.
+
+---
 ### 9.10. La compuerta que faltaba: correr el script en vez de leer su nombre
 
 En §9.9 rechacé la compuerta de punto de entrada **por regex**: sobre las 22 rutas que la prosa
