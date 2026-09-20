@@ -530,6 +530,76 @@ saber contra qué HEAD se midió).
 **El ANTES de cada recorte se lee del trinquete de B1**, no del plan. Los números del plan son
 órdenes de magnitud para priorizar `[PLAN §7.2.3]`.
 
+### 9.12. La fuga que apareció al terminar: extraer un bloque extrae sus obligaciones
+
+Al hacer la limpieza final aparecieron **419 entradas `aoi-*` en `$TMPDIR`** (3,2 MB). La pregunta no
+era el total —histórico, incluye corridas interrumpidas— sino si una corrida **completa** de
+`pnpm test` todavía deja residuo, porque eso significa crecimiento sin techo.
+
+El experimento decisivo, con diferencia de conjuntos y no con conteo:
+
+```text
+antes de la cadena:  419
+pnpm test            exit 0
+despues:             423   DELTA = 4
+
+los 4 exactos:  aoi-preinstalacion.8Khaj6   FILE  0 bytes
+                aoi-preinstalacion.LtwTpg   FILE  0 bytes
+                aoi-preinstalacion.PMOtFc   FILE  0 bytes
+                aoi-preinstalacion.RA95RD   FILE  12 bytes
+```
+
+**Cuatro archivos por corrida, para siempre.** A 100 corridas por semana son 400 archivos.
+
+#### La causa: el test recorta un bloque y no lo que el bloque necesita
+
+`fresh-snapshot-empty-target.test.mjs` extrae el bloque REAL de la foto previa de `setup.sh` —entre dos
+marcadores de texto— y lo corre por `bash -c`. Es el patrón correcto, y está documentado en su
+encabezado: *«un test que parafrasea la lógica prueba la paráfrasis»*.
+
+Pero el bloque hace `mktemp "${TMPDIR:-/tmp}/aoi-preinstalacion.XXXXXX"`, y **en `setup.sh` ese
+temporal lo borra un `trap cleanup_temp_files EXIT` que vive FUERA del slice**. El test extrajo el
+código y no la obligación:
+
+```sh
+trap cleanup_temp_files EXIT        # ← setup.sh, línea 42, fuera del slice extraído
+# ... 1.270 líneas ...
+FRESH_SNAPSHOT="$(mktemp .../aoi-preinstalacion.XXXXXX)"   # ← dentro del slice
+```
+
+Seis llamadas a `snapshotFlag()`, **cuatro de ellas alcanzan el `mktemp`** (las otras dos pasan
+`isReinstall=1` y saltean la rama entera): exactamente los 4 medidos.
+
+Y hay un detalle que cierra el diagnóstico: el test **ya tenía** disciplina de limpieza —un helper
+`tempDir(t)` con `t.after()`— para los fixtures que crea **él**. El archivo que crea el bloque
+extraído quedaba afuera de esa disciplina, porque no era suyo.
+
+#### El arreglo, y por qué el trap va adentro del script generado
+
+```sh
+trap 'rm -f "${FRESH_SNAPSHOT:-}"' EXIT   # el harness repone lo que el slice dejó afuera
+```
+
+Va en el script que el test **genera**, no en un `finally` del test: el archivo lo crea un
+subproceso de bash, y el `trap EXIT` de ese subproceso lo cubre **incluso si el bloque falla a la
+mitad**. Un `finally` en Node cubriría sólo el camino de éxito.
+
+| Medición | Antes | Después |
+| :--- | ---: | ---: |
+| Delta del test solo | 4 | **0** |
+| Delta de `pnpm test` completo | 4 | **0** |
+| Casos del test | 8/8 | **8/8** |
+
+Y los 427 acumulados se borraron, sin tocar `aoi-post-tool-counter.*` (los escribe el hook de ICM,
+son pre-existentes y no son de nadie más).
+
+> **La lección, que generaliza más allá de este test.** Un test que extrae un bloque de un script
+> para ejecutarlo no copia sólo código: copia sus **dependencias de contexto**, y las que no se ven
+> son las que fallan en silencio. Acá la dependencia invisible era un `trap` a mil líneas de
+> distancia, y el síntoma —archivos de 0 bytes— no se parece en nada a la causa. Es la misma forma
+> que el resto de este ciclo: **una aserción que pasa porque el entorno no participa.**
+
+---
 ### 9.11. La clase que NO se puede chequear barato: docblocks que declaran otro shape
 
 Los defectos que este ciclo arregló tienen una forma que se repite: **el docblock dice algo que el
