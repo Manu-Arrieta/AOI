@@ -35,9 +35,35 @@ export const PUBLIC_SURFACES = Object.freeze([
   'scaffold/scripts/mcp-gateway/setup-mcp-gateway.mjs',
 ])
 
+/**
+ * La prosa que el ciclo carga SIEMPRE: las `instructions` que el `applyTo`
+ * inyecta en cada fase y los prompts de comando. El ledger las trata como
+ * públicas por su EFECTO, no por su audiencia: un porcentaje sin evidencia acá
+ * no queda en un README que nadie lee, queda en el contexto de un agente que va
+ * a actuar sobre él.
+ *
+ * Se recorren los directorios enteros, no una lista: una lista se desactualiza
+ * cuando alguien agrega un archivo, y la compuerta quedaría verde sobre el nuevo.
+ *
+ * Se agregaron después de medir que el único claim retirado todavía vivo en el
+ * repositorio (`60–90%`, R-001) estaba justamente en `.github/instructions/`,
+ * fuera del alcance del escaneo: el patrón lo nombraba, el archivo existía, y
+ * ninguno de los dos se encontraba con el otro.
+ */
+export const PROSE_SURFACES = Object.freeze([
+  '.github/instructions',
+  '.github/prompts',
+])
+
 /** Claims that require corpus-qualified documentation, never a live promise. */
 export const RETIRED_CLAIMS = Object.freeze([
-  { label: 'universal token-saving range', pattern: /60%\s*(?:al|to|[-–])\s*90%/i },
+  // `60–90%` —el signo va DESPUÉS del 60, no antes del 90— es la forma que
+  // aparece en el repositorio, y el patrón la dejaba pasar: exigía el `%`
+  // pegado al 60. El claim estaba retirado en el ledger (R-001) y seguía vivo
+  // en una instrucción que se inyecta en todas las fases, sin que la compuerta
+  // pudiera verlo. Se conservan las formas que el patrón anterior sí cubría,
+  // porque al arreglarlo no hay que perder alcance.
+  { label: 'universal token-saving range', pattern: /60\s*%?\s*(?:al|to|[-–])\s*90\s*%/i },
   { label: 'universal MCP saving rate', pattern: /(?:hasta\s+un|up\s+to)\s+85%/i },
   { label: 'fixed test-count badge', pattern: /badge\/Tests-\d+(?:%2F|\/)\d+_Passing/i },
   { label: 'fixed scaffold-parity badge', pattern: /badge\/Scaffold_Parity-\d+(?:%2F|\/)\d+_Verified/i },
@@ -77,6 +103,17 @@ export function auditClaimsEvidence(root) {
     scanned += 1
     for (const claim of unsupportedClaims(fs.readFileSync(full, 'utf8'))) {
       errors.push(`${surface} reintroduces retired claim: ${claim}`)
+    }
+  }
+  for (const dir of PROSE_SURFACES) {
+    const full = path.join(root, dir)
+    if (!fs.existsSync(full)) continue
+    for (const name of fs.readdirSync(full).filter((f) => f.endsWith('.md')).sort()) {
+      const rel = `${dir}/${name}`
+      scanned += 1
+      for (const claim of unsupportedClaims(fs.readFileSync(path.join(root, rel), 'utf8'))) {
+        errors.push(`${rel} reintroduces retired claim: ${claim}`)
+      }
     }
   }
   if (scanned === 0) errors.push('no public claim surface was scanned')

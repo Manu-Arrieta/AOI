@@ -42,10 +42,10 @@
  */
 export const BAND_BUDGET = {
   '.github/agents/supervisor.agent.md': 1707,
-  '.github/instructions/agent-delegation.instructions.md': 1861,
+  '.github/instructions/agent-delegation.instructions.md': 1860,
   '.github/instructions/icm-protocol.instructions.md': 2124,
   '.github/instructions/model-selection.instructions.md': 396,
-  '.github/instructions/rtk.instructions.md': 334,
+  '.github/instructions/rtk.instructions.md': 329,
   '.github/skills/icm/SKILL.md': 414,
   '.github/skills/rtk/SKILL.md': 228,
   '.github/skills/sdd-lifecycle/SKILL.md': 1155,
@@ -75,7 +75,7 @@ export const BAND_BUDGET = {
  * transporte, que la nota de dos secciones arriba documenta como fallido para
  * los 27 agentes. Redundante con el template del Step 2 y equivocado a la vez.
  */
-export const BAND_CEILING = 8219
+export const BAND_CEILING = 8213
 
 /**
  * Compara la banda derivada contra su baseline. Pura: sólo decide, no imprime.
