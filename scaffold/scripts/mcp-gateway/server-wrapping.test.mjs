@@ -106,7 +106,7 @@ describe('the gateway config itself', () => {
   })
 
   it('gives an unknown tool a generic signature instead of inventing one', () => {
-    assert.match(generateCompactSignature('icm_recall'), /icm_recall\(query/)
+    assert.match(generateCompactSignature('icm_memory_recall'), /icm_memory_recall\(query/)
     assert.equal(generateCompactSignature('tool_desconocida'), 'tool_desconocida(params: object): any')
   })
 })
@@ -147,7 +147,7 @@ describe('ningún flag puede saltear la auditoría del Invariante 1', () => {
   const DIRECTO = { raw: { command: 'icm', args: ['serve'] } }
   const ENVUELTO = { proxied: { command: 'mcp-compressor', args: ['-c', 'high', '--', 'icm', 'serve'] } }
 
-  for (const flags of [[], ['--signatures'], ['--filter-coeffects', 'icm_recall']]) {
+  for (const flags of [[], ['--signatures'], ['--filter-coeffects', 'icm_memory_recall']]) {
     const etiqueta = flags.length ? flags.join(' ') : '(sin flags)'
 
     it(`falla con un servidor directo bajo ${etiqueta}`, () => {

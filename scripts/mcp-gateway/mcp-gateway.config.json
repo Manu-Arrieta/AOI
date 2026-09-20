@@ -8,9 +8,9 @@
     "omitFullSchemaOnList": true
   },
   "tier1CompactTools": [
-    "icm_recall",
-    "icm_store",
-    "icm_memoir",
+    "icm_memory_recall",
+    "icm_memory_store",
+    "icm_memoir_search",
     "search_graph",
     "trace_path"
   ],

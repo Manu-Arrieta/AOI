@@ -11,6 +11,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { ICM_MCP_TOOLS } from '../multi-harness/reference-integrity.mjs'
 
 /**
  * Checks that every MCP server the workspace registers actually goes through
@@ -67,26 +68,82 @@ export function validateGatewayConfig(config) {
 }
 
 /**
- * Generates compact signature representation for Tier 1 tools.
+ * Las firmas compactas de las herramientas Tier 1, como dato.
+ *
+ * Cada entrada nombra la HERRAMIENTA REAL y reproduce sus parámetros según el
+ * esquema que publica su servidor. Las que se abrevian llevan `…`: una firma
+ * compacta puede recortar, lo que no puede es mentir por omisión.
+ *
+ * El defecto que esta tabla reemplaza, medido el 2026-09-19: las cinco firmas
+ * anteriores nombraban herramientas que no existen (`icm_recall`, `icm_store`,
+ * `icm_memoir`) o declaraban parámetros inventados. Tres consecuencias
+ * concretas: el orden de parámetros de `icm_memory_store` estaba INVERTIDO
+ * (`content` antes de `topic`), la importancia declaraba tres niveles cuando el
+ * enum tiene cuatro —faltaba `medium`—, y `icm_memoir` no existe: son diez
+ * herramientas `icm_memoir_*`.
+ *
+ * Nada lo detectaba. El único consumidor era el test que fijaba los mismos
+ * strings, así que la tabla podía divergir del servidor para siempre con la
+ * compuerta en verde — el mismo patrón que `reference-integrity` existe para
+ * cazar con `icm_memoir_add_observation`. `auditTier1Names` es la guarda que
+ * faltaba en la otra mitad: los nombres.
+ *
+ * La omisión de `medium` merece un renglón aparte: es exactamente la clase de
+ * defecto que `icm-protocol-completeness.test.mjs` documenta haber sufrido
+ * (*"a compression pass silently dropped the `low` importance level, which
+ * nothing else would have caught"*). Otra compresión tiró `medium`, y nada lo
+ * cazó, porque la guarda que existe cubre un solo archivo.
+ */
+export const TIER1_SIGNATURES = {
+  icm_memory_recall:
+    'icm_memory_recall(query: string, topic?: string, limit?: number, keyword?: string, project?: string): MemoryItem[]',
+  icm_memory_store:
+    'icm_memory_store(topic: string, content: string, importance: "critical"|"high"|"medium"|"low", keywords?: string[], raw_excerpt?: string): string',
+  icm_memoir_search:
+    'icm_memoir_search(memoir: string, query: string, label?: string, limit?: number): Concept[]',
+  search_graph:
+    'search_graph(project: string, query?: string, label?: string, name_pattern?: string, …, limit?: number, offset?: number): GraphNode[]',
+  trace_path:
+    'trace_path(function_name: string, project: string, direction?: "inbound"|"outbound"|"both", depth?: number, mode?: "calls"|"data_flow"|"cross_service", …, include_tests?: boolean): PathResult',
+}
+
+/**
+ * Firma compacta de una herramienta Tier 1.
+ *
+ * El fallback cubre una herramienta que la tabla no conoce; `auditTier1Names`
+ * tiene que haberla reportado antes de llegar acá. Un nombre que cae al
+ * fallback no es una herramienta declarada: es una que nadie declaró.
  *
  * @param {string} toolName
  * @returns {string}
  */
 export function generateCompactSignature(toolName) {
-  switch (toolName) {
-    case 'icm_recall':
-      return 'icm_recall(query: string, topic?: string, limit?: number): MemoryItem[]'
-    case 'icm_store':
-      return 'icm_store(content: string, topic: string, importance: "low"|"high"|"critical"): boolean'
-    case 'icm_memoir':
-      return 'icm_memoir(query: string): string'
-    case 'search_graph':
-      return 'search_graph(symbol: string, depth?: number): GraphNode[]'
-    case 'trace_path':
-      return 'trace_path(fromSymbol: string, toSymbol: string): PathResult'
-    default:
-      return `${toolName}(params: object): any`
+  return TIER1_SIGNATURES[toolName] ?? `${toolName}(params: object): any`
+}
+
+/**
+ * Herramientas Tier 1 que el roster real del servidor no conoce.
+ *
+ * Es la guarda que faltaba, y cubre la mitad que ninguna otra podía: la tabla
+ * de firmas sólo prueba que un nombre TIENE firma, no que la herramienta EXISTA.
+ * `icm_recall` tenía las dos: firma propia y ninguna existencia.
+ *
+ * El roster es el del servidor ICM porque es el único que AOI puede leer sin
+ * hablar con el proceso. Las herramientas de `codebase-memory` no tienen roster
+ * en el repositorio —su lista vive en la prosa de los agentes— así que quedan
+ * fuera de esta guarda por prefijo, y eso está declarado en el test en vez de
+ * asumido.
+ *
+ * @param {object} config gateway config
+ * @param {Set<string>} roster nombres de herramienta que el servidor publica
+ * @returns {string[]} nombres de prefijo `icm_` que no resuelven
+ */
+export function auditTier1Names(config, roster) {
+  const unknown = []
+  for (const name of config?.tier1CompactTools ?? []) {
+    if (name.startsWith('icm_') && !roster.has(name)) unknown.push(name)
   }
+  return unknown
 }
 
 /**
@@ -131,6 +188,16 @@ export async function main() {
 
     if (!validation.valid) {
       process.stderr.write(`❌ Gateway Config Invalid:\n` + validation.errors.map((e) => `  - ${e}`).join('\n') + '\n')
+      process.exit(1)
+    }
+
+    // Un nombre que el servidor no publica no se imprime como si existiera. La
+    // validación de forma no puede verlo: `icm_recall` era un string no vacío
+    // en un array no vacío, que es todo lo que la forma exige.
+    const unknown = auditTier1Names(config, ICM_MCP_TOOLS)
+    if (unknown.length > 0) {
+      process.stderr.write(`❌ Herramientas Tier 1 que el servidor no publica: ${unknown.join(', ')}\n`)
+      process.stderr.write(`   Un nombre fantasma con firma propia pasa cualquier chequeo de forma.\n`)
       process.exit(1)
     }
 
