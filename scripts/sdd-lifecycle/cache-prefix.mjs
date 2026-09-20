@@ -67,6 +67,13 @@ export function surfaceLoadMap(root, phases = SDD_PHASES) {
  *
  * `universal` is the band that repeats in every phase — the mass a prefix
  * cache could reach and the band where a trim is worth its multiplier.
+ *
+ * «Universal» es de FASES, no de harnesses: el ×7 se arma con el `applyTo` de
+ * cada instruction, que es convención de Copilot, y AOI no le entrega esos
+ * archivos a los otros cinco. Medido el 2026-09-20: editar `icm-protocol` propagó
+ * sólo a `.agents/skills/icm/SKILL.md` —ni `CLAUDE.md`, ni `AGENTS.md`, ni
+ * `.cursorrules`, ni `.clinerules`—, así que el premio de recortar la banda es
+ * ×7 en Copilot, ×1 en antigravity (y sólo para `rtk`/`icm`) y **0** en el resto.
  */
 export function partitionSurface(map, phaseCount = SDD_PHASES.length) {
   const rows = [...map].map(([source, e]) => ({
