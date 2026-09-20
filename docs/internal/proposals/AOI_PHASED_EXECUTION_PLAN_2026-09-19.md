@@ -517,11 +517,31 @@ cada bloque no se declara al escribir, se **mide** después de la edición y la 
 | **B0** | ninguna compuerta miraba la corrida | `audit-task-artifacts.mjs` (225 LOC) + test (231) + `aoi:task-artifacts` | **18 tests nuevos** · paridad 413 → **415** · cadena 1533 → **1551** | **0 tokens** (instrumento) | — | 2026-09-19 |
 | **B1** | banda `9.457`/fase · ciclo `66.199` · huella `a48f43cd31f14b6f` · 3.722 tok de adaptadores **invisibles** | trinquete (`band-budget.mjs`, 103 LOC) + adaptadores impresos | Banda **idéntica**: 8 archivos · `9.457` · `66.199` · huella `a48f43cd31f14b6f`. Adaptadores **visibles**: `3.722 tok = 3,57% del piso` | **0** — protege, no ahorra | `a48f43cd31f14b6f` (sin cambio) | 2026-09-19 |
 | **B2** | `143` LOC · sin CLI · **la invocación del prompt no podía correr** | CLI en archivo propio (188 LOC) | **5 turnos → 2 tumbados · 185 → 31 tok (83,2%)** en el fixture. Módulo del algoritmo **intacto** en 144 LOC | 0 en banda | — | 2026-09-19 |
-| **B3** | `ast-skeletonizer`: 1 superficie · ciclo `105.466` | la invocación al paso 5 de `/sdd-verify` | `ast-skeletonizer`: **2 superficies** · ciclo **`105.532` = +66 tok** (×1, medido) | **+66** de costo fijo | `a48f43cd31f14b6f` (sin cambio) | 2026-09-19 |
+| **B3** | `ast-skeletonizer`: 1 superficie · ciclo `105.466` | la invocación al paso 5 de `/sdd-verify` | `ast-skeletonizer`: **2 superficies** · ciclo **`105.532` = +66 tok** (×1, medido) | **+66** de costo fijo | `a48f43cd31f14b6f` (sin cambio) | 2026-09-19 · **1 de 4**: ver §9.17 |
 | **B4.A** | `2.420` tok · `16.940`/ciclo | quitar el padding de la tabla de ruteo | **`1.707` tok · `11.949`/ciclo** · banda `9.457 → 8.744`/fase · ciclo **`105.466 → 100.545`** | **−4.921/ciclo** | `a48f43cd31f14b6f` → **`1a990169267eb204`** | 2026-09-19 |
 | **B4.B** | `1.510` tok · `10.570`/ciclo | padding + columna derivable + B/D/A redundante | **`1.155` tok · `8.085`/ciclo** · banda `8.744 → 8.389`/fase · ciclo **`100.545 → 98.060`** | **−2.485/ciclo** | `1a990169267eb204` → **`b09415441e545056`** | 2026-09-19 |
 | **B4.C** | `2.031` tok · `14.217`/ciclo | el `Example`, redundante y equivocado | **`1.861` tok · `13.027`/ciclo** · banda `8.389 → 8.219`/fase · ciclo **`98.060 → 96.870`** | **−1.190/ciclo** | `b09415441e545056` → **`b189f6d1759e11ae`** | 2026-09-19 |
 | **B5** | `105.466`/ciclo (modelo de Copilot) | medición | **(a) medida** — la banda llega a **1 de 6** harnesses, y **la banda son dos poblaciones**: 4.709 inyectados en el prefijo · 3.504 por invocación · **(b) medida** — cache real: **98,3%** global, pero **98,8% en Deepseek y 1,4% en GLM** · **(c) medida** — `ast-skeletonizer`: 64,1% sobre 241 archivos, 47,4% sobre fuentes | (a) **acota el premio** y parte la banda en dos · (b) **invierte la decisión por agente** | `4d1260941eb3392d` | 2026-09-20 |
+| **Claims + Qwen** | banda `8.219`/fase · ciclo `96.870` · huella `b189f6d1759e11ae` | los 3 claims vivos y un modelo que no existe | banda **`8.213`** · ciclo **`96.897`** · huella **`b36d8cc8a308948f`** | **+27** neto | `b189f6d1759e11ae` → **`b36d8cc8a308948f`** | 2026-09-20 |
+
+**La fila de arriba no existía, y la verificaron de menos.** Dos commits tocaron archivos de fase sin
+registrar el efecto: el fix de claims y el del modelo inexistente. El detalle, medido:
+
+| Archivo | Cambio | Multiplicador | Efecto/ciclo |
+| :--- | ---: | :---: | ---: |
+| `rtk.instructions.md` | `334 → 329` (se quitó el `60–90%` sin respaldo) | **×7** | **−35** |
+| `agent-delegation.instructions.md` | `1.861 → 1.860` + el contenido de Qwen (misma longitud) | **×7** | **−7** |
+| `sdd-apply.prompt.md` | `2.228 → 2.302` (el `saving 90%` se reemplazó por el número medido) | ×1 | **+74** |
+| | | | **+32** *(medido: +27; el estimador redondea archivo por archivo)* |
+
+**O sea: se pagó con banda para arreglar prosa.** Quitar un claim falso bajó 42/ciclo de la banda, y
+reemplazarlo por su medición subió 74 en un prompt. El neto es **+27**, y eso es correcto —un número
+verificado vale más que uno inventado— pero la fila tiene que existir, porque el ledger es lo único que
+distingue un cambio deliberado de un descuido.
+
+**Y la huella cambió sin recorte que lo explique**: `agent-delegation` pasó de `3.7` a `3.8`, misma
+longitud, distinto byte. Es exactamente lo que el ledger exige anotar —«si cambia, cambió la entrada y
+el delta no es comparable»— y estuvo dos commits sin anotarse.
 
 **Las tres columnas que no se negocian:** el valor **medido** (no estimado), la **huella** de la
 masa repetida (si cambia, cambió la entrada y el delta no es comparable), y la **fecha** (para
@@ -530,6 +550,162 @@ saber contra qué HEAD se midió).
 **El ANTES de cada recorte se lee del trinquete de B1**, no del plan. Los números del plan son
 órdenes de magnitud para priorizar `[PLAN §7.2.3]`.
 
+### 9.18. La revisión de §9.17 encontró siete defectos en mi propia medición
+
+§9.17 lo escribí con números propios y lo mandé a un lente adversarial. **Encontró siete problemas, y los
+siete eran reales.** Tres cambian lo que la sección dice; los demás la acotan. Vale registrarlos porque
+son la misma clase de error que el ciclo entero viene persiguiendo, cometida por mí esta vez.
+
+| # | Lo que afirmé | Lo que era |
+| :-: | :--- | :--- |
+| 1 | «La composición» de 22.226 tok | La tabla sumaba **21.983**: faltaban **243** de framing sin atribuir |
+| 2 | Fila «Instruction files **(la banda)**» | **Etiqueta falsa.** La banda son **8 archivos / 8.213**, y sus miembros caen en **3 filas** de esa tabla. Leer que la banda son 4 archivos induce a **contarla dos veces** |
+| 3 | «`/sdd-ff` menciona código **1** vez, `/sdd-verify` **18**» | **No reproducible**: seis patrones dan entre **11 y 14**, y el criterio mide *menciones de rutas de herramienta*, no lecturas de código. La conclusión se sostiene **por la cita del Step 3.5**, no por el conteo |
+| 4 | «`## Outline`: 216 de **340** líneas» | Son **339** — `split('\n')` cuenta el newline final. El 64% sobrevive |
+| 5 | «**Ninguna** compuerta acota ese archivo» | «Ninguna **de las que busqué**». Un negativo global no se prueba |
+| 6 | «`.tasks/registry.md` **está vacío**» | Tiene **1.196 bytes** con sus tablas; vacías están las **filas**. Y `findRealTaskDir` **no lee el registry**: recorre `.tasks/` buscando `*/*/{spec.md,…}`. La conclusión es correcta; la causa enunciada no |
+| 7 | «**3×** un agente de dominio» | 3,0× contra el **promedio**; 2,4× contra `supervisor`. Sin la base, es más fuerte que la evidencia |
+
+#### Los dos errores que generalizan
+
+**Partí por una dimensión y etiqueté por otra.** La tabla clasifica por **ruta**; la banda clasifica por
+**multiplicador**. Son particiones distintas, y como sus miembros se reparten entre las filas de la tabla,
+poner «la banda» como rótulo de una fila hace que un lector sume dos veces la misma masa. Es la misma
+forma que el resto del ciclo —**un rótulo que promete una partición y entrega otra**— y no lo vi porque
+las dos particiones contienen los mismos archivos: sólo cambia cómo se agrupan.
+
+**Conté caracteres donde hacía falta contar lecturas.** El «1 vs 18» medía apariciones de rutas con forma
+de archivo, y en `/sdd-verify` casi todas son **las herramientas que la fase invoca**. El instrumento medía
+el aparato, no el fenómeno: la fase que más rutas de herramienta nombra es justamente la que tiene las
+herramientas cableadas. El argumento correcto estaba en el texto del prompt, no en un regex.
+
+#### Y un hallazgo del revisor que vale más que los siete
+
+Mientras verificaba la banda con su instrumento real, midió el ledger contra el árbol de hoy:
+
+```text
+banda:  ledger B4.C dice 8.219   ·  instrumento vivo: 8.213
+huella: ledger dice 4d1260941eb3392d  ·  ahora: b36d8cc8a308948f
+ciclo:  ledger dice 96.870       ·  instrumento vivo: 96.897
+```
+
+**La última fila del ledger no describía el árbol que medí.** Dos commits —el fix de claims y el del modelo
+inexistente— tocaron archivos de fase **sin fila**, y la regla del propio ledger dice que sin huella igual
+«el delta no es comparable». La fila que faltaba ya está agregada, con la atribución: se pagó **banda
+(−42/ciclo)** para arreglar prosa **en un prompt (+74, ×1)**, neto **+27**.
+
+> **La lección, que es la del ciclo aplicada a mis propias mediciones.** Siete defectos en una sección de
+> treinta líneas, y ninguno se veía leyendo: todos aparecieron **midiendo lo que yo había medido**. Un
+> número propio sin verificación externa no es más confiable que uno citado — y en este repositorio, donde
+> la mitad de los hallazgos fueron «el instrumento mentía», eso ya debería ser la regla y no la excepción.
+
+---
+### 9.17. M4 se ejecutó 1 de 4 veces, y medirlo mostró que las otras 3 no correspondían
+
+B3 tenía un alcance explícito de **4 invocaciones**: `ast-skeletonizer` y `context-tombstone` en `/sdd-ff`,
+`ast-skeletonizer` en `/sdd-verify`, y `context-tombstone` en `/sdd-archive`. Se hizo **una**.
+
+**Por qué quedó a medias**: la tabla de dependencias decía *«B3 puede entrar **parcial**: con
+`ast-skeletonizer` solo, que sí tiene CLI»*, porque en ese momento el CLI del tombstone no existía. B2 lo creó
+después, y **nadie volvió a completar B3**. Un parcial deliberado que se volvió permanente.
+
+**Y las tres que faltan no se hacen, porque no corresponden.** Medido antes de escribirlas:
+
+El criterio **no es un conteo de menciones**: medido con seis patrones, `/sdd-verify` nombra entre 11 y 14
+rutas con forma de archivo, y casi todas son *las herramientas que esa fase invoca* —`ast-skeletonizer`,
+`diagnostic-distiller`, `invariant-gate`— más dos rutas de ejemplo dentro de un `Example:`. La fase que más
+las menciona es justamente la que tiene las herramientas cableadas: el metro medía el aparato, no el
+fenómeno. El criterio válido es **qué ordena leer cada prompt**:
+
+| Fase | Qué ordena leer |
+| :--- | :--- |
+| `/sdd-ff` (Steps 2 y 4) | `registry.md`, `proposal.md` y facts de ICM. **Nunca un fuente** |
+| `/sdd-verify` (Step 3.5) | *«review all new/modified files … Inspect each one's structure via `node scripts/code-lens/ast-skeletonizer.mjs <file>` before opening a single body»* |
+
+1. **`ast-skeletonizer` en `/sdd-ff` es un error de categoría.** La herramienta pliega *cuerpos de
+   código*; `/sdd-ff` es planificación y no lee código. No hay nada que plegar. El repositorio ya tiene
+   esa lección escrita para otro caso, en el mismo archivo del inventario: *«Looking for it among the
+   cycle surfaces was a category error: no prompt will ever name the proxy its own MCP calls travel
+   through»*.
+2. **`context-tombstone` en `/sdd-ff` tampoco**: colapsa *turnos de debugging superados*, y esa fase no
+   depura.
+3. **`context-tombstone` en `/sdd-archive` contradice su mandato.** Ese prompt ordena literalmente
+   *«Record all archive decisions **verbatim**»*. Un colapsador de turnos ahí va en contra de lo que la
+   fase existe para hacer.
+
+#### Dónde está la masa de `/sdd-ff`, medido
+
+El hueco que M4 señaló **es real**: `/sdd-ff` es la fase más cara y tiene 0 herramientas de proceso. Lo que
+estaba mal era el diagnóstico de *qué* la hace cara. La composición, por clase:
+
+| Clase (**por ruta**) | tok | Archivos |
+| :--- | ---: | ---: |
+| **Agentes spec-kit** (`speckit.specify` 4.065 · `speckit.tasks` 2.315 · `speckit.plan` 1.575) | **7.955** | 3 |
+| `.github/instructions/` | 4.709 | 4 |
+| `.github/agents/` de dominio (`supervisor` · `solution-architect` · `functional-analyst`) | 4.055 | 3 |
+| `.github/skills/` | 3.133 | 4 |
+| El prompt y los punteros de spec-kit | 2.131 | 4 |
+| Framing del assembler (los encabezados `===== archivo =====`) | 243 | — |
+| **Total** (`payloadTokens`, el literal emitido) | **22.226** | 18 |
+
+**Dos particiones que no coinciden, y confundirlas cuesta 8.213 tok.** La tabla clasifica **por ruta**.
+La banda del trinquete clasifica **por multiplicador**, y sus 8 miembros caen en tres filas distintas de
+esta misma tabla: `4.709` + `1.707` (`supervisor`) + `1.797` (`sdd-lifecycle/SKILL` + `icm/SKILL` +
+`rtk/SKILL`) = **`8.213` = `BAND_CEILING`**. Una versión anterior de esta tabla etiquetaba la primera fila
+como «la banda»: hacía leer que la banda son 4 archivos y 4.709 tok, y sumarla con las otras dos contaba
+la banda **dos veces**.
+
+**El bloque más grande son las definiciones de los tres agentes de spec-kit: 36% de la fase, 7.955 tok.**
+Y no hay ninguna herramienta de proceso en el inventario que comprima definiciones de agente en `.md`:
+`ast-skeletonizer` pliega código, `context-arranger` separa señal de ruido en material de exploración,
+`diagnostic-distiller` destila salidas de runner. **Ninguna de las 6 que el inventario etiqueta `process`**
+aplica a un `.agent.md`, y el candidato más plausible se midió en vez de descartarse por argumento:
+`ast-skeletonizer` sobre `speckit.specify.agent.md` devuelve **16.273 → 16.273 bytes, idéntico** — es un
+plegador por profundidad de llaves y sobre prosa no hay nada que plegar.
+
+Por eso **la parte de M4 que faltaba no se cierra desplegando herramientas**: el movimiento estaba
+apuntado al lugar correcto por la razón equivocada.
+
+#### La medición que M4 se exigió a sí misma sigue sin poder hacerse acá
+
+> *«Ahorro: **NO MEDIDO.** El fixture de `/sdd-ff` no ejercita las herramientas que esa fase no tiene. Se
+> mide con `[PLAN §8.4c]` antes de reclamarlo»*
+
+El fixture **ya intenta** medir con artefactos reales —`usingRealFf` prefiere el `tasks.md` y `design.md`
+de una tarea de verdad y sólo cae al sintético si no hay— y en este repositorio **no hay ninguna tarea**
+(`.tasks/` contiene sólo `registry.md`, con sus tablas y **cero filas**). El instrumento lo dice sin
+interpretación: `findRealTaskDir(process.cwd())` → `null`, y esa función **no lee el registry**: recorre
+`.tasks/` buscando `*/*/{spec.md,design.md,tasks.md}`. Así que cae al fixture, que es `COMPLEX_TASKS_MD`
+con tres tareas:
+**representativo del mecanismo, no del volumen**, como el propio plan advierte en §15.
+
+Es la misma forma que B5(a): la medición no falta por falta de instrumento, sino porque no hay una
+corrida real que medir **en este árbol**. Se hace donde haya una tarea, o no se hace.
+
+#### Lo que sí quedó disponible, y es más grande
+
+`speckit.specify.agent.md` pesa **4.065 tok en un solo archivo**: el mayor de todo el ciclo, y 3× un agente
+de dominio **contra el promedio** (1.351 tok; contra `supervisor`, el mayor, es 2,4×). Nadie lo acota — los tres caps que existen son `supervisor` ≤2.800, `icm-protocol` ≤2.200 y el
+bloque `## Model Requirement` ≤110—, la fase que lo carga no tiene techo (`context-budget.test.mjs`
+verifica una identidad contable, `floor + conditional === total`, no un tamaño), y el trinquete de la banda
+no lo mira: su multiplicador es **×1**, así que queda fuera de `BAND_BUDGET` por construcción.
+
+El enunciado preciso es **«ninguna de las compuertas que busqué»** —aserciones de tokens repo-wide, baseline
+y techo de la banda, el cap de 300 LOC de SRP (que excluye `.md`) y menciones del archivo—, no «ninguna».
+Un negativo global no se puede probar.
+
+Contexto que importa para decidir: **estos archivos ya se recortaron una vez**, en `cc272cc`
+(*perf(tokens): A4 y A3 implementadas — −2.012 por ciclo*), así que son material que AOI interviene. Y el
+instalador los **repara** (les agrega el bloque de modelo que spec-kit no trae), o sea que ya hay código
+que los toca.
+
+Adentro, lo que domina es `## Outline`: **216 de 339 líneas, 64% del archivo** (el span L64–L279, contando su propio encabezado; sin él, 215 líneas y 63%).
+
+Esto **no lo ejecuto acá**: cuánto puede encogerse un archivo importado de spec-kit sin perder su
+contrato es una decisión de alcance, del mismo tipo que «¿se parte el multiplicador de la banda?». Queda
+medido y propuesto, que es lo que el ciclo permite hacer sin decidir por el Owner.
+
+---
 ### 9.16. La prueba de implementación con DeepSeek y MiniMax: funcionó, y encontró tres defectos
 
 Se corrió una delegación real de implementación con los dos modelos que el Owner indicó —DeepSeek para
@@ -618,6 +794,52 @@ búsqueda que devuelve poco no prueba ausencia, y un número que no cuadra suele
 del objeto.**
 
 ---
+### 9.14. La banda no es una población: son dos, con mecanismos distintos
+
+Buscando el cache apareció la medición que **corrige el modelo sobre el que está construido el plan**. El
+harness guarda el system prompt que envía, así que se puede ver quién está en el prefijo estable.
+
+**60 system prompts, y los 60 tienen exactamente la misma composición:**
+
+```text
+prompt             tok   instructions presentes   agentes/skills presentes
+  system_prompt_0  15012          4/4                      0/4
+  system_prompt_1  13187          4/4                      0/4
+  ...               ...          4/4                      0/4     (60 de 60)
+```
+
+| Población | Archivos | tok | ¿En el prefijo estable? |
+| :--- | :--- | ---: | :--- |
+| **Instructions** | `agent-delegation` · `icm-protocol` · `model-selection` · `rtk` | **4.709** | **Sí, en los 60** |
+| **Agentes y skills** | `supervisor.agent.md` · `icm/SKILL` · `rtk/SKILL` · `sdd-lifecycle/SKILL` | **3.504** | **No, en ninguno** |
+
+La suma cuadra exacta: 4.709 + 3.504 = **8.213**, el baseline. Las dos poblaciones están separadas por el
+mecanismo: `applyTo` inyecta **instruction files**; un `.agent.md` se carga cuando se invoca el agente y
+una `SKILL.md` cuando dispara su trigger.
+
+**Y el supervisor sí aparece — pero en la conversación.** Su ruta y su contenido están en los `main.jsonl`
+(40 archivos con «Hub-and-Spoke Protocol»), o sea en resultados de herramientas cuando alguien lee el
+archivo. Eso no es el prefijo: es contenido de sesión, y no se repite igual en las 7 fases.
+
+#### Qué corrige esto
+
+| Afirmación del plan | Lo medido |
+| :--- | :--- |
+| «La banda son 8 archivos que se cargan en las 7 fases» | **4 se inyectan** en el prefijo; los otros 4 llegan por invocación |
+| El multiplicador ×7 vale para los 8 | Vale limpio para **4**; para el resto es un multiplicador de *referencias*, no de inyección |
+| `BAND_CEILING = 8.213` es «la masa repetida» | Son **dos masas**: 4.709 inyectada y 3.504 por demanda |
+
+Y explica algo que ya estaba medido y sin interpretar: el recorte de **B4.A** bajó `supervisor.agent.md` de
+2.420 a 1.707 —**713 tok, el mayor ahorro individual de todo el conjunto**— y el archivo **no está en el
+prefijo estable**. Su ahorro es real pero de otra clase: se paga cuando el supervisor se lee, no en cada
+petición.
+
+> **El aprendizaje, que es el mismo de todo el ciclo con una vuelta más.** El número `8.213 × 7 = 57.491`
+> se construyó contando **referencias**, y se presentó como inyección. No es que la medición estuviera mal:
+> es que la pregunta «¿cuántas fases lo cargan?» y la pregunta «¿cuántas peticiones lo llevan?» tienen
+> respuestas distintas, y sólo la segunda se puede multiplicar por un precio.
+
+---
 ### 9.13. B5(b) medida, y con ella una corrección al modelo de la banda
 
 Declaré B5(b) inobtenible: *«los contadores viven en la respuesta del proveedor, no en el árbol»*. Es
@@ -665,52 +887,6 @@ banda en un modelo con cache devuelve una fracción; en GLM, el valor completo.
 
 ---
 
-### 9.14. La banda no es una población: son dos, con mecanismos distintos
-
-Buscando el cache apareció la medición que **corrige el modelo sobre el que está construido el plan**. El
-harness guarda el system prompt que envía, así que se puede ver quién está en el prefijo estable.
-
-**60 system prompts, y los 60 tienen exactamente la misma composición:**
-
-```text
-prompt             tok   instructions presentes   agentes/skills presentes
-  system_prompt_0  15012          4/4                      0/4
-  system_prompt_1  13187          4/4                      0/4
-  ...               ...          4/4                      0/4     (60 de 60)
-```
-
-| Población | Archivos | tok | ¿En el prefijo estable? |
-| :--- | :--- | ---: | :--- |
-| **Instructions** | `agent-delegation` · `icm-protocol` · `model-selection` · `rtk` | **4.709** | **Sí, en los 60** |
-| **Agentes y skills** | `supervisor.agent.md` · `icm/SKILL` · `rtk/SKILL` · `sdd-lifecycle/SKILL` | **3.504** | **No, en ninguno** |
-
-La suma cuadra exacta: 4.709 + 3.504 = **8.213**, el baseline. Las dos poblaciones están separadas por el
-mecanismo: `applyTo` inyecta **instruction files**; un `.agent.md` se carga cuando se invoca el agente y
-una `SKILL.md` cuando dispara su trigger.
-
-**Y el supervisor sí aparece — pero en la conversación.** Su ruta y su contenido están en los `main.jsonl`
-(40 archivos con «Hub-and-Spoke Protocol»), o sea en resultados de herramientas cuando alguien lee el
-archivo. Eso no es el prefijo: es contenido de sesión, y no se repite igual en las 7 fases.
-
-#### Qué corrige esto
-
-| Afirmación del plan | Lo medido |
-| :--- | :--- |
-| «La banda son 8 archivos que se cargan en las 7 fases» | **4 se inyectan** en el prefijo; los otros 4 llegan por invocación |
-| El multiplicador ×7 vale para los 8 | Vale limpio para **4**; para el resto es un multiplicador de *referencias*, no de inyección |
-| `BAND_CEILING = 8.213` es «la masa repetida» | Son **dos masas**: 4.709 inyectada y 3.504 por demanda |
-
-Y explica algo que ya estaba medido y sin interpretar: el recorte de **B4.A** bajó `supervisor.agent.md` de
-2.420 a 1.707 —**713 tok, el mayor ahorro individual de todo el conjunto**— y el archivo **no está en el
-prefijo estable**. Su ahorro es real pero de otra clase: se paga cuando el supervisor se lee, no en cada
-petición.
-
-> **El aprendizaje, que es el mismo de todo el ciclo con una vuelta más.** El número `8.213 × 7 = 57.491`
-> se construyó contando **referencias**, y se presentó como inyección. No es que la medición estuviera mal:
-> es que la pregunta «¿cuántas fases lo cargan?» y la pregunta «¿cuántas peticiones lo llevan?» tienen
-> respuestas distintas, y sólo la segunda se puede multiplicar por un precio.
-
----
 ### 9.12. La fuga que apareció al terminar: extraer un bloque extrae sus obligaciones
 
 Al hacer la limpieza final aparecieron **419 entradas `aoi-*` en `$TMPDIR`** (3,2 MB). La pregunta no
