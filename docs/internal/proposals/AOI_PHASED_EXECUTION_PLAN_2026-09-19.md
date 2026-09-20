@@ -530,6 +530,72 @@ saber contra qué HEAD se midió).
 **El ANTES de cada recorte se lee del trinquete de B1**, no del plan. Los números del plan son
 órdenes de magnitud para priorizar `[PLAN §7.2.3]`.
 
+### 9.9. Los dos GAPs de punto de entrada: uno cerrado, uno más chico de lo que parecía
+
+Los dos scripts que la prosa invocaba sin que respondieran **están cerrados**. `context-tombstone`
+quedó arreglado al separarle el CLI (el módulo es librería por diseño, y el prompt ahora apunta al
+archivo correcto). `synthesize-stubs` recibió el `main` que nunca se escribió — y el rastro estaba
+a la vista: **`fileURLToPath` importado y sin usar**, esperando una guarda que no llegó.
+
+#### Y el GAP traía un segundo defecto adentro
+
+Al hacer funcionar el CLI apareció lo que el silencio tapaba: **las dos mitades del andamiaje no
+se hablaban**. El stub definía `evaluateFiberHealth` y `resetMetrics`; el test importaba `handler`
+de `./handler`. Un símbolo y una ruta que no existen, en la salida que el prompt promete como
+"RED test suites".
+
+| Mitad | De dónde tomaba el nombre |
+| :--- | :--- |
+| `implementationStub` | Del contrato, vía el regex de declaraciones |
+| `testSuite` | Del **default** `handler`, porque `scaffoldTaskFromSpecs` nunca le pasaba el nombre |
+
+El default no era un fallback inofensivo: **tapaba el hueco**. Un test RED que no puede pasar por
+la razón correcta no es un test RED, es un test roto, y el agente que implementa recibía un import
+inventado. Se corrigió compartiendo el patrón de declaración entre las dos mitades —con un solo
+regex la divergencia deja de ser posible— y generando un bloque por función declarada.
+
+`importPath` **no** se deriva: `design.md` declara firmas, nunca dónde viven. El default es un
+placeholder visible (`./<module>`) y el CLI acepta `--import-path`, porque inventar la ruta era
+exactamente el defecto que este arreglo elimina.
+
+#### La compuerta de punto de entrada: medida y **rechazada**
+
+El cuarto GAP era una compuerta que exigiera guarda de entrada a cada ruta invocada con `node` en
+la prosa, sobre `reference-integrity.mjs`, que ya las parsea. La medí antes de construirla, y **no
+se sostiene**:
+
+```text
+rutas .mjs invocadas con `node` en la prosa: 22
+sin guarda de punto de entrada (regex naive): 5  →  5 falsos positivos, 0 verdaderos
+```
+
+Los cinco, verificados uno por uno **corriéndolos**:
+
+| Archivo | Idioma de entrada | Correrlo sin args |
+| :--- | :--- | :--- |
+| `resolve-active-version.mjs` | `pathToFileURL(resolve(argv[1])).href === import.meta.url` | exit 1, *"workspace is required"* |
+| `export-memory-bundle.mjs` | el mismo | exit 1, *"workspace is required"* |
+| `rollback-version.mjs` | `refuseDirectExecution(...)`, **deliberado** | exit 1 con mensaje y la instrucción de import |
+| `validate-manifest.mjs` | `main()` en top-level | exit 1 con usage |
+| `bundle-contract.test.mjs` | es un **test**, no un CLI | — |
+
+Con los cuatro idiomas reconocidos y los tests excluidos, el conteo da **0 de 22**. O sea: la
+compuerta habría nacido con **23% de falsos positivos y ningún verdadero**, y —esto importa más—
+**`export-memory-bundle.mjs` ya tenía el comentario que documenta este mismo defecto**: *"the
+`file://${process.argv[1]}` guard never match, so the CLI exited 0 in silence"*. El repositorio ya
+había aprendido que hay más de un idioma de guarda, y una compuerta que lo ignore repite el
+aprendizaje al revés.
+
+**Decisión: no se construye como estaba propuesta.** Un 23% de ruido es cómo se silencia una
+compuerta, y su valor hoy sería **preventivo puro**: los dos defectos reales que habría atrapado ya
+están cerrados. Si se construye, tiene que reconocer los cuatro idiomas y excluir los tests —y eso
+es un diseño con su propio contrato de tests, no las ~20 LOC que estimé.
+
+> Vale registrar el patrón: **de los cuatro GAPs que reporté, uno era más chico de lo que dije
+> (el CLI), dos eran el mismo defecto (CLI + docblock, vistos desde dos lados) y uno no debía
+> existir** (la compuerta). Medir antes de construir dio la vuelta a dos de los cuatro.
+
+---
 ### 9.8. El ratchet de mutación: B0 y B1 no diluyeron la cobertura
 
 Era la única verificación que podía forzar rehacer trabajo después de mergear, y por eso se corrió
