@@ -32,8 +32,9 @@ This project operates with **Infinite Context Memory (ICM)**. You MUST use it ac
 ### Recall (Before Starting Any Task)
 \`\`\`bash
 icm wake-up                              # Instant deterministic facts pack
-icm recall "query"                        # Search episodic memories
-icm recall "query" -t "${workspace}-context"        # Filter by project topic
+icm recall "query"                        # Search episodic memories (cross-topic)
+icm list --topic "<topic>"                # READ stored context: reliable, deterministic
+icm recall "query" -t "${workspace}-context"        # Filter by topic — EMPTY if the topic misses the global top-K cut
 icm facts list "${workspace}"             # O(1) exact project facts
 \`\`\`
 
@@ -115,9 +116,10 @@ ${mcp}
 
 ### Recall (before starting work)
 \`\`\`bash
-icm recall "query"                        # search memories
-icm recall "query" -t "topic-name"        # filter by topic
-icm recall-context "query" --limit 5      # formatted for prompt injection
+icm recall "query"                        # search memories (cross-topic)
+icm list --topic "topic-name"             # READ stored context: reliable, deterministic
+icm recall "query" -t "topic-name"        # filter by topic — EMPTY if the topic misses the global top-K cut
+icm recall-context "query" --limit 5      # prompt injection (same -t caveat applies)
 \`\`\`
 
 ${derived || fallbackStoreTriggers(workspace).copilot}

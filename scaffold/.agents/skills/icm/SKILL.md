@@ -117,11 +117,9 @@ When operating in experimental sandboxes (`.sandboxes/{name}/`) or automated ben
 | `medium` | Normal | Yes |
 | `low` | Fast | Yes |
 
-Qué guardar con cada nivel: ver los disparadores de la sección 8.
-
 * **Auto-Dedup**: Storing content with >85% similarity in the same topic **automatically updates** the existing record.
 * **Consolidation**: When a topic exceeds 7 entries, run `icm_memory_consolidate(topic)` immediately.
-* **Prompt Recall**: Use `icm recall-context "query" -t "{TOPIC}" --limit 3` for compact prompt injection.
+* **Prompt Recall**: Use `icm recall-context "query" --limit 3` for compact prompt injection. Para leer el contexto de una tarea: `icm list --topic` (`-t` puede volver vacío).
 * **What NOT to Store**: Raw build/test output logs, transient git status, or ephemeral scratch.
 
 ---
@@ -140,7 +138,7 @@ Qué guardar con cada nivel: ver los disparadores de la sección 8.
 | Event / Phase Boundary | Tool Invocation | CLI Fallback |
 | :--- | :--- | :--- |
 | **Session Start** | `icm wake-up` / `icm_memory_recall` | `icm wake-up` |
-| **Task Start** | `icm_memory_recall(query, topic: "sdd-{WS}-{FEAT}-TASK-YYYY-NNN")` | `icm recall "query" -t "topic"` |
+| **Task Start** | `icm list --topic "sdd-{WS}-{FEAT}-TASK-YYYY-NNN"` | `icm list --topic "sdd-{WS}-{FEAT}-TASK"*` |
 | **Deterministic Config/Port** | `icm facts set "{WS}" "key" "value"` | `icm facts set "{WS}" "key" "value"` |
 | **Task Archive Closure** | `icm extract-patterns` + `icm memoir distill` | `icm memoir distill -t topic -m arch` |
 | **Post-Archive Briefing** | `icm briefing --project "$WORKSPACE"` | `icm briefing -p "$WORKSPACE"` |

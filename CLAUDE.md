@@ -8,8 +8,9 @@ This project operates with **Infinite Context Memory (ICM)**. You MUST use it ac
 ### Recall (Before Starting Any Task)
 ```bash
 icm wake-up                              # Instant deterministic facts pack
-icm recall "query"                        # Search episodic memories
-icm recall "query" -t "AOI-context"        # Filter by project topic
+icm recall "query"                        # Search episodic memories (cross-topic)
+icm list --topic "<topic>"                # READ stored context: reliable, deterministic
+icm recall "query" -t "AOI-context"        # Filter by topic — EMPTY if the topic misses the global top-K cut
 icm facts list "AOI"             # O(1) exact project facts
 ```
 

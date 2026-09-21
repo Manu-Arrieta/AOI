@@ -21,9 +21,10 @@ activate_code_analysis_and_search_tools
 
 ### Recall (before starting work)
 ```bash
-icm recall "query"                        # search memories
-icm recall "query" -t "topic-name"        # filter by topic
-icm recall-context "query" --limit 5      # formatted for prompt injection
+icm recall "query"                        # search memories (cross-topic)
+icm list --topic "topic-name"             # READ stored context: reliable, deterministic
+icm recall "query" -t "topic-name"        # filter by topic — EMPTY if the topic misses the global top-K cut
+icm recall-context "query" --limit 5      # prompt injection (same -t caveat applies)
 ```
 
 ### Store Triggers (MANDATORY) — derivado de `.github/instructions/icm-protocol.instructions.md`
