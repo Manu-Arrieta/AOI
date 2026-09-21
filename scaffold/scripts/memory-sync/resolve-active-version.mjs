@@ -103,6 +103,55 @@ export async function resolveActiveVersion({ workspace, versionsRoot = defaultVe
   }
 }
 
+/**
+ * Resuelve la version activa SIN tratar como error el caso del workspace nuevo.
+ *
+ * Por que existe, y es un defecto medido. `resolveActiveVersion` exige una
+ * entrada en `active.json` para el workspace y tira "No active memory version
+ * registered" cuando no la hay. Ese estado NO es corrupcion: es el estado de
+ * fabrica que AOI instala en cada proyecto (`workspaceStates: {}`). El schema ya
+ * lo anticipaba --`previousVersionId` es nullable-- pero ningun camino del
+ * ciclo podia producir una primera version: `prepareVersionManifest` y
+ * `activateVersion` exigian un predecesor, asi que un workspace nuevo era
+ * inarrancable, y el protocolo ICM prohibe el unico workaround (mutar
+ * `active.json` a mano). Medido 2026-09-21: `prepareVersionManifest` contra el
+ * estado de fabrica tiraba ese mismo error, y un `rg` del arbol entero
+ * confirmaba que no existe ningun `bootstrap`/`createFirstVersion` y que ningun
+ * modulo fuera de `activate` y `rollback` escribe `workspaceStates` --los dos
+ * exigen predecesor.
+ *
+ * La tolerancia es UNA sola: la falta de entrada para ESE workspace. Todo lo
+ * demas sigue siendo error y se delega tal cual a `resolveActiveVersion`: indice
+ * ausente, manifiesto declarado que no existe, y discrepancias de workspace o de
+ * version. Distinguir "nuevo" de "roto" es todo el punto.
+ *
+ * @returns la resolucion completa, o `null` si el workspace no esta registrado.
+ */
+export async function tryResolveActiveVersion({ workspace, versionsRoot = defaultVersionsRoot() }) {
+  if (!workspace || typeof workspace !== 'string') {
+    throw new Error('workspace is required to resolve an active memory version.')
+  }
+
+  const activeIndexPath = join(versionsRoot, 'active.json')
+
+  try {
+    await access(activeIndexPath, constants.F_OK)
+  } catch {
+    // Indice ausente: un store a medias, no un workspace nuevo. Se delega para
+    // que el error conserve el mensaje de `resolveActiveVersion` en vez de un
+    // ENOENT crudo de `readFile`.
+    return resolveActiveVersion({ workspace, versionsRoot })
+  }
+
+  const activeIndex = validateActiveVersionIndex(await loadJsonFile(activeIndexPath), { filePath: activeIndexPath })
+
+  if (!activeIndex.workspaceStates[workspace]) {
+    return null
+  }
+
+  return resolveActiveVersion({ workspace, versionsRoot })
+}
+
 function parseArgs(argv) {
   const [workspace, ...rest] = argv
   let versionsRoot

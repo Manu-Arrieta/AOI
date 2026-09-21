@@ -18,15 +18,55 @@ export async function activateVersion({ workspace, versionId, versionsRoot = def
   const activeIndex = await loadActiveIndex(versionsRoot)
   const workspaceState = activeIndex.workspaceStates[workspace]
 
-  assert(workspaceState, `No active memory version registered for workspace "${workspace}".`)
-  assert(workspaceState.activeVersionId !== versionId, `Memory version "${versionId}" is already active for workspace "${workspace}".`)
+  if (workspaceState) {
+    assert(workspaceState.activeVersionId !== versionId, `Memory version "${versionId}" is already active for workspace "${workspace}".`)
+  }
 
-  const currentActiveManifestPath = getManifestPath(versionsRoot, workspace, workspaceState.activeVersionId)
+  const currentActiveManifestPath = workspaceState
+    ? getManifestPath(versionsRoot, workspace, workspaceState.activeVersionId)
+    : null
   const nextManifestPath = getManifestPath(versionsRoot, workspace, versionId)
-  const currentActiveManifest = await loadManifestAtPath(currentActiveManifestPath)
   const nextManifest = await loadManifestAtPath(nextManifestPath)
 
   assert(nextManifest.status === 'candidate' || nextManifest.status === 'active', `Memory version "${versionId}" cannot be activated from status "${nextManifest.status}".`)
+
+  if (!workspaceState) {
+    // PRIMERA activacion: un workspace sin historia. Antes esto tiraba "No active
+    // memory version registered for workspace", asi que el estado de fabrica que
+    // AOI instala era inarrancable y el ciclo entero no tenia punto de entrada.
+    //
+    // El candidato no puede declarar un predecesor aca. Sin esta asercion, el
+    // camino de bootstrap seria un BYPASS que activa saltandose el paso de
+    // supersede en vez de reconocer el estado inicial: es la diferencia entre
+    // "el workspace es nuevo" y "el manifiesto miente".
+    assert(
+      nextManifest.previousVersionId === null,
+      `Cannot bootstrap workspace "${workspace}": version "${versionId}" declares predecessor "${nextManifest.previousVersionId}" but no active memory version is registered.`,
+    )
+
+    // `previousVersionId` explicito y no omitido: `validateActiveVersionIndex`
+    // usa `assertNullableString`, que acepta null pero no que la clave falte.
+    const bootstrappedManifest = { ...nextManifest, status: 'active', previousVersionId: null, activatedAt }
+    const bootstrappedIndex = {
+      ...activeIndex,
+      workspaceStates: {
+        ...activeIndex.workspaceStates,
+        [workspace]: { activeVersionId: versionId, previousVersionId: null, updatedAt: activatedAt },
+      },
+    }
+
+    await writeJsonFile(nextManifestPath, bootstrappedManifest)
+    await writeJsonFile(getActiveIndexPath(versionsRoot), bootstrappedIndex)
+
+    return {
+      nextActiveIndex: bootstrappedIndex,
+      nextActiveManifest: bootstrappedManifest,
+      supersededManifest: null,
+      previousVersionId: null,
+    }
+  }
+
+  const currentActiveManifest = await loadManifestAtPath(currentActiveManifestPath)
 
   const nextActiveManifest = {
     ...nextManifest,

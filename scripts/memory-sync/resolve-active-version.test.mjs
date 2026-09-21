@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { resolveActiveVersion } from './resolve-active-version.mjs'
+import { resolveActiveVersion, tryResolveActiveVersion } from './resolve-active-version.mjs'
 import { validateActiveVersionIndex, validateMemoryVersionManifest } from './schema.mjs'
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url))
@@ -89,6 +89,30 @@ test('resolveActiveVersion fails when the active manifest points to a missing co
     await assert.rejects(
       () => resolveActiveVersion({ workspace: 'fixture-workspace', versionsRoot }),
       /Dynamic memory constitution snapshot not found/,
+    )
+  })
+})
+
+// La razon por la que existe `tryResolveActiveVersion`, y es una distincion que
+// `resolveActiveVersion` no puede hacer sola: un workspace SIN registrar es un
+// estado legitimo --el de fabrica, que es el que AOI instala en cada proyecto--
+// mientras que un workspace registrado y roto es corrupcion. El ciclo no podia
+// arrancar porque el resolver trataba los dos como el mismo error.
+test('tryResolveActiveVersion returns null for an unregistered workspace instead of throwing', async () => {
+  await withFixture(async (versionsRoot) => {
+    assert.equal(await tryResolveActiveVersion({ workspace: 'missing-workspace', versionsRoot }), null)
+  })
+})
+
+// El control que impide que el arreglo del bootstrap se convierta en un bypass:
+// el estado no registrado devuelve null, la corrupcion sigue siendo un error.
+test('tryResolveActiveVersion still surfaces a corrupt registration', async () => {
+  await withFixture(async (versionsRoot) => {
+    await unlink(join(versionsRoot, 'manifests', 'fixture-workspace', 'fixture-v2.json'))
+
+    await assert.rejects(
+      () => tryResolveActiveVersion({ workspace: 'fixture-workspace', versionsRoot }),
+      /Memory version manifest not found/,
     )
   })
 })

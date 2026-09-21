@@ -3,7 +3,7 @@ import { constants } from 'node:fs'
 
 import { refuseDirectExecution } from './library-only.mjs'
 import { validateMemoryVersionManifest } from './schema.mjs'
-import { resolveActiveVersion } from './resolve-active-version.mjs'
+import { tryResolveActiveVersion } from './resolve-active-version.mjs'
 import {
   defaultVersionsRoot,
   getManifestPath,
@@ -106,8 +106,12 @@ export async function prepareVersionManifest({
   const discard = normalizeDecisionList(decisions?.discard ?? [], 'decisions.discard')
   const scopes = normalizeSelectedScopes(selectedScopes)
 
-  const activeResolution = await resolveActiveVersion({ workspace, versionsRoot })
-  const previousVersionId = activeResolution.workspaceState.activeVersionId
+  const activeResolution = await tryResolveActiveVersion({ workspace, versionsRoot })
+  // `null` cuando el workspace todavia no tiene version activa: es la PRIMERA.
+  // El schema ya lo anticipaba (`previousVersionId` es nullable), pero ningun
+  // camino podia producirlo porque el resolutor exigia un predecesor. Ver
+  // `tryResolveActiveVersion` para el defecto que esto cierra.
+  const previousVersionId = activeResolution?.workspaceState.activeVersionId ?? null
   const createdAt = new Date().toISOString()
   const dynamicConstitutionPath = buildDynamicConstitutionPath(workspace, versionId)
   const manifestPath = getManifestPath(versionsRoot, workspace, versionId)
