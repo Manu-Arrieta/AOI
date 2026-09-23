@@ -22,8 +22,65 @@ import path from 'node:path'
 import { findOrphanTests } from '../scaffold/validate-test-globs.mjs'
 import { isAoiGovernedPath, isDevelopmentRepo } from '../scaffold/governed-paths.mjs'
 
-const TEST_EXTENSIONS = new Set(['.mjs', '.js', '.ts', '.tsx', '.jsx', '.vue', '.py', '.go', '.rs'])
+/** El infijo `.test.` / `.spec.`: la convención de JS, TS y Vue, y de nadie más. */
+const hasTestInfix = (name) => name.includes('.test.') || name.includes('.spec.')
+
+/**
+ * Cómo se reconoce un archivo de test, POR LENGUAJE.
+ *
+ * **El infijo es la convención de JS, y la lista declaraba cinco lenguajes.**
+ * Medido el 2026-09-23 sobre `campaign-manager`, cuyo producto es .NET: con la
+ * regla del infijo sola, `.py`, `.go` y `.rs` eran entradas MUERTAS —ningún
+ * archivo real de esos lenguajes las matchea— y `.cs` no estaba. El efecto no es
+ * cosmético: el Invariant Gate reportaba las 22 reglas de un contrato como NO
+ * CUBIERTAS con los tags presentes en los tests, así que el veredicto dependía
+ * del LENGUAJE del producto y no de que existiera una prueba. Un gate que sólo
+ * puede juzgar proyectos JS no es un gate.
+ *
+ * Medición: sembrando una convención por lenguaje y llamando a
+ * `collectTestSources`, de 9 archivos se colectaban 2 —los dos de JS—.
+ *
+ * Cada entrada declara la convención REAL del lenguaje. La de C# mira el nombre
+ * y la de Rust la carpeta, porque en Rust el marcador es el directorio.
+ */
+const TEST_FILE_CONVENTIONS = new Map([
+  ['.mjs', hasTestInfix],
+  ['.js', hasTestInfix],
+  ['.ts', hasTestInfix],
+  ['.tsx', hasTestInfix],
+  ['.jsx', hasTestInfix],
+  ['.vue', hasTestInfix],
+  // pytest: `test_x.py` o `x_test.py`. Las dos formas son estándar.
+  ['.py', (name) => name.startsWith('test_') || name.endsWith('_test.py') || hasTestInfix(name)],
+  // Go: el sufijo es obligatorio, el toolchain no compila otro nombre como test.
+  ['.go', (name) => name.endsWith('_test.go')],
+  // C#: el marcador va en el SUFIJO. Producción (`Programa.cs`) no termina así,
+  // y eso es lo que mantiene honesto al filtro: un archivo de `src/` no acredita.
+  ['.cs', (name) => /Tests?\.cs$/.test(name)],
+  // Rust: los de integración viven bajo `tests/` con el nombre que quieran
+  // (`tests/algo.rs`), y los unitarios van inline con `#[cfg(test)]`, o sea
+  // DENTRO de un archivo de producción — esos no hay nada que colectar. El
+  // marcador es la carpeta, con el costo declarado: un módulo auxiliar de
+  // `tests/` también entra.
+  ['.rs', (_name, relative) => relative.split(path.sep).includes('tests')],
+])
+
 const SKIP_DIRS = new Set(['node_modules', '.git', '.nuxt', '.output', 'dist', 'build', 'coverage'])
+
+/**
+ * ¿Este archivo, con esta ruta relativa al barrido, es un archivo de test?
+ *
+ * Exportada porque la pregunta ahora depende del lenguaje y tenerla aparte deja
+ * fijarla con casos directos por convención. El único consumidor era el `walk`,
+ * así que una tabla mal escrita se veía como "el gate no cubre nada" y no como
+ * "la tabla está mal": el síntoma quedaba a tres capas del defecto.
+ */
+export function isTestFile(relative) {
+  const name = path.basename(relative)
+  const convention = TEST_FILE_CONVENTIONS.get(path.extname(name))
+
+  return convention ? convention(name, relative) : false
+}
 
 /**
  * Los espejos, como RUTA desde la raíz del barrido — nunca como nombre de directorio.
@@ -86,8 +143,7 @@ export function collectTestSources(dir) {
         continue
       }
 
-      const isTest = entry.name.includes('.test.') || entry.name.includes('.spec.')
-      if (!isTest || !TEST_EXTENSIONS.has(path.extname(entry.name))) continue
+      if (!isTestFile(path.relative(dir, full))) continue
 
       try {
         sources.push({ file: full, content: fs.readFileSync(full, 'utf8') })

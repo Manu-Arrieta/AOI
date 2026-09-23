@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { describe, it } from 'node:test'
-import { collectTestSources, dropAoiOwnedTests, dropUnreachableTests } from './test-reachability.mjs'
+import { collectTestSources, dropAoiOwnedTests, dropUnreachableTests, isTestFile } from './test-reachability.mjs'
 import { auditInvariantCoverage } from './invariant-gate.mjs'
 
 /** A workspace whose vitest config only collects `test/**`. */
@@ -152,5 +152,84 @@ describe('qué es un espejo, y qué sólo comparte su nombre', () => {
 
     assert.deepEqual(files, ['scripts/scaffold/gate.test.mjs'])
     clean(root)
+  })
+})
+
+/**
+ * El lenguaje del PRODUCTO no puede decidir el veredicto del gate.
+ *
+ * Medido el 2026-09-23 sobre `campaign-manager`, cuyo producto es .NET: sus 22
+ * reglas de contrato aparecían SIN CUBRIR con los tags presentes en los
+ * `*Tests.cs` de `backend/tests/`, porque el predicado sólo reconocía el infijo
+ * `.test.` de JS. Sembrando una convención por lenguaje, de 10 archivos se
+ * colectaban 2.
+ */
+describe('cada lenguaje declara SU convención de archivo de test', () => {
+  /** Un árbol con una convención por lenguaje, más producción que NO debe entrar. */
+  function convenciones() {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-lang-'))
+    const archivos = [
+      'A.test.ts', // JS: el infijo
+      'ValidacionTests.cs', // C#: el sufijo
+      'UnTest.cs', // C#: sufijo en singular
+      'test_algo.py', // pytest, forma prefijo
+      'algo_test.py', // pytest, forma sufijo
+      'algo_test.go', // Go: el sufijo es obligatorio
+      'tests/integracion.rs', // Rust: la carpeta
+      'Programa.cs', // producción: NO
+      'helpers.cs', // producción: NO
+      'otro/suelto.rs', // fuera de tests/: NO
+      'notas_algo.py', // ni prefijo ni sufijo: NO
+    ]
+    for (const rel of archivos) {
+      const full = path.join(root, rel)
+      fs.mkdirSync(path.dirname(full), { recursive: true })
+      fs.writeFileSync(full, 'x\n')
+    }
+    return root
+  }
+
+  it('colecta la convención real de cada lenguaje declarado', () => {
+    const root = convenciones()
+
+    const vistos = collectTestSources(root)
+      .map((s) => path.relative(root, s.file))
+      .sort()
+
+    assert.deepEqual(vistos, [
+      'A.test.ts',
+      'UnTest.cs',
+      'ValidacionTests.cs',
+      'algo_test.go',
+      'algo_test.py',
+      'test_algo.py',
+      'tests/integracion.rs',
+    ])
+    clean(root)
+  })
+
+  it('un archivo de producción NO acredita una regla, en ningún lenguaje', () => {
+    // La mitad que importa. Si el filtro colectara todo `.cs`, un tag escrito en
+    // un comentario de `Programa.cs` haría pasar la regla sin una sola prueba
+    // corriendo — el mismo ciclo que este módulo existe para cazar, entrando por
+    // la puerta que el arreglo estaba abriendo.
+    assert.equal(isTestFile('backend/src/Programa.cs'), false)
+    assert.equal(isTestFile('backend/src/ValidacionDeEsquema.cs'), false)
+    assert.equal(isTestFile('scripts/notas_algo.py'), false)
+    assert.equal(isTestFile('otro/suelto.rs'), false)
+
+    assert.equal(isTestFile('backend/tests/ValidacionDeEsquemaTests.cs'), true)
+    assert.equal(isTestFile('backend/tests/UnTest.cs'), true)
+    assert.equal(isTestFile('crate/tests/integracion.rs'), true)
+    assert.equal(isTestFile('test_algo.py'), true)
+    assert.equal(isTestFile('algo_test.py'), true)
+  })
+
+  it('la convención de JS no cambió: control de no-regresión', () => {
+    // El arreglo podía llevarse puesto lo que ya funcionaba, que es la mitad que
+    // el arreglo no toca. Se fija para que no dependa de la buena intención.
+    assert.equal(isTestFile('app/utils/budget.test.ts'), true)
+    assert.equal(isTestFile('app/utils/budget.spec.jsx'), true)
+    assert.equal(isTestFile('app/utils/budget.ts'), false)
   })
 })
