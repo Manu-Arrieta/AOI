@@ -163,6 +163,13 @@ describe('qué es un espejo, y qué sólo comparte su nombre', () => {
  * `*Tests.cs` de `backend/tests/`, porque el predicado sólo reconocía el infijo
  * `.test.` de JS. Sembrando una convención por lenguaje, de 10 archivos se
  * colectaban 2.
+ *
+ * **Y la primera pasada dejó afuera a Dart.** Medido el 2026-09-26 sobre el MISMO
+ * repo: `campaign-manager` tiene el producto en .NET **y en Flutter**, y la
+ * corrección agregó `.cs` sin agregar `.dart`. Los 8 archivos de
+ * `frontend/test/` con tags de contrato seguían invisibles, con el mismo síntoma
+ * y en la misma instalación que motivó el arreglo. Una lista de lenguajes se
+ * completa mirando el producto, no el defecto que uno acaba de ver.
  */
 describe('cada lenguaje declara SU convención de archivo de test', () => {
   /** Un árbol con una convención por lenguaje, más producción que NO debe entrar. */
@@ -175,11 +182,14 @@ describe('cada lenguaje declara SU convención de archivo de test', () => {
       'test_algo.py', // pytest, forma prefijo
       'algo_test.py', // pytest, forma sufijo
       'algo_test.go', // Go: el sufijo es obligatorio
+      'login_test.dart', // Dart: el sufijo, bajo `test/`
+      'integration_test/smoke_test.dart', // Dart: el MISMO sufijo, en la otra carpeta
       'tests/integracion.rs', // Rust: la carpeta
       'Programa.cs', // producción: NO
       'helpers.cs', // producción: NO
       'otro/suelto.rs', // fuera de tests/: NO
       'notas_algo.py', // ni prefijo ni sufijo: NO
+      'pantalla_de_login.dart', // producción Dart: NO
     ]
     for (const rel of archivos) {
       const full = path.join(root, rel)
@@ -202,6 +212,8 @@ describe('cada lenguaje declara SU convención de archivo de test', () => {
       'ValidacionTests.cs',
       'algo_test.go',
       'algo_test.py',
+      'integration_test/smoke_test.dart',
+      'login_test.dart',
       'test_algo.py',
       'tests/integracion.rs',
     ])

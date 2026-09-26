@@ -57,6 +57,16 @@ const TEST_FILE_CONVENTIONS = new Map([
   // C#: el marcador va en el SUFIJO. Producción (`Programa.cs`) no termina así,
   // y eso es lo que mantiene honesto al filtro: un archivo de `src/` no acredita.
   ['.cs', (name) => /Tests?\.cs$/.test(name)],
+  // Dart: el sufijo, como en Go y en C#. `package:test` descubre los `x_test.dart`
+  // y el `integration_test/` de Flutter usa la MISMA forma, así que un solo sufijo
+  // cubre las dos carpetas — y la carpeta no hace falta como marcador, que es lo
+  // que la distingue de Rust.
+  //
+  // Se agregó el 2026-09-26, y es una omisión de la primera pasada: esa corrigió
+  // `.cs` —el lenguaje de `backend/`— y dejó afuera el de `frontend/`, con el
+  // mismo síntoma y en el mismo repo. Medido sobre `campaign-manager`: 8 archivos
+  // de `frontend/test/` con tags de contrato, invisibles para el gate.
+  ['.dart', (name) => name.endsWith('_test.dart')],
   // Rust: los de integración viven bajo `tests/` con el nombre que quieran
   // (`tests/algo.rs`), y los unitarios van inline con `#[cfg(test)]`, o sea
   // DENTRO de un archivo de producción — esos no hay nada que colectar. El
