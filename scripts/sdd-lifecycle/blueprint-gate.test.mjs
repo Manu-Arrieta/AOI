@@ -12,10 +12,8 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import {
   auditBlueprintClosure,
-  collectBlueprints,
   diagramObligation,
   formatBlueprintGateReport,
-  parseCrossingValue,
 } from './blueprint-gate.mjs'
 
 /** Un blueprint cerrado y válido, del que cada test rompe una sola cosa. */
@@ -28,61 +26,12 @@ function closedBlueprint(overrides = {}) {
       { tag: 'SBC-2026-001:crossing.1', raw: 'api -> billing: charge-request', parsed: { from: 'api', to: 'billing', flow: 'charge-request' } },
     ],
     tracer: 'api -> billing -> ledger',
+    supersededBy: '',
     ...overrides,
   }
 }
 
 const check = (audit, id) => audit.checks.find((c) => c.id === id)
-
-describe('parseCrossingValue', () => {
-  it('lee origen, destino y flujo del formato que fija el prompt', () => {
-    assert.deepEqual(parseCrossingValue('api -> billing: charge-request'), {
-      from: 'api',
-      to: 'billing',
-      flow: 'charge-request',
-    })
-  })
-
-  it('tolera espacios irregulares', () => {
-    assert.deepEqual(parseCrossingValue('  api->billing:  charge  '), {
-      from: 'api',
-      to: 'billing',
-      flow: 'charge',
-    })
-  })
-
-  it('devuelve null sin flecha — no es un cruce, es un valor mal escrito', () => {
-    assert.equal(parseCrossingValue('api billing'), null)
-  })
-
-  it('un cruce sin flujo parsea, con flujo vacío: el gate lo tiene que rechazar', () => {
-    assert.deepEqual(parseCrossingValue('api -> billing'), { from: 'api', to: 'billing', flow: '' })
-  })
-})
-
-describe('collectBlueprints', () => {
-  it('agrupa los hechos sbc.* por blueprint, y un workspace puede tener varios', () => {
-    const facts = [
-      { key: 'sbc.SBC-1.contexts', value: 'api, db' },
-      { key: 'sbc.SBC-1.tracer', value: 'api -> db' },
-      { key: 'sbc.SBC-2.contexts', value: 'web' },
-      { key: 'arch.topology', value: 'modular-monolith' },
-    ]
-    const blueprints = collectBlueprints(facts)
-    assert.equal(blueprints.length, 2)
-    assert.deepEqual(blueprints[0].contexts, ['api', 'db'])
-    assert.equal(blueprints[0].tracer, 'api -> db')
-  })
-
-  it('ignora hechos que no son sbc.*', () => {
-    assert.equal(collectBlueprints([{ key: 'arch.topology', value: 'x' }]).length, 0)
-  })
-
-  it('no se rompe con hechos mal formados', () => {
-    const blueprints = collectBlueprints([{ key: 'sbc.SBC-1.contexts', value: '  api ,, db , ' }])
-    assert.deepEqual(blueprints[0].contexts, ['api', 'db'])
-  })
-})
 
 describe('auditBlueprintClosure — el camino que debe PASAR', () => {
   it('un blueprint cerrado pasa con las cinco aserciones', () => {

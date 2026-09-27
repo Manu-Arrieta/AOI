@@ -66,18 +66,45 @@ export function implicitWorkspace(cwd = process.cwd()) {
 /**
  * Decide si un blueprint debe diagramas, y si la obligación puede exigirse.
  *
- * Los tres estados NO son cosméticos. `not-required` dice que la obligación no
- * aplica; `unmet` dice que existe y no se cumplió. Un reporte que imprima lo
- * mismo en los dos casos convierte deuda arquitectónica en silencio.
+ * Los CUATRO estados NO son cosméticos. `not-required` dice que la obligación no
+ * aplica; `superseded` dice que aplicaba y dejó de hacerlo porque el contrato fue
+ * sucedido; `unmet` dice que existe y no se cumplió; `required` que existe y hay
+ * con qué cumplirla. Un reporte que imprima lo mismo en dos de ellos convierte
+ * deuda arquitectónica en silencio.
  *
- * @param {{ crossings?: Array<unknown>, sbcId?: string }} blueprint
+ * @param {{ crossings?: Array<unknown>, sbcId?: string, supersededBy?: string }} blueprint
  * @param {{ archifyAvailable?: boolean }} [options]
- * @returns {{ status: 'not-required'|'required'|'unmet', enforce: boolean,
+ * @returns {{ status: 'not-required'|'required'|'unmet'|'superseded', enforce: boolean,
  *   crossings: number, reason: string }}
  */
 export function diagramObligation(blueprint, { archifyAvailable = true } = {}) {
   const crossings = blueprint?.crossings?.length ?? 0
   const sbcId = blueprint?.sbcId ?? '(sin id)'
+
+  // ── SUCEDIDO: la obligación de diagrama es del contrato VIGENTE ──────────
+  //
+  // Va PRIMERO, antes que el conteo de cruces, porque es la razón más específica
+  // y la que el lector necesita: sin esto se pregunta por qué un contrato con seis
+  // cruces no debe nada.
+  //
+  // POR QUÉ LA OBLIGACIÓN SE ANULA Y NO SE HEREDA. Los cruces que siguen vigentes
+  // son los del sucesor —el `002` declara heredar cinco del `001`— y los diagramas
+  // que valen son los suyos. Producir los del antecesor documentaría una frontera
+  // que ya no existe, y acá eso es peor que no tener nada: un artefacto viejo se
+  // cree. Es el mismo criterio con el que este repositorio trata un comentario
+  // desactualizado.
+  //
+  // NO ENFORCEA, y no es una excepción al diseño: `unmet` tampoco lo hace, y por
+  // la misma razón de fondo —bloquear deja una salida gratis que es peor que el
+  // bloqueo—. Acá la salida gratis sería borrar el hecho `predecessor`.
+  if (blueprint?.supersededBy) {
+    return {
+      status: 'superseded',
+      enforce: false,
+      crossings,
+      reason: `contrato sucedido por ${blueprint.supersededBy}: la frontera vigente es la del sucesor, así que acá no hay diagrama que producir`,
+    }
+  }
 
   if (crossings === 0) {
     return {
@@ -186,8 +213,9 @@ export function parseGateArgs(argv = [], cwd = process.cwd()) {
   }
 }
 
-/** Formatea el veredicto de la obligación para el reporte. */export function formatDiagramObligation(sbcId, obligation, artifacts = null) {
-  const icon = { 'not-required': '⏭️', required: '📐', unmet: '⚠️' }[obligation.status]
+/** Formatea el veredicto de la obligación para el reporte. */
+export function formatDiagramObligation(sbcId, obligation, artifacts = null) {
+  const icon = { 'not-required': '⏭️', required: '📐', unmet: '⚠️', superseded: '🔁' }[obligation.status]
   const lines = [`\n### Diagrama (${sbcId}): ${icon} ${obligation.status.toUpperCase()}`, '', obligation.reason]
 
   if (artifacts) {

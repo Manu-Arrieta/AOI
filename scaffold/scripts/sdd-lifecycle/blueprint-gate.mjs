@@ -21,6 +21,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { findArchifyRenderer } from '../doctor-checks.mjs'
+import { collectBlueprints } from './blueprint-facts.mjs'
 import {
   auditDiagramArtifacts,
   diagramObligation,
@@ -43,61 +44,21 @@ export { diagramObligation, auditDiagramArtifacts }
 // enterarse de dónde cayó.
 export { runGenesisPhase, BLUEPRINT_FIXTURE, BLUEPRINT_PROSE, blueprintFactsText } from './genesis-phase.mjs'
 
-/** Fact key shapes written by /sdd-genesis on Genesis Gate approval. */
-export const CONTEXTS_KEY_PATTERN = /^sbc\.([A-Za-z0-9_-]+)\.contexts$/
-export const NEVER_KEY_PATTERN = /^sbc\.([A-Za-z0-9_-]+)\.never\.(\d+)$/
-export const CROSSING_KEY_PATTERN = /^sbc\.([A-Za-z0-9_-]+)\.crossing\.(\d+)$/
-export const TRACER_KEY_PATTERN = /^sbc\.([A-Za-z0-9_-]+)\.tracer$/
-
-/** `Origen -> Destino: nombre del flujo` — el formato que fija el prompt. */
-export function parseCrossingValue(value = '') {
-  const text = String(value).trim()
-  const split = text.split('->')
-  if (split.length < 2) return null
-
-  const from = split[0].trim()
-  const rest = split.slice(1).join('->').trim()
-  const colon = rest.indexOf(':')
-  const to = (colon === -1 ? rest : rest.slice(0, colon)).trim()
-  const flow = colon === -1 ? '' : rest.slice(colon + 1).trim()
-
-  if (!from || !to) return null
-  return { from, to, flow }
-}
-
-/** Agrupa los hechos `sbc.*` por blueprint. Un workspace puede tener varios. */
-export function collectBlueprints(facts = []) {
-  const byId = new Map()
-  const entry = (id) => {
-    if (!byId.has(id)) byId.set(id, { sbcId: id, contexts: [], globals: [], crossings: [], tracer: '' })
-    return byId.get(id)
-  }
-
-  for (const fact of facts) {
-    if (!fact || typeof fact.key !== 'string') continue
-    const value = String(fact.value ?? '').trim()
-
-    let m = fact.key.match(CONTEXTS_KEY_PATTERN)
-    if (m) {
-      entry(m[1]).contexts = value.split(',').map((s) => s.trim()).filter(Boolean)
-      continue
-    }
-    m = fact.key.match(NEVER_KEY_PATTERN)
-    if (m) {
-      entry(m[1]).globals.push({ tag: `${m[1]}:never.${m[2]}`, statement: value })
-      continue
-    }
-    m = fact.key.match(CROSSING_KEY_PATTERN)
-    if (m) {
-      entry(m[1]).crossings.push({ tag: `${m[1]}:crossing.${m[2]}`, raw: value, parsed: parseCrossingValue(value) })
-      continue
-    }
-    m = fact.key.match(TRACER_KEY_PATTERN)
-    if (m) entry(m[1]).tracer = value
-  }
-
-  return [...byId.values()].sort((a, b) => a.sbcId.localeCompare(b.sbcId))
-}
+// Re-exported: leer los hechos `sbc.*` y darles forma se separó a
+// `blueprint-facts.mjs` el 2026-09-27, cuando la lectura de la sucesión entre
+// contratos llevó a ESTE archivo a 336 LOC contra el Invariante 5 —ya venía en
+// 290, o sea al borde—. El corte es real y la cabecera de `blueprint-facts.mjs`
+// lo argumenta; acá va sólo el re-export para que los llamadores no cambien.
+export {
+  CONTEXTS_KEY_PATTERN,
+  NEVER_KEY_PATTERN,
+  CROSSING_KEY_PATTERN,
+  TRACER_KEY_PATTERN,
+  PREDECESSOR_KEY_PATTERN,
+  SBC_ID_IN_VALUE,
+  parseCrossingValue,
+  collectBlueprints,
+} from './blueprint-facts.mjs'
 
 /** Normaliza para comparar polaridad: quita el cuantificador y baja a minúsculas. */
 function subjectOf(statement) {

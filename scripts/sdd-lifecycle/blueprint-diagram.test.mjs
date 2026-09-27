@@ -38,7 +38,7 @@ const withCrossings = (n = 1) => ({
   })),
 })
 
-describe('diagramObligation — tres estados, no un booleano', () => {
+describe('diagramObligation — cuatro estados, no un booleano', () => {
   it('sin cruces la obligación NO EXISTE', () => {
     const o = diagramObligation({ crossings: [] })
     assert.equal(o.status, 'not-required')
@@ -68,6 +68,53 @@ describe('diagramObligation — tres estados, no un booleano', () => {
     const none = diagramObligation({ crossings: [] })
     const owed = diagramObligation(withCrossings(), { archifyAvailable: false })
     assert.notEqual(none.status, owed.status)
+  })
+
+  // ── La sucesión (2026-09-27) ──────────────────────────────────────────────
+
+  it('un contrato SUCEDIDO no debe diagramas, ni con cruces ni con Archify', () => {
+    // El caso que motivó esto: `SBC-2026-002` declara al `001` como predecesor, y
+    // la compuerta exigía igual los diagramas del antecesor —un diseño
+    // pre-multitenant que ya no existe—. Producirlos documentaría una frontera
+    // que nadie puede usar, y un artefacto viejo se cree.
+    const o = diagramObligation(
+      { sbcId: 'SBC-2026-001', crossings: withCrossings(6).crossings, supersededBy: 'SBC-2026-002' },
+      { archifyAvailable: true },
+    )
+
+    assert.equal(o.status, 'superseded')
+    assert.equal(o.enforce, false, 'un contrato sucedido no puede bloquear la aprobación')
+    assert.equal(o.crossings, 6, 'la cuenta se sigue reportando: dice cuántos cruces quedaron históricos')
+  })
+
+  it('nombra al sucesor, porque la dispensa tiene que ser auditable', () => {
+    // La obligación se anula, y una anulación sin autor no se puede revisar. El
+    // reporte dice quién sucedió al contrato.
+    const o = diagramObligation({ sbcId: 'SBC-2026-001', crossings: [{}], supersededBy: 'SBC-2026-002' })
+
+    assert.match(o.reason, /SBC-2026-002/)
+  })
+
+  it('sucedido y sin cruces NO son el mismo estado', () => {
+    // `not-required` dice "no aplica"; `superseded` dice "aplicaba y dejó de
+    // aplicar". Colapsarlos borraría del reporte la razón por la que un contrato
+    // con cruces no debe nada.
+    const none = diagramObligation({ crossings: [] })
+    const sucedido = diagramObligation({ crossings: [], supersededBy: 'SBC-2026-002' })
+
+    assert.notEqual(none.status, sucedido.status)
+  })
+
+  it('sucedido gana sobre unmet: no se reporta una deuda ya dispensada', () => {
+    // Sin Archify y con cruces propios, `unmet` diría "falta el diagrama". Pero si
+    // el contrato fue sucedido, ese diagrama no falta: no corresponde. El orden de
+    // las guardas es la decisión, no un detalle de implementación.
+    const o = diagramObligation(
+      { sbcId: 'SBC-2026-001', crossings: withCrossings(2).crossings, supersededBy: 'SBC-2026-002' },
+      { archifyAvailable: false },
+    )
+
+    assert.equal(o.status, 'superseded')
   })
 
   it('cuenta los cruces, porque el conteo ES el disparador', () => {
