@@ -216,8 +216,8 @@ console.log('▶ [Fase 4: /sdd-verify] Stress testing Mechanical Union, Diagnost
 // hand-written trace. Falls back to a fixture only if the capture failed.
 const rawCrash = realRun.ok ? realRun.failing : FALLBACK_CRASH
 const distilledCrash = distillTestOutput(rawCrash)
-const rawCrashTokens = Math.round(rawCrash.length / 4)
-const optCrashTokens = Math.round(distilledCrash.length / 4)
+const rawCrashTokens = estimateTokens(rawCrash)
+const optCrashTokens = estimateTokens(distilledCrash)
 
 // Stress 4.2: Mechanical Set Union consolidating 4 simultaneous defect reports in 0 tokens
 const unified = unifyVerificationReports(DEFECT_REPORTS)

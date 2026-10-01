@@ -23,6 +23,26 @@ describe('estimateTokens', () => {
     assert.equal(estimateTokens(''), 0)
     assert.equal(estimateTokens(null), 0)
   })
+
+  // Las longitudes múltiplo de 4 no fijan la POLÍTICA de redondeo: con 400,
+  // `round`, `ceil` y `floor` dan 100, así que un cambio de `Math.round` a
+  // `Math.ceil` pasaba los tres asserts de arriba sin que nada lo notara.
+  //
+  // Estos dos casos sí la fijan, y hacen falta LOS DOS:
+  //   401 → 100.25 · round 100 ≠ ceil 101   → excluye `ceil`
+  //   402 → 100.5  · round 101 ≠ floor 100  → excluye `floor`
+  // Juntos dejan `round` como la única de las tres que satisface ambos.
+  it('pins the rounding policy with a length that is not a multiple of four', () => {
+    assert.equal(estimateTokens('a'.repeat(401)), 100, 'acá ceil daría 101')
+    assert.equal(estimateTokens('a'.repeat(402)), 101, 'acá floor daría 100')
+  })
+
+  it('un valor no string se coerciona en vez de lanzar', () => {
+    // `String(text ?? '')`: el `??` cubre null/undefined, y el resto lo hace `String`.
+    // Un objeto sin `length` debe dar 0, no explotar dentro de un gate.
+    assert.equal(estimateTokens(undefined), 0)
+    assert.equal(estimateTokens(1234), 1)
+  })
 })
 
 describe('ledger accounting', () => {

@@ -45,6 +45,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { scanNonStructural } from './code-scanner.mjs'
+import { estimateTokens } from '../sdd-lifecycle/token-accounting.mjs'
 
 /**
  * ¿La llave en `{` abre una FORMA —una lista de import, un tipo, un objeto— y no
@@ -203,8 +204,8 @@ export async function main() {
   const skeleton = skeletonizeCode(raw)
 
   if (args.includes('--stats')) {
-    const rawTokens = Math.round(raw.length / 4)
-    const skelTokens = Math.round(skeleton.length / 4)
+    const rawTokens = estimateTokens(raw)
+    const skelTokens = estimateTokens(skeleton)
     const saved = Math.max(0, rawTokens - skelTokens)
     const pct = rawTokens > 0 ? ((saved / rawTokens) * 100).toFixed(1) : 0
     process.stdout.write(`--- AST-Lens Compression Stats ---\n`)
