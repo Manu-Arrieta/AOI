@@ -2216,10 +2216,17 @@ fi
 # Sin el init, el proyecto es el único inyector y lleva también compact y end.
 # Una máquina que ya lo tenía no se toca: el wrapper sigue haciéndose a un lado.
 info "ICM → hooks del proyecto (.claude/settings.json, .github/hooks/): sin icm init --mode hook"
-info "      Codex, Gemini y OpenCode no reciben hooks de ICM: no son harnesses de AOI"
-# Copilot CLI lee ~/.copilot y .github/hooks/ en camelCase con clave `bash`
-# (docs de GitHub); las declaraciones de AOI están en el formato de VS Code.
-info "      Copilot CLI tampoco: ICM ya no escribe ~/.copilot/settings.json"
+# Copilot CLI no tiene equivalente: los hooks de `.github/hooks/` no
+# dispararon en `copilot -p` desde un repo no confiado, en ninguno de los dos
+# formatos, y los de ~/.copilot/settings.json sí. Ese init era lo único que se
+# los daba, así que AOI escribe los mismos cuatro, fusionando. Con AOI_ICM_DB
+# el módulo no escribe nada, como icm init no corre.
+if COPILOT_ICM_OUT=$(node "$SCRIPT_DIR/scripts/conf/copilot-cli-icm-hooks.mjs" --icm "$(command -v icm)" 2>&1); then
+  ok "$COPILOT_ICM_OUT"
+else
+  warn "$COPILOT_ICM_OUT"
+fi
+info "Codex, Gemini y OpenCode no reciben hooks de ICM: no son harnesses de AOI"
 icm init --mode skill 2>/dev/null && ok "ICM → Skills installed" || warn "ICM skills skipped"
 # `icm init --mode cli` writes rule files for every tool it knows, so it can
 # leave a .windsurfrules behind in a workspace that does not use Windsurf.
