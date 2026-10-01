@@ -36,18 +36,87 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { isDevelopmentRepo } from './governed-paths.mjs'
 
-/** Pasos en orden. Puro y exportado para poder afirmarlo sin pagar la corrida. */
-export function planInstalledSuite(repoRoot, workDir) {
+/**
+ * Pasos en orden. Puro y exportado para poder afirmarlo sin pagar la corrida.
+ *
+ * `icmEnv` va a LOS TRES pasos, no sólo al instalador: `pnpm test` dentro de la
+ * instalación también llega a `icm` (provider-store, memory-sync y el guard de
+ * memoirs lo ejecutan por nombre), y aislar sólo el primer paso dejaría la misma
+ * fuga dos pasos más abajo.
+ */
+export function planInstalledSuite(repoRoot, workDir, icmEnv = null) {
+  const env = icmEnv ? { ...process.env, ...icmEnv } : undefined
   return [
     {
       label: 'install',
       command: 'bash',
       args: [path.join(repoRoot, 'setup.sh'), '--yes', workDir],
       cwd: repoRoot,
+      env,
     },
-    { label: 'deps', command: 'pnpm', args: ['install'], cwd: workDir },
-    { label: 'suite', command: 'pnpm', args: ['test'], cwd: workDir },
+    { label: 'deps', command: 'pnpm', args: ['install'], cwd: workDir, env },
+    { label: 'suite', command: 'pnpm', args: ['test'], cwd: workDir, env },
   ]
+}
+
+/** El primer ejecutable `name` del PATH, o null. */
+export function findExecutable(name, searchPath = process.env.PATH ?? '') {
+  for (const dir of searchPath.split(path.delimiter)) {
+    if (!dir) continue
+    const candidate = path.join(dir, name)
+    try {
+      fs.accessSync(candidate, fs.constants.X_OK)
+      if (fs.statSync(candidate).isFile()) return candidate
+    } catch {}
+  }
+  return null
+}
+
+/**
+ * El shim de `icm` aislado, tal cual lo escribe `setup.sh`.
+ *
+ * Se lee del instalador en vez de copiarlo acá: son dos lugares que tienen que
+ * aislar con la MISMA regla (`--db` siempre, `icm init` nunca), y una copia que
+ * derive reabriría la fuga en uno solo de los dos. Esta compuerta corre
+ * únicamente donde `setup.sh` existe, así que leerlo no agrega dependencia.
+ */
+export function isolatedIcmShim(repoRoot) {
+  const setup = fs.readFileSync(path.join(repoRoot, 'setup.sh'), 'utf8')
+  const open = "<<'AOI_ICM_SHIM'\n"
+  const from = setup.indexOf(open)
+  const to = setup.indexOf('\nAOI_ICM_SHIM\n', from)
+  if (from === -1 || to === -1) throw new Error('setup.sh ya no define el shim AOI_ICM_SHIM')
+  return setup.slice(from + open.length, to + 1)
+}
+
+/**
+ * Base de ICM y `icm` aislados para una corrida.
+ *
+ * POR QUÉ: esta compuerta corría `setup.sh` contra el `icm` real. Medido el
+ * 2026-09-30: ~35 topics `aoi-*-context` de corridas descartables vivían en la
+ * base real del desarrollador, y cada corrida ejecutaba
+ * `icm init --mode hook|skill|cli` contra su `~/.claude/`.
+ *
+ * Devuelve null si no hay `icm` real: sin él no hay a qué reenviar, y el
+ * llamador tiene que negarse antes que dejar que el instalador lo instale y
+ * escriba en la base global.
+ */
+export function isolatedIcm(repoRoot, { realIcm = findExecutable('icm') } = {}) {
+  if (!realIcm) return null
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-installed-suite-icm-'))
+  const bin = path.join(dir, 'bin')
+  fs.mkdirSync(bin)
+  fs.writeFileSync(path.join(bin, 'icm'), isolatedIcmShim(repoRoot), { mode: 0o755 })
+  const db = path.join(dir, 'icm.db')
+  return {
+    dir,
+    db,
+    env: {
+      PATH: `${bin}${path.delimiter}${process.env.PATH ?? ''}`,
+      AOI_ICM_DB: db,
+      AOI_ICM_REAL: realIcm,
+    },
+  }
 }
 
 /**
@@ -61,15 +130,15 @@ export function makeWorkDir(prefix = 'aoi-installed-suite-') {
 }
 
 const ejecutar = (step) =>
-  spawnSync(step.command, step.args, { cwd: step.cwd, encoding: 'utf8', shell: false })
+  spawnSync(step.command, step.args, { cwd: step.cwd, env: step.env, encoding: 'utf8', shell: false })
 
 /**
  * Corre el plan y devuelve el primer paso que falló, o null si pasaron todos.
  * @param {object} opts
  * @param {(step: object) => {status: number|null, stdout?: string, stderr?: string}} [opts.run]
  */
-export function runInstalledSuite({ repoRoot, workDir, run = ejecutar } = {}) {
-  const pasos = planInstalledSuite(repoRoot, workDir)
+export function runInstalledSuite({ repoRoot, workDir, icmEnv = null, run = ejecutar } = {}) {
+  const pasos = planInstalledSuite(repoRoot, workDir, icmEnv)
   const resultados = []
   for (const step of pasos) {
     const r = run(step)
@@ -93,18 +162,28 @@ function main() {
     process.exit(0)
   }
 
+  const icm = isolatedIcm(repoRoot)
+  if (!icm) {
+    console.error('❌ No hay `icm` en el PATH: sin él no hay base aislada posible, y el')
+    console.error('   instalador lo instalaría y escribiría en la base real. Instalalo primero.')
+    process.exit(1)
+  }
+
   const keep = process.argv.includes('--keep')
   const workDir = makeWorkDir()
   console.log(`Instalación bajo prueba: ${workDir}`)
+  console.log(`ICM aislado: ${icm.db}`)
 
-  const { ok, failed, resultados, output } = runInstalledSuite({ repoRoot, workDir })
+  const { ok, failed, resultados, output } = runInstalledSuite({ repoRoot, workDir, icmEnv: icm.env })
 
   for (const r of resultados) {
     console.log(`  ${r.status === 0 ? '✅' : '❌'} ${r.label} → exit ${r.status}`)
   }
 
-  if (!keep) fs.rmSync(workDir, { recursive: true, force: true })
-  else console.log(`(conservado por --keep: ${workDir})`)
+  if (!keep) {
+    fs.rmSync(workDir, { recursive: true, force: true })
+    fs.rmSync(icm.dir, { recursive: true, force: true })
+  } else console.log(`(conservado por --keep: ${workDir} · ${icm.dir})`)
 
   if (!ok) {
     console.error(`\n❌ La suite de AOI no pasa en una instalación real: falló \`${failed}\`.`)

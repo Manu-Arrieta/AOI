@@ -52,6 +52,28 @@ describe('el plan corre el instalador y después la suite del producto instalado
   })
 })
 
+describe('el aislamiento de ICM llega a los tres pasos', () => {
+  // Medido el 2026-09-30: ~35 topics de corridas descartables en la base real
+  // del desarrollador, porque ningún paso llevaba una base propia. `pnpm test`
+  // dentro de la instalación también ejecuta `icm`, así que aislar sólo el
+  // instalador no alcanza.
+  const icmEnv = { PATH: '/shim bin:/usr/bin', AOI_ICM_DB: '/tmp/x y/icm.db', AOI_ICM_REAL: '/opt/icm' }
+
+  it('cada paso recibe AOI_ICM_DB, AOI_ICM_REAL y el PATH con el shim delante', () => {
+    for (const step of planInstalledSuite(REPO, WORK, icmEnv)) {
+      assert.equal(step.env?.AOI_ICM_DB, icmEnv.AOI_ICM_DB, `${step.label} sin base aislada`)
+      assert.equal(step.env.AOI_ICM_REAL, icmEnv.AOI_ICM_REAL)
+      assert.equal(step.env.PATH, icmEnv.PATH)
+    }
+  })
+
+  it('runInstalledSuite entrega ese entorno al ejecutor', () => {
+    const vistos = []
+    runInstalledSuite({ repoRoot: REPO, workDir: WORK, icmEnv, run: (s) => (vistos.push(s.env?.AOI_ICM_DB), { status: 0 }) })
+    assert.deepEqual(vistos, Array(3).fill(icmEnv.AOI_ICM_DB))
+  })
+})
+
 describe('un paso rojo pone roja a la compuerta', () => {
   const okRun = () => ({ status: 0 })
 
