@@ -5,6 +5,7 @@ import path from 'node:path'
 import { describe, it } from 'node:test'
 import {
   claudeEntry,
+  dedupsAtRuntime,
   findIcm,
   icmMode,
   matcherCovers,
@@ -45,7 +46,7 @@ describe('claudeEntry: lo que se escribe para Claude Code', () => {
     // Regresión: 42-43 disparos × 4 hooks fallaron con "No such file or
     // directory" porque `bash .github/...` resolvía contra el cwd del shell.
     const c = claudeEntry('SessionStart', { command: 'bash .github/scripts/icm-hook.sh start', timeout: 10 })
-    assert.equal(c.command, 'bash "${CLAUDE_PROJECT_DIR:-.}/.github/scripts/icm-hook.sh" start')
+    assert.equal(c.command, 'bash "${CLAUDE_PROJECT_DIR:-.}/.github/scripts/icm-hook.sh" start claude')
     assert.equal(c.timeout, 10)
     assert.equal(scriptOf(c.command).script, '${CLAUDE_PROJECT_DIR:-.}/.github/scripts/icm-hook.sh')
   })
@@ -104,7 +105,7 @@ describe('el scope de usuario se lee y nunca se escribe', () => {
   })
 })
 
-describe('planClaude decide la fuente única de cada inyección', () => {
+describe('planClaude no depende de la máquina que lo corre', () => {
   const icmJson = {
     source: '.github/hooks/icm.json',
     hooks: {
@@ -114,25 +115,26 @@ describe('planClaude decide la fuente única de cada inyección', () => {
     },
   }
 
-  it('delega en el scope de usuario lo que `icm init --mode hook` ya registró', () => {
-    // Regresión de A1/A2: el proyecto volvía a disparar el mismo modo y
-    // UserPromptSubmit inyectaba dos veces el recall en cada prompt.
-    const dir = tmp()
-    const bin = path.join(dir, 'icm')
-    fs.writeFileSync(bin, '#!/bin/sh\n')
-    const user = userScope(bin, { SessionStart: ['start'], UserPromptSubmit: ['prompt'] })
-    const plan = planClaude([icmJson], { userHooks: user })
-    const status = Object.fromEntries(plan.map((p) => [p.icmMode, p.status]))
-    assert.deepEqual(status, { start: 'user-scope', post: 'project', prompt: 'user-scope' })
-    fs.rmSync(dir, { recursive: true, force: true })
-  })
-
-  it('sin scope de usuario, todo va al proyecto', () => {
-    assert.ok(planClaude([icmJson]).every((p) => p.status === 'project'))
+  it('lleva cada modo de ICM al proyecto, con el dialecto que se omite solo al disparar', () => {
+    // Regresión: el plan dejaba fuera los modos que el scope de usuario de la
+    // máquina disparaba, y el settings versionado salía sin ICM. En un clon
+    // sin `icm init --mode hook`, Claude Code corría sin ninguna inyección.
+    const plan = planClaude([icmJson])
+    assert.deepEqual(
+      plan.map((p) => p.icmMode),
+      ['start', 'post', 'prompt'],
+    )
+    assert.ok(plan.every((p) => dedupsAtRuntime(p.command)), plan.map((p) => p.command).join('\n'))
   })
 
   it('una declaración ilegible no aporta entradas', () => {
     assert.deepEqual(planClaude([{ source: 'x', hooks: null }]), [])
+  })
+
+  it('sólo el wrapper con `claude` se omite solo; el de Copilot y el binario directo, no', () => {
+    assert.ok(dedupsAtRuntime('bash "${CLAUDE_PROJECT_DIR:-.}/.github/scripts/icm-hook.sh" prompt claude'))
+    assert.ok(!dedupsAtRuntime('bash .github/scripts/icm-hook.sh prompt'))
+    assert.ok(!dedupsAtRuntime('/u/bin/icm hook prompt'))
   })
 })
 

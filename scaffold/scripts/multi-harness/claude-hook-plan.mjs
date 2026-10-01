@@ -28,8 +28,13 @@
  *      file, it runs once") no aplicaba: UserPromptSubmit inyectó 270 164 B
  *      duplicados en 155 prompts (~67k tokens) y SessionStart 97 151 B en 25
  *      arranques (~24k), entre `icm-hook.sh start` y session-init-hook.sh.
+ *      Dejar esos modos fuera del proyecto según la máquina que corría el
+ *      instalador hizo del archivo versionado algo distinto en cada máquina y
+ *      dejó sin ICM a todo clon sin `icm init`. La traducción es la misma en
+ *      todas partes y `icm-hook.sh <modo> claude` se omite AL DISPARAR si el
+ *      scope de usuario ya corre ese modo.
  *
- * El scope de usuario se LEE para deduplicar contra él; jamás se escribe.
+ * El scope de usuario sólo lo lee la auditoría, para avisar; jamás se escribe.
  */
 
 import fs from 'node:fs'
@@ -48,7 +53,7 @@ export const MATCHER = {
 const PROJECT_DIR = '${CLAUDE_PROJECT_DIR:-.}'
 
 /** Scripts que hablan más de un dialecto: el argumento que los pone en el de Claude. */
-const CLAUDE_DIALECT = { '.github/scripts/rtk-hook.sh': 'claude' }
+const CLAUDE_DIALECT = { '.github/scripts/rtk-hook.sh': 'claude', '.github/scripts/icm-hook.sh': 'claude' }
 
 /** Scripts cuyo evento de Copilot no significa lo mismo en Claude Code. */
 const CLAUDE_EVENT = { '.github/scripts/session-close-hook.sh': 'SessionEnd' }
@@ -169,25 +174,25 @@ export function userIcmModes(userHooks, event, matcher) {
 }
 
 /**
- * Cada entrada declarada, traducida, con su destino: `project` se escribe en
- * `.claude/settings.json`; `user-scope` ya la dispara el settings de usuario.
+ * Cada entrada declarada, traducida a Claude Code. No depende de la máquina:
+ * dos máquinas con el mismo árbol escriben el mismo `.claude/settings.json`.
  */
-export function planClaude(declarations, { userHooks = {} } = {}) {
+export function planClaude(declarations) {
   const plan = []
   for (const { source, hooks } of declarations) {
     if (!hooks) continue
     for (const [event, entries] of Object.entries(hooks)) {
       for (const entry of entries ?? []) {
         if (!entry?.command) continue
-        const c = claudeEntry(event, entry)
-        const mode = icmMode(entry.command)
-        const delegated = mode !== null && userIcmModes(userHooks, c.event, c.matcher).has(mode)
-        plan.push({ source, declared: entry.command, ...c, icmMode: mode, status: delegated ? 'user-scope' : 'project' })
+        plan.push({ source, declared: entry.command, ...claudeEntry(event, entry), icmMode: icmMode(entry.command) })
       }
     }
   }
   return plan
 }
+
+/** ¿El comando se omite solo cuando el scope de usuario ya dispara su modo? */
+export const dedupsAtRuntime = (command) => /icm-hook\.sh["']?\s+[a-z]+\s+claude\s*$/.test(command ?? '')
 
 /** Los handlers de un settings de Claude Code, aplanados. */
 export function settingsHandlers(settings) {

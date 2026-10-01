@@ -11,6 +11,14 @@
  * inyectó dos veces el mismo `icm hook prompt` (~67k tokens). Cada regla de
  * `claudeViolations` es uno de esos defectos; la duplicación entre scopes es un
  * aviso, con los bytes medidos, porque el scope de usuario no es de AOI.
+ *
+ * Una declaración cuenta como cableada sólo si el settings del PROYECTO la
+ * lleva. La versión anterior daba ✅ a una de ICM que no cableaba nadie —la
+ * guardaba aparte, sin marcarla faltante— y el archivo versionado, generado en
+ * una máquina con `icm init --mode hook`, no llevaba ningún hook de ICM: en un
+ * clon sin ese scope de usuario Claude Code corría sin ICM y la auditoría
+ * salía 0. Que el scope de usuario ya dispare un modo lo resuelve
+ * `icm-hook.sh` al disparar, no la configuración.
  */
 
 import fs from 'node:fs'
@@ -18,6 +26,7 @@ import path from 'node:path'
 import {
   CLAUDE_SETTINGS,
   isRelative,
+  dedupsAtRuntime,
   planClaude,
   readDeclarations,
   readUserHooks,
@@ -70,25 +79,25 @@ export function claudeViolations(handlers, root) {
   return out
 }
 
-/** El mismo `icm hook <modo>` disparado desde los dos scopes en el mismo evento. */
+/**
+ * El mismo `icm hook <modo>` disparado desde los dos scopes en el mismo evento.
+ * `icm-hook.sh <modo> claude` no cuenta: se omite solo al disparar.
+ */
 export function duplicateInjections(userHooks, projectHandlers) {
   const dups = []
   for (const h of projectHandlers) {
     const mode = icmMode(h.command)
-    if (mode && userIcmModes(userHooks, h.event, h.matcher).has(mode)) dups.push({ event: h.event, mode, command: h.command })
+    if (!mode || dedupsAtRuntime(h.command)) continue
+    if (userIcmModes(userHooks, h.event, h.matcher).has(mode)) dups.push({ event: h.event, mode, command: h.command })
   }
   return dups
 }
 
-/**
- * @param {string} root
- * @param {{ userHooks?: object, installed?: boolean }} [opts]
- *   `installed`: un instalador corrió acá y prometió el cableado de ICM.
- */
-export function auditHookWiring(root, { userHooks = readUserHooks(), installed = false } = {}) {
+/** @param {string} root @param {{ userHooks?: object }} [opts] */
+export function auditHookWiring(root, { userHooks = readUserHooks() } = {}) {
   const declarations = readDeclarations(root)
   const handlers = settingsHandlers(readJson(path.join(root, CLAUDE_SETTINGS)))
-  const r = { declared: declarations.map((d) => d.source), wired: [], orphaned: [], broken: [], unwiredIcm: [], delegated: [] }
+  const r = { declared: declarations.map((d) => d.source), wired: [], orphaned: [], missing: [], broken: [], userScopeOnly: [], skippedAtRuntime: [] }
 
   for (const d of declarations) {
     for (const cmd of Object.values(d.hooks ?? {}).flat().map((e) => e?.command).filter(Boolean)) {
@@ -100,16 +109,18 @@ export function auditHookWiring(root, { userHooks = readUserHooks(), installed =
 
     // Una declaración vacía no está "cableada" por vacuidad, y media cadena de
     // hooks es una regla que dispara a veces: las dos cuentan como huérfanas.
-    const plan = planClaude([d], { userHooks })
+    const plan = planClaude([d])
     let missing = plan.length === 0
     for (const p of plan) {
-      if (p.status === 'user-scope') r.delegated.push(`${d.source} → ${p.event}: icm hook ${p.icmMode}`)
-      else if (handlers.some((h) => h.event === p.event && h.command === p.command)) continue
-      // Sin `icm init --mode hook` en esta máquina, el cableado de ICM depende
-      // de que corra install-hooks acá. En CI o en un clon fresco eso no es un
-      // defecto del árbol; en un workspace instalado sí, porque se prometió.
-      else if (p.icmMode && !installed) r.unwiredIcm.push(`${d.source} → ${p.event}: icm hook ${p.icmMode}`)
-      else missing = true
+      const covered = p.icmMode !== null && userIcmModes(userHooks, p.event, p.matcher).has(p.icmMode)
+      const what = `${d.source} → ${p.event}: ${p.icmMode ? `icm hook ${p.icmMode}` : p.command}`
+      if (handlers.some((h) => h.event === p.event && h.command === p.command)) {
+        if (covered && dedupsAtRuntime(p.command)) r.skippedAtRuntime.push(what)
+        continue
+      }
+      missing = true
+      // Esta máquina lo cubre; un clon sin `icm init --mode hook`, no.
+      ;(covered ? r.userScopeOnly : r.missing).push(what)
     }
     ;(missing ? r.orphaned : r.wired).push(d.source)
   }

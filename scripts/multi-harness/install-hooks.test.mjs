@@ -8,6 +8,7 @@ import { describe, it } from 'node:test'
 import { auditHookWiring, installClaudeHooks, readDeclarations, toClaudeSettings } from './install-hooks.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
+const CLI = path.join(REPO, 'scripts/multi-harness/install-hooks.mjs')
 
 function workspace(files) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-hooks-'))
@@ -171,21 +172,34 @@ describe('the audit detects an unwired declaration', () => {
   })
 })
 
-describe('the user scope is the single source of what it already injects', () => {
-  it('leaves out of the project every icm mode the user settings fire', () => {
-    // Regresión de A1: `icm init --mode hook` y `icm.json` disparaban el mismo
-    // `icm hook prompt` con otra cadena, y Claude Code no lo deduplicaba.
-    const decl = { source: 'icm', hooks: { UserPromptSubmit: [{ command: 'bash .github/scripts/icm-hook.sh prompt' }] } }
-    const user = { UserPromptSubmit: [{ hooks: [{ type: 'command', command: 'icm hook prompt' }] }] }
-    assert.deepEqual(toClaudeSettings([decl], { userHooks: user }).hooks, {})
-    assert.equal(toClaudeSettings([decl]).hooks.UserPromptSubmit[0].hooks.length, 1)
+describe('the tracked .claude/settings.json is the same on every machine', () => {
+  it('install-hooks writes the same bytes whatever the user scope fires', () => {
+    // Regresión: install-hooks dejaba fuera los modos de ICM que el settings
+    // de usuario de ESTA máquina disparaba. El archivo versionado salió sin
+    // ningún hook de ICM y, en otra máquina, correrlo cambiaba el archivo.
+    const write = (userSettings) => {
+      const root = workspace({ 'user/settings.json': JSON.stringify(userSettings) })
+      fs.cpSync(path.join(REPO, '.github/hooks'), path.join(root, '.github/hooks'), { recursive: true })
+      const r = spawnSync(process.execPath, [CLI, '--user-settings', path.join(root, 'user/settings.json')], {
+        cwd: root,
+        env: { ...process.env, CLAUDE_CONFIG_DIR: path.join(root, 'user') },
+        encoding: 'utf8',
+      })
+      assert.equal(r.status, 0, r.stderr)
+      const out = fs.readFileSync(path.join(root, '.claude/settings.json'), 'utf8')
+      clean(root)
+      return out
+    }
+    const icmUser = { hooks: { UserPromptSubmit: [{ hooks: [{ type: 'command', command: 'icm hook prompt' }] }] } }
+    const clean1 = write({})
+    assert.equal(write(icmUser), clean1)
+    assert.match(clean1, /icm-hook\.sh\\" prompt claude/)
   })
 })
 
 describe('the CLI refuses an argument it does not know', () => {
   // Regresión de D1: con `argv.includes('--audit')`, `--audti` corría la rama
   // que ESCRIBE `.claude/settings.json` y salía con 0.
-  const CLI = path.join(REPO, 'scripts/multi-harness/install-hooks.mjs')
   for (const args of [['--audti'], ['--audit', '--bogus'], ['--user-settings']]) {
     it(`exits 2 and writes nothing for ${args.join(' ')}`, () => {
       const root = workspace({ '.github/hooks/h.json': decl('PreToolUse', 'bash h.sh') })

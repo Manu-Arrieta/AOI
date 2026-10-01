@@ -43,10 +43,19 @@ printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","updatedInput":{"com
   { mode: 0o755 },
 )
 
-const env = { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH}` }
+// Un CLAUDE_CONFIG_DIR propio: icm-hook.sh lee el settings de usuario, y el de
+// esta máquina dispara `icm hook <modo>` (icm init --mode hook).
+const config = (name, hooks) => {
+  const dir = path.join(bin, name)
+  fs.mkdirSync(dir, { recursive: true })
+  fs.writeFileSync(path.join(dir, 'settings.json'), JSON.stringify({ hooks }))
+  return dir
+}
+const EMPTY = config('empty user', {})
+const env = { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH}`, CLAUDE_CONFIG_DIR: EMPTY }
 const stdinOf = (event) => sampleEvents(REPO).find((e) => e.event === event).stdin
-const run = (script, args, event, cwd = REPO) =>
-  spawnSync('bash', [path.join(SCRIPTS, script), ...args], { cwd, env, input: stdinOf(event), encoding: 'utf8' })
+const run = (script, args, event, cwd = REPO, extra = {}) =>
+  spawnSync('bash', [path.join(SCRIPTS, script), ...args], { cwd, env: { ...env, ...extra }, input: stdinOf(event), encoding: 'utf8' })
 const calls = () => (fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n').filter(Boolean) : [])
 
 describe('session-init-hook.sh', () => {
@@ -115,5 +124,97 @@ describe('PostToolUse reaches icm hook post once per tool call, with the event',
     const hookPost = calls().filter((c) => c.startsWith('icm hook post'))
     assert.equal(hookPost.length, 5)
     assert.ok(hookPost.every((c) => !c.endsWith(' stdin=0')), hookPost.join('\n'))
+  })
+})
+
+describe('icm-hook.sh <modo> claude: one injection per event on every machine', () => {
+  // Regresión: con los modos de ICM fuera del settings versionado, un clon
+  // sin `icm init --mode hook` no inyectaba nada; con ellos adentro y sin
+  // omitirse, esta máquina inyectaba dos veces (~67k tokens en 155 prompts).
+  const icm = path.join(bin, 'icm')
+  const MODES = [
+    ['start', 'SessionStart'],
+    ['pre', 'PreToolUse', 'Bash'],
+    ['post', 'PostToolUse'],
+    ['prompt', 'UserPromptSubmit'],
+  ]
+  const userScope = (command) =>
+    Object.fromEntries(MODES.map(([mode, event, matcher]) => [event, [{ ...(matcher ? { matcher } : {}), hooks: [{ type: 'command', command: command(mode) }] }]]))
+  // HOME con espacios y la ruta citada, como la escribe `icm init`.
+  const ICM_USER = config('user with icm', userScope((m) => `"${icm}" hook ${m}`))
+  const hookCalls = () => calls().filter((c) => c.startsWith('icm hook ')).map((c) => c.replace(/ stdin=\d+$/, ''))
+  const fire = (mode, configDir, dialect = ['claude'], extra = {}) =>
+    run('icm-hook.sh', [mode, ...dialect], MODES.find((m) => m[0] === mode)[1], REPO, { CLAUDE_CONFIG_DIR: configDir, ...extra })
+
+  for (const [mode] of MODES) {
+    it(`clean machine (empty user scope): the project fires icm hook ${mode}`, () => {
+      assert.equal(fire(mode, EMPTY).status, 0)
+      assert.deepEqual(hookCalls(), [`icm hook ${mode}`])
+    })
+
+    it(`this machine (user scope fires icm hook ${mode}): the project skips it`, () => {
+      const r = fire(mode, ICM_USER)
+      assert.equal(r.status, 0)
+      assert.equal(r.stdout, '')
+      assert.deepEqual(hookCalls(), [])
+    })
+  }
+
+  it('no user settings file at all is a clean machine', () => {
+    fire('prompt', path.join(bin, 'no such dir'))
+    assert.deepEqual(hookCalls(), ['icm hook prompt'])
+  })
+
+  it('Copilot (no dialect) always fires: the Claude user scope does not run under Copilot', () => {
+    fire('prompt', ICM_USER, [])
+    assert.deepEqual(hookCalls(), ['icm hook prompt'])
+  })
+
+  it('a user entry whose binary is gone covers nothing', () => {
+    fire('prompt', config('dead icm', userScope((m) => `/no/existe/icm hook ${m}`)))
+    assert.deepEqual(hookCalls(), ['icm hook prompt'])
+  })
+
+  it('a user matcher that does not cover Bash does not cover PreToolUse', () => {
+    fire('pre', config('edit only', { PreToolUse: [{ matcher: 'Edit', hooks: [{ command: `${icm} hook pre` }] }] }))
+    assert.deepEqual(hookCalls(), ['icm hook pre'])
+  })
+
+  it('another copy of this wrapper in the user scope does not count (it would skip too)', () => {
+    fire('prompt', config('wrapper', userScope((m) => `bash /x/.github/scripts/icm-hook.sh ${m} claude`)))
+    assert.deepEqual(hookCalls(), ['icm hook prompt'])
+  })
+
+  it('an unreadable user settings file fires (twice is the old defect; zero would be worse)', () => {
+    const dir = path.join(bin, 'broken user')
+    fs.mkdirSync(dir, { recursive: true })
+    fs.writeFileSync(path.join(dir, 'settings.json'), '{ roto')
+    fire('prompt', dir)
+    assert.deepEqual(hookCalls(), ['icm hook prompt'])
+  })
+
+  it('without jq, the node fallback decides the same', () => {
+    // PATH sin jq: sólo icm, node, y bash y cat (que usa el icm falso).
+    const which = (cmd) => spawnSync('sh', ['-c', `command -v ${cmd}`], { encoding: 'utf8' }).stdout.trim()
+    const bash = which('bash')
+    const nojq = path.join(bin, 'nojq')
+    fs.mkdirSync(nojq, { recursive: true })
+    for (const [name, target] of [['icm', icm], ['cat', which('cat')], ['bash', bash], ['node', process.execPath]]) {
+      fs.rmSync(path.join(nojq, name), { force: true })
+      fs.symlinkSync(target, path.join(nojq, name))
+    }
+    const go = (mode, dir) =>
+      spawnSync(bash, [path.join(SCRIPTS, 'icm-hook.sh'), mode, 'claude'], { env: { PATH: nojq, HOME: bin, CLAUDE_CONFIG_DIR: dir }, input: '{}', encoding: 'utf8' })
+    assert.equal(spawnSync(bash, ['-c', 'command -v jq'], { env: { PATH: nojq } }).status, 1)
+    assert.equal(go('prompt', ICM_USER).status, 0)
+    assert.deepEqual(hookCalls(), [])
+    go('prompt', EMPTY)
+    assert.deepEqual(hookCalls(), ['icm hook prompt'])
+  })
+
+  it('an unknown dialect fails without blocking the tool (exit 1, never 2)', () => {
+    const r = fire('pre', EMPTY, ['claud'])
+    assert.equal(r.status, 1)
+    assert.deepEqual(hookCalls(), [])
   })
 })

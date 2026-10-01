@@ -40,16 +40,17 @@ import { measureInjection } from './hook-simulation.mjs'
 export { auditHookWiring, readDeclarations }
 
 /**
- * Translates the declarations into Claude Code's settings shape. Entries the
- * user scope already fires (`icm init --mode hook`) are left out: writing them
- * again is what doubled every ICM injection.
+ * Translates the declarations into Claude Code's settings shape. The output
+ * depends on the tree alone: written from this machine's user scope, the
+ * tracked file carried no ICM hook and a clone without `icm init --mode hook`
+ * ran Claude Code with no ICM at all. The double injection that motivated
+ * leaving them out is resolved when the hook fires, by `icm-hook.sh`.
  *
  * @returns {{ hooks: object }}
  */
-export function toClaudeSettings(declarations, { userHooks = {} } = {}) {
+export function toClaudeSettings(declarations) {
   const hooks = {}
-  for (const p of planClaude(declarations, { userHooks })) {
-    if (p.status !== 'project') continue
+  for (const p of planClaude(declarations)) {
     hooks[p.event] ??= []
     const group = hooks[p.event].find((g) => g.matcher === p.matcher)
     const hook = { type: 'command', command: p.command }
@@ -67,9 +68,9 @@ export function toClaudeSettings(declarations, { userHooks = {} } = {}) {
  * Only the `hooks` key is replaced. Everything else — permissions, env, model
  * — belongs to the Owner and is left untouched, because an installer that
  * rewrites a settings file wholesale is the same mistake as an installer that
- * deletes a customised CLAUDE.md. The user settings are only READ.
+ * deletes a customised CLAUDE.md. The user settings are never read nor written.
  */
-export function installClaudeHooks(root, declarations, { userHooks = {} } = {}) {
+export function installClaudeHooks(root, declarations) {
   const target = path.join(root, CLAUDE_SETTINGS)
   let existing = {}
   if (fs.existsSync(target)) {
@@ -80,7 +81,7 @@ export function installClaudeHooks(root, declarations, { userHooks = {} } = {}) 
     }
   }
 
-  const merged = { ...existing, ...toClaudeSettings(declarations, { userHooks }) }
+  const merged = { ...existing, ...toClaudeSettings(declarations) }
   fs.mkdirSync(path.dirname(target), { recursive: true })
   fs.writeFileSync(target, `${JSON.stringify(merged, null, 2)}\n`)
   return CLAUDE_SETTINGS
@@ -151,11 +152,12 @@ function reportHookAudit(root, r, declarations) {
   console.log('  .github/hooks/ es la convención de Copilot: una declaración acá ya la carga.')
   console.log('  Lo que se audita es Claude Code y que los scripts existan y sean ejecutables.\n')
   for (const s of r.wired) console.log(`  ✅ ${s}`)
-  for (const s of r.delegated) console.log(`     ↳ ${s} — la dispara el settings de usuario (icm init --mode hook)`)
-  for (const s of r.orphaned) console.error(`  ❌ ${s} — no llega a Claude Code`)
+  for (const s of r.skippedAtRuntime) console.log(`     ↳ ${s} — acá lo dispara el settings de usuario; icm-hook.sh se omite al disparar`)
+  for (const s of r.orphaned) console.error(`  ❌ ${s} — no llega entera a Claude Code`)
+  for (const s of r.missing) console.error(`     ↳ ${s} — no la cablea ningún scope`)
+  for (const s of r.userScopeOnly) console.error(`     ↳ ${s} — sólo el scope de usuario de ESTA máquina; un clon sin icm init queda sin ella`)
   for (const s of r.broken) console.error(`  ❌ ${s}`)
   for (const s of r.violations) console.error(`  ❌ ${s}`)
-  for (const s of r.unwiredIcm) console.log(`  ⚠️  ${s} — sin cablear en este clon: correr install-hooks.mjs`)
 
   // Aviso y no falla: el scope de usuario no es de AOI. Pero los bytes van
   // medidos, porque "duplicado" sin magnitud no mueve a nadie a arreglarlo.
@@ -175,11 +177,11 @@ function main() {
     console.error(`${error}\nUso: install-hooks.mjs [--audit] [--user-settings <settings.json>]`)
     process.exit(2)
   }
-  const userHooks = readUserHooks(values['user-settings'] ?? userSettingsPath())
   const declarations = readDeclarations(root)
 
   if (values.audit) {
-    const r = auditHookWiring(root, { userHooks, installed: isInstalledWorkspace(root) })
+    const userHooks = readUserHooks(values['user-settings'] ?? userSettingsPath())
+    const r = auditHookWiring(root, { userHooks })
     const hooksFail = reportHookAudit(root, r, declarations)
     const gitGuardUnreachable = reportGitGuard(root, { audit: true })
 
@@ -198,7 +200,7 @@ function main() {
   }
 
   if (declarations.length > 0) {
-    const written = installClaudeHooks(root, declarations, { userHooks })
+    const written = installClaudeHooks(root, declarations)
     console.log(`✅ ${declarations.length} declaración(es) → ${written}`)
   } else {
     console.log('No hay declaraciones en .github/hooks/ — nada que cablear.')

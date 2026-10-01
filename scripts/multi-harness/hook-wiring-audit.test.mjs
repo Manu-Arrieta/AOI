@@ -96,25 +96,15 @@ describe('the shipped .claude/settings.json', () => {
     assert.ok(r.wired.length > 0)
   })
 
-  it('is exactly what install-hooks writes from the declarations (modulo ICM delegation)', () => {
-    // El archivo versionado no se edita a mano. Lo que no es ICM depende sólo
-    // del árbol; lo de ICM depende del scope de usuario de esta máquina.
+  it('is exactly what install-hooks writes from the declarations', () => {
+    // El archivo versionado no se edita a mano ni depende de la máquina: la
+    // versión anterior lo comparaba "módulo ICM", y así pasó un settings sin
+    // ningún hook de ICM.
     const root = workspace({})
     fs.cpSync(path.join(REPO, '.github/hooks'), path.join(root, '.github/hooks'), { recursive: true })
-    installClaudeHooks(root, readDeclarations(root), { userHooks: {} })
-    const strip = (s) =>
-      JSON.stringify(
-        Object.fromEntries(
-          Object.entries(s.hooks)
-            .map(([e, gs]) => [e, gs.map((g) => ({ ...g, hooks: g.hooks.filter((h) => !/icm-hook/.test(h.command)) }))])
-            .map(([e, gs]) => [e, gs.filter((g) => g.hooks.length > 0)])
-            .filter(([, gs]) => gs.length > 0)
-            .sort(([a], [b]) => a.localeCompare(b)),
-        ),
-      )
-    const fresh = JSON.parse(fs.readFileSync(path.join(root, '.claude/settings.json'), 'utf8'))
-    const shipped = JSON.parse(fs.readFileSync(path.join(REPO, '.claude/settings.json'), 'utf8'))
-    assert.equal(strip(shipped), strip(fresh))
+    installClaudeHooks(root, readDeclarations(root))
+    const fresh = fs.readFileSync(path.join(root, '.claude/settings.json'), 'utf8')
+    assert.equal(fs.readFileSync(path.join(REPO, '.claude/settings.json'), 'utf8'), fresh)
     clean(root)
   })
 })
@@ -134,23 +124,68 @@ describe('ICM injected from two scopes', () => {
     )
   })
 
-  it('counts as wired when the user scope fires it, and as a warning when nobody does outside an installed workspace', () => {
-    const root = workspace({
-      '.github/hooks/icm.json': JSON.stringify({ hooks: { UserPromptSubmit: [{ command: 'bash .github/scripts/icm-hook.sh prompt' }] } }),
+  it('is not reported for the wrapper that skips itself when the user scope fires the mode', () => {
+    const d = duplicateInjections(user, [
+      { event: 'UserPromptSubmit', command: 'bash "${CLAUDE_PROJECT_DIR:-.}/.github/scripts/icm-hook.sh" prompt claude' },
+    ])
+    assert.deepEqual(d, [])
+  })
+
+  describe('an ICM declaration the project settings do not carry is never green', () => {
+    // Regresión: el settings versionado se generó en una máquina con
+    // `icm init --mode hook` y no llevaba ningún hook de ICM. La auditoría
+    // guardaba esas entradas aparte sin marcarlas faltantes: con un scope de
+    // usuario VACÍO imprimía ✅ icm.json, "Cada declaración llega..." y exit 0,
+    // mientras Claude Code no recibía ninguna inyección de ICM.
+    const decl = JSON.stringify({ hooks: { UserPromptSubmit: [{ command: 'bash .github/scripts/icm-hook.sh prompt' }] } })
+    const files = (projectSettings) => ({
+      '.github/hooks/icm.json': decl,
       '.github/scripts/icm-hook.sh': '#!/usr/bin/env bash\n',
-      '.claude/settings.json': settings({}),
+      '.claude/settings.json': settings(projectSettings),
+      'empty-user.json': '{}',
     })
-    const delegated = auditHookWiring(root, { userHooks: user })
-    assert.deepEqual(delegated.wired, ['.github/hooks/icm.json'])
-    assert.equal(delegated.delegated.length, 1)
+    const cli = path.join(REPO, 'scripts/multi-harness/install-hooks.mjs')
+    const audit = (root, userFile) =>
+      spawnSync(process.execPath, [cli, '--audit', '--user-settings', userFile], { cwd: root, encoding: 'utf8' })
 
-    const ci = auditHookWiring(root, { userHooks: {} })
-    assert.deepEqual(ci.orphaned, [])
-    assert.equal(ci.unwiredIcm.length, 1)
+    it('neither scope wires it: orphaned, the CLI exits 1 and prints no ✅ for it', () => {
+      const root = workspace(files({}))
+      const r = auditHookWiring(root, { userHooks: {} })
+      assert.deepEqual(r.orphaned, ['.github/hooks/icm.json'])
+      assert.equal(r.missing.length, 1)
+      const res = audit(root, path.join(root, 'empty-user.json'))
+      assert.equal(res.status, 1)
+      assert.doesNotMatch(res.stdout, /✅ \.github\/hooks\/icm\.json/)
+      assert.doesNotMatch(res.stdout, /Cada declaración llega/)
+      clean(root)
+    })
 
-    // Donde un instalador corrió, el cableado se prometió: falta = falla.
-    assert.deepEqual(auditHookWiring(root, { userHooks: {}, installed: true }).orphaned, ['.github/hooks/icm.json'])
-    clean(root)
+    it('only this machine\'s user scope wires it: still orphaned, named as machine-dependent', () => {
+      const root = workspace(files({}))
+      const r = auditHookWiring(root, { userHooks: user })
+      assert.deepEqual(r.orphaned, ['.github/hooks/icm.json'])
+      assert.equal(r.userScopeOnly.length, 1)
+      clean(root)
+    })
+
+    it('the project carries it: wired in both machine profiles, skipped at runtime where the user scope fires it', () => {
+      const root = workspace({})
+      fs.writeFileSync(path.join(root, 'empty-user.json'), '{}')
+      fs.mkdirSync(path.join(root, '.github/hooks'), { recursive: true })
+      fs.writeFileSync(path.join(root, '.github/hooks/icm.json'), decl)
+      fs.mkdirSync(path.join(root, '.github/scripts'), { recursive: true })
+      fs.writeFileSync(path.join(root, '.github/scripts/icm-hook.sh'), '#!/usr/bin/env bash\n', { mode: 0o755 })
+      installClaudeHooks(root, readDeclarations(root))
+      const cleanMachine = auditHookWiring(root, { userHooks: {} })
+      const thisMachine = auditHookWiring(root, { userHooks: user })
+      assert.deepEqual(cleanMachine.wired, ['.github/hooks/icm.json'])
+      assert.deepEqual(thisMachine.wired, ['.github/hooks/icm.json'])
+      assert.deepEqual(cleanMachine.skippedAtRuntime, [])
+      assert.equal(thisMachine.skippedAtRuntime.length, 1)
+      assert.deepEqual(thisMachine.duplicates, [])
+      assert.equal(audit(root, path.join(root, 'empty-user.json')).status, 0)
+      clean(root)
+    })
   })
 
   it('the audit CLI exits 1 on the legacy settings and 0 after install-hooks rewrites them', () => {

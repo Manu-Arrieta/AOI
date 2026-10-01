@@ -24,6 +24,7 @@
 
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { userSettingsPath } from './claude-hook-plan.mjs'
@@ -134,6 +135,21 @@ export function simulate({ scopes, events, cwd, env = process.env, projectDir, i
   // Sin shim, el `icm` real corre en sólo-lectura: `hook post`, `end` y
   // `health` escriben en la base, y una medición no tiene por qué ensuciarla.
   else runEnv.ICM_READONLY = '1'
+  // `icm-hook.sh <modo> claude` decide si se omite leyendo el settings de
+  // usuario. Sin esto lo leía de la máquina real: la simulación medía un scope
+  // y el script decidía con otro.
+  const configDir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-sim-config-'))
+  const user = scopes.find((s) => s.name === 'user')?.settings ?? {}
+  fs.writeFileSync(path.join(configDir, 'settings.json'), JSON.stringify(user))
+  runEnv.CLAUDE_CONFIG_DIR = configDir
+  try {
+    return runEvents({ scopes, events, cwd, runEnv, icmBin, timeoutMs })
+  } finally {
+    fs.rmSync(configDir, { recursive: true, force: true })
+  }
+}
+
+function runEvents({ scopes, events, cwd, runEnv, icmBin, timeoutMs }) {
   return events.map(({ event, toolName, stdin }) => {
     const runs = handlersFor(scopes, event, toolName).map((h) => {
       const r = spawnSync('bash', ['-c', withIcm(h.command, icmBin)], { cwd, env: runEnv, input: stdin, encoding: 'utf8', timeout: timeoutMs })

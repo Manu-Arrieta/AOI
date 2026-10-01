@@ -15,7 +15,8 @@
 #
 # No llama a `icm hook stop`: ese subcomando no existe (`icm hook --help`;
 # exit 2, silenciado con `|| true` desde siempre). El resumen de sesión real es
-# `icm hook end`, y ya lo dispara el settings de usuario de `icm init --mode hook`.
+# `icm hook end`, y lo dispara el settings de usuario donde corrió
+# `icm init --mode hook`; `icm.json` no lo declara, ni lo declaraba en main.
 
 set -euo pipefail
 

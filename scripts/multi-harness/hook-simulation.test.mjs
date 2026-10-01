@@ -131,15 +131,22 @@ printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse",%s"updatedInput":{"c
       }
     }
   }
-  installClaudeHooks(project, declarations, { userHooks: user.hooks })
+  installClaudeHooks(project, declarations)
   const current = JSON.parse(fs.readFileSync(path.join(project, '.claude/settings.json'), 'utf8'))
+  // La primera versión de este arreglo: los modos que el scope de usuario de
+  // la máquina que corrió install-hooks ya disparaba, fuera del proyecto.
+  const machineDependent = {
+    hooks: Object.fromEntries(
+      Object.entries(current.hooks).map(([event, groups]) => [event, groups.map((g) => ({ ...g, hooks: g.hooks.filter((h) => !/icm-hook/.test(h.command)) }))]),
+    ),
+  }
 
   const env = { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH}` }
-  const run = (settings, cwd) =>
+  const run = (settings, cwd, userScope = user) =>
     Object.fromEntries(
       simulate({
         scopes: [
-          { name: 'user', settings: user },
+          { name: 'user', settings: userScope },
           { name: 'project', settings },
         ],
         events: sampleEvents(cwd),
@@ -154,10 +161,29 @@ printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse",%s"updatedInput":{"c
   const now = run(current, project)
   const beforeSub = run(legacy, path.join(project, '.github'))
   const nowSub = run(current, path.join(project, '.github'))
+  // Un clon sin `icm init --mode hook`: scope de usuario vacío.
+  const beforeClean = run(legacy, project, {})
+  const nowClean = run(current, project, {})
+  const machineDependentClean = run(machineDependent, project, {})
 
   it('UserPromptSubmit injects the recall once instead of twice', () => {
     assert.equal(before.UserPromptSubmit.stdoutBytes, 2000)
     assert.equal(now.UserPromptSubmit.stdoutBytes, 1000)
+  })
+
+  it('a clean machine (no user-scope icm hooks) still gets every injection exactly once', () => {
+    // Regresión: con los modos de ICM fuera del settings versionado, este
+    // perfil no recibía NINGUNA inyección de ICM.
+    assert.equal(machineDependentClean.UserPromptSubmit.stdoutBytes, 0)
+    assert.equal(machineDependentClean.SessionStart.stdoutBytes, '{"continue":true}\n'.length)
+    assert.equal(nowClean.UserPromptSubmit.stdoutBytes, 1000)
+    assert.equal(nowClean.SessionStart.stdoutBytes, 500 + '{"continue":true}\n'.length)
+    assert.equal(beforeClean.UserPromptSubmit.stdoutBytes, 1000)
+  })
+
+  it('both machine profiles inject the same bytes from the same tracked settings', () => {
+    const bytes = (r) => Object.fromEntries(Object.values(r).map((e) => [e.event, e.stdoutBytes]))
+    assert.deepEqual(bytes(nowClean), bytes(now))
   })
 
   it('SessionStart injects the wake-up pack once', () => {
