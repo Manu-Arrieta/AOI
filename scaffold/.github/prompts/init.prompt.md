@@ -234,7 +234,7 @@ Check all hook files in `.github/hooks/`:
 
 | Hook File                 | Expected Events                                                 |
 | ------------------------- | --------------------------------------------------------------- |
-| `icm.json`                | `SessionStart`, `PreToolUse`, `PostToolUse`, `UserPromptSubmit` |
+| `icm.json`                | `SessionStart`, `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `PreCompact` |
 | `rtk-rewrite.json`        | `PreToolUse`                                                    |
 | `session-init.json`       | `SessionStart`                                                  |
 | `session-close.json`      | `Stop`                                                          |

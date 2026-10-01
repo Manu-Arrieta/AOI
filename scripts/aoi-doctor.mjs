@@ -21,6 +21,7 @@ import { fileURLToPath } from 'node:url'
 import { validateScaffoldParity } from './scaffold/validate-scaffold-parity.mjs'
 import { checkMemoirNaming } from './memoir-naming-guard.mjs'
 import { checkFactsConsistency } from './facts-consistency-guard.mjs'
+import { checkIcmHygiene } from './icm-hygiene-guard.mjs'
 import {
   checkArchifySkill,
   checkBinaries,
@@ -92,6 +93,8 @@ export async function runAoiDoctor(options = {}) {
   // Misma razón que el de memoirs: lee la base compartida de ICM, así que
   // necesita el `execFn` inyectado o la suite le hablaría a la base real.
   const factsCheck = await checkFactsConsistency(repoRoot, execFn)
+  // Igual: lee la base compartida (sólo lectura) con el `execFn` inyectado.
+  const hygieneCheck = await checkIcmHygiene(repoRoot, execFn)
 
   let parityCheck
   try {
@@ -173,6 +176,15 @@ export async function runAoiDoctor(options = {}) {
       // stack planeado, un servicio en otro repo, un lenguaje sin manifiesto—.
       // Trancar el doctor sobre una inferencia sería el mismo error que el
       // instalador que pisaba el `pnpm-workspace.yaml` del Owner.
+      mandatory: false,
+    },
+    {
+      category: 'Memory Engine',
+      name: 'ICM Memory Hygiene',
+      status: hygieneCheck.status,
+      details: hygieneCheck.details,
+      // Nunca obligatorio: la base es del Owner y está fuera del repositorio;
+      // el doctor no puede repararla. Nombra la basura; borrarla es del Owner.
       mandatory: false,
     },
     {
