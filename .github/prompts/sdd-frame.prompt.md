@@ -179,6 +179,8 @@ icm facts set "{WORKSPACE}" "bic.${BIC_ID}.oracle"  "{escenario observable de é
 
 This is the only write this phase performs. Do NOT create `.tasks/` entries, task IDs, or canvas files.
 
+**Context boundary:** the next phase starts in a fresh context (new session or subagent) from this phase's artifacts and facts (`aoi:handoffs`), not from this chat.
+
 ---
 
 **La intención o requerimiento a calibrar es:**

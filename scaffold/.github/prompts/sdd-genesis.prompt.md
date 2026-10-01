@@ -247,6 +247,8 @@ icm_memoir_link(memoir: "{WORKSPACE}-architecture", from: "{contexto}", to: "{ot
 
 This is the only write this phase performs. Do NOT create `.tasks/` entries, task IDs, or canvas files.
 
+**Context boundary:** the next phase starts in a fresh context (new session or subagent) from this phase's artifacts and facts (`aoi:handoffs`), not from this chat.
+
 ---
 
 **La idea a desarrollar es:**

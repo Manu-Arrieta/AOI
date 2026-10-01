@@ -182,5 +182,7 @@ Present the proposal to the Owner. Ask:
 - If changes requested → iterate the proposal
 - If cancelled → update registry to `❌ Cancelado`, persist reason in ICM
 
+**Context boundary:** the next phase starts in a fresh context (new session or subagent) from this phase's artifacts and facts (`aoi:handoffs`), not from this chat.
+
 **The change to start is:**
 {{input}}
