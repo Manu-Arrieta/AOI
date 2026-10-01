@@ -104,7 +104,13 @@ export function createLedger() {
         }
         return this.phases[key]
       }
-      const saved = Math.max(0, raw - opt)
+      // Sin piso en 0. Con piso, una fase donde AOI cuesta MÁS se imprimía
+      // "0.0% saved" y el total sumaba ese 0 en vez de la pérdida. Medido sobre
+      // un store ICM vacío —el de cualquier usuario nuevo—: la Fase 0 dio 12 ->
+      // 35 tokens, el reporte dijo 0.0%, y el ahorro total quedó 7 tokens por
+      // encima de su propia resta (14.648 contra 14.641). El instrumento que
+      // juzga a todas las ramas no puede redondear una pérdida a cero.
+      const saved = raw - opt
       const pct = raw > 0 ? `${((saved / raw) * 100).toFixed(1)}%` : '0.0%'
       this.phases[key] = {
         name,

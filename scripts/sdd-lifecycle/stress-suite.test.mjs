@@ -39,7 +39,12 @@ let fidelity = { real: 0, fixture: 0, omitted: 0 }
 
 before(() => {
   try {
-    output = execFileSync('node', [SUITE], {
+    // `--hermetic`: el resultado tiene que ser función del árbol. Sin el flag la
+    // Fase 0 lee el store ICM de quien corre el test, y el veredicto cambiaba
+    // de máquina en máquina. Medido: verde contra la base del desarrollador y 3
+    // fallos contra una base vacía (12 -> 35 tokens en la Fase 0), con el
+    // mismo árbol.
+    output = execFileSync('node', [SUITE, '--hermetic'], {
       cwd: REPO_ROOT,
       encoding: 'utf8',
       timeout: 300000,
