@@ -260,8 +260,10 @@ export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = '
 
 /**
  * Los argumentos del CLI. Ya rechazaba un flag desconocido —ignorarlo corría un
- * compile completo—, pero no un VALOR: `--harness claud` salía 0 tras compilar 0
- * archivos, medido, y un `--harness` sin valor caía en silencio a `all`.
+ * compile completo—, y un `--harness` solo, sin nada detrás, ya salía 2. Lo que
+ * no rechazaba era un VALOR, medido sobre main: `--harness claud` salía 0 tras
+ * compilar 0 archivos, y `--harness --prune` tomaba `--prune` como nombre de
+ * harness, compilaba 0 archivos y también salía 0.
  */
 export function parseCompileArgs(argv) {
   const { values: v } = parseFlags(argv, {

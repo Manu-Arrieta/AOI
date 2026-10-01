@@ -117,6 +117,7 @@ describe('parseCompileArgs — un harness mal escrito no compila cero archivos c
     assert.throws(() => parseCompileArgs(['--harness', 'claud']), (e) => e instanceof UsageError && /claud/.test(e.message))
     assert.throws(() => parseCompileArgs(['--harness', 'claude,curosr']), /curosr/)
     assert.throws(() => parseCompileArgs(['--harness']), UsageError)
+    assert.throws(() => parseCompileArgs(['--harness', '--prune']), UsageError)
     assert.throws(() => parseCompileArgs(['--help']), /Flags válidos/)
   })
 
