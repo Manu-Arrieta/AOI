@@ -181,11 +181,22 @@ describe('context-tombstone-cli mide el ahorro que aplica', () => {
     // `--file` AL FINAL: ahí `args[i + 1]` es `undefined` con guard y sin él, así
     // que el guard nunca se ejercitaba. La mutación que lo borraba sobrevivía al
     // control negativo — el test afirmaba lo correcto sobre una entrada que no
-    // llegaba al código.
+    // llegaba al código. Desde los flags estrictos (D6) es error de USO: exit 2.
     const r = run(['--file', '--dry-run'])
-    assert.equal(r.code, 1)
-    assert.match(r.stderr, /--file/, 'no reportó el flag obligatorio ausente')
-    assert.match(r.stderr, /Falta --file/, 'cayó al ENOENT en vez del mensaje de flag faltante')
+    assert.equal(r.code, 2)
+    assert.match(r.stderr, /--file/, 'no nombró el flag sin valor')
+    assert.doesNotMatch(r.stderr, /ENOENT/, 'cayó al ENOENT en vez del error de uso')
+  })
+
+  it('un --threshold mal escrito o no numérico sale con 2 en vez de dejar el umbral en 0', () => {
+    // Medido (D6): `--treshold 10` se ignoraba y el CLI tumbaba con umbral 0, exit 0.
+    const { root, file } = turnsFile(TURNS)
+    for (const args of [['--treshold', '10'], ['--threshold', 'abc'], ['--threshold', '-1']]) {
+      const r = run(['--file', file, ...args])
+      assert.equal(r.code, 2, `${args.join(' ')}: ${r.stdout}${r.stderr}`)
+      assert.doesNotMatch(r.stdout, /Tumbados/, `${args.join(' ')} igual corrió`)
+    }
+    fs.rmSync(root, { recursive: true, force: true })
   })
 
   it('acepta un objeto con la clave "turns" además de un array', () => {

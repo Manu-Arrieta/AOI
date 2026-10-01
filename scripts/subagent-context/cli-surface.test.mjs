@@ -119,12 +119,33 @@ describe('the payload CLI builds for the directory it was given', () => {
     fs.rmSync(root, { recursive: true, force: true })
   })
 
-  it('ignores a flag given without a value instead of consuming the next one', () => {
+  it('refuses a flag given without a value instead of falling back to the default role', () => {
+    // Antes `--role` sin valor se ignoraba y el payload salía para `frontend`
+    // con exit 0: el subagente equivocado recibía trabajo que parecía correcto.
     const { root, dir } = taskDir()
     const r = run(['--task-dir', dir, '--role'])
-    assert.equal(r.code, 0, `${r.stdout}${r.stderr}`)
-    assert.match(r.stdout, /TASK-2026-001/)
+    assert.equal(r.code, 2, `${r.stdout}${r.stderr}`)
+    assert.equal(r.stdout, '')
     fs.rmSync(root, { recursive: true, force: true })
+  })
+
+  it('refuses an unknown format and an unknown flag instead of answering in markdown', () => {
+    // Medido (D6): `--format yaml` y `--formt toon` salían 0 con markdown.
+    const { root, dir } = taskDir()
+    for (const args of [['--format', 'yaml'], ['--formt', 'toon']]) {
+      const r = run(['--task-dir', dir, ...args])
+      assert.equal(r.code, 2, `${args.join(' ')}: ${r.stdout}${r.stderr}`)
+      assert.match(r.stderr, new RegExp(args[0] === '--format' ? 'markdown, toon' : 'Flags válidos'))
+      assert.equal(r.stdout, '', `${args.join(' ')} igual produjo un payload`)
+    }
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+
+  it('refuses a --task-dir that does not exist instead of an empty payload with exit 0', () => {
+    const r = run(['--task-dir', path.join(os.tmpdir(), 'aoi-no-existe-toon-xyz'), '--role', 'qa'])
+    assert.equal(r.code, 2, `${r.stdout}${r.stderr}`)
+    assert.match(r.stderr, /no existe/)
+    assert.equal(r.stdout, '')
   })
 
   it('carries the design contracts and nothing from a conversation — Invariant 2', () => {

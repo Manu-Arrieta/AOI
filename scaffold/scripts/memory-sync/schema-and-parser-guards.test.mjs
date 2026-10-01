@@ -224,16 +224,15 @@ describe('las últimas guardias alcanzables sin fixture', () => {
     }
   })
 
-  it('parseBundleArgs ignora los tokens que no son flags', () => {
-    // `typeof token !== 'string' || !token.startsWith('--')`. Con `or→and`, un
-    // token no-string que además no empiece con `--` dejaría de saltarse.
-    const salida = parseBundleArgs(
-      ['ws', 'v1', 'a.memory-bundle.json.gz', 'suelto', 42, null, '--owner-context', 'ctx'],
-      { lists: [] },
-    )
-    assert.equal(salida.flags?.['owner-context'] ?? salida['owner-context'], 'ctx')
-    for (const suelto of ['suelto', '42', 'null']) {
-      assert.equal(Object.hasOwn(salida, suelto), false, `"${suelto}" no puede volverse una clave`)
+  it('parseBundleArgs rechaza los tokens que no son strings y los sueltos', () => {
+    // Antes los saltaba (`typeof token !== 'string' || ...`): un argumento suelto
+    // no era un error. Ahora un no-string es un bug del llamador (TypeError) y un
+    // suelto es un error de uso; ninguno de los dos se vuelve clave en silencio.
+    for (const malo of [42, null, undefined]) {
+      assert.throws(() => parseBundleArgs(['ws', 'v1', 'a.memory-bundle.json.gz', malo]), TypeError)
     }
+    assert.throws(() => parseBundleArgs(['ws', 'v1', 'a.memory-bundle.json.gz', 'suelto']), /sobra un argumento/)
+    const salida = parseBundleArgs(['ws', 'v1', 'a.memory-bundle.json.gz', '--owner-context', 'ctx'], { lists: [] })
+    assert.equal(salida.flags['owner-context'], 'ctx')
   })
 })

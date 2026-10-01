@@ -26,6 +26,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { exitUsage, readFlags } from '../sdd-lifecycle/cli-flags.mjs'
 
 const EXTS = ['.mjs', '.js']
 // No se filtra por el nombre 'scaffold': el espejo raíz queda afuera porque
@@ -261,16 +262,19 @@ export function importCycles(graph) {
 }
 
 function main() {
-  const root = process.cwd()
-  const graph = buildInteractionGraph(root)
-  const args = process.argv.slice(2)
-  if (args.includes('--hubs')) {
+  // Estricto y ANTES de construir el grafo (D6): `--hub` se ignoraba y devolvía
+  // el JSON completo —38.247 bytes medidos— en vez de las 465 de `--hubs`, el
+  // contexto que el modo barato existe para ahorrar.
+  const { values: v } = readFlags(process.argv.slice(2), { hubs: { type: 'boolean' }, cycles: { type: 'boolean' } })
+  if (v.hubs && v.cycles) exitUsage('--hubs y --cycles no se combinan: uno por invocación')
+  const graph = buildInteractionGraph(process.cwd())
+  if (v.hubs) {
     for (const { module, fanOut } of hubs(graph)) {
       process.stdout.write(`${String(fanOut).padStart(3)}  ${module}\n`)
     }
     return
   }
-  if (args.includes('--cycles')) {
+  if (v.cycles) {
     const cycles = importCycles(graph)
     for (const [a, b] of cycles) process.stdout.write(`CICLO  ${a}  <->  ${b}\n`)
     if (!cycles.length) process.stdout.write('Sin ciclos de import.\n')

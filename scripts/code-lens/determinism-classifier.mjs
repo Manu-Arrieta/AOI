@@ -29,6 +29,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { readFlags } from '../sdd-lifecycle/cli-flags.mjs'
 
 const EXTS = ['.mjs', '.js']
 // No se filtra por el nombre 'scaffold': el espejo raíz queda afuera porque
@@ -128,9 +129,11 @@ export function summarize(byFile) {
 }
 
 function main() {
-  const root = process.cwd()
-  const byFile = auditDeterminism(root)
-  if (process.argv.slice(2).includes('--summary')) {
+  // Estricto y ANTES de clasificar (D6): `--summry` se ignoraba y devolvía el
+  // JSON por archivo —32.243 bytes medidos— en vez del resumen de una línea por clase.
+  const { values: v } = readFlags(process.argv.slice(2), { summary: { type: 'boolean' } })
+  const byFile = auditDeterminism(process.cwd())
+  if (v.summary) {
     for (const { class: id, count } of summarize(byFile)) {
       process.stdout.write(`${String(count).padStart(4)}  ${id}\n`)
     }

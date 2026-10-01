@@ -13,6 +13,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { renderProjectGuide } from './claude-project-guide.mjs'
+import { exitOnUsageError, oneOf, parseFlags } from '../sdd-lifecycle/cli-flags.mjs'
 import { syncHarnessCommands } from './harness-commands.mjs'
 import { fallbackStoreTriggers, prunePathIfPristine, readMcpActivation, readStoreTriggers, renderMcpActivation, renderStoreTriggers, syncAntigravitySkills } from './protocol-source.mjs'
 
@@ -257,32 +258,30 @@ export function compileHarnessRules(repoRoot, harnesses = ['all'], workspace = '
   }
 }
 
+/**
+ * Los argumentos del CLI. Ya rechazaba un flag desconocido —ignorarlo corría un
+ * compile completo—, y un `--harness` solo, sin nada detrás, ya salía 2. Lo que
+ * no rechazaba era un VALOR, medido sobre main: `--harness claud` salía 0 tras
+ * compilar 0 archivos, y `--harness --prune` tomaba `--prune` como nombre de
+ * harness, compilaba 0 archivos y también salía 0.
+ */
+export function parseCompileArgs(argv) {
+  const { values: v } = parseFlags(argv, {
+    harness: { type: 'string' }, workspace: { type: 'string' }, prune: { type: 'boolean' }, reference: { type: 'string' },
+  })
+  const harnesses = (v.harness ?? 'all').split(',').map((h) => h.trim().toLowerCase())
+  for (const h of harnesses) oneOf('harness', h, SUPPORTED_HARNESSES)
+  return { harnessArg: v.harness ?? 'all', harnesses, workspace: v.workspace ?? '', prune: v.prune === true, reference: v.reference ?? '' }
+}
+
 // Direct CLI Execution
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
-  const args = process.argv.slice(2)
-  let harnessArg = 'all'
-  let workspaceArg = ''
-  let pruneArg = false
-  let referenceArg = ''
-
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--harness' && args[i + 1]) harnessArg = args[++i]
-    else if (args[i] === '--workspace' && args[i + 1]) workspaceArg = args[++i]
-    else if (args[i] === '--prune') pruneArg = true
-    else if (args[i] === '--reference' && args[i + 1]) referenceArg = args[++i]
-    else if (args[i].startsWith('-')) {
-      // Silently ignoring these ran a full compile: `--help` is not accepted.
-      console.error(`Unknown flag: ${args[i]}`)
-      process.exit(2)
-    }
-  }
-
-  const harnesses = harnessArg.split(',').map((h) => h.trim().toLowerCase())
+  const { harnessArg, harnesses, workspace, prune: pruneArg, reference: referenceArg } = exitOnUsageError(() => parseCompileArgs(process.argv.slice(2)))
   const repoRoot = process.cwd()
   // Never 'AOI': that is the PRODUCT's name. `aoi:sync-rules` passes no
   // --workspace, so the old default renamed every harness file in an
   // installed project to AOI. The directory is what the protocol falls back to.
-  if (!workspaceArg) workspaceArg = path.basename(repoRoot)
+  const workspaceArg = workspace || path.basename(repoRoot)
 
   console.log(`\n⚙️  Compiling AOI Multi-Harness Rules (harness: ${harnessArg}, workspace: ${workspaceArg})...\n`)
   const result = compileHarnessRules(repoRoot, harnesses, workspaceArg, { prune: pruneArg, reference: referenceArg || undefined })

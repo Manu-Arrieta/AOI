@@ -35,7 +35,15 @@ import {
 } from './real-corpus.mjs'
 import { COMPLEX_DESIGN_MD, COMPLEX_TASKS_MD, DEFECT_REPORTS } from './stress-fixtures.mjs'
 import { runGenesisPhase } from './blueprint-gate.mjs'
+import { readFlags } from './cli-flags.mjs'
 
+// Estricto y ANTES de todo (D6): `--help` se ignoraba —medido— y corría la suite
+// entera, con sus llamadas a ICM; un `--hermetc` mal escrito medía el store vivo.
+const FLAGS = readFlags(process.argv.slice(2), { hermetic: { type: 'boolean' }, help: { type: 'boolean', short: 'h' } }).values
+if (FLAGS.help) {
+  console.log('Uso: node scripts/sdd-lifecycle/sdd-stress-suite.mjs [--hermetic]  (--hermetic: no lee el store ICM vivo)')
+  process.exit(0)
+}
 const ledger = createLedger()
 const WORKSPACE = path.basename(process.cwd())
 // Phases prefer real artifacts from an actual task; without one they fall back
@@ -62,7 +70,7 @@ console.log('▶ [Fase 0: /sdd-frame] Testing Socratic Grounding in O(1)...')
 // semántico es real y vale verlo—, pero **el payload deja de ser comparable
 // entre versiones**, que es justo lo que la Fase 6 del protocolo usa. Con el
 // flag, la fase se omite y el total vuelve a ser función del árbol.
-const HERMETIC = process.argv.includes('--hermetic')
+const HERMETIC = FLAGS.hermetic === true
 const groundingProbe = HERMETIC
   ? ''
   : [

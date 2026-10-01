@@ -46,6 +46,7 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { scanNonStructural } from './code-scanner.mjs'
 import { estimateTokens } from '../sdd-lifecycle/token-accounting.mjs'
+import { exitUsage, readFlags } from '../sdd-lifecycle/cli-flags.mjs'
 
 /**
  * ¿La llave en `{` abre una FORMA —una lista de import, un tipo, un objeto— y no
@@ -188,13 +189,18 @@ export function skeletonizeCode(sourceCode = '', options = {}) {
  * CLI Execution
  */
 export async function main() {
-  const args = process.argv.slice(2)
-  if (args.length === 0 || args.includes('-h') || args.includes('--help')) {
+  // Estricto (D6): lo desconocido se ignoraba, y el archivo era `args[0]` aunque
+  // fuera un flag — `--stats x.mjs` buscaba un archivo llamado `--stats`.
+  const { values: v, positionals } = readFlags(process.argv.slice(2), {
+    stats: { type: 'boolean' }, help: { type: 'boolean', short: 'h' },
+  }, { positionals: true })
+  if (positionals.length === 0 || v.help) {
     process.stdout.write(`Usage: aoi:ast-lens <file-path> [--stats]\n`)
     process.exit(0)
   }
+  if (positionals.length > 1) exitUsage(`un archivo por invocación, recibió ${positionals.length}`)
 
-  const filePath = path.resolve(args[0])
+  const filePath = path.resolve(positionals[0])
   if (!fs.existsSync(filePath)) {
     process.stderr.write(`Error: File not found: ${filePath}\n`)
     process.exit(1)
@@ -203,7 +209,7 @@ export async function main() {
   const raw = fs.readFileSync(filePath, 'utf8')
   const skeleton = skeletonizeCode(raw)
 
-  if (args.includes('--stats')) {
+  if (v.stats) {
     const rawTokens = estimateTokens(raw)
     const skelTokens = estimateTokens(skeleton)
     const saved = Math.max(0, rawTokens - skelTokens)

@@ -29,6 +29,7 @@ import {
 // El estimador es el ÚNICO del repositorio: un `Math.round(len / 4)` local lo
 // duplicaría y las dos cifras podrían discrepar sin que nada lo diga.
 import { estimateTokens } from '../sdd-lifecycle/token-accounting.mjs'
+import { exitUsage, readFlags } from '../sdd-lifecycle/cli-flags.mjs'
 
 /**
  * Los pares (turno tumbado, turno que lo tumba).
@@ -162,32 +163,32 @@ function usage() {
       '--output <path>  destino de los turnos procesados (default: stdout)\n' +
       '\nExit codes:\n' +
       '  0  corrio (haya aplicado o no), o se pidio la ayuda\n' +
-      '  1  no se pudo leer el archivo, o su forma no es la esperada\n'
+      '  1  falta --file, no se pudo leer el archivo, o su forma no es la esperada\n' +
+      '  2  un flag desconocido o sin valor, o un --threshold que no es un entero\n'
   )
 }
 
 function main() {
   const args = process.argv.slice(2)
-  if (args.length === 0 || args.includes('-h') || args.includes('--help')) return usage()
+  if (args.length === 0) return usage()
+  // Estricto (D6): el `indexOf` viejo ignoraba lo desconocido y `--treshold 5`
+  // —medido— dejaba el umbral en 0 con exit 0; `--threshold abc` lo volvía NaN.
+  const { values: v } = readFlags(args, {
+    file: { type: 'string' }, threshold: { type: 'string' }, output: { type: 'string' },
+    'dry-run': { type: 'boolean' }, help: { type: 'boolean', short: 'h' },
+  })
+  if (v.help) return usage()
 
-  const value = (flag) => {
-    const i = args.indexOf(flag)
-    if (i < 0) return undefined
-    const next = args[i + 1]
-    // Un flag seguido de otro flag, o al final, no tiene valor: devolver
-    // `undefined` deja decidir al default, en vez de tomar el flag como un path.
-    return next === undefined || next.startsWith('--') ? undefined : next
-  }
-
-  const file = value('--file')
+  const file = v.file
   if (!file) {
     process.stderr.write('Falta --file <turns.json>. Usá --help.\n')
     process.exit(1)
   }
+  if (v.threshold !== undefined && !/^\d+$/.test(v.threshold)) exitUsage(`--threshold espera un entero >= 0, recibió "${v.threshold}"`)
 
-  const dryRun = args.includes('--dry-run')
-  const output = value('--output')
-  const rawThreshold = value('--threshold')
+  const dryRun = v['dry-run'] === true
+  const output = v.output
+  const rawThreshold = v.threshold
 
   let report
   try {

@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
 import {
   compileHarnessRules,
@@ -10,7 +12,9 @@ import {
   generateClineRules,
   generateCopilotInstructions,
   generateCursorRules,
+  parseCompileArgs,
 } from './compile-rules.mjs'
+import { UsageError } from '../sdd-lifecycle/cli-flags.mjs'
 
 describe('multi-harness rules compiler', () => {
   it('generators include mandatory ICM persistent memory rules', () => {
@@ -99,5 +103,32 @@ describe('el pruning protege al Owner sin espejo en el destino', () => {
 
     assert.ok(fs.existsSync(path.join(root, 'CLAUDE.md')), 'sin referencia no se puede afirmar que sea de AOI')
     assert.ok(fs.existsSync(path.join(root, '.agents/skills/mia/SKILL.md')))
+  })
+})
+
+describe('parseCompileArgs — un harness mal escrito no compila cero archivos con exit 0', () => {
+  it('acepta lo que pasan setup.sh, setup.ps1 y aoi:sync-rules', () => {
+    assert.deepEqual(parseCompileArgs([]).harnesses, ['all'])
+    const r = parseCompileArgs(['--harness', 'copilot,Claude', '--workspace', 'WS', '--prune', '--reference', '/ref'])
+    assert.deepEqual([r.harnesses, r.workspace, r.prune, r.reference], [['copilot', 'claude'], 'WS', true, '/ref'])
+  })
+
+  it('rechaza un harness desconocido, un --harness sin valor y un flag desconocido', () => {
+    assert.throws(() => parseCompileArgs(['--harness', 'claud']), (e) => e instanceof UsageError && /claud/.test(e.message))
+    assert.throws(() => parseCompileArgs(['--harness', 'claude,curosr']), /curosr/)
+    assert.throws(() => parseCompileArgs(['--harness']), UsageError)
+    assert.throws(() => parseCompileArgs(['--harness', '--prune']), UsageError)
+    assert.throws(() => parseCompileArgs(['--help']), /Flags válidos/)
+  })
+
+  it('el CLI sale con 2 ante `--harness claud` y no escribe nada', () => {
+    const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-compile-flag-'))
+    const cli = fileURLToPath(new URL('./compile-rules.mjs', import.meta.url))
+    const r = spawnSync(process.execPath, [cli, '--harness', 'claud'], { cwd, encoding: 'utf8' })
+    const written = fs.readdirSync(cwd)
+    fs.rmSync(cwd, { recursive: true, force: true })
+    assert.equal(r.status, 2, r.stdout + r.stderr)
+    assert.match(r.stderr, /claud/)
+    assert.deepEqual(written, [])
   })
 })
