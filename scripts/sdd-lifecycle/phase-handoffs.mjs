@@ -67,6 +67,11 @@ export const HANDOFFS = [
     prompt: PROMPT('sdd-ff'),
     produces: ['spec.md', 'design.md', 'tasks.md', 'implementation-plan.md'],
     requires: ['proposal.md'],
+    // Siembra los tests del BIC en `## Test Requirements` y decide el checklist
+    // por la cantidad de Never Rules (`sdd-ff.prompt.md:75,120`). Condicional:
+    // sólo cuando la tarea vino de `/sdd-frame`. La tabla no lo declaraba y el
+    // checker no podía verlo, porque sólo confirmaba lo declarado (C6).
+    conditionalRequires: ['bic-facts'],
   },
   {
     phase: 'Phase_3_Apply',
@@ -95,6 +100,10 @@ export const HANDOFFS = [
     prompt: PROMPT('sdd-archive'),
     produces: ['archive-report.md', 'functional-docs.md'],
     requires: ['verify-report.md'],
+    // Registra como deuda el `sbc.{SBC_ID}.diagram-obligation` que quedó en
+    // `unmet` (`sdd-archive.prompt.md:135`). Condicional: sólo si hubo SBC. Lo
+    // encontró la detección de `undeclaredFacts` la primera vez que corrió.
+    conditionalRequires: ['sbc-facts'],
   },
 ]
 
@@ -122,6 +131,9 @@ const ARTIFACT_MARKERS = {
   'sbc-facts': /sbc\./i,
   'blueprint-diagrams': /\.blueprints\/|diagrams\//i,
 }
+
+/** Los traspasos que viajan por ICM y no dejan archivo: ver `undeclaredFacts`. */
+const FACT_FAMILIES = ['bic-facts', 'sbc-facts']
 
 function mentions(text, artifact) {
   const marker = ARTIFACT_MARKERS[artifact]
@@ -162,13 +174,22 @@ const PRODUCED = (s) => [...(s.produces ?? []), ...(s.conditionalProduces ?? [])
  * que todas mutan y que leen humanos. Un productor sin consumidor puede ser
  * correcto; lo que no puede es ser invisible.
  *
+ * `undeclaredFacts` es la otra dirección de `silentConsumers`: un prompt que
+ * lee o escribe una familia de hechos ICM que su fila no declara. Auditoría
+ * 2026-09-30 (C6): `sdd-ff` lee `bic.` y la tabla no lo decía; el checker sólo
+ * confirmaba lo declarado, así que el reporte mostraba una cadena sin esa
+ * arista y nada podía fallar. Se limita a los hechos (`bic.`, `sbc.`) porque es
+ * el traspaso que no deja archivo: un nombre como `spec.md` aparece en prompts
+ * que sólo lo citan, y `bic.`/`sbc.` sólo aparece donde se consulta ICM.
+ *
  * @returns {{ orphanRequires: string[], orphanProduces: string[],
- *   silentProducers: string[], silentConsumers: string[] }}
+ *   silentProducers: string[], silentConsumers: string[], undeclaredFacts: string[] }}
  */
 export function auditHandoffs(root, chain = HANDOFFS) {
   const orphanRequires = []
   const silentProducers = []
   const silentConsumers = []
+  const undeclaredFacts = []
   const producedSoFar = new Set()
   const produced = new Set()
   const consumed = new Set()
@@ -198,13 +219,19 @@ export function auditHandoffs(root, chain = HANDOFFS) {
       producedSoFar.add(artifact)
       produced.add(artifact)
     }
+    const declared = new Set([...REQUIRED(step), ...PRODUCED(step)])
+    for (const family of FACT_FAMILIES) {
+      if (mentions(text, family) && !declared.has(family)) {
+        undeclaredFacts.push(`${step.phase}: su prompt nombra ${family} y su fila no lo declara ni como entrada ni como salida`)
+      }
+    }
   }
 
   const orphanProduces = [...produced]
     .filter((a) => !consumed.has(a))
     .map((a) => `${a} lo produce una fase y ninguna posterior lo pide`)
 
-  return { orphanRequires, orphanProduces, silentProducers, silentConsumers }
+  return { orphanRequires, orphanProduces, silentProducers, silentConsumers, undeclaredFacts }
 }
 
 /**
@@ -254,7 +281,7 @@ function main() {
     for (const w of r.orphanProduces) console.log(`⚠️  ${w}`)
   }
 
-  const failures = [...r.orphanRequires, ...r.silentProducers, ...r.silentConsumers]
+  const failures = [...r.orphanRequires, ...r.silentProducers, ...r.silentConsumers, ...r.undeclaredFacts]
   if (failures.length > 0) {
     console.error('')
     for (const f of failures) console.error(`❌ ${f}`)

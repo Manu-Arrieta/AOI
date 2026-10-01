@@ -41,7 +41,7 @@ Do NOT skip these steps. If either step fails, report the failure and stop.
    - No spec drift (implementation matches what was planned)
    - Tests exist and pass
    - Code follows project conventions
-   - **Invariant Gate (0 tokens)**: `node scripts/sdd-lifecycle/invariant-gate.mjs --entity "{WORKSPACE}" --tests-dir . --exit-code`. Exit 1 is an automatic FAIL — a declared BIC invariant with no test enforcing it is an unguarded contract; copy the reported `Unenforced Contract Rules` verbatim into the report. Exit 2 means the contract could not be read (broken ICM toolchain) and is ALSO a FAIL — never treat an unreadable contract as a pass. `SKIPPED` means the task never passed through `/sdd-frame` and is not a failure.
+   - **Invariant Gate (0 tokens)**: `node scripts/sdd-lifecycle/invariant-gate.mjs --entity "{WORKSPACE}" --tests-dir . --exit-code`. Exit 1 is an automatic FAIL — a declared BIC invariant with no test enforcing it is an unguarded contract; copy the reported `Unenforced Contract Rules` verbatim into the report. Exit 2 means the contract could not be read (broken ICM toolchain) and is ALSO a FAIL — never treat an unreadable contract as a pass. `SKIPPED` means the task never passed through `/sdd-frame` and is not a failure. Exit 0 is a pass only with header `PASSED`/`SKIPPED`: `PARTIAL` or `NOT AUDITED` is unverified, never PASS.
 4. **Verify** scaffold-mirror compliance:
    - All agents exist in `.github/agents/`
    - `copilot-instructions.md` is up to date

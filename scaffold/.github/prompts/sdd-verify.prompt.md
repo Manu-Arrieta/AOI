@@ -95,7 +95,7 @@ Verify that every business invariant ("Never Rule") and the Business Oracle cali
 node scripts/sdd-lifecycle/invariant-gate.mjs --entity "{WORKSPACE}" --tests-dir . --exit-code
 ```
 
-- **Exit 0 → continue.** Status `SKIPPED` means the task never passed through `/sdd-frame` (no BIC facts exist) and is not a failure.
+- **Exit 0 → read the header.** `PASSED` → continue. `SKIPPED` means the task never passed through `/sdd-frame` (no BIC facts exist) and is not a failure. `PARTIAL` is NOT a pass: each ⏸️ rule's only test is skipped on this platform — report it as unverified here.
 - **Exit 1 → automatic FAIL gate.** A declared invariant with no test enforcing it is an unguarded contract. Capture the reported `Unenforced Contract Rules` verbatim into the Verify Report. Same severity as the Service Discovery and Resource Workflow Semantics gates.
 - **Si el contrato se contradice a sí mismo, decilo y no lo tapes.** Un ciclo real produjo un BIC cuyo oráculo exigía un estado que sus propios criterios de aceptación asignaban a otro; los dos no podían valer. Marcá el test con `CONTRADICTION PENDING OWNER RESOLUTION` y el gate lo tratará como **no cubierto** en vez de leerlo como enforcement — un contrato que nadie puede satisfacer no debe publicarse reportado como exigido. Se resuelve devolviendo a `/sdd-frame` para recalibrar, no eligiendo una mitad en silencio.
 - **Exit 2 → BLOCKED, also a FAIL.** The contract could not be read (broken ICM toolchain). Absence of evidence is never evidence of compliance: repair the toolchain and re-run. Do NOT interpret an unreadable contract as a clean pass.
@@ -111,6 +111,7 @@ node scripts/sdd-lifecycle/blueprint-gate.mjs "{WORKSPACE}" --workspace "{WORKSP
 ```
 
 - **Exit 0 → continue.** `SKIPPED` means the task never passed through `/sdd-genesis` (no `sbc.*` facts) and is not a failure.
+- **`NOT AUDITED` (exit 2) → BLOCKED, a FAIL.** The SBC could not be read; never report it as `SKIPPED`.
 - **Exit 1 → automatic FAIL gate.** Two distinct causes, and the report names which:
   - **Closure failed** — a boundary crossing with no named flow, a dangling endpoint, a duplicated/polarized invariant, or no Tracer Bullet. This is a broken contract.
   - **`required` but no artifacts** — crossings declared, Archify present, and `.blueprints/{SBC_ID}/diagrams/` empty. Produce the diagram in `/sdd-apply`, or return to `/sdd-genesis`.
@@ -202,8 +203,8 @@ Write `.tasks/{feature-name}/TASK-YYYY-NNN/verify-report.md`:
 ## Quality Gates
 
 - [ ] Service Discovery completed (mandatory)
-- [ ] Invariant Gate — `invariant-gate.mjs` exit 0 (every BIC Never Rule & Oracle has a test)
-- [ ] Blueprint Gate — `blueprint-gate.mjs` exit 0 (SBC closure holds; diagram artifacts present when crossings were declared and Archify is available)
+- [ ] Invariant Gate — `invariant-gate.mjs` exit 0 and `PASSED`/`SKIPPED` (`PARTIAL` = unverified here, not a pass)
+- [ ] Blueprint Gate — `blueprint-gate.mjs` exit 0, not `NOT AUDITED` (SBC closure holds; diagram artifacts present when crossings were declared and Archify is available)
 - [ ] Sandbox manifest valid — `validate-manifest.mjs` exit 0 (if active sandbox)
 - [ ] ICM Memory Health OK
 - [ ] No orphan tasks in `tasks.md`

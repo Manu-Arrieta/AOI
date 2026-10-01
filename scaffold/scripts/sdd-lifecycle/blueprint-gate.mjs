@@ -22,6 +22,7 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { findArchifyRenderer } from '../doctor-checks.mjs'
 import { collectBlueprints } from './blueprint-facts.mjs'
+import { resolveWorkspaceEntity } from './workspace-identity.mjs'
 import {
   auditDiagramArtifacts,
   diagramObligation,
@@ -168,9 +169,9 @@ export function auditBlueprintClosure(blueprint) {
   return { sbcId, status, checks }
 }
 
-export function formatBlueprintGateReport(audits = []) {
+export function formatBlueprintGateReport(audits = [], entity = '') {
   if (audits.length === 0) {
-    return '## Blueprint Gate: ⏭️ SKIPPED\nNo `sbc.*` facts found for this workspace.'
+    return `## Blueprint Gate: ⏭️ SKIPPED\nNo \`sbc.*\` facts found for ${entity ? `"${entity}"` : 'this workspace'}.`
   }
 
   const lines = []
@@ -206,13 +207,27 @@ export function main(argv = process.argv.slice(2)) {
     return { audits: [], diagramFailures: [], archifyAvailable: false, exitCode: 2 }
   }
 
-  const { positional, workspaceRoot, dbPath, record } = parsed
-  const entity = positional[0] || path.basename(process.cwd())
-  const facts = readSbcFacts(entity, dbPath)
-  const blueprints = collectBlueprints(facts)
+  const { positional, workspaceRoot, dbPath, record, chain } = parsed
+  // La entidad se resuelve como en el Invariant Gate (remoto origin, luego el
+  // directorio): con `basename(cwd)` un worktree auditaba una entidad inexistente.
+  let entity = positional[0]
+  if (!entity) {
+    const resolved = resolveWorkspaceEntity(process.cwd(), 'Blueprint Gate')
+    process.stderr.write(resolved.notice)
+    entity = resolved.entity
+  }
+  const read = readSbcFacts(entity, dbPath)
+  if (!read.ok) {
+    // "No pude leer" no es "no hay SBC". Con `--chain` la ausencia (sin `icm`,
+    // entidad desconocida) sale 0 como en el Invariant Gate; una avería, nunca.
+    console.log(`## Blueprint Gate: ⏭️ NOT AUDITED\nNo se pudo leer el SBC de "${entity}": ${read.reason}. Nada se dio por cerrado.`)
+    process.exitCode = chain && read.absent ? 0 : 2
+    return { audits: [], diagramFailures: [], archifyAvailable: false, exitCode: process.exitCode, notAudited: read.reason }
+  }
+  const blueprints = collectBlueprints(read.facts)
   const audits = blueprints.map(auditBlueprintClosure)
 
-  console.log(formatBlueprintGateReport(audits))
+  console.log(formatBlueprintGateReport(audits, entity))
 
   // La detección de Archify es la MISMA que usa el doctor: una sola respuesta
   // para "¿está instalado?" evita que la compuerta y el doctor divergan.

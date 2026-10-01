@@ -55,10 +55,15 @@ export function workspaceFromGitRemote(cwd = process.cwd()) {
  * `SKIPPED` sale 0. Quien lea el resultado tiene que poder ver qué se auditó y
  * con qué criterio, o el gate se vuelve un pase silencioso con más pasos.
  *
+ * `gate` nombra quién habla en el aviso: el Blueprint Gate usaba
+ * `basename(cwd)` por su cuenta y en un worktree auditaba una entidad que no
+ * existe — SKIPPED, exit 0. Ahora resuelve con esta misma función.
+ *
  * @param {string} cwd
+ * @param {string} [gate]
  * @returns {{ entity: string, source: string, notice: string }}
  */
-export function resolveWorkspaceEntity(cwd = process.cwd()) {
+export function resolveWorkspaceEntity(cwd = process.cwd(), gate = 'Invariant Gate') {
   const fromRemote = workspaceFromGitRemote(cwd)
   const entity = fromRemote || path.basename(cwd)
   const source = fromRemote
@@ -68,6 +73,6 @@ export function resolveWorkspaceEntity(cwd = process.cwd()) {
   return {
     entity,
     source,
-    notice: `Invariant Gate: entidad auto-resuelta "${entity}" desde ${source}.\n`,
+    notice: `${gate}: entidad auto-resuelta "${entity}" desde ${source}.\n`,
   }
 }

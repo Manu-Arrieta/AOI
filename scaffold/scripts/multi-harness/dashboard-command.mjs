@@ -5,6 +5,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { profileIncludesDashboard, readInstalledProfile } from '../installation-profiles.mjs'
 
 export const DASHBOARD_COMMANDS = new Set(['dev', 'build', 'preview', 'prepare', 'test'])
@@ -43,7 +44,29 @@ export function runDashboardCommand(root, command, run = spawnSync) {
   return 0
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const exitCode = runDashboardCommand(process.cwd(), process.argv[2] ?? '')
-  process.exitCode = exitCode
+// La guarda comparaba `import.meta.url` con `'file://' + process.argv[1]`: una
+// concatenación, no una URL. Con un espacio en la ruta —este repositorio vive
+// bajo "GITHUB MIGRATION"— la URL lleva `%20` y la cadena no, así que `main`
+// nunca corría: `pnpm test:dashboard` salía 0 sin imprimir nada y los 87 tests
+// del dashboard nunca entraron en la cadena (auditoría 2026-09-30, C1). Se
+// comparan rutas REALES y no sólo resueltas: Node carga el módulo principal por
+// su realpath, así que con `path.resolve` la guarda tampoco dispara cuando se
+// la invoca por un symlink. Medido en macOS: `os.tmpdir()` es `/var/...` y
+// `import.meta.url` dice `/private/var/...`.
+function invokedDirectly() {
+  try {
+    return Boolean(process.argv[1]) && fs.realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)
+  } catch {
+    return false // argv[1] no es un archivo: el módulo fue importado, no invocado
+  }
+}
+
+if (invokedDirectly()) {
+  const command = process.argv[2] ?? ''
+  if (!DASHBOARD_COMMANDS.has(command)) {
+    process.stderr.write(`Uso: dashboard-command.mjs <${[...DASHBOARD_COMMANDS].join('|')}> — recibido: "${command}"\n`)
+    process.exitCode = 2
+  } else {
+    process.exitCode = runDashboardCommand(process.cwd(), command)
+  }
 }
