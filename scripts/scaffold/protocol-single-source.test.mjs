@@ -42,6 +42,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it, after } from 'node:test'
+import { isNestedCheckout } from './nested-checkout.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const PROTOCOL = 'AOI_REAL_WORLD_VERIFICATION_MATRIX.md'
@@ -83,6 +84,8 @@ function recorrer(dir, rel = '') {
   for (const e of fs.readdirSync(path.join(dir, rel), { withFileTypes: true })) {
     if (IGNORAR.has(e.name)) continue
     const hijo = path.join(rel, e.name)
+    // Un checkout anidado (un worktree de Claude Code) es otro árbol: nested-checkout.mjs.
+    if (e.isDirectory() && isNestedCheckout(path.join(dir, hijo))) continue
     if (e.isDirectory()) out.push(...recorrer(dir, hijo))
     else out.push(hijo)
   }

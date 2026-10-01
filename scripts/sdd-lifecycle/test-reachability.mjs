@@ -21,6 +21,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { findOrphanTests } from '../scaffold/validate-test-globs.mjs'
 import { isAoiGovernedPath, isDevelopmentRepo } from '../scaffold/governed-paths.mjs'
+import { isNestedCheckout } from '../scaffold/nested-checkout.mjs'
 
 /** El infijo `.test.` / `.spec.`: la convención de JS, TS y Vue, y de nadie más. */
 const hasTestInfix = (name) => name.includes('.test.') || name.includes('.spec.')
@@ -149,6 +150,8 @@ export function collectTestSources(dir) {
         // Anclado a la raíz del barrido: `scripts/scaffold/` comparte nombre con
         // el espejo y no es uno.
         if (MIRROR_DIRS.has(path.relative(dir, full))) continue
+        // Un checkout anidado (un worktree de Claude Code) es otro árbol: nested-checkout.mjs.
+        if (isNestedCheckout(full)) continue
         walk(full)
         continue
       }

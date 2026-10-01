@@ -28,6 +28,7 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { withoutNestedCheckouts } from './nested-checkout.mjs'
 
 /**
  * Textual mutations, chosen for a low rate of equivalent mutants: each one
@@ -1042,10 +1043,8 @@ export async function probe(root, area, testGlob, limit = Infinity, log = () => 
   const EXCLUDED = /(?:^|\/)(?:node_modules|\.git|\.nuxt|\.output|coverage)(?:\/|$)/
   fs.cpSync(root, work, {
     recursive: true,
-    filter: (src) => {
-      const rel = path.relative(root, src)
-      return rel === '' || !EXCLUDED.test(rel)
-    },
+    // Un checkout anidado (un worktree de Claude Code) es otro árbol: nested-checkout.mjs.
+    filter: withoutNestedCheckouts(root, (src) => !EXCLUDED.test(path.relative(root, src))),
   })
 
   // Todo lo que sigue corre con la limpieza ya armada: la copia existe desde el

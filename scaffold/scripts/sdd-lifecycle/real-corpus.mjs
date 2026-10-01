@@ -15,6 +15,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { FALLBACK_CRASH, fallbackDebuggingTurns, fallbackDiscoveryCorpus } from './stress-fixtures.mjs'
+import { isNestedCheckout } from '../scaffold/nested-checkout.mjs'
 
 const CODE_EXTENSIONS = new Set(['.mjs', '.js', '.ts', '.vue'])
 const SKIP_DIRS = new Set(['node_modules', '.git', '.nuxt', '.output', 'dist', 'build', 'coverage', 'scaffold'])
@@ -34,6 +35,8 @@ function listCodeFiles(dir, limit) {
       if (out.length >= limit) return
       if (SKIP_DIRS.has(entry.name)) continue
       const full = path.join(current, entry.name)
+      // Un checkout anidado (un worktree de Claude Code) es otro árbol: nested-checkout.mjs.
+      if (entry.isDirectory() && isNestedCheckout(full)) continue
       if (entry.isDirectory()) walk(full)
       else if (CODE_EXTENSIONS.has(path.extname(entry.name)) && !entry.name.includes('.test.')) {
         out.push(full)

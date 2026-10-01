@@ -26,6 +26,7 @@ import { fileURLToPath } from 'node:url'
 import { after, describe, it } from 'node:test'
 import { skeletonizeCode } from './ast-skeletonizer.mjs'
 import { scanNonStructural } from './code-scanner.mjs'
+import { isNestedCheckout } from '../scaffold/nested-checkout.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(HERE, '../..')
@@ -42,6 +43,8 @@ function sources(dir) {
     for (const e of fs.readdirSync(d, { withFileTypes: true })) {
       if (SKIP.has(e.name)) continue
       const full = path.join(d, e.name)
+      // Un checkout anidado (un worktree de Claude Code) es otro árbol: nested-checkout.mjs.
+      if (e.isDirectory() && isNestedCheckout(full)) continue
       if (e.isDirectory()) walk(full)
       else if (/\.(mjs|js)$/.test(e.name) && !e.name.includes('.test.')) out.push(full)
     }

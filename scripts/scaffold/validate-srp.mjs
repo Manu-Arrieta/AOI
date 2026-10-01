@@ -29,6 +29,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { validateFileSizes } from '../sdd-lifecycle/mechanical-verify-union.mjs'
 import { isAoiGovernedPath, isDevelopmentRepo } from './governed-paths.mjs'
+import { isNestedCheckout } from './nested-checkout.mjs'
 
 export const MAX_LOC = 300
 const SOURCE_EXTENSIONS = new Set(['.mjs', '.js', '.ts'])
@@ -87,7 +88,7 @@ const MIRROR_DIR = 'scaffold'
  * newline; using the gate's own measure keeps the two from disagreeing.
  */
 export const LEGACY_BUDGET = {
-  'scripts/scaffold/mutation-probe.mjs': 1143,
+  'scripts/scaffold/mutation-probe.mjs': 1142,
   'scripts/scaffold/mutation-probe.test.mjs': 928,
   'scripts/scaffold/validate-test-globs.mjs': 355,
   'scripts/scaffold/validate-test-globs.test.mjs': 359,
@@ -118,6 +119,8 @@ export function listSourceFiles(root, dir = 'scripts') {
       // The mirror is one specific path, not every directory that shares its
       // name. Matching by basename here is what hid `scripts/scaffold/`.
       if (path.relative(root, full) === MIRROR_DIR) continue
+      // Un checkout anidado (un worktree de Claude Code) es otro árbol: nested-checkout.mjs.
+      if ((entry.isDirectory() || entry.isSymbolicLink()) && isNestedCheckout(full)) continue
       // A symlink is neither `isDirectory()` nor `isFile()` to `readdirSync`,
       // so a linked directory used to be skipped entirely — 900 LOC of
       // governed source sat behind one and the ratchet reported clean. The

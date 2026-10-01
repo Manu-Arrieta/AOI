@@ -30,6 +30,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { readFlags } from '../sdd-lifecycle/cli-flags.mjs'
+import { isNestedCheckout } from '../scaffold/nested-checkout.mjs'
 
 const EXTS = ['.mjs', '.js']
 // No se filtra por el nombre 'scaffold': el espejo raíz queda afuera porque
@@ -79,6 +80,8 @@ function walk(dir, keep, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (SKIP_DIRS.has(entry.name)) continue
     const full = path.join(dir, entry.name)
+    // Un checkout anidado (un worktree de Claude Code) es otro árbol: nested-checkout.mjs.
+    if (entry.isDirectory() && isNestedCheckout(full)) continue
     if (entry.isDirectory()) walk(full, keep, out)
     else if (keep(entry.name)) out.push(full)
   }

@@ -25,6 +25,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { isNestedCheckout } from './nested-checkout.mjs'
 
 const TEST_INVOCATION = /node\s+--test\s+([^&|;]+)/g
 
@@ -71,12 +72,11 @@ export function collectTestGlobs(scripts) {
   return globs
 }
 
-/** Directories no runner is expected to reach. */
-// '.conf' holds the installer's snapshot of a previous install and 'scaffold'
-// is a byte-for-byte mirror: both contain copies of test files that are not
-// meant to run, and counting them as orphans buries the real finding under 43
-// false positives — which is exactly what happened the first time this ran in
-// an installed workspace rather than in the repository.
+// Directories no runner is expected to reach. '.conf' holds the installer's
+// snapshot of a previous install and 'scaffold' is a byte-for-byte mirror:
+// both hold copies of tests not meant to run, and counting them as orphans
+// buried the real finding under 43 false positives the first time this ran
+// in an installed workspace. Nested checkouts go by `.git`, not by name.
 const SKIP_DIRS = new Set(['node_modules', '.git', '.nuxt', 'dist', '.output', 'scaffold', '.venv', '.conf', '.sandboxes'])
 
 /** Every test file on disk, whatever the runner. */
@@ -93,7 +93,7 @@ export function collectTestFiles(root, dir = '.') {
     for (const e of entries) {
       if (SKIP_DIRS.has(e.name)) continue
       const childRel = path.join(rel, e.name)
-      if (e.isDirectory()) walk(childRel)
+      if (e.isDirectory()) { if (!isNestedCheckout(path.join(root, childRel))) walk(childRel) }
       else if (/\.(test|spec)\.(mjs|ts|js)$/.test(e.name)) out.push(path.normalize(childRel))
     }
   }
