@@ -25,6 +25,7 @@ import {
   isEmpty, parseAssignment, readAssignment, registryAgents, resolveAgent, storedSlots, writeFact,
 } from './provider-store.mjs'
 import { CATEGORIES } from './validate-agent-routing.mjs'
+import { UsageError, exitOnUsageError, parseFlags } from '../sdd-lifecycle/cli-flags.mjs'
 
 /** Los valores elegibles, uno por modelo configurado, en el orden del manifiesto. */
 export function modelChoices(discovered) {
@@ -137,16 +138,39 @@ export function applyWrites(workspace, writes, { reset = false, existing = [], e
 /** Las claves guardadas, para que `--reset` sepa qué borrar. */
 export const existingKeys = (assignment) => storedSlots(assignment).map((s) => s.key)
 
-function flagValues(args, flag) {
-  const out = []
-  args.forEach((a, i) => a === flag && args[i + 1] && out.push(args[i + 1]))
-  return out
+const USAGE = 'Uso: --show | --list-models | --interactive [--if-empty] | [--reset] --set <alcance>=<#n|valor> | --unset <alcance>'
+const SETUP_FLAGS = {
+  root: { type: 'string' }, workspace: { type: 'string' }, 'list-models': { type: 'boolean' }, show: { type: 'boolean' },
+  interactive: { type: 'boolean' }, 'if-empty': { type: 'boolean' }, reset: { type: 'boolean' },
+  set: { type: 'string', multiple: true }, unset: { type: 'string', multiple: true },
+}
+
+/**
+ * Los argumentos, validados ANTES de tocar ICM. El bucle viejo ignoraba lo que no
+ * conocía (auditoría D3, leído en el código: medirlo exige escribir en ICM): con
+ * `--reset --sett all=#1` quedaba `--reset` solo, `applyWrites` borraba la asignación
+ * entera y salía 0 con ✅; `--show --set all=#1` mostraba y descartaba el `--set`. Un modo por invocación, y `--reset` sólo junto al `--set` que lo reemplaza.
+ */
+export function parseSetupArgs(argv) {
+  const { values: v } = parseFlags(argv, SETUP_FLAGS)
+  const sets = v.set ?? []
+  const unsets = v.unset ?? []
+  const modes = ['list-models', 'show', 'interactive'].filter((m) => v[m]).map((m) => `--${m}`)
+  if (sets.length + unsets.length > 0 || v.reset) modes.push('--set/--unset/--reset')
+  if (modes.length > 1) throw new UsageError(`${modes.join(' y ')} no se combinan: uno por invocación.\n   ${USAGE}`)
+  if (modes.length === 0) throw new UsageError(USAGE)
+  if (v['if-empty'] && !v.interactive) throw new UsageError('--if-empty sólo tiene sentido con --interactive')
+  if (v.reset && sets.length === 0) {
+    throw new UsageError('--reset sin --set borraría la asignación entera y dejaría a todos SIN ASIGNAR. Ej.: --reset --set all=#1')
+  }
+  return { root: v.root, workspace: v.workspace, mode: modes[0], sets, unsets, reset: v.reset === true, ifEmpty: v['if-empty'] === true }
 }
 
 async function main() {
-  const args = process.argv.slice(2)
-  const root = path.resolve(flagValues(args, '--root')[0] ?? process.cwd())
-  const workspace = flagValues(args, '--workspace')[0] ?? defaultWorkspace(root)
+  const opts = exitOnUsageError(() => parseSetupArgs(process.argv.slice(2)))
+  // `||` y no `??`: el bucle viejo saltaba un valor vacío, y `--workspace ""` seguía cayendo al default.
+  const root = path.resolve(opts.root || process.cwd())
+  const workspace = opts.workspace || defaultWorkspace(root)
   const agents = registryAgents(root)
   if (agents.length === 0) {
     console.error(`❌ Registro vacío o ausente en ${root}: no hay agentes que asignar.`)
@@ -160,11 +184,11 @@ async function main() {
   const discovered = discoverProviders()
   const choices = modelChoices(discovered)
 
-  if (args.includes('--list-models')) return console.log(choices.length ? formatChoices(choices) : formatReport(discovered))
-  if (args.includes('--show')) return console.log(`Asignación de ${workspace}:\n` + formatTable(resolvedTable(agents, read.assignment)))
+  if (opts.mode === '--list-models') return console.log(choices.length ? formatChoices(choices) : formatReport(discovered))
+  if (opts.mode === '--show') return console.log(`Asignación de ${workspace}:\n` + formatTable(resolvedTable(agents, read.assignment)))
 
-  if (args.includes('--interactive')) {
-    if (args.includes('--if-empty') && !isEmpty(read.assignment)) {
+  if (opts.mode === '--interactive') {
+    if (opts.ifEmpty && !isEmpty(read.assignment)) {
       console.log(`Asignación existente de ${workspace} — se conserva. Para cambiarla: /aoi-providers\n`)
       return console.log(formatTable(resolvedTable(agents, read.assignment)))
     }
@@ -197,13 +221,7 @@ async function main() {
     }
   }
 
-  const sets = flagValues(args, '--set')
-  const unsets = flagValues(args, '--unset')
-  const reset = args.includes('--reset')
-  if (sets.length + unsets.length === 0 && !reset) {
-    console.error('Uso: --show | --list-models | --interactive [--if-empty] | [--reset] --set <alcance>=<#n|valor> | --unset <alcance>')
-    process.exit(2)
-  }
+  const { sets, unsets, reset } = opts
   let writes
   try {
     writes = [

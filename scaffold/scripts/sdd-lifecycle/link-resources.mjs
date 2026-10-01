@@ -12,6 +12,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { readFlags } from './cli-flags.mjs'
 
 /**
  * Collects relative paths of markdown/json resource files in a subtree.
@@ -122,18 +123,16 @@ export function updateTaskRelations(taskDir, { userstories = [], workflows = [],
 
 // CLI Interface
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
-  const args = process.argv.slice(2)
-  let taskDir = ''
-  let autoMatch = ''
-  let storyInput = []
-  let workflowInput = []
-
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--task-dir' && args[i + 1]) taskDir = args[++i]
-    else if (args[i] === '--auto-match' && args[i + 1]) autoMatch = args[++i]
-    else if (args[i] === '--story' && args[i + 1]) storyInput.push(args[++i])
-    else if (args[i] === '--workflow' && args[i + 1]) workflowInput.push(args[++i])
-  }
+  // Estricto (D6): el bucle viejo ignoraba lo desconocido, y `--stroy x.md`
+  // —medido— imprimía ✅ con 0 historias enlazadas y relations.json intacto.
+  const { values: v } = readFlags(process.argv.slice(2), {
+    'task-dir': { type: 'string' }, 'auto-match': { type: 'string' },
+    story: { type: 'string', multiple: true }, workflow: { type: 'string', multiple: true },
+  })
+  const taskDir = v['task-dir'] ?? ''
+  const autoMatch = v['auto-match'] ?? ''
+  const storyInput = v.story ?? []
+  const workflowInput = v.workflow ?? []
 
   if (!taskDir) {
     console.error('Usage: node link-resources.mjs --task-dir <path> [--story <file>] [--workflow <file>] [--auto-match <query>]')

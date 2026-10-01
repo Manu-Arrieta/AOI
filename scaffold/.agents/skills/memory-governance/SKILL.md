@@ -26,16 +26,18 @@ AOI uses governed memory versioning for workspaces registered in `.specify/memor
 
 ## Core Scripts
 
-All scripts live in `scripts/memory-sync/`:
+All scripts live in `scripts/memory-sync/`. Three of them are an API, not an
+executable: `node <file>` refuses with exit 1 and changes nothing, so they are
+imported (see Rollback below).
 
 | Script                         | Purpose                                  |
 | ------------------------------ | ---------------------------------------- |
 | `resolve-active-version.mjs`   | Read active version for workspace        |
-| `prepare-version-manifest.mjs` | Create a new version manifest            |
-| `activate-version.mjs`         | Set a version as active                  |
+| `prepare-version-manifest.mjs` | API: create a new version manifest       |
+| `activate-version.mjs`         | API: set a version as active             |
 | `export-memory-bundle.mjs`     | Export active version to portable bundle |
 | `import-memory-bundle.mjs`     | Import a bundle as a candidate version   |
-| `rollback-version.mjs`         | Restore previous version                 |
+| `rollback-version.mjs`         | API: restore previous version            |
 | `bundle-contract.test.mjs`     | Validate bundle schema                   |
 | `bundle-lifecycle.test.mjs`    | Validate full lifecycle                  |
 
@@ -62,8 +64,9 @@ All scripts live in `scripts/memory-sync/`:
 
 1. Resolve active version + confirm `previousVersionId`
 2. **Safety check**: validate previous version integrity
-3. Run `node scripts/memory-sync/rollback-version.mjs "$WORKSPACE" "$targetVersionId"`
-4. Must provide `reason` for rollback
+3. Require a written `reason` — the API refuses without one and persists it as `rollbackReason`
+4. Run it from the workspace root, importing the API (`rollback-version.mjs` is not a CLI: run directly, it exits 1):
+   `node --input-type=module -e "import { rollbackVersion } from './scripts/memory-sync/rollback-version.mjs'; const r = await rollbackVersion({ workspace: process.argv[1], targetVersionId: process.argv[2], reason: process.argv[3] }); console.log(JSON.stringify(r.nextActiveIndex.workspaceStates[process.argv[1]]))" "$WORKSPACE" "$targetVersionId" "$reason"`
 5. Active pointer is updated atomically
 
 ## Critical Constraints

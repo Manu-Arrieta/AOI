@@ -9,42 +9,52 @@
  * loops were the same code with different flag names, and neither had a test:
  * every mutant the probe planted inside them survived.
  *
- * One parser, one place to get the `index += 1` right, and a surface small
- * enough to hold with assertions.
+ * Estricto desde la auditoría 2026-09-30 (D4): el bucle compartido aceptaba
+ * CUALQUIER clave y saltaba un flag sin valor. `--scopes memories` (con s) no
+ * era un error: dejaba `scope` vacío, y `export-memory-bundle` lee la lista
+ * vacía como "todos los scopes" — se exportaba todo por un typo. Ahora lo
+ * desconocido, lo que no tiene valor y lo que sobra es un `UsageError`.
  */
+
+import { UsageError, parseFlags } from '../sdd-lifecycle/cli-flags.mjs'
+
+/**
+ * Los flags de un solo valor que los dos CLIs leen. Ninguno de los dos pasa
+ * todavía su propia lista, así que el default es la unión: sigue aceptando `--owner-context` en el export, pero ya no un nombre
+ * que ninguno de los dos lee.
+ */
+export const BUNDLE_VALUE_FLAGS = ['versions-root', 'exports-root', 'exported-at', 'format-version', 'owner-context']
 
 /**
  * Splits `argv` into the three positional values and a flag map.
  *
- * A flag named in `lists` may repeat and accumulates; every other flag keeps
- * its last value. A flag with no value following it is ignored rather than
- * recorded as `undefined` — a scope list containing a hole fails downstream
- * with a message about the hole instead of about the missing argument.
+ * A flag named in `lists` may repeat and accumulates; every flag in `values`
+ * keeps its last value. Anything else throws `UsageError`.
  *
  * @param {string[]} argv
- * @param {{ lists?: string[] }} [options]
+ * @param {{ lists?: string[], values?: string[] }} [options]
  * @returns {{ workspace: string, versionId: string, relativeArtifactPath: string,
  *   flags: Record<string, string | string[]> }}
  */
-export function parseBundleArgs(argv = [], { lists = [] } = {}) {
-  const [workspace, versionId, relativeArtifactPath, ...rest] = argv
-  const flags = {}
-  for (const name of lists) flags[name] = []
+export function parseBundleArgs(argv = [], { lists = [], values = BUNDLE_VALUE_FLAGS } = {}) {
+  const options = {}
+  for (const name of values) options[name] = { type: 'string' }
+  for (const name of lists) options[name] = { type: 'string', multiple: true }
 
-  for (let index = 0; index < rest.length; index += 1) {
-    const token = rest[index]
-    if (typeof token !== 'string' || !token.startsWith('--')) continue
+  // `util.parseArgs` no mira el tipo de cada token: un `null` revienta adentro
+  // con un TypeError ajeno y un `42` se vuelve el versionId. `process.argv` sólo
+  // trae strings, así que otra cosa es un bug del llamador y se dice como tal.
+  const bad = argv.findIndex((token) => typeof token !== 'string')
+  if (bad > -1) throw new TypeError(`argv sólo admite strings, recibió ${String(argv[bad])} en la posición ${bad}`)
 
-    const key = token.slice(2)
-    const value = rest[index + 1]
-    // A flag whose value is another flag was never a value: consuming it
-    // would silently eat the next option.
-    if (value === undefined || value.startsWith('--')) continue
-
-    if (lists.includes(key)) flags[key].push(value)
-    else flags[key] = value
-    index += 1
+  const parsed = parseFlags(argv, options, { positionals: true })
+  const [workspace, versionId, relativeArtifactPath, ...extra] = parsed.positionals
+  if (extra.length > 0) {
+    throw new UsageError(`sobra un argumento: "${extra[0]}". Uso: <workspace> <versionId> <ruta> [--flags]`)
   }
 
+  const flags = {}
+  for (const name of lists) flags[name] = []
+  for (const [key, value] of Object.entries(parsed.values)) flags[key] = value
   return { workspace, versionId, relativeArtifactPath, flags }
 }

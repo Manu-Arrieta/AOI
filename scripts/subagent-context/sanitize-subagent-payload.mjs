@@ -13,6 +13,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { serializeSubagentPayloadToTOON } from './toon-serializer.mjs'
+import { exitOnUsageError, exitUsage, oneOf, readFlags } from '../sdd-lifecycle/cli-flags.mjs'
 
 /**
  * Normalizes role names into canonical keys.
@@ -261,22 +262,18 @@ export async function sanitizeTaskPayloadFromDisk(taskDir, role, format = 'markd
   })
 }
 
-// CLI Execution
+// CLI Execution. El bucle viejo ignoraba lo que no conocía y no validaba nada,
+// medido: `--format yaml` y `--formt toon` devolvían markdown con exit 0, y un
+// `--task-dir` inexistente salía 0 con un payload vacío que el subagente recibía
+// como si la tarea no tuviera trabajo.
 async function main() {
-  const args = process.argv.slice(2)
-  let taskDir = '.'
-  let role = 'frontend'
-  let format = 'markdown'
-
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--task-dir' && args[i + 1]) {
-      taskDir = args[++i]
-    } else if (args[i] === '--role' && args[i + 1]) {
-      role = args[++i]
-    } else if (args[i] === '--format' && args[i + 1]) {
-      format = args[++i]
-    }
-  }
+  const { values: v } = readFlags(process.argv.slice(2), {
+    'task-dir': { type: 'string' }, role: { type: 'string' }, format: { type: 'string' },
+  })
+  const format = exitOnUsageError(() => oneOf('format', v.format, ['markdown', 'toon'])) ?? 'markdown'
+  const taskDir = v['task-dir'] ?? '.'
+  const role = v.role ?? 'frontend'
+  if (!fs.existsSync(taskDir) || !fs.statSync(taskDir).isDirectory()) exitUsage(`--task-dir no existe o no es un directorio: ${taskDir}`)
 
   try {
     const result = await sanitizeTaskPayloadFromDisk(taskDir, role, format)

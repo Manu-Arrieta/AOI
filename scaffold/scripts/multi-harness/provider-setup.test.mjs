@@ -6,10 +6,16 @@
  */
 
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
 import {
-  applyWrites, existingKeys, formatTable, interactiveWrites, modelChoices, pickValue, resolvedTable, scopeKey,
+  applyWrites, existingKeys, formatTable, interactiveWrites, modelChoices, parseSetupArgs, pickValue, resolvedTable, scopeKey,
 } from './provider-setup.mjs'
+import { UsageError } from '../sdd-lifecycle/cli-flags.mjs'
 import { DEFAULT_KEY, RESOLVED_AT_KEY, agentKey, categoryKey, parseAssignment, readAssignment } from './provider-store.mjs'
 import { memoryIcm } from '../scaffold/fake-icm.mjs'
 
@@ -116,5 +122,48 @@ describe('formatTable', () => {
     const out = formatTable(resolvedTable(AGENTS, parseAssignment([])))
     assert.match(out, /3 agente\(s\) sin asignar/)
     assert.match(out, /\/aoi-providers/)
+  })
+})
+
+describe('parseSetupArgs — los argumentos se validan antes de tocar ICM', () => {
+  it('lee los modos que usan /aoi-providers, setup.sh y /init', () => {
+    assert.equal(parseSetupArgs(['--show']).mode, '--show')
+    assert.equal(parseSetupArgs(['--workspace', 'WS', '--show']).workspace, 'WS')
+    assert.equal(parseSetupArgs(['--list-models']).mode, '--list-models')
+    const i = parseSetupArgs(['--workspace', 'WS', '--interactive', '--if-empty'])
+    assert.deepEqual([i.mode, i.ifEmpty], ['--interactive', true])
+    const r = parseSetupArgs(['--reset', '--set', 'all=#2'])
+    assert.deepEqual([r.reset, r.sets], [true, ['all=#2']])
+    assert.deepEqual(parseSetupArgs(['--set', 'all=#1', '--set', 'agent:ux-designer=#3']).sets, ['all=#1', 'agent:ux-designer=#3'])
+    assert.deepEqual(parseSetupArgs(['--unset', 'agent:ux-designer']).unsets, ['agent:ux-designer'])
+  })
+
+  it('--reset con el --set mal escrito se rechaza: antes borraba la asignación entera e imprimía ✅', () => {
+    assert.throws(() => parseSetupArgs(['--reset', '--sett', 'all=#1']), (e) => e instanceof UsageError && /--sett/.test(e.message))
+    assert.throws(() => parseSetupArgs(['--reset']), (e) => e instanceof UsageError && /SIN ASIGNAR/.test(e.message))
+    assert.throws(() => parseSetupArgs(['--reset', '--unset', 'all']), /--reset sin --set/)
+  })
+
+  it('--show no se come en silencio un --set, ni dos modos conviven', () => {
+    assert.throws(() => parseSetupArgs(['--show', '--set', 'all=#1']), /no se combinan/)
+    assert.throws(() => parseSetupArgs(['--list-models', '--interactive']), /no se combinan/)
+  })
+
+  it('sin modo, con --if-empty suelto o con un --set sin valor, es error de uso', () => {
+    assert.throws(() => parseSetupArgs([]), /Uso:/)
+    assert.throws(() => parseSetupArgs(['--if-empty']), UsageError)
+    assert.throws(() => parseSetupArgs(['--set']), UsageError)
+  })
+
+  it('el CLI sale con 2 y no llega a ICM: el rechazo ocurre antes del registro', () => {
+    // Un root vacío: si el parseo dejara pasar el typo, el CLI moriría por el
+    // registro ausente —también con 2— así que lo que se afirma es el MENSAJE.
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-psetup-'))
+    const cli = fileURLToPath(new URL('./provider-setup.mjs', import.meta.url))
+    const r = spawnSync(process.execPath, [cli, '--root', root, '--reset', '--sett', 'all=#1'], { encoding: 'utf8' })
+    fs.rmSync(root, { recursive: true, force: true })
+    assert.equal(r.status, 2)
+    assert.match(r.stderr, /--sett/)
+    assert.match(r.stderr, /Flags válidos:.*--set <valor>/)
   })
 })

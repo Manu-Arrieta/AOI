@@ -34,6 +34,7 @@ import { assemblePhaseContext } from './assemble-phase-context.mjs'
 import { auditBandBudget } from './band-budget.mjs'
 import { auditContextBudget, formatHarnessAdapters, SDD_PHASES } from './context-budget.mjs'
 import { read } from './instruction-scope.mjs'
+import { readFlags } from './cli-flags.mjs'
 
 /** Anthropic bills a cache read at a tenth of an input token. */
 export const CACHE_READ_RATE = 0.1
@@ -238,6 +239,10 @@ export function formatCacheReport(part, options = {}) {
 }
 
 function main() {
+  // No toma flags, y antes tampoco los rechazaba (D6): `--help` —medido— corría
+  // la auditoría entera (3.160 bytes) en vez de decir qué hace el comando.
+  const { values: v } = readFlags(process.argv.slice(2), { help: { type: 'boolean', short: 'h' } })
+  if (v.help) return console.log('Uso: node scripts/sdd-lifecycle/cache-prefix.mjs  (sin flags; exit 1 si la masa repetida muta)')
   const root = process.cwd()
   const part = partitionSurface(surfaceLoadMap(root))
   const budget = auditContextBudget(root)

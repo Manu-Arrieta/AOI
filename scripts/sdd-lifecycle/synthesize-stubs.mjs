@@ -22,6 +22,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { UsageError, parseFlags } from './cli-flags.mjs'
 
 /**
  * El patrón de una declaración de función exportada.
@@ -235,15 +236,20 @@ export function formatScaffoldReport(taskDir, opts = {}) {
  * escribió.
  */
 export function main(argv = process.argv.slice(2)) {
-  const value = (flag) => {
-    const at = argv.indexOf(flag)
-    const next = at > -1 ? argv[at + 1] : undefined
-    // Un flag seguido de otro flag, o al final, no tiene valor: se trata como
-    // ausente en vez de tomar el flag como path.
-    return next === undefined || next.startsWith('--') ? undefined : next
+  // Estricto (D6): el `indexOf` viejo ignoraba lo desconocido, y `--import-pth`
+  // —medido— caía al placeholder `./<module>` con exit 0, sin decir que el flag
+  // no se había leído. `exitCode` y no `exit`: `main` se exporta.
+  let flags
+  try {
+    flags = parseFlags(argv, { 'task-dir': { type: 'string' }, 'import-path': { type: 'string' } }).values
+  } catch (e) {
+    if (!(e instanceof UsageError)) throw e
+    process.stderr.write(`[synthesize-stubs] ${e.message}\n`)
+    process.exitCode = 2
+    return
   }
 
-  const taskDir = value('--task-dir')
+  const taskDir = flags['task-dir']
   if (!taskDir) {
     process.stderr.write(
       'uso: node scripts/sdd-lifecycle/synthesize-stubs.mjs --task-dir <dir> [--import-path <p>]\n'
@@ -257,7 +263,7 @@ export function main(argv = process.argv.slice(2)) {
     return
   }
 
-  const importPath = value('--import-path')
+  const importPath = flags['import-path']
   process.stdout.write(`${formatScaffoldReport(taskDir, importPath ? { importPath } : {})}\n`)
 }
 

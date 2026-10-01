@@ -93,6 +93,22 @@ describe('link-resources refuses to guess where the task lives', () => {
     assert.equal(r.code, 1)
     assert.match(r.stderr, /Error/)
   })
+
+  it('refuses a misspelled flag with exit 2 instead of printing ✅ over no change', () => {
+    // Medido (D6): `--stroy` se ignoraba, relations.json se reescribía igual y
+    // el CLI decía `✅ Updated` con 0 historias: el enlace pedido no existía.
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-link4-'))
+    const taskDir = path.join(root, '.tasks/feat/TASK-2026-001')
+    fs.mkdirSync(taskDir, { recursive: true })
+    const r = run(LINK, ['--task-dir', taskDir, '--stroy', 'userstories/historia.md'], root)
+    const wrote = fs.existsSync(path.join(taskDir, 'relations.json'))
+    fs.rmSync(root, { recursive: true, force: true })
+    assert.equal(r.code, 2, `${r.stdout}${r.stderr}`)
+    assert.match(r.stderr, /--stroy/)
+    assert.match(r.stderr, /--story <valor>/)
+    assert.doesNotMatch(r.stdout, /✅/)
+    assert.equal(wrote, false, 'escribió relations.json igual')
+  })
 })
 
 describe('registry-sync gates the id allocator', () => {

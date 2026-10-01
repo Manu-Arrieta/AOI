@@ -137,17 +137,26 @@ test('the report says it wrote nothing, because that is the guarantee', () => {
 })
 
 test('the CLI prints usage and exits 1 when it has no --task-dir', () => {
-  for (const args of [[], ['--task-dir']]) {
+  const { code, out } = runCli([])
+  assert.equal(code, 1)
+  assert.match(out, /uso: node scripts\/sdd-lifecycle\/synthesize-stubs\.mjs/)
+})
+
+test('a flag with no value, or another flag as its value, is a usage error (exit 2)', () => {
+  for (const args of [['--task-dir'], ['--task-dir', '--dry-run']]) {
     const { code, out } = runCli(args)
-    assert.equal(code, 1, `args=${JSON.stringify(args)}`)
-    assert.match(out, /uso: node scripts\/sdd-lifecycle\/synthesize-stubs\.mjs/)
+    assert.equal(code, 2, `args=${JSON.stringify(args)}`)
+    assert.match(out, /--task-dir/)
   }
 })
 
-test('the CLI does not take another flag as the value of --task-dir', () => {
-  const { code, out } = runCli(['--task-dir', '--dry-run'])
-  assert.equal(code, 1)
-  assert.match(out, /uso:/)
+test('a misspelled --import-path is refused instead of falling back to the placeholder', () => {
+  // Medido (D6): `--import-pth ../srv/fiber` salía 0 con `from './<module>'`.
+  const { code, out } = runCli(['--task-dir', FIXTURE, '--import-pth', '../srv/fiber'])
+  assert.equal(code, 2)
+  assert.match(out, /--import-pth/)
+  assert.match(out, /Flags válidos: --task-dir <valor> --import-path <valor>/)
+  assert.doesNotMatch(out, /<module>/, 'igual imprimió el scaffold con el placeholder')
 })
 
 test('the CLI names the missing directory instead of throwing a stack', () => {

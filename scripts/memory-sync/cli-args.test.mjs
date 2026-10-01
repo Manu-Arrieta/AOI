@@ -12,6 +12,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { parseBundleArgs } from './cli-args.mjs'
+import { UsageError } from '../sdd-lifecycle/cli-flags.mjs'
 
 describe('parseBundleArgs', () => {
   it('takes the first three tokens as the positional values', () => {
@@ -56,24 +57,43 @@ describe('parseBundleArgs', () => {
     assert.equal(r.flags['versions-root'], '/dos')
   })
 
-  it('ignores a flag with no value instead of recording undefined', () => {
-    // A scope list with a hole in it fails downstream complaining about the
-    // hole, which sends the operator looking in the wrong place.
-    const r = parseBundleArgs(['ws', 'v1', 'a.gz', '--scope'], { lists: ['scope'] })
-    assert.deepEqual(r.flags.scope, [])
+  it('refuses a flag with no value instead of reading it as "none selected"', () => {
+    // Before: `--scope` at the end was skipped, the list stayed empty, and the
+    // export read an empty list as ALL scopes.
+    assert.throws(() => parseBundleArgs(['ws', 'v1', 'a.gz', '--scope'], { lists: ['scope'] }), UsageError)
   })
 
-  it('does not swallow the next option as a value', () => {
-    const r = parseBundleArgs(['ws', 'v1', 'a.gz', '--scope', '--versions-root', '/raiz'], {
-      lists: ['scope'],
-    })
-    assert.deepEqual(r.flags.scope, [], '`--versions-root` se consumió como si fuera un scope')
-    assert.equal(r.flags['versions-root'], '/raiz')
+  it('refuses to take the next option as a value, instead of swallowing or skipping it', () => {
+    assert.throws(
+      () => parseBundleArgs(['ws', 'v1', 'a.gz', '--scope', '--versions-root', '/raiz'], { lists: ['scope'] }),
+      UsageError,
+    )
   })
 
-  it('ignores a bare token that is not a flag', () => {
-    const r = parseBundleArgs(['ws', 'v1', 'a.gz', 'suelto', '--versions-root', '/raiz'])
-    assert.equal(r.flags.suelto, undefined)
+  it('refuses an unknown flag and names the valid ones — `--scopes` exported everything', () => {
+    // Medido (D4): `--scopes memories` dejaba `scope` vacío y el export tomaba
+    // la lista vacía como "todos": un typo de una letra exportaba la memoria entera.
+    assert.throws(
+      () => parseBundleArgs(['ws', 'v1', 'a.gz', '--scopes', 'memories'], { lists: ['scope'] }),
+      (e) => e instanceof UsageError && /--scopes/.test(e.message) && /--scope <valor>/.test(e.message),
+    )
+  })
+
+  it('refuses a list flag the calling CLI did not declare', () => {
+    // `--retain` is import's; on export it would have been accepted and ignored.
+    assert.throws(() => parseBundleArgs(['ws', 'v1', 'a.gz', '--retain', 'x'], { lists: ['scope'] }), UsageError)
+  })
+
+  it('refuses a stray token after the three positionals', () => {
+    assert.throws(
+      () => parseBundleArgs(['ws', 'v1', 'a.gz', 'suelto', '--versions-root', '/raiz']),
+      (e) => e instanceof UsageError && /suelto/.test(e.message),
+    )
+  })
+
+  it('reads the positionals even when a flag comes first', () => {
+    const r = parseBundleArgs(['--versions-root', '/raiz', 'ws', 'v1', 'a.gz'])
+    assert.deepEqual([r.workspace, r.versionId, r.relativeArtifactPath], ['ws', 'v1', 'a.gz'])
     assert.equal(r.flags['versions-root'], '/raiz')
   })
 
