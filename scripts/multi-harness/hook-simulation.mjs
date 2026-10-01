@@ -112,6 +112,7 @@ export function sampleEvents(cwd) {
     ev('UserPromptSubmit', { prompt: 'arreglá el cableado de hooks de Claude Code en install-hooks' }),
     ev('PreToolUse', bash, 'Bash'),
     ev('PostToolUse', { ...bash, tool_response: { stdout: 'On branch main', stderr: '' } }, 'Bash'),
+    ev('PreCompact', { trigger: 'auto', custom_instructions: '' }),
     ev('Stop', { stop_hook_active: false }),
     ev('SessionEnd', { reason: 'other' }),
   ]

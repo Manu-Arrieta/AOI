@@ -27,6 +27,13 @@
         "command": "bash .github/scripts/icm-hook.sh prompt",
         "timeout": 10
       }
+    ],
+    "PreCompact": [
+      {
+        "type": "command",
+        "command": "bash .github/scripts/icm-hook.sh compact",
+        "timeout": 10
+      }
     ]
   }
 }

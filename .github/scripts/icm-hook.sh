@@ -96,10 +96,127 @@ user_scope_fires() {
   return 1
 }
 
+# ── Recall por sesión ────────────────────────────────────────────────────────
+# Medido sobre 110 sesiones reales de este repositorio: el 82,2 % de las líneas
+# que `icm hook prompt` inyectó (527 KB de 634 KB) ya se habían inyectado antes
+# en la MISMA sesión, y cada una se relee en todos los requests posteriores.
+# ICM no lo evita: `icm hook prompt` ignora `[recall] enabled` y `limit`.
+# Cuando este wrapper ES el inyector, recuerda por sesión qué líneas ya entraron
+# y no las repite. Sin id de sesión no hay registro: se inyecta sin filtrar.
+# Todo en builtins de bash 3.2 (el /bin/bash de macOS) y un único awk, porque
+# corre en cada prompt.
+RECALL_DIR="${TMPDIR:-/tmp}"
+RECALL_DIR="${RECALL_DIR%/}/aoi-recall-seen"
+RECALL_FILE=''
+
+# Valor de un campo string del JSON de stdin, en REPLY. Sin jq ni node.
+json_field() {
+  local re='"'"$1"'"[[:space:]]*:[[:space:]]*"(([^"\\]|\\.)*)"'
+  REPLY=''
+  if [[ $INPUT =~ $re ]]; then REPLY=${BASH_REMATCH[1]}; fi
+}
+
+# Claude Code y VS Code mandan session_id; otras variantes, sessionId o
+# conversationId. Sin ninguno, el transcript identifica la sesión igual.
+recall_key() {
+  local f c
+  for f in session_id sessionId conversationId; do
+    json_field "$f"
+    if [ -n "$REPLY" ]; then
+      RECALL_FILE="$RECALL_DIR/s-${REPLY//[^A-Za-z0-9._-]/_}"
+      return 0
+    fi
+  done
+  json_field transcript_path
+  [ -n "$REPLY" ] || json_field transcriptPath
+  [ -n "$REPLY" ] || return 1
+  c=$(printf '%s' "$REPLY" | cksum)
+  RECALL_FILE="$RECALL_DIR/t-${c%% *}"
+}
+
+# Después de compactar, o en una sesión nueva o limpiada, lo inyectado ya no
+# está en el contexto y vuelve a valer: el registro se vacía. Un resume
+# conserva el contexto, así que conserva el registro. VS Code manda siempre
+# source "new".
+recall_maintain() {
+  [ -n "$RECALL_FILE" ] || return 0
+  case "$MODE" in
+    start)
+      json_field source
+      [ "$REPLY" = resume ] && return 0
+      # Registros de sesiones que nunca dispararon SessionEnd (VS Code no lo tiene).
+      [ -d "$RECALL_DIR" ] && find "$RECALL_DIR" -type f -mtime +2 -delete 2>/dev/null || true
+      ;;
+    compact|end) ;;
+    *) return 0 ;;
+  esac
+  [ -e "$RECALL_FILE" ] && rm -f "$RECALL_FILE" 2>/dev/null || true
+}
+
+# Prompts de pura continuación: una lista cerrada, nunca por largo. El recall de
+# "continua" es el de cualquier consulta vacía (55 de esos en el historial).
+is_continuation() {
+  local p w sep re r=1
+  json_field prompt
+  p=${REPLY//\\n/ }
+  p=${p//\\u00fa/ú}
+  p=${p//\\u00ed/í}
+  p=${p//\\u00e9/é}
+  w='(continua|continúa|continuá|continuar|continue|sigue|seguí|segui|siga|procede|procedé|proceed|dale|ok|okay|okey|sí|si|yes|yep|go on|go ahead|keep going|adelante)'
+  sep='[[:space:][:punct:]]'
+  re="^${sep}*${w}(${sep}+${w}){0,2}${sep}*\$"
+  shopt -s nocasematch
+  if [[ $p =~ $re ]]; then r=0; fi
+  shopt -u nocasematch
+  return $r
+}
+
+recall_inject() {
+  local out rc=0
+  is_continuation && return 0
+  # La `x` conserva los saltos finales que `$(...)` borraría: lo que no se
+  # filtra sale byte por byte como lo dio icm.
+  out=$("$ICM_BIN" hook prompt <<<"$INPUT"; r=$?; printf x; exit "$r") || rc=$?
+  out=${out%x}
+  # Sin registro, con error, o sin líneas "- " (no es el formato del recall):
+  # pasa entera.
+  if [ "$rc" -ne 0 ] || [ -z "$RECALL_FILE" ] || [[ $'\n'$out != *$'\n- '* ]] ||
+    ! { [ -d "$RECALL_DIR" ] || mkdir -p "$RECALL_DIR" 2>/dev/null; }; then
+    printf '%s' "$out"
+    return "$rc"
+  fi
+  # Si ninguna línea es nueva, tampoco va el encabezado.
+  awk -v state="$RECALL_FILE" '
+    BEGIN { while ((getline l < state) > 0) seen[l] = 1; close(state) }
+    { line[++n] = $0
+      if (substr($0, 1, 2) != "- ") { keep[n] = 1; next }
+      items++
+      if (!($0 in seen)) { keep[n] = 1; seen[$0] = 1; fresh[++m] = $0 } }
+    END {
+      if (m == 0) exit
+      for (i = 1; i <= n; i++) if (keep[i]) print line[i]
+      for (j = 1; j <= m; j++) print fresh[j] >> state
+    }' <<<"$out" || true
+}
+
+# start, prompt, compact y end leen su stdin acá (es chico: no trae salida de
+# herramientas) porque el registro de recall necesita el id de sesión aunque
+# el modo se omita después. pre y post lo pasan intacto a icm.
+INPUT=''
+STDIN_READ=0
+case "$MODE" in
+  start|prompt|compact|end)
+    IFS= read -r -d '' INPUT || true
+    STDIN_READ=1
+    recall_key || true
+    recall_maintain
+    ;;
+esac
+
 if [ "$DIALECT" = claude ] && user_scope_fires "$MODE"; then
   # Sin leer el stdin, un PostToolUse con salida grande deja a Claude Code
   # escribiendo en un pipe cerrado.
-  cat >/dev/null 2>&1 || true
+  [ "$STDIN_READ" = 1 ] || cat >/dev/null 2>&1 || true
   exit 0
 fi
 
@@ -122,4 +239,12 @@ if [ -z "$ICM_BIN" ]; then
   exit 0
 fi
 
+if [ "$MODE" = prompt ]; then
+  recall_inject
+  exit 0
+fi
+
+if [ "$STDIN_READ" = 1 ]; then
+  exec "$ICM_BIN" hook "$MODE" <<<"$INPUT"
+fi
 exec "$ICM_BIN" hook "$MODE"
