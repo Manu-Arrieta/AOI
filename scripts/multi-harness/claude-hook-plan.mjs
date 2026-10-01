@@ -19,7 +19,7 @@
  *      claude` devuelve el mismo `updatedInput` sin decidir el permiso.
  *   3. Evento. `Stop` en Claude Code corre al final de CADA turno; el cierre de
  *      sesión es `SessionEnd`.
- *   4. Doble scope. `setup.sh` corre `icm init --mode hook`, que registra
+ *   4. Doble scope. `setup.sh` corría `icm init --mode hook`, que registra
  *      `icm hook <modo>` en el settings de USUARIO para start, pre, post,
  *      prompt, compact y end (verificado corriéndolo con un HOME desechable).
  *      El proyecto volvía a llamar al mismo `icm hook <modo>` vía
@@ -33,6 +33,12 @@
  *      dejó sin ICM a todo clon sin `icm init`. La traducción es la misma en
  *      todas partes y `icm-hook.sh <modo> claude` se omite AL DISPARAR si el
  *      scope de usuario ya corre ese modo.
+ *   5. Inyector único. Donde ICM inyectaba desde el scope de usuario, el
+ *      filtro de recall por sesión de `icm-hook.sh` (82,2 % de líneas
+ *      repetidas) no corría: setup ya no ejecuta `icm init --mode hook`, y el
+ *      proyecto lleva los seis modos que ese init registraba para Claude Code.
+ *      `end` no tiene declaración en `.github/hooks/` —Copilot no lo recibía
+ *      de ICM—, así que lo agrega sólo esta traducción.
  *
  * El scope de usuario sólo lo lee la auditoría, para avisar; jamás se escribe.
  */
@@ -57,6 +63,28 @@ const CLAUDE_DIALECT = { '.github/scripts/rtk-hook.sh': 'claude', '.github/scrip
 
 /** Scripts cuyo evento de Copilot no significa lo mismo en Claude Code. */
 const CLAUDE_EVENT = { '.github/scripts/session-close-hook.sh': 'SessionEnd' }
+
+const ICM_HOOK = '.github/scripts/icm-hook.sh'
+
+/**
+ * Lo que `icm init --mode hook` registraba para Claude Code y no para Copilot
+ * (~/.copilot/settings.json: start, pre, post y prompt). Sin esta entrada, una
+ * instalación nueva —que ya no corre ese init— perdía `icm hook end`, la
+ * extracción de la cola que `post` llena, al cerrar cada sesión.
+ */
+const CLAUDE_ONLY = { [ICM_HOOK]: [{ event: 'SessionEnd', args: ' end' }] }
+
+// `icm init` registró compact y end sin timeout (el default de Claude Code);
+// los 10 s de icm.json, pensados para el vaciado del registro, cortarían una
+// extracción de transcript cuya duración no se pudo medir sin escribir la base.
+const UNTIMED_MODES = new Set(['compact', 'end'])
+
+// `icm init` registró `icm hook post` SIN matcher (PreToolUse sí con "Bash",
+// leído de ~/.claude/settings.json): post encola la salida de Read, Edit, MCP…
+// igual que la de Bash y su límite cada N cuenta todas. Con el matcher "Bash"
+// del proyecto, una instalación sin ese init perdía la extracción de toda
+// herramienta que no fuera Bash.
+const UNMATCHED_MODES = new Set(['post'])
 
 /** Lee cada declaración de `.github/hooks/`; una que no parsea queda con `hooks: null`. */
 export function readDeclarations(root, dir = HOOKS_DIR) {
@@ -113,12 +141,26 @@ export function claudeEntry(event, entry) {
   const rel = s.script.replace(/^\.\//, '')
   const dialect = CLAUDE_DIALECT[rel] ? ` ${CLAUDE_DIALECT[rel]}` : ''
   const claudeEvent = CLAUDE_EVENT[rel] ?? event
+  const mode = rel === ICM_HOOK ? icmMode(entry.command) : null
+  const untimed = UNTIMED_MODES.has(mode)
   return {
     event: claudeEvent,
-    matcher: MATCHER[claudeEvent],
+    matcher: UNMATCHED_MODES.has(mode) ? undefined : MATCHER[claudeEvent],
     command: `bash "${PROJECT_DIR}/${rel}"${s.rest}${dialect}`,
-    timeout: entry.timeout,
+    timeout: untimed ? undefined : entry.timeout,
   }
+}
+
+/** Las entradas que sólo Claude Code recibe de los scripts que una declaración usa. */
+function claudeOnlyEntries(hooks) {
+  const used = new Set()
+  for (const entries of Object.values(hooks)) {
+    for (const e of entries ?? []) {
+      const s = scriptOf(e?.command)
+      if (s && isRelative(s.script)) used.add(s.script.replace(/^\.\//, ''))
+    }
+  }
+  return [...used].flatMap((rel) => (CLAUDE_ONLY[rel] ?? []).map((x) => ({ event: x.event, entry: { command: `bash ${rel}${x.args}` } })))
 }
 
 /** Dónde lee Claude Code el settings de usuario; `CLAUDE_CONFIG_DIR` lo mueve (docs de settings). */
@@ -181,11 +223,10 @@ export function planClaude(declarations) {
   const plan = []
   for (const { source, hooks } of declarations) {
     if (!hooks) continue
-    for (const [event, entries] of Object.entries(hooks)) {
-      for (const entry of entries ?? []) {
-        if (!entry?.command) continue
-        plan.push({ source, declared: entry.command, ...claudeEntry(event, entry), icmMode: icmMode(entry.command) })
-      }
+    const declared = Object.entries(hooks).flatMap(([event, entries]) => (entries ?? []).map((entry) => ({ event, entry })))
+    for (const { event, entry } of [...declared, ...claudeOnlyEntries(hooks)]) {
+      if (!entry?.command) continue
+      plan.push({ source, declared: entry.command, ...claudeEntry(event, entry), icmMode: icmMode(entry.command) })
     }
   }
   return plan

@@ -2206,17 +2206,27 @@ ok "ICM → Workspace MCP registered (.vscode/mcp.json)"
 if [[ -n "$(get_codebase_memory_path || true)" ]]; then
   ok "codebase-memory-mcp → Workspace MCP registered (.vscode/mcp.json)"
 fi
-# `icm init --mode hook` registra `icm hook start|pre|post|prompt|compact|end`
-# en el settings de USUARIO de Claude Code (y en Copilot CLI, Codex y
-# OpenCode). El proyecto cablea igual start, pre, post y prompt —el
-# .claude/settings.json versionado es el mismo en toda máquina— y
-# `icm-hook.sh <modo> claude` se omite al disparar cuando este scope ya corre
-# el modo. Sin esa omisión, UserPromptSubmit inyectaba el recall dos veces por
-# prompt (270 164 B en 155 prompts medidos). PreCompact también llega a
-# icm-hook.sh, pero sólo vacía su registro de recall por sesión: nunca llama
-# `icm hook compact`, que extrae memorias del transcript y que el proyecto no
-# encendía. compact y end quedan donde los pone este comando.
-icm init --mode hook 2>/dev/null && ok "ICM → Hooks installed (auto-extraction)" || warn "ICM hooks skipped"
+# `icm init --mode hook` ya no corre. Registraba `icm hook <modo>` en el
+# settings de USUARIO de Claude Code (start, pre, post, prompt, compact, end) y
+# de Copilot CLI (start, pre, post, prompt), y el proyecto cablea los mismos
+# modos vía `icm-hook.sh <modo> claude`, que se omite al disparar donde ese
+# scope ya corre. Resultado medido: en toda máquina instalada inyectaba ICM
+# directo y el filtro de recall por sesión del wrapper —el 82,2 % de las líneas
+# de recall de 110 sesiones reales ya estaba en el contexto— no corría nunca.
+# Sin el init, el proyecto es el único inyector y lleva también compact y end.
+# Una máquina que ya lo tenía no se toca: el wrapper sigue haciéndose a un lado.
+info "ICM → hooks del proyecto (.claude/settings.json, .github/hooks/): sin icm init --mode hook"
+# Copilot CLI no tiene equivalente: los hooks de `.github/hooks/` no
+# dispararon en `copilot -p` desde un repo no confiado, en ninguno de los dos
+# formatos, y los de ~/.copilot/settings.json sí. Ese init era lo único que se
+# los daba, así que AOI escribe los mismos cuatro, fusionando. Con AOI_ICM_DB
+# el módulo no escribe nada, como icm init no corre.
+if COPILOT_ICM_OUT=$(node "$SCRIPT_DIR/scripts/conf/copilot-cli-icm-hooks.mjs" --icm "$(command -v icm)" 2>&1); then
+  ok "$COPILOT_ICM_OUT"
+else
+  warn "$COPILOT_ICM_OUT"
+fi
+info "Codex, Gemini y OpenCode no reciben hooks de ICM: no son harnesses de AOI"
 icm init --mode skill 2>/dev/null && ok "ICM → Skills installed" || warn "ICM skills skipped"
 # `icm init --mode cli` writes rule files for every tool it knows, so it can
 # leave a .windsurfrules behind in a workspace that does not use Windsurf.

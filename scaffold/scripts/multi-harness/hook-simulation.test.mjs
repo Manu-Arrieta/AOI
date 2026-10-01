@@ -198,7 +198,7 @@ printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse",%s"updatedInput":{"c
   it('session close fires at SessionEnd, not on every turn, and answers valid JSON', () => {
     assert.equal(before.Stop.handlers, 1)
     assert.equal(now.Stop.handlers, 0)
-    const close = now.SessionEnd.runs.find((r) => r.scope === 'project')
+    const close = now.SessionEnd.runs.find((r) => r.scope === 'project' && /session-close/.test(r.command))
     assert.equal(close.kind, 'json')
     assert.ok(close.valid)
   })

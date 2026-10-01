@@ -163,9 +163,9 @@ describe('hookDeclarations', () => {
     // La costura que importa: un hook declarado que install-hooks no tradujo
     // queda muerto, y nada en el árbol lo delata salvo esta comparación. Se
     // compara contra la TRADUCCIÓN y no contra la cadena declarada: copiada
-    // tal cual, la ruta relativa fallaba fuera de la raíz. Las de ICM quedan
-    // fuera porque, donde `icm init --mode hook` ya las registra, no se
-    // escriben en el proyecto (las audita `aoi:hooks`).
+    // tal cual, la ruta relativa fallaba fuera de la raíz. Las de ICM las
+    // audita `aoi:hooks`, que conoce lo que sólo Claude recibe (`end`, sin
+    // declaración en `.github/hooks/`) y el omitirse al disparar.
     const declaradas = Object.entries(hookDeclarations(REPO)).flatMap(([event, hs]) =>
       hs.filter((h) => icmMode(h.command) === null).map((h) => claudeEntry(event, h).command),
     )

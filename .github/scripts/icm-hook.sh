@@ -5,11 +5,14 @@
 # .claude/settings.json con `claude` (lo traduce install-hooks.mjs).
 #
 # Con `claude`, el modo se omite si el settings de USUARIO de Claude Code ya
-# dispara `icm hook <modo>` en el mismo evento. `setup.sh` corre
+# dispara `icm hook <modo>` en el mismo evento. `setup.sh` corría
 # `icm init --mode hook`, que registra start, pre, post, prompt, compact y end
 # en ese scope; el proyecto llamaba al mismo modo con otra cadena y Claude Code
 # no lo deduplicaba: UserPromptSubmit inyectó 270 164 B duplicados en 155
-# prompts (~67k tokens) sobre los 111 transcripts de este repositorio. Sacar
+# prompts (~67k tokens) sobre los 111 transcripts de este repositorio. Y donde
+# ICM inyectaba directo, el filtro de recall por sesión de abajo no corría
+# nunca: por eso setup ya no lo ejecuta, y en una instalación nueva este
+# wrapper es el único inyector, compact y end incluidos. Sacar
 # los modos del .claude/settings.json versionado según el scope de la máquina
 # que corría install-hooks dejaba un archivo distinto en cada máquina y, en un
 # clon sin `icm init`, Claude Code sin ICM. Por eso se decide acá, al disparar:
@@ -72,9 +75,10 @@ user_scope_fires() {
   local mode="$1" event matcher='' file cmds c bin
   case "$mode" in
     start) event=SessionStart ;;
-    pre) event=PreToolUse; matcher=Bash ;;
-    post) event=PostToolUse; matcher=Bash ;;
+    pre) event=PreToolUse; matcher=$TOOL ;;
+    post) event=PostToolUse; matcher=$TOOL ;;
     prompt) event=UserPromptSubmit ;;
+    compact) event=PreCompact ;;
     end) event=SessionEnd ;;
     *) return 1 ;;
   esac
@@ -226,10 +230,21 @@ recall_inject() {
 
 # start, prompt, compact y end leen su stdin acá (es chico: no trae salida de
 # herramientas) porque el registro de recall necesita el id de sesión aunque
-# el modo se omita después. pre y post lo pasan intacto a icm.
+# el modo se omita después. pre y post lo pasan a icm; con `claude` lo leen
+# para saber la herramienta: post corre para todas (Read, Edit, MCP… encolan
+# extracción como Bash) y omitirse depende de que el usuario cubra ESA.
 INPUT=''
 STDIN_READ=0
+TOOL=''
 case "$MODE" in
+  pre|post)
+    if [ "$DIALECT" = claude ]; then
+      IFS= read -r -d '' INPUT || true
+      STDIN_READ=1
+      re='"tool_name"[[:space:]]*:[[:space:]]*"([^"]*)"'
+      if [[ ${INPUT:0:4096} =~ $re ]]; then TOOL=${BASH_REMATCH[1]}; fi
+    fi
+    ;;
   start|prompt|compact|end)
     IFS= read -r -d '' INPUT || true
     STDIN_READ=1
@@ -238,12 +253,13 @@ case "$MODE" in
     ;;
 esac
 
-# `compact` sólo vacía el registro. `icm hook compact` extrae memorias del
-# transcript, y main no lo cableaba desde el proyecto: VS Code lee
-# .github/hooks/*.json, así que llamarlo acá encendía esa escritura en cada
-# compactación de Copilot y en todo clon sin `icm init`. Donde el scope de
-# usuario lo registra, ya corre por su cuenta.
-if [ "$MODE" = compact ]; then
+# compact y end extraen memorias del transcript: procesan la cola que `post`
+# llena (~45 % útil, medido). `icm init --mode hook` los registraba sólo para
+# Claude Code, nunca para Copilot; sin el dialecto `claude` sólo vacían el
+# registro, porque llamarlos encendería en Copilot una escritura que ICM mismo
+# no le cableó. En Claude, una instalación sin ese init los perdería si el
+# proyecto no los llamara: siguen abajo, salvo que el scope de usuario ya corra.
+if [ "$DIALECT" != claude ] && { [ "$MODE" = compact ] || [ "$MODE" = end ]; }; then
   exit 0
 fi
 

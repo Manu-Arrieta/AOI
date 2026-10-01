@@ -205,20 +205,24 @@ describe('the register follows what the context still holds', () => {
   })
 })
 
-describe('compact never calls icm from the project', () => {
-  // main no cableaba `icm hook compact` desde el proyecto y ese modo extrae
-  // memorias del transcript: declararlo en icm.json lo encendía en Copilot.
-  it('clean machine: compact only clears the register; icm is not run', () => {
-    recall('uno')
-    prompt({ session_id: 'S' })
-    fs.rmSync(log, { force: true })
-    for (const dialect of [['claude'], []]) {
-      const r = fire('compact', { session_id: 'S', trigger: 'auto' }, { dialect })
-      assert.equal(r.status, 0)
-      assert.equal(r.stdout, '')
-    }
-    assert.deepEqual(icmCalls(), [])
-  })
+describe('compact and end reach icm only in the Claude dialect', () => {
+  // Extraen memorias del transcript. ICM se los registraba a Claude Code y
+  // nunca a Copilot: declarados en icm.json, llamarlos sin dialecto encendía
+  // en Copilot una escritura nueva. Y setup ya no corre `icm init --mode
+  // hook`, así que en Claude el proyecto es quien los llama.
+  for (const mode of ['compact', 'end']) {
+    it(`clean machine: ${mode} clears the register; icm runs once from Claude, never from Copilot`, () => {
+      recall('uno')
+      prompt({ session_id: 'S' })
+      fs.rmSync(log, { force: true })
+      for (const dialect of [['claude'], []]) {
+        const r = fire(mode, { session_id: 'S', trigger: 'auto' }, { dialect })
+        assert.equal(r.status, 0)
+        assert.equal(r.stdout, '')
+      }
+      assert.deepEqual(icmCalls(), [`icm hook ${mode}`])
+    })
+  }
 })
 
 describe('pure continuation prompts get no recall', () => {
