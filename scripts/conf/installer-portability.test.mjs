@@ -21,6 +21,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
+import { isNestedCheckout } from '../scaffold/nested-checkout.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const SKIP_DIRS = new Set(['node_modules', '.git', 'scaffold', '.nuxt', '.output', 'dist', 'coverage'])
@@ -38,6 +39,8 @@ export function shellScripts(root) {
     for (const e of entries) {
       if (SKIP_DIRS.has(e.name)) continue
       const full = path.join(dir, e.name)
+      // Un checkout anidado (un worktree de Claude Code) es otro árbol: nested-checkout.mjs.
+      if (e.isDirectory() && isNestedCheckout(full)) continue
       if (e.isDirectory()) walk(full)
       else if (e.name.endsWith('.sh')) out.push(path.relative(root, full))
     }

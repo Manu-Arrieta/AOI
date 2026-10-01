@@ -36,6 +36,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { isNestedCheckout } from '../scaffold/nested-checkout.mjs'
 
 /** La única ubicación legítima del protocolo. */
 export const PROTOCOL = 'docs/internal/audits/PROTOCOLO_AUDITORIA_COMPARATIVA.md'
@@ -107,6 +108,8 @@ export function walkFiles(root, rel = '') {
   for (const e of fs.readdirSync(current, { withFileTypes: true })) {
     if (SKIP.has(e.name)) continue
     const child = path.join(rel, e.name)
+    // Un checkout anidado (un worktree de Claude Code) es otro árbol: nested-checkout.mjs.
+    if (e.isDirectory() && isNestedCheckout(path.join(root, child))) continue
     if (e.isDirectory()) out.push(...walkFiles(root, child))
     else out.push(child)
   }

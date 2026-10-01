@@ -44,6 +44,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { withoutNestedCheckouts } from '../scaffold/nested-checkout.mjs'
 
 /** Los directorios cuya prosa el ciclo inyecta o ejecuta. */
 export const PROSE_DIRS = Object.freeze([
@@ -153,7 +154,8 @@ export function sandboxCopy(root) {
   try {
     fs.cpSync(root, work, {
       recursive: true,
-      filter: (src) => src === root || !EXCLUDED.test(path.relative(root, src)),
+      // Un checkout anidado (un worktree de Claude Code) es otro árbol: nested-checkout.mjs.
+      filter: withoutNestedCheckouts(root, (src) => !EXCLUDED.test(path.relative(root, src))),
     })
   } catch (err) {
     // El `main` sólo borra `work` cuando la copia le DEVOLVIÓ: si `cpSync` falla

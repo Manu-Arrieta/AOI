@@ -35,6 +35,7 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 
 import { resolveWorkspaceName } from './memoir-naming-guard.mjs'
+import { isNestedCheckout } from './scaffold/nested-checkout.mjs'
 
 const execFileAsync = promisify(execFile)
 
@@ -121,8 +122,9 @@ export function collectDeclaredDependencies(repoRoot, depth = MANIFEST_SCAN_DEPT
 
     for (const entry of entries) {
       const full = path.join(dir, entry.name)
+      // Un checkout anidado (un worktree de Claude Code) es otro árbol: nested-checkout.mjs.
       if (entry.isFile() && entry.name === 'package.json') readManifest(full)
-      else if (entry.isDirectory() && remaining > 0 && isWalkable(entry.name)) walk(full, remaining - 1)
+      else if (entry.isDirectory() && remaining > 0 && isWalkable(entry.name) && !isNestedCheckout(full)) walk(full, remaining - 1)
     }
   }
 

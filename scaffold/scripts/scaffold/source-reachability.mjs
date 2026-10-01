@@ -22,6 +22,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { isNestedCheckout } from './nested-checkout.mjs'
 
 const EXTS = ['.mjs', '.js']
 // `scaffold` is deliberately absent: the walk starts inside `scripts/`, and
@@ -43,6 +44,8 @@ function walk(dir, keep, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (SKIP_DIRS.has(entry.name)) continue
     const full = path.join(dir, entry.name)
+    // Un checkout anidado (un worktree de Claude Code) es otro árbol: nested-checkout.mjs.
+    if (entry.isDirectory() && isNestedCheckout(full)) continue
     if (entry.isDirectory()) walk(full, keep, out)
     else if (keep(entry.name)) out.push(full)
   }

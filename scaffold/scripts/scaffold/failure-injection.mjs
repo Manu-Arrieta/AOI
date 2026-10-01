@@ -28,6 +28,7 @@ import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { isNestedCheckout } from './nested-checkout.mjs'
 
 /**
  * Directorios que sólo engordan la copia y que ninguna compuerta lee.
@@ -48,6 +49,8 @@ export function mirror(src, dest, skip = SKIP) {
     if (skip.has(e.name)) continue
     const from = path.join(src, e.name)
     const to = path.join(dest, e.name)
+    // Un checkout anidado (un worktree de Claude Code) es otro árbol: nested-checkout.mjs.
+    if (e.isDirectory() && isNestedCheckout(from)) continue
     if (e.isDirectory()) mirror(from, to, skip)
     else if (e.isFile()) fs.copyFileSync(from, to)
     else if (e.isSymbolicLink()) fs.symlinkSync(fs.readlinkSync(from), to)
