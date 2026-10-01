@@ -119,10 +119,12 @@ describe('planClaude no depende de la máquina que lo corre', () => {
     // Regresión: el plan dejaba fuera los modos que el scope de usuario de la
     // máquina disparaba, y el settings versionado salía sin ICM. En un clon
     // sin `icm init --mode hook`, Claude Code corría sin ninguna inyección.
+    // `end` no está declarado: lo agrega la traducción, porque setup ya no
+    // corre ese init y Copilot nunca lo recibió de ICM.
     const plan = planClaude([icmJson])
     assert.deepEqual(
       plan.map((p) => p.icmMode),
-      ['start', 'post', 'prompt'],
+      ['start', 'post', 'prompt', 'end'],
     )
     assert.ok(plan.every((p) => dedupsAtRuntime(p.command)), plan.map((p) => p.command).join('\n'))
   })

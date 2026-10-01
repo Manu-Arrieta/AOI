@@ -43,8 +43,10 @@ export { auditHookWiring, readDeclarations }
  * Translates the declarations into Claude Code's settings shape. The output
  * depends on the tree alone: written from this machine's user scope, the
  * tracked file carried no ICM hook and a clone without `icm init --mode hook`
- * ran Claude Code with no ICM at all. The double injection that motivated
- * leaving them out is resolved when the hook fires, by `icm-hook.sh`.
+ * ran Claude Code with no ICM at all — which is now every new install, since
+ * setup.sh stopped running that init so the project's wrapper (and its
+ * per-session recall filter) is the only injector. Where an older install left
+ * user-scope icm hooks, `icm-hook.sh` steps aside when the hook fires.
  *
  * @returns {{ hooks: object }}
  */
@@ -155,7 +157,7 @@ function reportHookAudit(root, r, declarations) {
   for (const s of r.skippedAtRuntime) console.log(`     ↳ ${s} — acá lo dispara el settings de usuario; icm-hook.sh se omite al disparar`)
   for (const s of r.orphaned) console.error(`  ❌ ${s} — no llega entera a Claude Code`)
   for (const s of r.missing) console.error(`     ↳ ${s} — no la cablea ningún scope`)
-  for (const s of r.userScopeOnly) console.error(`     ↳ ${s} — sólo el scope de usuario de ESTA máquina; un clon sin icm init queda sin ella`)
+  for (const s of r.userScopeOnly) console.error(`     ↳ ${s} — sólo el scope de usuario de ESTA máquina; una instalación nueva (setup ya no corre icm init --mode hook) queda sin ella`)
   for (const s of r.broken) console.error(`  ❌ ${s}`)
   for (const s of r.violations) console.error(`  ❌ ${s}`)
 

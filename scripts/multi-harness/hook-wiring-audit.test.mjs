@@ -152,7 +152,9 @@ describe('ICM injected from two scopes', () => {
       const root = workspace(files({}))
       const r = auditHookWiring(root, { userHooks: {} })
       assert.deepEqual(r.orphaned, ['.github/hooks/icm.json'])
-      assert.equal(r.missing.length, 1)
+      // prompt y el `end` que sólo la traducción a Claude agrega: icm init ya no
+      // lo registra en el scope de usuario, así que también tiene que estar.
+      assert.deepEqual(r.missing.map((m) => m.split(': ').pop()), ['icm hook prompt', 'icm hook end'])
       const res = audit(root, path.join(root, 'empty-user.json'))
       assert.equal(res.status, 1)
       assert.doesNotMatch(res.stdout, /✅ \.github\/hooks\/icm\.json/)

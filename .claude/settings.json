@@ -66,8 +66,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.github/scripts/icm-hook.sh\" compact claude",
-            "timeout": 10
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.github/scripts/icm-hook.sh\" compact claude"
           }
         ]
       }
@@ -75,6 +74,10 @@
     "SessionEnd": [
       {
         "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.github/scripts/icm-hook.sh\" end claude"
+          },
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.github/scripts/session-close-hook.sh\"",

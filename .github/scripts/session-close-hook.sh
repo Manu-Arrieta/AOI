@@ -15,8 +15,10 @@
 #
 # No llama a `icm hook stop`: ese subcomando no existe (`icm hook --help`;
 # exit 2, silenciado con `|| true` desde siempre). El resumen de sesión real es
-# `icm hook end`, y lo dispara el settings de usuario donde corrió
-# `icm init --mode hook`; `icm.json` no lo declara, ni lo declaraba en main.
+# `icm hook end`: en Claude Code lo dispara `icm-hook.sh end claude`, que la
+# traducción de install-hooks agrega a SessionEnd (setup ya no corre
+# `icm init --mode hook`, que lo registraba en el scope de usuario). Copilot
+# no lo recibe: ICM nunca se lo cableó.
 
 set -euo pipefail
 

@@ -119,7 +119,8 @@ export function auditHookWiring(root, { userHooks = readUserHooks() } = {}) {
         continue
       }
       missing = true
-      // Esta máquina lo cubre; un clon sin `icm init --mode hook`, no.
+      // Esta máquina lo cubre; una instalación nueva, que ya no corre
+      // `icm init --mode hook`, no.
       ;(covered ? r.userScopeOnly : r.missing).push(what)
     }
     ;(missing ? r.orphaned : r.wired).push(d.source)
