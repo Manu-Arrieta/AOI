@@ -36,22 +36,18 @@ export function thresholdFor(window) {
 const declared = (entry) =>
   Number.isFinite(entry?.maxInputTokens) && entry.maxInputTokens > 0 ? entry.maxInputTokens : null
 
-// El log de Copilot nombra al modelo sin el prefijo de vendor que lleva el id declarado
-// (`deepseek-v4-pro` contra `deepseek-ai/deepseek-v4-pro`, medido el 2026-10-01).
-const tail = (id) => String(id ?? '').split('/').pop()
-
 /**
- * La entrada declarada que corresponde a un modelo, por `id`, por `name`, por el valor
+ * La entrada declarada que corresponde a un modelo, por `id`, por `name` o por el valor
  * que `runSubagent` acepta (`<name> (customendpoint)`, que es lo que guarda la
- * asignación) o, si es la única, por el id sin prefijo de vendor.
+ * asignación). Sin coincidencia parcial: el log de Copilot nombra a cada modelo
+ * declarado con su id completo (`deepseek-ai/deepseek-v4-pro` de Nvidia, 34 requests
+ * medidos), así que un `deepseek-v4-pro` a secas es de otro proveedor —uno que ya no está
+ * declarado— y tomarle la ventana a Nvidia sería prestarle la de otro.
  */
 export function findDeclared(model, entries = []) {
   const m = String(model ?? '').trim()
   if (!m) return null
-  const exact = entries.find((e) => e.id === m || e.name === m || subagentValue(e) === m)
-  if (exact) return exact
-  const byTail = entries.filter((e) => e.id && tail(e.id) === tail(m))
-  return byTail.length === 1 ? byTail[0] : null
+  return entries.find((e) => e.id === m || e.name === m || subagentValue(e) === m) ?? null
 }
 
 /**
@@ -75,15 +71,19 @@ export function anthropicWindow(model, maxUsage = 0) {
 
 /**
  * La ventana del modelo en uso y de dónde sale, en este orden:
- *   1. la que el harness publica para ese modelo (`max_prompt_tokens` de Copilot);
- *   2. el modelo visto (Anthropic, o uno declarado con `maxInputTokens`);
- *   3. el modelo asignado (`assignment.default`, o el menor de los slots), por su
+ *   1. `maxInputTokens` que el Owner declaró para ese modelo: lo declarado manda;
+ *   2. `max_prompt_tokens` de Copilot, sólo si el request no pasó por el wrapper de
+ *      modelos declarados (`viaWrapper`): un customendpoint con el mismo id que un
+ *      modelo de Copilot no es ese modelo;
+ *   3. un modelo declarado sin ventana: 128k, igual para todos los que no la declaran;
+ *   4. un modelo Anthropic por su id;
+ *   5. el modelo asignado (`assignment.default`, o el menor de los slots), por su
  *      `maxInputTokens` declarado;
- *   4. 128k.
+ *   6. 128k.
  * Nunca es menor que el mayor request observado: si un request leyó más, la ventana es
  * al menos eso (Kimi K3 sin `maxInputTokens` declarado leyó 483.658 tokens en Copilot).
  *
- * @param {{ model?: string|null, maxUsage?: number, harnessWindow?: number|null }} seen
+ * @param {{ model?: string|null, maxUsage?: number, harnessWindow?: number|null, viaWrapper?: boolean }} seen
  * @param {{ entries?: object[], assigned?: string[] }} declaredCtx
  * @returns {{ window: number, source: string }}
  */
@@ -93,10 +93,11 @@ export function resolveWindow(seen = {}, declaredCtx = {}) {
   return maxUsage > r.window ? { window: maxUsage, source: `${r.source}; request observado mayor` } : r
 }
 
-function baseWindow({ model, maxUsage = 0, harnessWindow = null }, { entries = [], assigned = [] }) {
-  if (harnessWindow > 0) return { window: harnessWindow, source: 'Copilot: max_prompt_tokens del modelo' }
-  const fromTranscript = model ? declared(findDeclared(model, entries)) : null
-  if (fromTranscript) return { window: fromTranscript, source: 'modelo visto → maxInputTokens declarado' }
+function baseWindow({ model, maxUsage = 0, harnessWindow = null, viaWrapper = false }, { entries = [], assigned = [] }) {
+  const entry = model ? findDeclared(model, entries) : null
+  if (declared(entry)) return { window: declared(entry), source: 'modelo visto → maxInputTokens declarado' }
+  if (harnessWindow > 0 && !viaWrapper) return { window: harnessWindow, source: 'Copilot: max_prompt_tokens del modelo' }
+  if (entry) return { window: DEFAULT_WINDOW, source: 'declarado sin maxInputTokens → 128k' }
   if (model && isAnthropicModel(model)) return anthropicWindow(model, maxUsage)
   if (assigned.length > 0) {
     const windows = assigned.map((v) => declared(findDeclared(v, entries)))

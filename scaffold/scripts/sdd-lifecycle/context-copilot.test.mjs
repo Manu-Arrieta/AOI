@@ -14,8 +14,8 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { after, describe, it } from 'node:test'
-import { debugLogFor, emptyDebug, scanDebugLine } from './context-copilot.mjs'
-import { MAX_FIRES, icmWithTimeout, loadDeclared, runHook, sweepState, STATE_TTL_MS } from './context-meter.mjs'
+import { WRAPPER, debugLogFor, emptyDebug, scanDebugLine } from './context-copilot.mjs'
+import { MAX_FIRES, icmWithTimeout, loadDeclared, runHook, stateFileName, sweepState, STATE_TTL_MS } from './context-meter.mjs'
 import { emptyScan, measure, scanLine } from './context-transcript.mjs'
 import { findDeclared, isAnthropicModel, resolveWindow } from './context-window.mjs'
 import { readLines } from './jsonl-lines.mjs'
@@ -96,6 +96,12 @@ describe('Copilot con log de depuración', () => {
     assert.equal(d.maxUsage, 300_000)
   })
 
+  it('summarizeVirtualTools resume la lista de tools, no la conversación: no vacía nada', () => {
+    const d = emptyDebug()
+    for (const l of [llm(300_000), llm(4_000, { debugName: 'summarizeVirtualTools', model: 'gpt-4o-mini' })]) scanDebugLine(d, l)
+    assert.deepEqual([d.usage, d.model], [300_000, 'gpt-5.4'])
+  })
+
   it('avisa con la ventana max_prompt_tokens de models.json, una vez por nivel', async () => {
     const models = [{ id: 'gpt-5.4', capabilities: { limits: { max_prompt_tokens: 272_000 } } }]
     const s = copilotSession({ transcript: [userMsg('a')], debug: [llm(100_000)], models })
@@ -107,10 +113,35 @@ describe('Copilot con log de depuración', () => {
     assert.equal(await hook(s, state), '')
   })
 
-  it('un customendpoint sin ventana en models.json usa maxInputTokens declarado, aunque el log omita el vendor', async () => {
+  const kimi = { id: 'kimi-k3', name: 'Kimi-k 3 - Provider - Kimi', vendor: 'customendpoint' }
+  const copilotKimi = [{ id: 'kimi-k3', capabilities: { limits: { max_prompt_tokens: 917_501 } } }]
+  const withKimi = async () => ({ entries: [kimi], assigned: [] })
+
+  it('un customendpoint declarado sin ventana no toma la de un modelo de Copilot con el mismo id', async () => {
+    const s = copilotSession({ transcript: [userMsg('a')], debug: [llm(150_000, { debugName: WRAPPER, model: 'kimi-k3' })], models: copilotKimi })
+    const out = await hook(s, tmpDir(), withKimi)
+    assert.match(JSON.parse(out).systemMessage, /ventana 150k, declarado sin maxInputTokens → 128k; request observado mayor/)
+  })
+
+  it('el kimi-k3 que sirve Copilot (sin wrapper) sí usa su models.json', async () => {
+    const s = copilotSession({ transcript: [userMsg('a')], debug: [llm(150_000, { model: 'kimi-k3' })], models: copilotKimi })
+    assert.equal(await hook(s, tmpDir(), withKimi), '', '150k < umbral 200k de una ventana de 917k')
+  })
+
+  it('maxInputTokens declarado manda sobre models.json, pase o no por el wrapper', async () => {
+    const loader = async () => ({ entries: [{ ...kimi, maxInputTokens: 200_000 }], assigned: [] })
+    for (const debugName of [WRAPPER, 'panel/editAgent']) {
+      const s = copilotSession({ transcript: [userMsg('a')], debug: [llm(120_000, { debugName, model: 'kimi-k3' })], models: copilotKimi })
+      assert.match(await hook(s, tmpDir(), loader), /umbral 100k \(ventana 200k, modelo visto → maxInputTokens declarado\)/, debugName)
+    }
+  })
+
+  it('un id sin prefijo de vendor no toma la ventana del modelo de otro proveedor', async () => {
     const loader = async () => ({ entries: [{ id: 'deepseek-ai/deepseek-v4-pro', name: 'D', vendor: 'customendpoint', maxInputTokens: 1_000_000 }], assigned: [] })
-    const s = copilotSession({ transcript: [userMsg('a')], debug: [llm(150_000, { debugName: 'copilotLanguageModelWrapper', model: 'deepseek-v4-pro' })], models: [] })
-    assert.equal(await hook(s, tmpDir(), loader), '', 'con 128k por defecto habría disparado a 64k')
+    const bare = copilotSession({ transcript: [userMsg('a')], debug: [llm(70_000, { debugName: WRAPPER, model: 'deepseek-v4-pro' })], models: [] })
+    assert.match(await hook(bare, tmpDir(), loader), /ventana 128k, por defecto: ventana no declarada/)
+    const full = copilotSession({ transcript: [userMsg('a')], debug: [llm(70_000, { debugName: WRAPPER, model: 'deepseek-ai/deepseek-v4-pro' })], models: [] })
+    assert.equal(await hook(full, tmpDir(), loader), '', 'con su id completo es el declarado: 1M')
   })
 })
 
@@ -126,10 +157,10 @@ describe('ventana', () => {
     assert.deepEqual(resolveWindow({ model: 'kimi-k3', maxUsage: 483_658 }), { window: 483_658, source: 'por defecto: ventana no declarada; request observado mayor' })
   })
 
-  it('el id sin vendor resuelve sólo si es único', () => {
-    const e = [{ id: 'a/m1', maxInputTokens: 1 }, { id: 'b/m2', maxInputTokens: 2 }, { id: 'c/m2', maxInputTokens: 3 }]
-    assert.equal(findDeclared('m1', e).id, 'a/m1')
-    assert.equal(findDeclared('m2', e), null)
+  it('sólo coincidencia exacta de id o name', () => {
+    const e = [{ id: 'a/m1', name: 'M uno', maxInputTokens: 1 }]
+    assert.equal(findDeclared('m1', e), null)
+    assert.equal(findDeclared('M uno', e).id, 'a/m1')
   })
 })
 
@@ -182,15 +213,35 @@ describe('readLines', () => {
 })
 
 describe('estado y dependencias', () => {
-  it('borra el estado de sesiones sin actividad en 7 días y conserva el resto', () => {
+  const age = (f, ms) => fs.utimesSync(f, (Date.now() - ms) / 1000, (Date.now() - ms) / 1000)
+  const OLD = STATE_TTL_MS + 60_000
+
+  it('borra sólo sus propios estados sin actividad en 7 días; los JSON ajenos del directorio quedan', () => {
     const dir = tmpDir()
-    for (const f of ['old.json', 'new.json', 'keep.txt']) fs.writeFileSync(path.join(dir, f), '{}')
-    const now = Date.now()
-    const old = (now - STATE_TTL_MS - 60_000) / 1000
-    fs.utimesSync(path.join(dir, 'old.json'), old, old)
-    fs.utimesSync(path.join(dir, 'keep.txt'), old, old)
-    sweepState(dir, now)
-    assert.deepEqual(fs.readdirSync(dir).sort(), ['keep.txt', 'new.json'])
+    const own = stateFileName('vieja')
+    const files = [own, `${own}.123.tmp`, stateFileName('nueva'), 'old.json', 'otro.json.1.tmp', 'keep.txt']
+    for (const f of files) fs.writeFileSync(path.join(dir, f), '{}')
+    for (const f of files.filter((f) => f !== stateFileName('nueva'))) age(path.join(dir, f), OLD)
+    sweepState(dir)
+    assert.deepEqual(fs.readdirSync(dir).sort(), ['context-meter-nueva.json', 'keep.txt', 'old.json', 'otro.json.1.tmp'])
+  })
+
+  it('una sesión nueva barre el directorio de estado', async () => {
+    const dir = tmpDir()
+    fs.writeFileSync(path.join(dir, stateFileName('vieja')), '{}')
+    age(path.join(dir, stateFileName('vieja')), OLD)
+    await runHook(JSON.stringify({ session_id: 'nueva', prompt: 'p' }), { stateDir: dir, declaredLoader: noDeclared })
+    assert.deepEqual(fs.readdirSync(dir), [stateFileName('nueva')])
+  })
+
+  it('una estimación por bytes que pasa la ventana se toma como resumen: no avisa y vuelve a contar desde ahí', async () => {
+    const t = path.join(tmpDir(), 'otro-harness.jsonl')
+    fs.writeFileSync(t, `${JSON.stringify({ content: 'w'.repeat(600_000) })}\n`)
+    const state = tmpDir()
+    const input = JSON.stringify({ session_id: 'h', transcript_path: t })
+    assert.equal(await runHook(input, { stateDir: state, declaredLoader: noDeclared }), '', '≈150k > ventana 128k')
+    fs.appendFileSync(t, `${JSON.stringify({ content: 'w'.repeat(260_000) })}\n`)
+    assert.match(await runHook(input, { stateDir: state, declaredLoader: noDeclared }), /≈65k tokens \(estimado/)
   })
 
   it('un icm colgado no demora el prompt: la consulta tiene tope y la asignación queda vacía', async () => {

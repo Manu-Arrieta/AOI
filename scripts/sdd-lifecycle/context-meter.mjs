@@ -107,7 +107,14 @@ function readState(file) {
   }
 }
 
-/** Borra los estados de sesión más viejos que `ttl`. Nunca lanza. */
+/**
+ * El nombre del archivo de estado de una sesión. El prefijo es lo que permite limpiar
+ * sólo lo propio: `AOI_CONTEXT_METER_DIR` puede apuntar a un directorio con otros JSON.
+ */
+export const stateFileName = (key) => `context-meter-${key}.json`
+const OWN_STATE = /^context-meter-[A-Za-z0-9_.-]+\.json(?:\.\d+\.tmp)?$/
+
+/** Borra los estados de sesión del medidor más viejos que `ttl`. Nunca lanza. */
 export function sweepState(dir, now = Date.now(), ttl = STATE_TTL_MS) {
   let names = []
   try {
@@ -116,7 +123,7 @@ export function sweepState(dir, now = Date.now(), ttl = STATE_TTL_MS) {
     return
   }
   for (const name of names) {
-    if (!/\.json$|\.tmp$/.test(name)) continue
+    if (!OWN_STATE.test(name)) continue
     const f = path.join(dir, name)
     try {
       if (now - fs.statSync(f).mtimeMs > ttl) fs.unlinkSync(f)
@@ -171,7 +178,7 @@ export async function runHook(text, { stateDir = defaultStateDir(), declaredLoad
   const key = sessionKey(input)
   if (!key) return ''
 
-  const file = path.join(stateDir, `${key}.json`)
+  const file = path.join(stateDir, stateFileName(key))
   if (!fs.existsSync(file)) sweepState(stateDir)
   const state = readState(file)
   const transcript = transcriptOf(input)
@@ -191,9 +198,12 @@ export async function runHook(text, { stateDir = defaultStateDir(), declaredLoad
     state.harness = { model, window: copilotPromptLimit(state.debug.file, model) }
   }
   const harnessWindow = state.harness?.model === model ? state.harness.window : null
-  if (!harnessWindow && !isAnthropicModel(model) && !state.declared) state.declared = await declaredLoader()
+  // En Copilot lo declarado manda sobre su models.json, así que se carga siempre; en
+  // Claude Code un modelo Anthropic no lo necesita.
+  if ((state.debug || !isAnthropicModel(model)) && !state.declared) state.declared = await declaredLoader()
   const maxUsage = Math.max(scan?.maxUsage ?? 0, state.debug?.maxUsage ?? 0)
-  const { window, source: windowSource } = resolveWindow({ model, maxUsage, harnessWindow }, state.declared ?? {})
+  const viaWrapper = state.debug?.wrapper === true
+  const { window, source: windowSource } = resolveWindow({ model, maxUsage, harnessWindow, viaWrapper }, state.declared ?? {})
   // Una estimación que pasa la ventana no es el contexto: el harness ya resumió (Copilot
   // no deja marca en el transcript). Lo de antes deja de contar.
   if (!exact && tokens > window && scan) {

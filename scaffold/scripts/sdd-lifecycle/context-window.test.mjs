@@ -126,7 +126,8 @@ describe('resolveWindow', () => {
   })
 
   it('modelo del transcript no declarado y nada asignado → 128k', () => {
-    assert.deepEqual(resolveWindow({ model: 'kimi-k3' }, { entries }), { window: DEFAULT_WINDOW, source: 'por defecto: ventana no declarada' })
+    assert.deepEqual(resolveWindow({ model: 'llama-no-declarado' }, { entries }), { window: DEFAULT_WINDOW, source: 'por defecto: ventana no declarada' })
+    assert.deepEqual(resolveWindow({ model: 'kimi-k3' }, { entries }), { window: DEFAULT_WINDOW, source: 'declarado sin maxInputTokens → 128k' })
     assert.deepEqual(resolveWindow(), { window: DEFAULT_WINDOW, source: 'por defecto: ventana no declarada' })
   })
 })

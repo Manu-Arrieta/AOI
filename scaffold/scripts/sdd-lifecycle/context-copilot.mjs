@@ -24,8 +24,10 @@
  * (195 de esas 225 sesiones lo tienen) registra cada `llm_request` con `model`,
  * `debugName` e `inputTokens` (`cachedTokens` nunca lo supera: está incluido), los
  * resúmenes como `debugName: summarizeConversationHistory`, y su `models.json` trae
- * `max_prompt_tokens` de cada modelo que sirve Copilot. Los customendpoint no figuran
- * ahí: su ventana sale de `maxInputTokens` declarado.
+ * `max_prompt_tokens` de cada modelo que sirve Copilot. Los customendpoint pueden
+ * compartir id con uno de Copilot (`kimi-k3` declarado sin ventana contra 917.501 de
+ * models.json): su ventana sale de lo declarado, nunca de ese archivo
+ * (`context-window.mjs`).
  */
 
 import fs from 'node:fs'
@@ -41,11 +43,22 @@ export function debugLogFor(transcript) {
   return m ? path.join(m[1], 'GitHub.copilot-chat', 'debug-logs', m[2], 'main.jsonl') : null
 }
 
-export const emptyDebug = (file = null) => ({ file, offset: 0, usage: null, maxUsage: 0, model: null })
+export const emptyDebug = (file = null) => ({ file, offset: 0, usage: null, maxUsage: 0, model: null, wrapper: false })
 
-// Requests que no son el contexto de la conversación: el resumen relee toda la
-// historia una vez para comprimirla, y el subagente de búsqueda tiene la suya.
+// Requests que no son el contexto de la conversación: los resúmenes releen la historia
+// (o la lista de tools, `summarizeVirtualTools`) una vez para comprimirla, y el
+// subagente de búsqueda tiene la suya.
 const SIDE_REQUEST = /^summarize|subagent|^title/i
+
+// Sólo este resumen reemplaza la historia. `summarizeVirtualTools` (3 requests medidos)
+// resume la lista de tools y no vacía nada.
+const HISTORY_SUMMARY = /^summarizeConversationHistory/i
+
+// Los modelos que no sirve Copilot (customendpoint y demás proveedores declarados por el
+// Owner) pasan por este wrapper: 8.479 requests medidos, de 11 ids: los 8 declarados hoy y 3 que hoy no figuran en la configuración.
+// El log no nombra al proveedor: este nombre es la única señal de que el request no es
+// de un modelo de Copilot.
+export const WRAPPER = 'copilotLanguageModelWrapper'
 
 const HEAD = 2048
 // La cola que se lee de un log: alcanza para los últimos ~13 requests de 1,25 MB, y el
@@ -95,7 +108,7 @@ export function scanDebugLine(d, line, full = () => line) {
   const a = r.attrs ?? {}
   const name = typeof a.debugName === 'string' ? a.debugName : ''
   // Después de un resumen la historia ya no está: el próximo request dirá cuánto quedó.
-  if (/^summarize/i.test(name)) {
+  if (HISTORY_SUMMARY.test(name)) {
     d.usage = 0
     return
   }
@@ -103,6 +116,7 @@ export function scanDebugLine(d, line, full = () => line) {
   d.usage = a.inputTokens
   d.maxUsage = Math.max(d.maxUsage, a.inputTokens)
   if (typeof a.model === 'string' && a.model) d.model = a.model
+  d.wrapper = name === WRAPPER
 }
 
 /** Lee del log de depuración lo agregado desde `prev.offset`. */
