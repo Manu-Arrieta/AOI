@@ -46,10 +46,10 @@ const project = fakeIcm('project')
 // Un rtk que no reescribe nada: la prueba no depende del rtk de la máquina.
 fs.writeFileSync(path.join(project.dir, 'rtk'), '#!/usr/bin/env bash\ncat >/dev/null\nexit 0\n', { mode: 0o755 })
 const user = fakeIcm('user')
-// Lo que `icm init --mode hook` escribe en ~/.claude/settings.json (leído de esta máquina).
-const ALL_SIX = {
-  hooks: Object.fromEntries(MODES.map((m) => [EVENT[m], [{ hooks: [{ type: 'command', command: `"${user.bin}" hook ${m}` }] }]])),
-}
+// Lo que `icm init --mode hook` escribe en ~/.claude/settings.json (leído de
+// esta máquina): pre con matcher "Bash", todo lo demás sin matcher.
+const userEntry = (m, matcher) => [{ ...(matcher ? { matcher } : {}), hooks: [{ type: 'command', command: `"${user.bin}" hook ${m}` }] }]
+const ALL_SIX = { hooks: Object.fromEntries(MODES.map((m) => [EVENT[m], userEntry(m, m === 'pre' ? 'Bash' : undefined)])) }
 
 const tree = path.join(ROOT, 'ws one')
 fs.cpSync(path.join(REPO, '.github/hooks'), path.join(tree, '.github/hooks'), { recursive: true })
@@ -126,6 +126,45 @@ describe('esta máquina (el scope de usuario ya dispara los seis): el proyecto n
   })
 })
 
+describe('herramientas que no son Bash: post corre para todas, pre sólo para Bash', () => {
+  // Defecto de a3e078b: el proyecto llevaba post con matcher "Bash" e icm init
+  // lo registra sin matcher; una instalación nueva perdía la extracción de
+  // Read, Edit, MCP… (`icm hook post` las encola igual que a Bash).
+  const TOOLS = ['Bash', 'Read', 'Edit', 'mcp__icm__icm_memory_recall']
+  const toolEvents = () =>
+    TOOLS.flatMap((tool) =>
+      ['PreToolUse', 'PostToolUse'].map((event) => ({
+        event,
+        toolName: tool,
+        stdin: JSON.stringify({ session_id: 'T', transcript_path: '/dev/null', cwd: tree, hook_event_name: event, tool_name: tool, tool_input: {}, tool_response: { ok: 1 } }),
+      })),
+    )
+  const fire = (userScope) => {
+    project.reset()
+    user.reset()
+    simulate({ scopes: [{ name: 'user', settings: userScope }, { name: 'project', settings: claudeSettings }], events: toolEvents(), cwd: tree, env, projectDir: tree })
+    return { project: count(project.calls()), user: count(user.calls()) }
+  }
+
+  it('instalación nueva: post una vez por herramienta, pre sólo la de Bash — lo que disparaba icm init', () => {
+    const r = fire({})
+    assert.deepEqual(r.project, { ...none, post: TOOLS.length, pre: 1 })
+    assert.deepEqual(r.user, none)
+  })
+
+  it('esta máquina: las mismas llamadas, todas desde el scope de usuario', () => {
+    const r = fire(ALL_SIX)
+    assert.deepEqual(r.project, none)
+    assert.deepEqual(r.user, { ...none, post: TOOLS.length, pre: 1 })
+  })
+
+  it('un post de usuario sólo para Bash: el proyecto cubre el resto sin duplicar Bash', () => {
+    const r = fire({ hooks: { PostToolUse: userEntry('post', 'Bash') } })
+    assert.equal(r.user.post, 1)
+    assert.equal(r.project.post, TOOLS.length - 1)
+  })
+})
+
 describe('la traducción a Claude Code', () => {
   const plan = planClaude(readDeclarations(REPO)).filter((p) => p.icmMode)
 
@@ -133,6 +172,12 @@ describe('la traducción a Claude Code', () => {
     assert.deepEqual(Object.fromEntries(plan.map((p) => [p.icmMode, p.event])), EVENT)
     assert.equal(plan.length, MODES.length)
     assert.ok(plan.every((p) => / claude$/.test(p.command)))
+  })
+
+  it('el matcher de cada modo es el de icm init: pre "Bash", post ninguno', () => {
+    const m = Object.fromEntries(plan.map((p) => [p.icmMode, p.matcher]))
+    assert.equal(m.pre, 'Bash')
+    assert.equal(m.post, undefined)
   })
 
   it('compact y end sin timeout, como los registraba icm init; los demás conservan el declarado', () => {

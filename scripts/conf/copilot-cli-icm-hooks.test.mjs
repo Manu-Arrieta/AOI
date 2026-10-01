@@ -126,6 +126,22 @@ describe('los hooks de ICM de Copilot CLI, como los escribía icm init', () => {
     assert.deepEqual(COPILOT_CLI_HOOKS.map(([ev, mode]) => s.hooks[ev][0].bash), COPILOT_CLI_HOOKS.map(([, m]) => `"/a b/icm" hook ${m}`))
   })
 
+  it('conserva el modo 600 y escribe a través de un settings.json enlazado', () => {
+    const h = home()
+    const real = path.join(h, 'dotfiles', 'copilot.json')
+    fs.mkdirSync(path.dirname(real), { recursive: true })
+    fs.writeFileSync(real, JSON.stringify({ theme: 'dark' }), { mode: 0o600 })
+    fs.chmodSync(real, 0o600)
+    fs.mkdirSync(path.dirname(settingsIn(h)), { recursive: true })
+    fs.symlinkSync(real, settingsIn(h))
+    assert.equal(cli(h, ['--icm', ICM]).status, 0)
+    assert.ok(fs.lstatSync(settingsIn(h)).isSymbolicLink(), 'el enlace sigue siendo un enlace')
+    assert.equal(fs.statSync(real).mode & 0o777, 0o600)
+    const s = JSON.parse(fs.readFileSync(real, 'utf8'))
+    assert.equal(s.theme, 'dark')
+    assert.equal(s.hooks.sessionStart.length, 1)
+  })
+
   it('COPILOT_HOME mueve el archivo; sin ella es ~/.copilot', () => {
     assert.equal(copilotSettingsPath({ HOME: '/h' }), path.join('/h', '.copilot', 'settings.json'))
     assert.equal(copilotSettingsPath({ HOME: '/h', COPILOT_HOME: '/c' }), path.join('/c', 'settings.json'))

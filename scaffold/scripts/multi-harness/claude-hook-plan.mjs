@@ -79,6 +79,13 @@ const CLAUDE_ONLY = { [ICM_HOOK]: [{ event: 'SessionEnd', args: ' end' }] }
 // extracción de transcript cuya duración no se pudo medir sin escribir la base.
 const UNTIMED_MODES = new Set(['compact', 'end'])
 
+// `icm init` registró `icm hook post` SIN matcher (PreToolUse sí con "Bash",
+// leído de ~/.claude/settings.json): post encola la salida de Read, Edit, MCP…
+// igual que la de Bash y su límite cada N cuenta todas. Con el matcher "Bash"
+// del proyecto, una instalación sin ese init perdía la extracción de toda
+// herramienta que no fuera Bash.
+const UNMATCHED_MODES = new Set(['post'])
+
 /** Lee cada declaración de `.github/hooks/`; una que no parsea queda con `hooks: null`. */
 export function readDeclarations(root, dir = HOOKS_DIR) {
   const full = path.join(root, dir)
@@ -134,10 +141,11 @@ export function claudeEntry(event, entry) {
   const rel = s.script.replace(/^\.\//, '')
   const dialect = CLAUDE_DIALECT[rel] ? ` ${CLAUDE_DIALECT[rel]}` : ''
   const claudeEvent = CLAUDE_EVENT[rel] ?? event
-  const untimed = rel === ICM_HOOK && UNTIMED_MODES.has(icmMode(entry.command))
+  const mode = rel === ICM_HOOK ? icmMode(entry.command) : null
+  const untimed = UNTIMED_MODES.has(mode)
   return {
     event: claudeEvent,
-    matcher: MATCHER[claudeEvent],
+    matcher: UNMATCHED_MODES.has(mode) ? undefined : MATCHER[claudeEvent],
     command: `bash "${PROJECT_DIR}/${rel}"${s.rest}${dialect}`,
     timeout: untimed ? undefined : entry.timeout,
   }

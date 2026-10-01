@@ -84,10 +84,16 @@ export function ensureCopilotHooks({ file, icmBin, env = process.env }) {
   const r = mergeCopilotHooks(current, icmBin)
   if (r.error) return { status: 'refused', message: `${file}: ${r.error}; no se toca` }
   if (r.added.length === 0) return { status: 'unchanged', message: `Copilot CLI ya tenía los hooks de ICM (${file})` }
-  fs.mkdirSync(path.dirname(file), { recursive: true })
-  const tmp = `${file}.aoi-tmp-${process.pid}`
+  // El rename atómico reemplazaba un settings.json enlazado (dotfiles) por un
+  // archivo común y dejaba en 644 uno que estaba en 600: se escribe sobre el
+  // destino del enlace y con el modo que tenía.
+  const target = fs.existsSync(file) ? fs.realpathSync(file) : file
+  const mode = fs.existsSync(target) ? fs.statSync(target).mode & 0o777 : null
+  fs.mkdirSync(path.dirname(target), { recursive: true })
+  const tmp = `${target}.aoi-tmp-${process.pid}`
   fs.writeFileSync(tmp, `${JSON.stringify(r.settings, null, 2)}\n`)
-  fs.renameSync(tmp, file)
+  if (mode !== null) fs.chmodSync(tmp, mode)
+  fs.renameSync(tmp, target)
   return { status: 'written', message: `Copilot CLI → hooks de ICM: ${r.added.join(', ')} (${file})` }
 }
 

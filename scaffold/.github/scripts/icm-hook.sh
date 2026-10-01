@@ -75,8 +75,8 @@ user_scope_fires() {
   local mode="$1" event matcher='' file cmds c bin
   case "$mode" in
     start) event=SessionStart ;;
-    pre) event=PreToolUse; matcher=Bash ;;
-    post) event=PostToolUse; matcher=Bash ;;
+    pre) event=PreToolUse; matcher=$TOOL ;;
+    post) event=PostToolUse; matcher=$TOOL ;;
     prompt) event=UserPromptSubmit ;;
     compact) event=PreCompact ;;
     end) event=SessionEnd ;;
@@ -230,10 +230,21 @@ recall_inject() {
 
 # start, prompt, compact y end leen su stdin acá (es chico: no trae salida de
 # herramientas) porque el registro de recall necesita el id de sesión aunque
-# el modo se omita después. pre y post lo pasan intacto a icm.
+# el modo se omita después. pre y post lo pasan a icm; con `claude` lo leen
+# para saber la herramienta: post corre para todas (Read, Edit, MCP… encolan
+# extracción como Bash) y omitirse depende de que el usuario cubra ESA.
 INPUT=''
 STDIN_READ=0
+TOOL=''
 case "$MODE" in
+  pre|post)
+    if [ "$DIALECT" = claude ]; then
+      IFS= read -r -d '' INPUT || true
+      STDIN_READ=1
+      re='"tool_name"[[:space:]]*:[[:space:]]*"([^"]*)"'
+      if [[ ${INPUT:0:4096} =~ $re ]]; then TOOL=${BASH_REMATCH[1]}; fi
+    fi
+    ;;
   start|prompt|compact|end)
     IFS= read -r -d '' INPUT || true
     STDIN_READ=1
