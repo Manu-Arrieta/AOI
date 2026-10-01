@@ -120,6 +120,26 @@ describe('the harness surfaces are derived from the protocol, not copied', () =>
     fs.rmSync(empty, { recursive: true, force: true })
   })
 
+  it('cita topic y workspace, para que un nombre con espacio sea un solo argumento', () => {
+    // Medido con un workspace "ws one": la superficie compilada decía
+    // `icm store -t <topic>` y el fallback `-t ws one-context`; copiado tal
+    // cual, el shell parte el topic en `ws` y `one-context`. Lo mismo con
+    // `--workspace ws one` en la guía. Cubre el fallback (protocolo ilegible).
+    const ws = 'ws one'
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-proto-'))
+    const surfaces = {
+      'CLAUDE.md': generateClaudeMd({ workspace: ws, repoRoot: REPO }),
+      'copilot-instructions': generateCopilotInstructions({ workspace: ws, repoRoot: REPO }),
+      'CLAUDE.md (fallback)': generateClaudeMd({ workspace: ws, repoRoot: empty }),
+      'copilot (fallback)': fallbackStoreTriggers(ws).copilot,
+    }
+    fs.rmSync(empty, { recursive: true, force: true })
+    for (const [name, text] of Object.entries(surfaces)) {
+      const unquoted = text.match(/(?:-t|--workspace) (?!")(?:<topic>|ws one)\S*/g) ?? []
+      assert.deepEqual(unquoted, [], `${name} deja sin comillas: ${unquoted.join(', ')}`)
+    }
+  })
+
   it('names a protocol file that exists', () => {
     assert.ok(fs.existsSync(path.join(REPO, ICM_PROTOCOL)), `${ICM_PROTOCOL} no existe`)
   })

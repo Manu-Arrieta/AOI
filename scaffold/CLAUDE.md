@@ -16,7 +16,7 @@ icm facts list "AOI"             # O(1) exact project facts
 
 ### Store Triggers (MANDATORY) — derivado de `.github/instructions/icm-protocol.instructions.md`
 
-`icm store -t <topic> -c "<description>" -i <importance>` · topics: `AOI-decisions`,
+`icm store -t "<topic>" -c "<description>" -i <importance>` · topics: `AOI-decisions`,
 `AOI-context`, `AOI-errors-resolved`, `AOI-preferences`.
 
 - `-i critical` → project stack o contexto · decisión de arquitectura · convención establecida · preferencia del Owner (topic `AOI-preferences`)
@@ -86,7 +86,7 @@ intended behaviour, not an obstacle to route around: it exists because
 ```bash
 pnpm test                 # the full chain: every gate, then every suite
 pnpm aoi:doctor           # 360° health check, 0 inference tokens
-pnpm aoi:sync-rules       # recompile all harness files + scaffold mirror
+pnpm aoi:sync-rules       # recompile every harness file
 ```
 
 While iterating, run one area's suite or one file rather than the whole chain:
@@ -100,10 +100,10 @@ node --test --test-name-pattern "ratchet" scripts/scaffold/validate-srp.test.mjs
 Read-only lenses. All deterministic; none of them needs a model:
 
 ```bash
-pnpm aoi:graph          # prompt→script→agent interaction graph (JSON)
-pnpm aoi:handoffs       # SDD phase sequence and its artifact contract
-pnpm aoi:determinism    # per-file determinism classification
-pnpm aoi:ast-lens       # fold function bodies, keep signatures
+pnpm aoi:graph --hubs          # fan-out ranking; bare: full graph JSON
+pnpm aoi:handoffs              # SDD phase sequence and its artifact contract
+pnpm aoi:determinism --summary # count per class; bare: one row per file
+pnpm aoi:ast-lens <file>       # fold function bodies, keep signatures
 ```
 
 ## Architecture
@@ -125,7 +125,7 @@ pnpm aoi:ast-lens       # fold function bodies, keep signatures
 
 Do not mistake that table for the architecture. It is a taxonomy, and a taxonomy
 hides the thing that actually matters — who calls whom, in what order. For the
-real shape run `pnpm aoi:graph` and `pnpm aoi:handoffs`: they answer from the
+real shape run `pnpm aoi:graph --hubs` and `pnpm aoi:handoffs`: they answer from the
 current tree instead of from prose written once and never re-measured.
 
 The governance spine is `.specify/memory/constitution.md` and its five
@@ -164,12 +164,12 @@ same change, or `test:parity` fails. Adding one no test loads fails
 ## Working conventions
 
 - **Most of this tree is gitignored, and most of it is hidden.** For files use
-  `fd -H -I` — two flags: `-H` for dot-directories, `-I` for ignored ones. Here
-  `.md` files count 60 without them and 1356 with. For content use
-  `rtk proxy rg --no-ignore`: bare `rg` is rewritten to `grep` by the RTK hook, and
-  `grep` rejects `--no-ignore` outright, so the plain form cannot be followed.
-- `compile-rules.mjs` takes `--workspace AOI`. Unknown flags fall back
-  to defaults silently rather than erroring.
+  `fd -H -I -E node_modules`: `-H` for dot-directories, `-I` for ignored ones,
+  `-E` drops dependencies. For content use
+  `rtk proxy rg --no-ignore -g '!node_modules'`: bare `rg` is rewritten by the
+  RTK hook to `grep`, and `grep` rejects `--no-ignore`.
+- `aoi:sync-rules` names the workspace after the directory unless given
+  `--workspace "AOI"`: pass it from a worktree or a copy.
 - ICM content passes through a shell: backticks inside it are command-substituted.
   Keep them out of `icm store -c` values.
 - Comments in this codebase carry the measured defect that motivated the code,

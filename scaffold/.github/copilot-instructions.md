@@ -29,7 +29,7 @@ icm recall-context "query" --limit 5      # prompt injection (same -t caveat app
 
 ### Store Triggers (MANDATORY) — derivado de `.github/instructions/icm-protocol.instructions.md`
 
-`icm store -t <topic> -c "<description>" -i <importance>` · topics: `AOI-decisions`,
+`icm store -t "<topic>" -c "<description>" -i <importance>` · topics: `AOI-decisions`,
 `AOI-context`, `AOI-errors-resolved`, `AOI-preferences`.
 
 - `-i critical` → project stack o contexto · decisión de arquitectura · convención establecida · preferencia del Owner (topic `AOI-preferences`)
