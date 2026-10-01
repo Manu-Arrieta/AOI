@@ -84,6 +84,38 @@ describe('C4: un test que no corre acá no es evidencia de acá', () => {
   })
 })
 
+describe('un skip incondicional no es PARTIAL: no corre en ninguna plataforma', () => {
+  // Repro del verificador: `it.skip` y `{ skip: true }` salían PARTIAL, exit 0.
+  const NEVER_RUNS = [
+    `it.skip('${TAG} nunca corre', () => {})`,
+    "it('FIXTURE-778:never.2 tampoco', { skip: true }, () => {})",
+  ].join('\n')
+  const FACTS_2 = `${FACTS}\nbic.FIXTURE-778.never.2    FIXTURE-778:never.2 NUNCA otra`
+
+  it('auditInvariantCoverage: FAILED en cualquier plataforma, nada en platformSkipped', () => {
+    const rules = [RULE, { ...RULE, tag: 'FIXTURE-778:never.2' }]
+    for (const platform of ['darwin', 'win32']) {
+      const audit = auditInvariantCoverage(rules, [{ file: 'n.test.mjs', content: NEVER_RUNS }], { platform })
+      assert.equal(audit.status, 'FAILED')
+      assert.deepEqual(audit.platformSkipped, [])
+      assert.match(audit.uncovered[0].statement, /desactivado sin condición de plataforma \(`\.skip`/)
+    }
+  })
+
+  it('el CLI con --exit-code: FAILED, exit 1, Uncovered: 2', () => {
+    const { root, cleanup } = workspace({ 'n.test.mjs': NEVER_RUNS })
+    try {
+      fs.writeFileSync(path.join(root, 'facts.txt'), FACTS_2)
+      const r = gateRun(['--facts-file', 'facts.txt', '--tests-dir', '.', '--exit-code'], { cwd: root })
+      assert.equal(r.code, 1, r.stdout + r.stderr)
+      assert.match(r.stdout, /Invariant Gate: 🛑 FAILED[\s\S]*Uncovered: 2/)
+      assert.doesNotMatch(r.stdout, /PARTIAL|Skipped on/)
+    } finally {
+      cleanup()
+    }
+  })
+})
+
 describe('D2: un flag desconocido no puede degradar el veredicto', () => {
   it('parseGateArgs rechaza lo desconocido y los valores ausentes', () => {
     assert.match(parseGateArgs(['--bogus']).error, /desconocido: --bogus/)

@@ -134,8 +134,10 @@ describe('la cadena de pnpm test corre lo que CLAUDE.md dice que corre', () => {
     }
   })
 
-  it('C3: el Invariant Gate corre en modo --chain, no con --exit-code a secas', () => {
+  it('C3: el Invariant Gate y el Blueprint Gate corren en modo --chain', () => {
     assert.ok(steps.includes('pnpm aoi:invariant-gate --chain'))
+    // Sin --chain, un worktree o un CI sin icm saldría 2 por "no pude leer".
+    assert.ok(steps.includes('pnpm aoi:blueprint-gate --chain'))
   })
 
   it('C5: la suite de conf pasa por run-suite, no por node --test directo', () => {

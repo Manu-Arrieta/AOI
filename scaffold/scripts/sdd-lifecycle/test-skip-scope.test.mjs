@@ -8,7 +8,7 @@
 
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { closing, evaluateSkip, tagSkippedOn, testCalls } from './test-skip-scope.mjs'
+import { closing, evaluateSkip, skipScope, tagSkippedOn, testCalls } from './test-skip-scope.mjs'
 
 const TAG = 'FIXTURE-777:never.1'
 
@@ -25,6 +25,14 @@ describe('evaluateSkip decide sólo lo que se puede decidir sin ejecutar', () =>
     assert.equal(evaluateSkip('false', 'darwin'), false)
   })
 
+  it('os.platform() cuenta como plataforma; un valor que no es plataforma salta siempre', () => {
+    assert.equal(evaluateSkip("os.platform() !== 'win32'", 'darwin'), true)
+    assert.equal(skipScope("os.platform() !== 'win32'"), 'platform')
+    assert.equal(skipScope("process.platform === 'darwin'"), 'platform')
+    assert.equal(skipScope("process.platform !== 'windows'"), 'always')
+    assert.equal(skipScope('true'), 'always')
+  })
+
   it('lo que depende del árbol queda indeterminado, no "salta"', () => {
     assert.equal(evaluateSkip('!SETUP_PS1', 'darwin'), null)
   })
@@ -39,13 +47,29 @@ describe('tagSkippedOn', () => {
       '  })',
       '})',
     ].join('\n')
-    assert.deepEqual(tagSkippedOn(src, TAG, 'darwin'), { skipped: true, condition: "skip: process.platform !== 'win32'" })
+    assert.deepEqual(tagSkippedOn(src, TAG, 'darwin'), { skipped: true, condition: "skip: process.platform !== 'win32'", scope: 'platform' })
     assert.equal(tagSkippedOn(src, TAG, 'win32').skipped, false)
   })
 
   it('it.skip y describe.skip saltan a todo lo que contienen', () => {
     assert.equal(tagSkippedOn(`it.skip('${TAG}', () => {})`, TAG, 'darwin').skipped, true)
     assert.equal(tagSkippedOn(`describe.skip('d', () => { it('${TAG}', () => {}) })`, TAG, 'darwin').skipped, true)
+  })
+
+  it('it.skip, .todo y { skip: true } no corren en NINGUNA plataforma: scope always', () => {
+    for (const src of [`it.skip('${TAG}', () => {})`, `it.todo('${TAG}')`, `it('${TAG}', { skip: true }, () => {})`, `it('${TAG}', { todo: 'luego' }, () => {})`]) {
+      for (const platform of ['darwin', 'win32', 'linux']) assert.equal(tagSkippedOn(src, TAG, platform).scope, 'always', `${src} @ ${platform}`)
+    }
+  })
+
+  it('un skip por plataforma bajo un describe.skip tampoco corre en ninguna', () => {
+    const src = `describe.skip('d', () => { it('${TAG}', { skip: process.platform !== 'win32' }, () => {}) })`
+    assert.deepEqual(tagSkippedOn(src, TAG, 'darwin'), { skipped: true, condition: '.skip', scope: 'always' })
+  })
+
+  it('una cita por plataforma gana sobre otra incondicional: la regla corre en algún lado', () => {
+    const src = `it.skip('${TAG} a', () => {})\nit('${TAG} b', { skip: os.platform() !== 'win32' }, () => {})\n`
+    assert.equal(tagSkippedOn(src, TAG, 'darwin').scope, 'platform')
   })
 
   it('basta UNA cita que corra para que el tag corra', () => {

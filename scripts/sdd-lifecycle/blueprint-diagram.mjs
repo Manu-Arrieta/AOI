@@ -36,7 +36,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { isDevelopmentRepo } from '../scaffold/governed-paths.mjs'
-import { parseFactTable } from './contract-facts.mjs'
+import { noFacts, parseFactTable, readFactsFromIcm } from './contract-facts.mjs'
 
 /** Dónde vive el blueprint y sus diagramas dentro del WORKSPACE, según el prompt. */
 export const BLUEPRINT_DIR = '.blueprints'
@@ -181,11 +181,11 @@ export function auditDiagramArtifacts(workspaceRoot, sbcId) {
  * datos ajenos. `ICM_DB` no alcanza: no lo honra este build.
  *
  * @param {string[]} argv
- * @returns {{ positional: string[], workspaceRoot: string, dbPath: string, record: boolean }}
+ * @returns {{ positional: string[], workspaceRoot: string, dbPath: string, record: boolean, chain: boolean }}
  */
 export function parseGateArgs(argv = [], cwd = process.cwd()) {
   const flags = { '--workspace': '', '--db': '' }
-  const KNOWN_BOOLEAN = new Set(['--record'])
+  const KNOWN_BOOLEAN = new Set(['--record', '--chain'])
   const positional = []
 
   for (let i = 0; i < argv.length; i++) {
@@ -210,6 +210,7 @@ export function parseGateArgs(argv = [], cwd = process.cwd()) {
     workspaceRoot: flags['--workspace'] || implicitWorkspace(cwd),
     dbPath: flags['--db'],
     record: argv.includes('--record'),
+    chain: argv.includes('--chain'),
   }
 }
 
@@ -240,28 +241,27 @@ export function formatDiagramObligation(sbcId, obligation, artifacts = null) {
 }
 
 /**
- * Lee los hechos `sbc.*` de la entidad, o `[]` si ICM no responde.
+ * Lee los hechos `sbc.*` de la entidad, distinguiendo "no hay SBC" de "no pude leer".
  *
  * Vive acá junto a `recordObligation` porque las dos son E/S de ICM: leer el
- * blueprint y registrar su estado son la misma pregunta dicha en dos sentidos,
- * y separarlas fue lo que dejó al gate en 305 LOC contra el límite de 300.
+ * blueprint y registrar su estado son la misma pregunta dicha en dos sentidos.
+ *
+ * Antes devolvía `[]` ante cualquier error, y el gate —ya en la cadena de
+ * `pnpm test`— decía SKIPPED con exit 0 sin `icm`, con un `icm` que fallaba o con
+ * una entidad que ICM no conoce. Ahora la lectura es la del Invariant Gate.
  *
  * @param {string} entity
  * @param {string} [dbPath] Base descartable, para no tocar el store compartido.
- * @returns {Array<{ key: string, value: string }>}
+ * @returns {{ ok: boolean, facts: Array<{ key: string, value: string }>, reason?: string, absent?: boolean }}
  */
 export function readSbcFacts(entity, dbPath = '') {
-  const args = ['facts', 'list', entity, '-p', 'sbc.', '--read-only']
-  if (dbPath) args.push('--db', dbPath)
-  try {
-    const text = execFileSync('icm', args, {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    })
-    return parseFactTable(text)
-  } catch {
-    return []
+  const read = readFactsFromIcm(entity, { prefix: 'sbc.', dbPath })
+  if (!read.ok) return { ok: false, facts: [], reason: read.reason, absent: read.absent }
+  const facts = noFacts(read.text) ? [] : parseFactTable(read.text)
+  if (facts.length === 0 && !noFacts(read.text)) {
+    return { ok: false, facts, reason: 'icm respondió una tabla sbc.* que no se pudo leer', absent: false }
   }
+  return { ok: true, facts }
 }
 
 /**

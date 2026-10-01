@@ -81,13 +81,19 @@ export function auditInvariantCoverage(rules = [], testSources = [], { platform 
     // Y que además CORRE acá (C4, auditoría 2026-09-30): en macOS
     // `BIC-2026-003:never.2/never.3` figuraban ✅ con un único test que lleva
     // `skip: process.platform !== 'win32'`. Ver `test-skip-scope.mjs`.
+    // Un `it.skip`/`.todo`/`{ skip: true }` no corre en ninguna: no es PARTIAL sino
+    // no cubierta (el verificador midió dos reglas así reportadas PARTIAL, exit 0).
     const scoped = asserting.map((src) => ({ src, ...tagSkippedOn(src.content, rule.tag, platform) }))
     const runsHere = scoped.find((s) => !s.skipped)
+    const elsewhere = scoped.find((s) => s.scope === 'platform')
 
     if (runsHere) {
       covered.push({ tag: rule.tag, kind: rule.kind, evidence: runsHere.src.file })
+    } else if (elsewhere) {
+      platformSkipped.push({ tag: rule.tag, kind: rule.kind, evidence: elsewhere.src.file, condition: elsewhere.condition, platform })
     } else if (scoped.length > 0) {
-      platformSkipped.push({ tag: rule.tag, kind: rule.kind, evidence: scoped[0].src.file, condition: scoped[0].condition, platform })
+      const off = scoped[0]
+      uncovered.push({ tag: rule.tag, kind: rule.kind, statement: `${rule.statement} — su único test está desactivado sin condición de plataforma (\`${off.condition}\`, ${off.src.file})` })
     } else if (hits.length > 0) {
       uncovered.push({
         tag: rule.tag,
@@ -122,7 +128,8 @@ export function auditInvariantCoverage(rules = [], testSources = [], { platform 
  *
  * PARTIAL sale 0, y es una decisión: el gate existe para cazar reglas que NADIE
  * testea, y una regla con un test acotado a otra plataforma sí tiene quien la
- * vigile — en esa plataforma. Exigir 1 en macOS pediría verificar acá algo que
+ * vigile — en esa plataforma. Sólo esa: un skip incondicional no lo vigila nadie
+ * y llega acá como FAILED (ver `skipScope` en `test-skip-scope.mjs`). Exigir 1 en macOS pediría verificar acá algo que
  * acá no se puede ejecutar, y la única salida barata sería borrar el `skip` o el
  * tag. Lo que no puede pasar es leerlo como completo: por eso no cuenta como
  * cubierta, el encabezado dice PARTIAL y cada regla nombra su plataforma.
@@ -194,7 +201,7 @@ export function chainContractAbsence(cwd) {
   process.stderr.write(notice)
   const read = readFactsFromIcm(entity)
   if (read.ok && !noFacts(read.text)) return { entity, absent: '' }
-  if (!read.ok && !/no conoce la entidad|not on PATH/.test(read.reason)) return { entity, absent: '' }
+  if (!read.ok && !read.absent) return { entity, absent: '' }
   return { entity, absent: read.ok ? `"${entity}" no tiene hechos bic.*` : read.reason }
 }
 

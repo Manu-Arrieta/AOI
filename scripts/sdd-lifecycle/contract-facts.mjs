@@ -103,10 +103,11 @@ export function noFacts(text) {
 }
 
 /** Una invocación cruda a `icm facts list`, sin interpretar el resultado. */
-function listFacts(entity, prefix) {
+function listFacts(entity, prefix, dbPath = '') {
   const args = ['facts', 'list', entity]
   if (prefix) args.push('-p', prefix)
   args.push('--read-only')
+  if (dbPath) args.push('--db', dbPath)
   return execFileSync('icm', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
 }
 
@@ -128,25 +129,33 @@ function listFacts(entity, prefix) {
  * `/sdd-frame`. Ésa no tiene nada que exigir y sale 0. Una entidad que ICM no
  * conoce no es un contrato vacío: es una consulta que no encontró su objeto.
  *
+ * `prefix` y `dbPath` existen porque el Blueprint Gate tenía su propia lectura de
+ * `sbc.*` que convertía CUALQUIER error en "no hay hechos" → SKIPPED, exit 0: un
+ * `icm` roto o una entidad mal resuelta se leían como "no hay SBC". Una sola
+ * lectura para los dos gates. `absent` marca lo que es ausencia y no avería (sin
+ * `icm` en el PATH, entidad desconocida): `--chain` lo reporta NOT AUDITED con 0.
+ *
  * @param {string} entity
- * @returns {{ ok: boolean, text: string, reason?: string }}
+ * @param {{ prefix?: string, dbPath?: string }} [opts]
+ * @returns {{ ok: boolean, text: string, reason?: string, absent?: boolean }}
  */
-export function readFactsFromIcm(entity) {
+export function readFactsFromIcm(entity, { prefix = 'bic.', dbPath = '' } = {}) {
   try {
-    const text = listFacts(entity, 'bic.')
+    const text = listFacts(entity, prefix, dbPath)
     if (noFacts(text)) {
-      // Sin hechos bic.*: ¿la entidad existe y simplemente no tiene contrato,
+      // Sin hechos del prefijo: ¿la entidad existe y simplemente no tiene contrato,
       // o no existe? La consulta SIN prefijo lo decide — es la única forma de
       // preguntarle a ICM si conoce la entidad.
       let all = ''
       try {
-        all = listFacts(entity, '')
+        all = listFacts(entity, '', dbPath)
       } catch {
         all = ''
       }
       if (noFacts(all) || all.trim() === '') {
         return {
           ok: false,
+          absent: true,
           text: '',
           reason:
             `ICM no conoce la entidad "${entity}": no tiene ningún hecho. ` +
@@ -156,10 +165,8 @@ export function readFactsFromIcm(entity) {
     }
     return { ok: true, text }
   } catch (err) {
-    const reason =
-      err?.code === 'ENOENT'
-        ? 'the `icm` binary is not on PATH'
-        : `icm exited with an error (${err?.message || 'unknown'})`
-    return { ok: false, text: '', reason }
+    const absent = err?.code === 'ENOENT'
+    const reason = absent ? 'the `icm` binary is not on PATH' : `icm exited with an error (${err?.message || 'unknown'})`
+    return { ok: false, absent, text: '', reason }
   }
 }
