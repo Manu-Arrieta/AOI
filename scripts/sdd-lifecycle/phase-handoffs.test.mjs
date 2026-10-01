@@ -256,3 +256,37 @@ describe('los marcadores de artefacto que no son archivos', () => {
     fs.rmSync(root, { recursive: true, force: true })
   })
 })
+
+// C6 de la auditoría 2026-09-30. `sdd-ff.prompt.md:120` lee el contrato con
+// `icm facts list ... -p "bic."` y la fila de Phase_2_FF no lo declaraba: el
+// checker sólo confirmaba lo que la tabla decía, así que esa arista no existía
+// para nadie y el reporte mostraba una cadena más pobre que la real.
+describe('undeclaredFacts — un prompt que consulta hechos que su fila no declara', () => {
+  it('lo detecta: el prompt nombra bic. y la fila no lo declara', () => {
+    const root = workspace({ '.github/prompts/a.prompt.md': 'icm facts list "WS" -p "bic."' })
+    try {
+      const r = auditHandoffs(root, [{ phase: 'A', prompt: '.github/prompts/a.prompt.md', produces: [], requires: [] }])
+      assert.equal(r.undeclaredFacts.length, 1)
+      assert.match(r.undeclaredFacts[0], /^A: su prompt nombra bic-facts/)
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  it('un consumo condicional declarado cuenta como declarado', () => {
+    const root = workspace({ '.github/prompts/a.prompt.md': 'icm facts list "WS" -p "bic."' })
+    try {
+      const r = auditHandoffs(root, [{ phase: 'A', prompt: '.github/prompts/a.prompt.md', conditionalRequires: ['bic-facts'] }])
+      assert.deepEqual(r.undeclaredFacts, [])
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  it('la cadena publicada no tiene traspasos ICM sin declarar, y FF lee el BIC', () => {
+    assert.deepEqual(auditHandoffs(REPO).undeclaredFacts, [])
+    const ff = HANDOFFS.find((h) => h.phase === 'Phase_2_FF')
+    assert.ok((ff.conditionalRequires ?? []).includes('bic-facts'), '/sdd-ff ya no declara que siembra el BIC')
+    assert.match(formatHandoffChain(), /Phase_2_FF\s+← proposal\.md, bic-facts \(si aplica\)/)
+  })
+})

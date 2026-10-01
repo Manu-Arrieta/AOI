@@ -29,6 +29,7 @@ import {
   invokedScripts,
   probeEntryPoints,
   readsStdin,
+  SANDBOX_PREFIX,
 } from './entry-point-probe.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
@@ -212,14 +213,16 @@ test('main() borra la copia del sandbox, y eso está fijado', () => {
   //
   // Se compara por CONJUNTO de nombres y no por conteo: un conteo puede dar 0
   // porque la corrida no llegó a crear nada, que es el verde por vacío.
+  // El prefijo se importa: cuando la copia pasó a llevar un espacio (C2), un
+  // prefijo copiado a mano habría dejado este caso verde sobre cero directorios.
   const tmp = os.tmpdir()
-  const previos = new Set(fs.readdirSync(tmp).filter((n) => n.startsWith('aoi-entrypoint-')))
+  const previos = new Set(fs.readdirSync(tmp).filter((n) => n.startsWith(SANDBOX_PREFIX)))
   const { root, cleanup } = fixture('node scripts/vivo.mjs\n', { 'vivo.mjs': 'console.log("ok")\n' })
   try {
     runProbe(root)
     const nuevos = fs
       .readdirSync(tmp)
-      .filter((n) => n.startsWith('aoi-entrypoint-'))
+      .filter((n) => n.startsWith(SANDBOX_PREFIX))
       .filter((n) => !previos.has(n))
     assert.deepEqual(nuevos, [], `la compuerta dejó ${nuevos.length} copia(s) sin borrar`)
   } finally {

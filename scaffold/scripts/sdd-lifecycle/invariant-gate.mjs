@@ -16,6 +16,10 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { collectTestSources, dropAoiOwnedTests, dropUnreachableTests } from './test-reachability.mjs'
 import { acquireRules } from './invariant-gate-preconditions.mjs'
+import { HELP, parseGateArgs, USAGE } from './invariant-gate-args.mjs'
+import { tagSkippedOn } from './test-skip-scope.mjs'
+import { noFacts, readFactsFromIcm } from './contract-facts.mjs'
+import { resolveWorkspaceEntity } from './workspace-identity.mjs'
 
 // Re-exported: collecting test sources moved to test-reachability.mjs when this
 // file crossed 300 LOC, but it is part of this module's public surface and
@@ -31,9 +35,11 @@ export { NEVER_KEY_PATTERN, ORACLE_KEY_PATTERN, extractContractRules, parseFactT
  * Audits whether every declared contract rule is referenced by at least one test.
  * @param {ReturnType<typeof extractContractRules>} rules
  * @param {Array<{ file: string, content: string }>} testSources
- * @returns {{ status: 'PASSED'|'FAILED'|'SKIPPED', totalRules: number,
+ * @returns {{ status: 'PASSED'|'PARTIAL'|'FAILED'|'SKIPPED', totalRules: number,
  *   covered: Array<{ tag: string, kind: string, evidence: string }>,
- *   uncovered: Array<{ tag: string, kind: string, statement: string }>, timestamp: string }}
+ *   uncovered: Array<{ tag: string, kind: string, statement: string }>,
+ *   platformSkipped: Array<{ tag: string, kind: string, evidence: string, condition: string, platform: string }>,
+ *   timestamp: string }}
  */
 /**
  * Markers an agent leaves when it finds the contract itself is inconsistent.
@@ -62,18 +68,26 @@ function hasUnresolvedContradiction(content) {
   return CONTRADICTION_MARKERS.some((re) => re.test(content))
 }
 
-export function auditInvariantCoverage(rules = [], testSources = []) {
+export function auditInvariantCoverage(rules = [], testSources = [], { platform = process.platform } = {}) {
   const covered = []
   const uncovered = []
+  const platformSkipped = []
 
   for (const rule of rules) {
     const hits = testSources.filter((src) => src.content.includes(rule.tag))
     // A rule is covered by a test that ASSERTS it. One that only records a
     // dispute about it is evidence of a broken contract, not of enforcement.
-    const hit = hits.find((src) => !hasUnresolvedContradiction(src.content))
+    const asserting = hits.filter((src) => !hasUnresolvedContradiction(src.content))
+    // Y que además CORRE acá (C4, auditoría 2026-09-30): en macOS
+    // `BIC-2026-003:never.2/never.3` figuraban ✅ con un único test que lleva
+    // `skip: process.platform !== 'win32'`. Ver `test-skip-scope.mjs`.
+    const scoped = asserting.map((src) => ({ src, ...tagSkippedOn(src.content, rule.tag, platform) }))
+    const runsHere = scoped.find((s) => !s.skipped)
 
-    if (hit) {
-      covered.push({ tag: rule.tag, kind: rule.kind, evidence: hit.file })
+    if (runsHere) {
+      covered.push({ tag: rule.tag, kind: rule.kind, evidence: runsHere.src.file })
+    } else if (scoped.length > 0) {
+      platformSkipped.push({ tag: rule.tag, kind: rule.kind, evidence: scoped[0].src.file, condition: scoped[0].condition, platform })
     } else if (hits.length > 0) {
       uncovered.push({
         tag: rule.tag,
@@ -85,17 +99,36 @@ export function auditInvariantCoverage(rules = [], testSources = []) {
     }
   }
 
+  // PARTIAL es un estado propio y no un PASSED con nota al pie: la regla tiene
+  // test, pero en esta plataforma nadie lo ejecuta. Sale 0 aun con --exit-code
+  // —ver `exitCodeFor`—, y el encabezado nunca dice PASSED.
   let status = 'PASSED'
   if (rules.length === 0) status = 'SKIPPED'
   else if (uncovered.length > 0) status = 'FAILED'
+  else if (platformSkipped.length > 0) status = 'PARTIAL'
 
   return {
     status,
     totalRules: rules.length,
     covered,
     uncovered,
+    platformSkipped,
     timestamp: new Date().toISOString(),
   }
+}
+
+/**
+ * El código de salida de un veredicto bajo `--exit-code`.
+ *
+ * PARTIAL sale 0, y es una decisión: el gate existe para cazar reglas que NADIE
+ * testea, y una regla con un test acotado a otra plataforma sí tiene quien la
+ * vigile — en esa plataforma. Exigir 1 en macOS pediría verificar acá algo que
+ * acá no se puede ejecutar, y la única salida barata sería borrar el `skip` o el
+ * tag. Lo que no puede pasar es leerlo como completo: por eso no cuenta como
+ * cubierta, el encabezado dice PARTIAL y cada regla nombra su plataforma.
+ */
+export function exitCodeFor(status) {
+  return status === 'FAILED' ? 1 : 0
 }
 
 /**
@@ -108,12 +141,22 @@ export function formatInvariantGateReport(audit) {
     return '## Invariant Gate: ⏭️ SKIPPED\nNo BIC contract facts found for this workspace.'
   }
 
-  const icon = audit.status === 'PASSED' ? '✅' : '🛑'
+  const icon = { PASSED: '✅', PARTIAL: '⚠️' }[audit.status] ?? '🛑'
+  const skipped = audit.platformSkipped ?? []
   const lines = [
     `## Invariant Gate: ${icon} ${audit.status}`,
-    `Contract rules: ${audit.totalRules} | Covered: ${audit.covered.length} | Uncovered: ${audit.uncovered.length}`,
+    `Contract rules: ${audit.totalRules} | Covered: ${audit.covered.length} | Uncovered: ${audit.uncovered.length}` +
+      (skipped.length > 0 ? ` | Skipped on ${skipped[0].platform}: ${skipped.length}` : ''),
     '',
   ]
+
+  if (skipped.length > 0) {
+    lines.push(`### Rules whose only test does not run on ${skipped[0].platform}`)
+    for (const item of skipped) {
+      lines.push(`- ⏸️ \`${item.tag}\` — not verified here (\`${item.condition}\`) — ${item.evidence}`)
+    }
+    lines.push('')
+  }
 
   if (audit.uncovered.length > 0) {
     lines.push('### Unenforced Contract Rules')
@@ -131,38 +174,56 @@ export function formatInvariantGateReport(audit) {
   return lines.join('\n').trim()
 }
 
-function parseArgValue(args, flag) {
-  const index = args.indexOf(flag)
-  return index !== -1 && args[index + 1] ? args[index + 1] : ''
+/**
+ * ¿El contrato es inalcanzable desde acá? Sólo para `--chain`.
+ *
+ * Con `--chain` el gate corre dentro de `pnpm test` (C3, auditoría 2026-09-30:
+ * CLAUDE.md afirmaba que la cadena lo corría y no lo corría). El contrato vive en
+ * el ICM LOCAL, no en el árbol, y hay dos lugares medidos donde no se alcanza:
+ * una instalación core nueva —la entidad inferida no tiene hechos `bic.*`, y con
+ * `--exit-code` la cadena de TODO workspace nuevo quedaba en rojo con 2— y el
+ * runner de CI, que no tiene `icm` (ver `fake-icm.mjs`). Ahí se reporta NOT
+ * AUDITED, en voz alta y con el motivo, y sale 0: es un "no sé", no un PASSED.
+ * Lo que sigue bloqueando es lo que no es ausencia: un `icm` que falla, o una
+ * tabla que llega y no se puede leer (`acquireRules`).
+ *
+ * @returns {{ entity: string, absent: string }} `absent` vacío si hay contrato
+ */
+export function chainContractAbsence(cwd) {
+  const { entity, notice } = resolveWorkspaceEntity(cwd)
+  process.stderr.write(notice)
+  const read = readFactsFromIcm(entity)
+  if (read.ok && !noFacts(read.text)) return { entity, absent: '' }
+  if (!read.ok && !/no conoce la entidad|not on PATH/.test(read.reason)) return { entity, absent: '' }
+  return { entity, absent: read.ok ? `"${entity}" no tiene hechos bic.*` : read.reason }
 }
-
 
 // CLI Execution
 export async function main() {
-  const args = process.argv.slice(2)
-  if (args.includes('-h') || args.includes('--help')) {
-    process.stdout.write(
-      'Usage: node scripts/sdd-lifecycle/invariant-gate.mjs [--entity <WORKSPACE>] ' +
-        '[--facts-file <table.txt>] [--tests-dir <dir>] [--bic <BIC-ID>] [--json] [--exit-code]\n' +
-        '\n--entity se resuelve solo (git remote origin, con fallback a\n' +
-        'basename del directorio) cuando no se pasa --entity ni --facts-file.\n' +
-        '\nExit codes (with --exit-code):\n' +
-        '  0  PASSED, or SKIPPED when --entity is EXPLICIT and the workspace has no bic.* facts\n' +
-        '  1  FAILED — a declared invariant or oracle has no test asserting it\n' +
-        '  2  BLOCKED — the contract could not be read, OR an INFERRED entity has no\n' +
-        '     bic.* facts. An inferred name cannot tell "this task never ran\n' +
-        '     /sdd-frame" from "I guessed the wrong entity", and SKIPPED would be a\n' +
-        '     silent pass on a guessed name. Pass --entity to assert it.\n'
-    )
+  const parsed = parseGateArgs(process.argv.slice(2))
+  if (parsed.error) {
+    process.stderr.write(`Invariant Gate: ${parsed.error}\n${USAGE}`)
+    process.exit(2)
+  }
+  const { entity: entityArg, factsFile, bicFilter, asJson, enforceExitCode, chain, help } = parsed.opts
+  if (help) {
+    process.stdout.write(HELP)
     process.exit(0)
   }
+  const testsDir = parsed.opts.testsDir || process.cwd()
+  const installRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 
-  const entity = parseArgValue(args, '--entity')
-  const factsFile = parseArgValue(args, '--facts-file')
-  const testsDir = parseArgValue(args, '--tests-dir') || process.cwd()
-  const bicFilter = parseArgValue(args, '--bic')
-  const asJson = args.includes('--json')
-  const enforceExitCode = args.includes('--exit-code')
+  let entity = entityArg
+  if (chain && !entity && !factsFile) {
+    const chained = chainContractAbsence(process.cwd())
+    if (chained.absent) {
+      const notAudited = { status: 'NOT_AUDITED', reason: chained.absent, covered: [], timestamp: new Date().toISOString() }
+      process.stdout.write(asJson ? `${JSON.stringify(notAudited, null, 2)}\n`
+        : `## Invariant Gate: ⏭️ NOT AUDITED\nContrato inalcanzable desde acá: ${chained.absent}. Nada se dio por cubierto.\n`)
+      return
+    }
+    entity = chained.entity
+  }
 
   // El contrato se consigue en su propio módulo: allá viven las guardias de
   // "¿leí algo?" y los tres caminos de entrada. Acá sólo importa que salga.
@@ -173,7 +234,6 @@ export async function main() {
   // uno de AOI se reporta enforced sin que exista una sola prueba suya. La raíz
   // se deduce de dónde vive ESTE archivo, no de `cwd`, porque lo que hay que
   // ubicar es la instalación de AOI que se está ejecutando.
-  const installRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
   const { kept: ownerSources, dropped: aoiOwned } = dropAoiOwnedTests(installRoot, collectTestSources(testsDir))
 
   const { kept, dropped, determinable, reason } = dropUnreachableTests(testsDir, ownerSources)
@@ -218,8 +278,8 @@ export async function main() {
     process.stdout.write(formatInvariantGateReport(audit) + '\n')
   }
 
-  if (enforceExitCode && audit.status === 'FAILED') {
-    process.exit(1)
+  if (enforceExitCode && exitCodeFor(audit.status) !== 0) {
+    process.exit(exitCodeFor(audit.status))
   }
 }
 
