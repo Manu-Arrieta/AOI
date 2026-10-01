@@ -191,10 +191,38 @@ export function installGitGuard(root) {
   return { changed, skipped: '', actions }
 }
 
+/**
+ * Lee los argumentos y rechaza cualquiera que no conozca.
+ *
+ * Antes cada CLI preguntaba `argv.includes('--audit')`: con un typo como
+ * `--audti` la pregunta daba false y corría la rama de INSTALACIÓN, que
+ * escribe `.git/hooks/commit-msg` (o `.claude/settings.json`) y sale con 0.
+ * Medido en una copia. Un flag desconocido ahora sale con 2 y no escribe nada.
+ *
+ * @returns {{ values: Record<string, string|boolean>, error: string|null }}
+ */
+export function parseCliArgs(argv, { flags = [], options = [] } = {}) {
+  const values = {}
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i]
+    if (flags.includes(a)) values[a.slice(2)] = true
+    else if (options.includes(a)) {
+      if (argv[i + 1] === undefined || argv[i + 1].startsWith('--')) return { values, error: `${a} necesita un valor` }
+      values[a.slice(2)] = argv[++i]
+    } else return { values, error: `argumento desconocido: ${a}` }
+  }
+  return { values, error: null }
+}
+
 function main() {
   const root = process.cwd()
+  const { values, error } = parseCliArgs(process.argv.slice(2), { flags: ['--audit'] })
+  if (error) {
+    console.error(`${error}\nUso: install-git-guard.mjs [--audit]`)
+    process.exit(2)
+  }
 
-  if (process.argv.includes('--audit')) {
+  if (values.audit) {
     const r = auditGitGuard(root)
     console.log('=== AOI Git Guard ===\n')
     if (!r.gitRepo) {

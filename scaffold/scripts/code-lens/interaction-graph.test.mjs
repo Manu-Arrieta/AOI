@@ -28,6 +28,7 @@ import {
   promptInvocations,
   hubs,
 } from './interaction-graph.mjs'
+import { claudeEntry, icmMode } from '../multi-harness/claude-hook-plan.mjs'
 
 const REPO = path.resolve(import.meta.dirname, '../..')
 
@@ -160,9 +161,16 @@ describe('hookDeclarations', () => {
 
   it('sobre el repositorio real, toda declaración llega al compilado', () => {
     // La costura que importa: un hook declarado que install-hooks no tradujo
-    // queda muerto, y nada en el árbol lo delata salvo esta comparación.
-    const declaradas = Object.values(hookDeclarations(REPO)).flat().map((h) => h.command)
+    // queda muerto, y nada en el árbol lo delata salvo esta comparación. Se
+    // compara contra la TRADUCCIÓN y no contra la cadena declarada: copiada
+    // tal cual, la ruta relativa fallaba fuera de la raíz. Las de ICM quedan
+    // fuera porque, donde `icm init --mode hook` ya las registra, no se
+    // escriben en el proyecto (las audita `aoi:hooks`).
+    const declaradas = Object.entries(hookDeclarations(REPO)).flatMap(([event, hs]) =>
+      hs.filter((h) => icmMode(h.command) === null).map((h) => claudeEntry(event, h).command),
+    )
     const compiladas = new Set(Object.values(hookChain(REPO)).flat().map((h) => h.command))
+    assert.ok(declaradas.length > 0)
     for (const cmd of declaradas) {
       assert.ok(compiladas.has(cmd), `declarado pero ausente del compilado: ${cmd}`)
     }

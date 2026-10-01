@@ -5,12 +5,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .github/scripts/icm-hook.sh start",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.github/scripts/icm-hook.sh\" start claude",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "bash .github/scripts/session-init-hook.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.github/scripts/session-init-hook.sh\"",
             "timeout": 15
           }
         ]
@@ -22,12 +22,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .github/scripts/icm-hook.sh pre",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.github/scripts/icm-hook.sh\" pre claude",
             "timeout": 5
           },
           {
             "type": "command",
-            "command": "bash .github/scripts/rtk-hook.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.github/scripts/rtk-hook.sh\" claude",
             "timeout": 5
           }
         ]
@@ -39,13 +39,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .github/scripts/icm-hook.sh post",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.github/scripts/icm-hook.sh\" post claude",
             "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "bash .github/scripts/post-tool-learning-hook.sh",
-            "timeout": 15
           }
         ]
       }
@@ -55,18 +50,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .github/scripts/icm-hook.sh prompt",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.github/scripts/icm-hook.sh\" prompt claude",
             "timeout": 10
           }
         ]
       }
     ],
-    "Stop": [
+    "SessionEnd": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "bash .github/scripts/session-close-hook.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.github/scripts/session-close-hook.sh\"",
             "timeout": 30
           }
         ]

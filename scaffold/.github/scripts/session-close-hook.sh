@@ -1,6 +1,22 @@
 #!/usr/bin/env bash
-# session-close-hook.sh — Stop hook for AOI agentic infrastructure
-# Runs when an agent session ends. Performs ICM health check and session summary.
+# session-close-hook.sh — session-close hook for AOI agentic infrastructure
+# Copilot lo declara en `Stop`; en Claude Code install-hooks.mjs lo cablea en
+# `SessionEnd`, porque allí `Stop` corre al final de CADA turno (100 disparos
+# en 14 sesiones de los transcripts de este repositorio) y este hook es de cierre.
+#
+# stdout lleva sólo el JSON final. Antes imprimía ~35 KB de `icm health`
+# delante (226 784 B en esos 100 disparos), y un stdout que no empieza con `{`
+# se lee como texto: el `systemMessage` nunca llegó. El informe va a stderr,
+# que es diagnóstico.
+#
+# Ya no borra el contador de post-tool en cada disparo: con `Stop` eso reseteaba
+# el rate-limit de post-tool-learning-hook.sh en cada turno, y ese hook se
+# retiró (llamaba a `icm hook post` con el stdin ya consumido).
+#
+# No llama a `icm hook stop`: ese subcomando no existe (`icm hook --help`;
+# exit 2, silenciado con `|| true` desde siempre). El resumen de sesión real es
+# `icm hook end`, y lo dispara el settings de usuario donde corrió
+# `icm init --mode hook`; `icm.json` no lo declara, ni lo declaraba en main.
 
 set -euo pipefail
 
@@ -29,32 +45,24 @@ else
   HOOK_INPUT="{}"
 fi
 
-# El mismo alcance y el mismo saneo que `post-tool-learning-hook.sh`: el
-# contador es por sesión, así que éste es el nombre que hay que borrar. El
-# `tr` evita que un id con `/` o `..` escriba fuera del temporal.
+# El id viaja dentro de un JSON; el `tr` le saca lo que lo rompería.
 SESSION_ID=$(echo "$HOOK_INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('session_id') or 'default')" 2>/dev/null | tr -cd 'A-Za-z0-9._-' || echo "default")
 [ -n "$SESSION_ID" ] || SESSION_ID="default"
+
 # ── ICM Health Check ─────────────────────────────────────────────────────────
 if [ -n "$ICM_BIN" ] && [ -x "$ICM_BIN" ]; then
   echo "[session-close] Running ICM health check..." >&2
-  "$ICM_BIN" health 2>/dev/null || echo "[session-close] ICM health check completed." >&2
-
-  # Store session summary
-  "$ICM_BIN" hook stop 2>/dev/null || true
+  "$ICM_BIN" health >&2 2>/dev/null || echo "[session-close] ICM health check completed." >&2
 else
   echo "[session-close] ICM not found — health check skipped." >&2
 fi
 
-# El contador de ESTA sesión, que es el nombre que escribe el hook de
-# post-tool. Antes borraba `/tmp/aoi-post-tool-counter.$$` con su propio pid,
-# un nombre que ese hook nunca usó —llevaba otro pid— así que el `rm` no
-# limpió nada en toda su vida.
-rm -f "/tmp/aoi-post-tool-counter.${SESSION_ID}" 2>/dev/null || true
-
-# Y los de sesiones que murieron sin cerrar: uno por sesión abandonada sería un
-# archivo de 2 bytes para siempre. El corte por antigüedad no puede pisar una
-# sesión viva porque ninguna dura siete días. `-H` es obligatorio en macOS:
-# `/tmp` es un symlink y `find` no lo atraviesa.
+# Contadores que dejó `post-tool-learning-hook.sh`, ya retirado: escribía uno
+# por sesión en /tmp. Nadie los escribe ahora, pero una sesión abandonada de
+# antes dejaba su archivo para siempre. El corte por antigüedad no puede pisar
+# a un workspace instalado con la versión vieja, porque ninguna sesión dura
+# siete días. `-H` es obligatorio en macOS: `/tmp` es un symlink y `find` no
+# lo atraviesa.
 find -H /tmp -maxdepth 1 -name 'aoi-post-tool-counter.*' -mtime +7 -delete 2>/dev/null || true
 
 # ── Success output ───────────────────────────────────────────────────────────
