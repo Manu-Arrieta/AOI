@@ -249,7 +249,7 @@ Present results to the Owner and offer choices:
 
 **The Owner decides.** The Supervisor does NOT auto-archive on PASS.
 
-**Context boundary:** the next phase starts in a fresh context (new session or subagent) from this phase's artifacts and facts (`aoi:handoffs`), not from this chat.
+**Corte de contexto:** la fase siguiente arranca en un contexto nuevo (sesión o subagente) con los artefactos y facts de esta (`aoi:handoffs`), no con este chat.
 
 **The task to verify is:**
 {{input}}

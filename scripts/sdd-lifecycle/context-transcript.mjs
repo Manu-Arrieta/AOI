@@ -9,20 +9,25 @@
  * por prompt costaría cientos de ms cada vez; guardando el offset, cada disparo lee sólo
  * lo que se agregó desde el anterior.
  *
- * Dos medidas, y el resultado dice cuál usó:
+ * Medidas, y el resultado dice cuál usó:
  *   - exacta: Claude Code guarda el `usage` de Anthropic en cada mensaje del asistente;
- *     el contexto del último request es input + cache_read + cache_creation.
+ *     el contexto del último request es input + cache_read + cache_creation. Copilot la
+ *     guarda en su log de depuración (`context-copilot.mjs`).
+ *   - sin medida: un transcript de Copilot sin su log no permite ni una cota inferior
+ *     (`context-copilot.mjs`); se reconoce para no contarlo como bytes.
  *   - estimada: sin `usage` (otro harness, otro formato) se suman los bytes del contenido
  *     de los mensajes y se dividen por 4. Una línea que no es JSON cuenta entera.
  */
 
 import fs from 'node:fs'
+import { isCopilotRecord } from './context-copilot.mjs'
+import { readLines } from './jsonl-lines.mjs'
 
 export const BYTES_PER_TOKEN = 4
 
 /** El estado de lectura de un transcript que todavía no se leyó. */
 export function emptyScan(file = null) {
-  return { file, offset: 0, contentBytes: 0, usage: null, maxUsage: 0, model: null, identity: null }
+  return { file, offset: 0, contentBytes: 0, usage: null, maxUsage: 0, model: null, identity: null, format: null, skipped: false, jsonl: false }
 }
 
 export const usageTotal = (u) =>
@@ -51,6 +56,10 @@ export function scanLine(scan, line) {
   if (rec.type === 'system' && rec.subtype === 'compact_boundary') {
     scan.contentBytes = 0
     scan.usage = null
+    return
+  }
+  if (isCopilotRecord(rec)) {
+    scan.format = 'copilot'
     return
   }
   if (rec.attachment?.type === 'model' && typeof rec.attachment.identity?.modelId === 'string') {
@@ -85,39 +94,40 @@ export function effectiveModel(scan) {
 }
 
 /**
- * Lee del transcript lo que se agregó desde `prev.offset`. Un archivo más chico que el
- * offset fue reescrito: se relee desde cero. Sólo se consumen líneas completas.
+ * Lee del transcript lo que se agregó desde `prev.offset`, por bloques y con tope
+ * (`jsonl-lines.mjs`). Un archivo más chico que el offset fue reescrito: se relee desde
+ * cero. Sólo se consumen líneas completas.
  */
 export function scanTranscript(file, prev = null) {
   const size = fs.statSync(file).size
   const scan = prev && prev.file === file && size >= prev.offset ? { ...prev } : emptyScan(file)
   if (size === scan.offset) return scan
-  const buf = Buffer.alloc(size - scan.offset)
-  const fd = fs.openSync(file, 'r')
-  try {
-    fs.readSync(fd, buf, 0, buf.length, scan.offset)
-  } finally {
-    fs.closeSync(fd)
-  }
-  const end = buf.lastIndexOf(10)
-  if (end === -1) {
-    // Sin saltos de línea no es JSONL: un documento que se reescribe entero. Cuenta lo
-    // que creció.
-    scan.contentBytes += buf.length
+  const r = readLines(file, scan.offset, (line) => scanLine(scan, line))
+  if (r.skipped) scan.skipped = true
+  if (r.newline) scan.jsonl = true
+  if (!scan.jsonl) {
+    // Sin saltos de línea nunca no es JSONL: un documento que se reescribe entero.
+    // Cuenta lo que creció.
+    scan.contentBytes += size - scan.offset
     scan.offset = size
     return scan
   }
-  for (const line of buf.subarray(0, end).toString('utf8').split('\n')) if (line) scanLine(scan, line)
-  scan.offset += end + 1
+  scan.offset = r.offset
   return scan
 }
 
 /**
- * El contexto actual en tokens y cómo se obtuvo. Sin transcript queda lo único que el
- * hook ve: los prompts, que son una cota inferior.
+ * El contexto actual en tokens y cómo se obtuvo, del más exacto al menos. Sin
+ * transcript queda lo único que el hook ve: los prompts, que son una cota inferior.
+ * @param {object|null} debug  el estado del log de depuración de Copilot, si hay
  */
-export function measure(scan, observedBytes = 0) {
-  if (scan?.usage) return { tokens: scan.usage, source: 'exacto: usage del transcript' }
-  if (scan) return { tokens: Math.round(scan.contentBytes / BYTES_PER_TOKEN), source: 'estimado: bytes del transcript/4' }
-  return { tokens: Math.round(observedBytes / BYTES_PER_TOKEN), source: 'estimado: prompts observados/4, cota inferior' }
+export function measure(scan, observedBytes = 0, debug = null) {
+  if (debug && debug.usage !== null) return { tokens: debug.usage, source: 'exacto: inputTokens del log de Copilot', exact: true }
+  if (scan?.usage) return { tokens: scan.usage, source: 'exacto: usage del transcript', exact: true }
+  if (scan) {
+    const tokens = Math.round(scan.contentBytes / BYTES_PER_TOKEN)
+    if (scan.format === 'copilot') return { tokens: 0, source: 'sin medida: Copilot sin log de depuración', exact: false }
+    return { tokens, source: `estimado: bytes del transcript/4${scan.skipped ? ', cola' : ''}`, exact: false }
+  }
+  return { tokens: Math.round(observedBytes / BYTES_PER_TOKEN), source: 'estimado: prompts observados/4, cota inferior', exact: false }
 }

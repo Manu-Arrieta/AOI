@@ -14,25 +14,48 @@
  * continuidad no necesita el chat: la entrada de cada fase son los artefactos de
  * `.tasks/` y los facts que verifica `aoi:handoffs`.
  *
+ * Tiene que comportarse igual con todo proveedor, y los customendpoint corren por
+ * Copilot. Ahí la primera versión medía el transcript entero (envoltorio y argumentos
+ * duplicados, sin resultados de tools ni marca de resumen) contra una ventana de 128k:
+ * replay sobre las 225 sesiones de Copilot de esta máquina, 529 avisos en 127, uno de
+ * "≈8,45M tokens". Ahora el contexto de Copilot es el `inputTokens` exacto de su log
+ * de depuración (`context-copilot.mjs`) y sin log no avisa; mismo replay: 136 avisos
+ * en 78 sesiones, todos exactos y ninguno por encima de la ventana.
+ *
  * Cuesta 0 tokens hasta que dispara: sin cruce no imprime nada. Nunca hace fallar el
- * prompt: cualquier error es un exit 0 mudo. El estado por sesión (offset del
- * transcript y último nivel avisado) es un archivo chico; sin id de sesión no se mide.
+ * prompt: cualquier error es un exit 0 mudo. El estado por sesión (offsets, último
+ * nivel y avisos dados) es un archivo chico; sin id de sesión no se mide.
  *
  * Salida: `systemMessage` (lo ve el usuario, en Claude Code y en Copilot) y
  * `hookSpecificOutput.additionalContext` (lo lee el modelo; Claude Code lo inyecta y
  * Copilot no lo admite en UserPromptSubmit, según su referencia de hooks).
  */
 
+import { execFileSync } from 'node:child_process'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { copilotPromptLimit, debugLogFor, scanDebugLog } from './context-copilot.mjs'
 import { effectiveModel, measure, scanTranscript } from './context-transcript.mjs'
-import { resolveWindow, thresholdFor } from './context-window.mjs'
+import { isAnthropicModel, resolveWindow, thresholdFor } from './context-window.mjs'
 
 /** Tras el primer aviso, otro cada vez que el contexto crece un 50 % más. */
 export const REFIRE = 1.5
+
+/**
+ * Avisos por sesión, como máximo. Cada compactación rearma el aviso y una sesión real
+ * de Claude Code de este repositorio lo recibió 14 veces: a partir del tercero el aviso
+ * ya fue leído y sólo agrega bytes que se releen en cada request.
+ */
+export const MAX_FIRES = 3
+
+/** El estado de una sesión sin actividad en 7 días no se va a volver a leer. */
+export const STATE_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
+/** Tope de la consulta a `icm`: uno colgado demoró el prompt 8 s medidos. */
+export const ICM_TIMEOUT_MS = 1500
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
@@ -84,6 +107,25 @@ function readState(file) {
   }
 }
 
+/** Borra los estados de sesión más viejos que `ttl`. Nunca lanza. */
+export function sweepState(dir, now = Date.now(), ttl = STATE_TTL_MS) {
+  let names = []
+  try {
+    names = fs.readdirSync(dir)
+  } catch {
+    return
+  }
+  for (const name of names) {
+    if (!/\.json$|\.tmp$/.test(name)) continue
+    const f = path.join(dir, name)
+    try {
+      if (now - fs.statSync(f).mtimeMs > ttl) fs.unlinkSync(f)
+    } catch {
+      // otro disparo lo borró o lo está escribiendo
+    }
+  }
+}
+
 function writeState(file, state) {
   fs.mkdirSync(path.dirname(file), { recursive: true })
   const tmp = `${file}.${process.pid}.tmp`
@@ -94,15 +136,19 @@ function writeState(file, state) {
 /**
  * Los modelos declarados (con su `maxInputTokens`) y los asignados. Se cargan sólo si el
  * transcript no trae un modelo Anthropic, y una vez por sesión: el resultado queda en el
- * estado. `icm` se consulta en modo lectura; si no responde, no hay asignación.
+ * estado. `icm` se consulta en modo lectura y con tope de tiempo; si no responde, no
+ * hay asignación.
  */
-export async function loadDeclared(root = ROOT) {
-  const { discoverProviders } = await import('../multi-harness/provider-config.mjs')
+export const icmWithTimeout = (args, timeout = ICM_TIMEOUT_MS) =>
+  execFileSync('icm', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout, killSignal: 'SIGKILL' })
+
+export async function loadDeclared({ root = ROOT, exec = icmWithTimeout, discover = null } = {}) {
+  const discoverProviders = discover ?? (await import('../multi-harness/provider-config.mjs')).discoverProviders
   const entries = discoverProviders().entries.map(({ id, name, vendor, maxInputTokens }) => ({ id, name, vendor, maxInputTokens }))
   let assigned = []
   try {
     const store = await import('../multi-harness/provider-store.mjs')
-    const r = store.readAssignment(store.defaultWorkspace(root))
+    const r = store.readAssignment(store.defaultWorkspace(root), exec)
     if (r.ok) assigned = r.assignment.default ? [r.assignment.default] : store.storedSlots(r.assignment).map((s) => s.value)
   } catch {
     // sin icm: sin asignación
@@ -126,23 +172,39 @@ export async function runHook(text, { stateDir = defaultStateDir(), declaredLoad
   if (!key) return ''
 
   const file = path.join(stateDir, `${key}.json`)
+  if (!fs.existsSync(file)) sweepState(stateDir)
   const state = readState(file)
   const transcript = transcriptOf(input)
   let scan = null
   if (transcript && fs.existsSync(transcript)) {
     scan = scanTranscript(transcript, state.scan ?? null)
     state.scan = scan
+    const dlog = debugLogFor(transcript)
+    if (dlog && fs.existsSync(dlog)) state.debug = scanDebugLog(dlog, state.debug ?? null)
   } else if (typeof input.prompt === 'string') {
     state.observedBytes = (state.observedBytes ?? 0) + Buffer.byteLength(input.prompt)
   }
 
-  const { tokens, source } = measure(scan, state.observedBytes)
-  const model = effectiveModel(scan)
-  if (!(model && /^claude/i.test(model)) && !state.declared) state.declared = await declaredLoader()
-  const { window, source: windowSource } = resolveWindow({ model, maxUsage: scan?.maxUsage ?? 0 }, state.declared ?? {})
+  let { tokens, source, exact } = measure(scan, state.observedBytes, state.debug ?? null)
+  const model = state.debug?.model ?? effectiveModel(scan)
+  if (state.debug && model && state.harness?.model !== model) {
+    state.harness = { model, window: copilotPromptLimit(state.debug.file, model) }
+  }
+  const harnessWindow = state.harness?.model === model ? state.harness.window : null
+  if (!harnessWindow && !isAnthropicModel(model) && !state.declared) state.declared = await declaredLoader()
+  const maxUsage = Math.max(scan?.maxUsage ?? 0, state.debug?.maxUsage ?? 0)
+  const { window, source: windowSource } = resolveWindow({ model, maxUsage, harnessWindow }, state.declared ?? {})
+  // Una estimación que pasa la ventana no es el contexto: el harness ya resumió (Copilot
+  // no deja marca en el transcript). Lo de antes deja de contar.
+  if (!exact && tokens > window && scan) {
+    scan.contentBytes = 0
+    tokens = 0
+  }
   const threshold = thresholdFor(window)
-  const { fire, level } = crossing(tokens, threshold, state.level ?? -1)
-  state.level = level
+  const crossed = crossing(tokens, threshold, state.level ?? -1)
+  state.level = crossed.level
+  const fire = crossed.fire && (state.fires ?? 0) < MAX_FIRES
+  if (fire) state.fires = (state.fires ?? 0) + 1
   writeState(file, state)
   if (!fire) return ''
 

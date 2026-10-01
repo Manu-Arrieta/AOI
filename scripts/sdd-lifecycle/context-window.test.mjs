@@ -48,10 +48,10 @@ const RAW = [
   { name: 'Kimi', vendor: 'customendpoint', apiKey: SECRET, models: [{ id: 'kimi-k3', name: 'Kimi-k 3 - Provider - Kimi', url: 'https://x' }] },
 ]
 
-function declaredEntries() {
+function declaredEntries(raw = RAW) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-window-'))
   const file = path.join(dir, 'chatLanguageModels.json')
-  fs.writeFileSync(file, JSON.stringify(RAW))
+  fs.writeFileSync(file, JSON.stringify(raw))
   try {
     return { providers: readProviders(file), entries: flatten(readProviders(file)) }
   } finally {
@@ -69,6 +69,16 @@ describe('provider-config conserva maxInputTokens', () => {
 
   it('apiKey sigue sin salir', () => {
     const { providers, entries } = declaredEntries()
+    assert.ok(!JSON.stringify(providers).includes(SECRET))
+    assert.ok(!JSON.stringify(entries).includes(SECRET))
+  })
+
+  it('una apiKey declarada dentro del modelo, al lado de maxInputTokens, tampoco sale', () => {
+    // Del modelo ahora se copia un campo más: la lista segura no se abre a lo que venga al lado.
+    const raw = [{ name: 'Alfa', vendor: 'customendpoint', models: [{ id: 'g', name: 'G', apiKey: SECRET, maxInputTokens: 128000, headers: { Authorization: SECRET } }] }]
+    const { providers, entries } = declaredEntries(raw)
+    assert.equal(entries[0].maxInputTokens, 128000)
+    assert.equal('apiKey' in providers[0].models[0], false)
     assert.ok(!JSON.stringify(providers).includes(SECRET))
     assert.ok(!JSON.stringify(entries).includes(SECRET))
   })
@@ -100,7 +110,7 @@ describe('resolveWindow', () => {
     assert.equal(resolveWindow({ model: 'glm-5.2' }, { entries }).window, 128_000)
     assert.equal(resolveWindow({ model: 'Qwen 3.8 plus - Provider - Alibaba' }, { entries }).window, 1_000_000)
     const r = resolveWindow({ model: 'Deepseek v4 flash - Provider - Deepseek (customendpoint)' }, { entries })
-    assert.deepEqual(r, { window: 1_000_000, source: 'transcript → maxInputTokens declarado' })
+    assert.deepEqual(r, { window: 1_000_000, source: 'modelo visto → maxInputTokens declarado' })
   })
 
   it('sin modelo en el transcript → el asignado por su maxInputTokens', () => {

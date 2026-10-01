@@ -36,15 +36,30 @@ export function thresholdFor(window) {
 const declared = (entry) =>
   Number.isFinite(entry?.maxInputTokens) && entry.maxInputTokens > 0 ? entry.maxInputTokens : null
 
+// El log de Copilot nombra al modelo sin el prefijo de vendor que lleva el id declarado
+// (`deepseek-v4-pro` contra `deepseek-ai/deepseek-v4-pro`, medido el 2026-10-01).
+const tail = (id) => String(id ?? '').split('/').pop()
+
 /**
- * La entrada declarada que corresponde a un modelo, por `id`, por `name` o por el valor
- * que `runSubagent` acepta (`<name> (customendpoint)`, que es lo que guarda la asignación).
+ * La entrada declarada que corresponde a un modelo, por `id`, por `name`, por el valor
+ * que `runSubagent` acepta (`<name> (customendpoint)`, que es lo que guarda la
+ * asignación) o, si es la única, por el id sin prefijo de vendor.
  */
 export function findDeclared(model, entries = []) {
   const m = String(model ?? '').trim()
   if (!m) return null
-  return entries.find((e) => e.id === m || e.name === m || subagentValue(e) === m) ?? null
+  const exact = entries.find((e) => e.id === m || e.name === m || subagentValue(e) === m)
+  if (exact) return exact
+  const byTail = entries.filter((e) => e.id && tail(e.id) === tail(m))
+  return byTail.length === 1 ? byTail[0] : null
 }
+
+/**
+ * Un modelo de Anthropic por cualquier vía: la API directa y Copilot (`claude-…`),
+ * Vertex (`claude-…@fecha`) y Bedrock, con o sin perfil regional
+ * (`anthropic.claude-…`, `us.anthropic.claude-…`).
+ */
+export const isAnthropicModel = (model) => /^(?:(?:[a-z]{2,6}\.)?anthropic\.)?claude/i.test(String(model ?? ''))
 
 /**
  * Ventana de un modelo Anthropic visto en el transcript. Claude Code escribe el id
@@ -60,19 +75,29 @@ export function anthropicWindow(model, maxUsage = 0) {
 
 /**
  * La ventana del modelo en uso y de dónde sale, en este orden:
- *   1. el modelo del transcript (Anthropic, o uno declarado con `maxInputTokens`);
- *   2. el modelo asignado (`assignment.default`, o el menor de los slots), por su
+ *   1. la que el harness publica para ese modelo (`max_prompt_tokens` de Copilot);
+ *   2. el modelo visto (Anthropic, o uno declarado con `maxInputTokens`);
+ *   3. el modelo asignado (`assignment.default`, o el menor de los slots), por su
  *      `maxInputTokens` declarado;
- *   3. 128k.
+ *   4. 128k.
+ * Nunca es menor que el mayor request observado: si un request leyó más, la ventana es
+ * al menos eso (Kimi K3 sin `maxInputTokens` declarado leyó 483.658 tokens en Copilot).
  *
- * @param {{ model?: string|null, maxUsage?: number }} seen
+ * @param {{ model?: string|null, maxUsage?: number, harnessWindow?: number|null }} seen
  * @param {{ entries?: object[], assigned?: string[] }} declaredCtx
  * @returns {{ window: number, source: string }}
  */
-export function resolveWindow({ model, maxUsage = 0 } = {}, { entries = [], assigned = [] } = {}) {
-  if (model && /^claude/i.test(model)) return anthropicWindow(model, maxUsage)
+export function resolveWindow(seen = {}, declaredCtx = {}) {
+  const r = baseWindow(seen, declaredCtx)
+  const maxUsage = seen.maxUsage ?? 0
+  return maxUsage > r.window ? { window: maxUsage, source: `${r.source}; request observado mayor` } : r
+}
+
+function baseWindow({ model, maxUsage = 0, harnessWindow = null }, { entries = [], assigned = [] }) {
+  if (harnessWindow > 0) return { window: harnessWindow, source: 'Copilot: max_prompt_tokens del modelo' }
   const fromTranscript = model ? declared(findDeclared(model, entries)) : null
-  if (fromTranscript) return { window: fromTranscript, source: 'transcript → maxInputTokens declarado' }
+  if (fromTranscript) return { window: fromTranscript, source: 'modelo visto → maxInputTokens declarado' }
+  if (model && isAnthropicModel(model)) return anthropicWindow(model, maxUsage)
   if (assigned.length > 0) {
     const windows = assigned.map((v) => declared(findDeclared(v, entries)))
     // Un slot sin ventana cuenta como 128k: el menor manda, porque no se sabe cuál de

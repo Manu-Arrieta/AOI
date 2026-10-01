@@ -46,7 +46,7 @@ const hook = (input, stateDir, declaredLoader = noDeclared) => runHook(JSON.stri
 describe('context-transcript', () => {
   it('ruta exacta: el contexto es input + cache_read + cache_creation del último request', () => {
     const file = transcript(tmpDir(), [user('hola'), assistant('m1', 40_000), user('seguí'), assistant('m2', 123_456)])
-    assert.deepEqual(measure(scanTranscript(file)), { tokens: 123_456, source: 'exacto: usage del transcript' })
+    assert.deepEqual(measure(scanTranscript(file)), { tokens: 123_456, source: 'exacto: usage del transcript', exact: true })
   })
 
   it('ruta estimada: sin usage son los bytes del contenido / 4, y lo dice', () => {
@@ -66,6 +66,15 @@ describe('context-transcript', () => {
     scanLine(scan, JSON.stringify({ uuid: 'y', message: { id: 'syn', model: '<synthetic>', usage: { input_tokens: 5 } } }))
     assert.equal(scan.usage, null)
     assert.equal(scan.maxUsage, 300_000, 'la evidencia de ventana larga sobrevive a la compactación')
+  })
+
+  it('una compactación también vacía los bytes estimados: después cuenta sólo lo nuevo', () => {
+    const scan = emptyScan()
+    scanLine(scan, user('a'.repeat(40_000)))
+    scanLine(scan, JSON.stringify({ type: 'system', subtype: 'compact_boundary', uuid: 'c' }))
+    assert.equal(scan.contentBytes, 0)
+    scanLine(scan, user('b'.repeat(400)))
+    assert.equal(measure(scan).tokens, 100, 'los 40.000 bytes de antes de la compactación no cuentan')
   })
 
   it('incremental: lee sólo lo agregado y llega al mismo estado que una lectura completa', () => {

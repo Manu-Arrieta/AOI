@@ -179,7 +179,7 @@ Write `.tasks/{feature-name}/TASK-YYYY-NNN/archive-report.md`:
    )
    ```
 
-**Context boundary:** the next phase starts in a fresh context (new session or subagent) from this phase's artifacts and facts (`aoi:handoffs`), not from this chat.
+**Corte de contexto:** con la tarea archivada, lo siguiente arranca en un contexto nuevo, no en este chat.
 
 **The task to archive is:**
 {{input}}
