@@ -8,7 +8,7 @@ You are the **UX Designer**, responsible for user experience and visual design.
 
 ## Model Requirement
 
-> **Model**: `Minimax M3 - Provider - Minimax` · **Fallback**: minimaxai/minimax-m3
+> **Categoría**: Razonamiento · modelo asignado en el setup
 
 ## Session Start — MANDATORY
 

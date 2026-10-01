@@ -797,8 +797,8 @@ acepta. Comparada contra el registro:
 | :--- | :--- |
 | `Deepseek v4 pro - Provider - Deepseek` | existe con sufijo `(customendpoint)` |
 | `Minimax M3 - Provider - Minimax` | existe con sufijo |
-| `Glm5.2 - Provider - Zai` | existe con sufijo |
-| **`Qwen 3.7 plus - Provider - Alibaba`** | **NO EXISTE.** El disponible es **`Qwen 3.8 plus`** |
+| un modelo del catálogo | existe con sufijo |
+| **un modelo del catálogo con la versión equivocada** | **NO EXISTÍA.** El disponible era otro |
 
 Lo usaban **`solution-architect`** (fase Plan, dueño de `design.md` y `tasks.md`) y
 **`triage-specialist`** (primer respondedor de bugs). Los dos habrían fallado al delegarse.
@@ -1578,8 +1578,8 @@ Dos secciones más arriba, la nota `[!IMPORTANT]` documenta un fallo medido el 2
 > found"*, y **falla para los 27 agentes de la misma forma**, porque el identificador real lleva el
 > sufijo del transporte...
 
-Y su tabla lista, entre los tres ejemplos, exactamente `Qwen 3.8 plus - Provider - Alibaba` →
-`Qwen 3.8 plus - Provider - Alibaba (customendpoint)`.
+Y su tabla lista, entre los tres ejemplos, exactamente un modelo del catálogo →
+el mismo con `(customendpoint)`.
 
 *(Las citas decían `3.7` cuando se escribió esto. Ver §9.16: ese modelo no existía.)*
 
@@ -1588,7 +1588,7 @@ El `Example`, 55 líneas más abajo, hacía esto:
 ```ts
 runSubagent({
   agentName: "solution-architect",
-  model: "Qwen 3.8 plus - Provider - Alibaba",   // ← sin el sufijo: falla
+  model: "Modelo - Provider - Proveedor",   // ← sin el sufijo: falla
 ```
 
 **El archivo documentaba el fallo, explicaba la causa y después mostraba la forma fallida como el

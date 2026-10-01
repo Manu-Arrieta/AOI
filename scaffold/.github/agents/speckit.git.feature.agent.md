@@ -4,7 +4,7 @@ description: Create a feature branch with sequential or timestamp numbering
 
 ## Model Requirement
 
-> **Model**: `Glm5.2 - Provider - Zai` · **Fallback**: z-ai/glm-5.2
+> **Categoría**: Implementación · modelo asignado en el setup
 
 ## User Input
 

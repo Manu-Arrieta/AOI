@@ -7,14 +7,21 @@ import { describe, it } from 'node:test'
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8')
 
-const MODEL = 'Deepseek v4 flash - Provider - Deepseek'
-const FALLBACK = 'deepseek-ai/deepseek-v4-pro'
+const CATEGORY = '**Categoría**: Razonamiento'
 
+/**
+ * El prompt declara su CATEGORÍA, no su modelo.
+ *
+ * Antes este contrato fijaba un modelo concreto y su fallback. Se retiraron del prompt
+ * junto con el resto de los nombres de proveedor: la asignación se elige en el setup y
+ * nombrarla acá la deja obsoleta en silencio. Lo que se conserva es la **intención** del
+ * Owner —esta fase prioriza costo y latencia— expresada como override de agente.
+ */
 function auditGenesisModel(prompt) {
   const failures = []
-  if (!prompt.includes(MODEL)) failures.push('Genesis lost its Owner-selected model')
-  if (!prompt.includes(FALLBACK)) failures.push('Genesis lost its fallback model')
-  if (!/no se afirma que razone mejor/i.test(prompt)) failures.push('Genesis now overstates Flash reasoning quality')
+  if (!prompt.includes(CATEGORY)) failures.push('Genesis lost its category')
+  if (/Provider - /.test(prompt)) failures.push('Genesis names a provider: la asignación es dinámica')
+  if (!/no se afirma que razone mejor/i.test(prompt)) failures.push('Genesis now overstates the model quality')
   if (prompt.includes('customendpoint')) failures.push('Genesis carries a subagent transport identifier it does not invoke')
   return failures
 }
@@ -22,18 +29,27 @@ function auditGenesisModel(prompt) {
 describe('Genesis model contract', () => {
   const prompt = read('.github/prompts/sdd-genesis.prompt.md')
 
-  it('keeps the Owner-selected model, fallback, and bounded quality claim', () => {
+  it('keeps the category, the bounded quality claim, and no provider name', () => {
     assert.deepEqual(auditGenesisModel(prompt), [])
   })
 
-  it('detects a missing fallback', () => {
-    assert.deepEqual(auditGenesisModel(prompt.replace(FALLBACK, '')), ['Genesis lost its fallback model'])
+  it('detects a missing category', () => {
+    assert.deepEqual(auditGenesisModel(prompt.replace(CATEGORY, '')), ['Genesis lost its category'])
+  })
+
+  it('detects a provider written into the prompt', () => {
+    assert.deepEqual(auditGenesisModel(`${prompt}\nModeloA - Provider - Alfa`), [
+      'Genesis names a provider: la asignación es dinámica',
+    ])
   })
 
   it('detects the stale subagent transport detail', () => {
     assert.deepEqual(
-      auditGenesisModel(`${prompt}\nDeepseek v4 flash - Provider - Deepseek (customendpoint)`),
-      ['Genesis carries a subagent transport identifier it does not invoke']
+      auditGenesisModel(`${prompt}\nModeloA - Provider - Alfa (customendpoint)`),
+      [
+        'Genesis names a provider: la asignación es dinámica',
+        'Genesis carries a subagent transport identifier it does not invoke',
+      ]
     )
   })
 })

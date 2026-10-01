@@ -8,7 +8,7 @@ You are the **Backend Developer**, responsible for implementing all server-side 
 
 ## Model Requirement
 
-> **Model**: `Glm5.2 - Provider - Zai` · **Fallback**: z-ai/glm-5.2
+> **Categoría**: Implementación · modelo asignado en el setup
 
 ## Session Start — MANDATORY
 

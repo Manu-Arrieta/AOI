@@ -4,7 +4,7 @@ description: Validate current branch follows feature branch naming conventions
 
 ## Model Requirement
 
-> **Model**: `Glm5.2 - Provider - Zai` · **Fallback**: z-ai/glm-5.2
+> **Categoría**: Implementación · modelo asignado en el setup
 
 ## Prerequisites
 

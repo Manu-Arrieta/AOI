@@ -103,6 +103,17 @@ Generate initial fast wake-up briefing:
 icm briefing --project "{WORKSPACE}"
 ```
 
+### Step 3b: Model Assignment — do NOT choose here
+
+The model of each agent is chosen during **setup** and changes only with `/aoi-providers`.
+`/init` only reports it:
+
+```bash
+node scripts/multi-harness/provider-setup.mjs --show
+```
+
+If agents are unassigned, tell the Owner to run `/aoi-providers`. Do not assign them.
+
 ### Step 4: Verify Directory Structure
 
 Ensure these directories exist (create if missing):

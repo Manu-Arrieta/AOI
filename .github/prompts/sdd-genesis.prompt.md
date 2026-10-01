@@ -9,10 +9,12 @@ Engage with the Outcome & Invariant Architect (human) as an **Architectural Spar
 
 ## Model Requirement
 
-> **Model**: `Deepseek v4 flash - Provider - Deepseek` · **Fallback**: `deepseek-ai/deepseek-v4-pro`
+> **Categoría**: Razonamiento · corre en tu sesión, con el modelo del picker
 
-**Excepción del Owner (2026-09-14):** Flash prioriza costo y latencia para este diálogo de varias
-rondas; no se afirma que razone mejor. Si la calidad observada no alcanza, usar el fallback Pro.
+**Excepción del Owner:** esta fase prioriza costo y latencia sobre profundidad de
+razonamiento. No se delega, así que ninguna asignación la alcanza: elegí en el picker el
+modelo más económico que tengas; no se afirma que razone mejor. Si la calidad observada no
+alcanza, cambiá a uno de mayor capacidad.
 
 ## Scope — What This Phase IS and IS NOT
 

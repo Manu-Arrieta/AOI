@@ -1057,31 +1057,23 @@ fi
 require_archify
 install_specify || true
 
-# ── Phase 1.5: Optional NVIDIA customendpoint helper (non-blocking) ────────
-header "Phase 1.5: NVIDIA customendpoint (opcional)"
+# ── Phase 1.5: Provider detection (non-blocking, read-only) ────────────────
+#
+# Era un configurador que copiaba un template al User dir de VS Code. Se convirtió en
+# un DETECTOR: el template declaraba secretos con hashes que genera VS Code y 4 de 6 no
+# resolvían en otra máquina, así que copiarlo producía una config que falla al autenticar
+# —y sobrescribía la que funcionaba—.
+#
+# Sin prompt: no escribe nada, así que no hay nada que consentir.
+header "Phase 1.5: Proveedores de modelos (detección)"
 
-if [[ -f "$SCRIPT_DIR/scripts/nvidia-vscode-setup.sh" ]]; then
-  info "Detectando VS Code para configurar custom endpoint NVIDIA (Kimi K2.6, DeepSeek V4 Pro, MiniMax M3, Qwen 3.5)"
-  info "Presione Enter para ejecutar ahora, o 'n' + Enter para omitir (AOI seguirá funcionando con defaults vendor-copilot)."
-  if [ "$AUTO_YES" -eq 1 ] || ! [ -t 0 ]; then
-    NVIDIA_CHOICE="n"
-  else
-    printf "${YELLOW}▸${NC} Configurar customendpoint NVIDIA? [Y/n]: "
-    read -r NVIDIA_CHOICE
+if [[ -f "$SCRIPT_DIR/scripts/provider-vscode-setup.sh" ]]; then
+  if ! bash "$SCRIPT_DIR/scripts/provider-vscode-setup.sh"; then
+    warn "No se pudieron detectar los proveedores — el setup continúa. Corré manualmente:"
+    warn "  bash scripts/provider-vscode-setup.sh"
   fi
-  case "$NVIDIA_CHOICE" in
-    n|N|no|NO)
-      warn "Saltado por elección del operador. AOI continúa con defaults vendor-copilot (Gemini 3.1 Pro Preview / GPT-5.4 xhigh)."
-      ;;
-    *)
-      bash "$SCRIPT_DIR/scripts/nvidia-vscode-setup.sh" || {
-        ret=$?
-        warn "nvidia-vscode-setup.sh salió con código $ret — el setup continúa. El operador puede correrlo manualmente tras finalizar."
-      }
-      ;;
-  esac
 else
-  warn "scripts/nvidia-vscode-setup.sh no encontrado junto a setup.sh — saltando Phase 1.5"
+  warn "scripts/provider-vscode-setup.sh no encontrado junto a setup.sh — saltando Phase 1.5"
 fi
 
 # ── Advanced profile: Headroom integration and managed-files hook ──────────
@@ -2201,6 +2193,27 @@ cat > "$PROJECT_PATH/.specify/memory/briefings/active-briefing.md" <<EOF
 - **Health**: Governed via \`pnpm aoi:doctor\`
 EOF
 ok "Briefing: deterministic active-briefing.md initialized"
+
+# ── Phase 5.1: Model assignment ────────────────────────────────────────────
+#
+# AOI no trae proveedores: el Owner elige acá uno para todos, por categoría o por
+# agente, y después sólo cambia con /aoi-providers. Va DESPUÉS de Phase 3 y 5 porque
+# lee el registro instalado y escribe en la entidad ICM que Phase 5 acaba de crear.
+#
+# `--if-empty`: reinstalar no pisa una asignación existente — cambiarla es una
+# decisión del Owner, no un efecto de volver a correr el setup.
+header "Phase 5.1: Asignación de modelos a agentes"
+
+PROVIDER_SETUP="$PROJECT_PATH/scripts/multi-harness/provider-setup.mjs"
+if [[ ! -f "$PROVIDER_SETUP" ]]; then
+  warn "provider-setup.mjs no está en el workspace — saltando. Después corré /aoi-providers."
+elif [ "$AUTO_YES" -eq 1 ] || ! [ -t 0 ]; then
+  # Sin terminal nadie puede elegir, y elegir por el Owner es justo lo que no se hace.
+  warn "Setup no interactivo: la asignación no se toca. Para elegirla o cambiarla: /aoi-providers."
+  (cd "$PROJECT_PATH" && node "$PROVIDER_SETUP" --workspace "$PROJECT_NAME" --show) || true
+elif ! (cd "$PROJECT_PATH" && node "$PROVIDER_SETUP" --workspace "$PROJECT_NAME" --interactive --if-empty); then
+  warn "No se pudo completar la asignación — el setup continúa. Corré /aoi-providers."
+fi
 
 # ── Phase 6: Base-Project Map (pre-seed only) ─────────────────────────────
 header "Phase 6: Base-Project Map"

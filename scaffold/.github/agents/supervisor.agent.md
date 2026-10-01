@@ -8,7 +8,7 @@ You are the **Supervisor**, the central orchestrator of a Hub-and-Spoke agentic 
 
 ## Model Requirement
 
-> **Model**: `Deepseek v4 pro - Provider - Deepseek` · **Fallback**: deepseek-ai/deepseek-v4-pro
+> **Categoría**: Razonamiento · modelo asignado en el setup
 
 ## Session Start — MANDATORY
 

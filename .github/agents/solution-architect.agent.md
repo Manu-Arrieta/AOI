@@ -8,7 +8,7 @@ You are the **Solution Architect**, responsible for HOW to build what the Functi
 
 ## Model Requirement
 
-> **Model**: `Qwen 3.8 plus - Provider - Alibaba` · **Fallback**: DeepSeek (`deepseek-v4-pro`)
+> **Categoría**: Razonamiento · modelo asignado en el setup
 
 ## Session Start — MANDATORY
 

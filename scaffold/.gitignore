@@ -14,7 +14,7 @@ coverage/
 # Exported memory bundle artifacts
 .exportsmemories/
 
-# Credenciales del customendpoint NVIDIA. El ejemplo se preservaba con una
+# Credenciales de custom endpoints. El ejemplo se preservaba con una
 # negación, que murió cuando `.vscode/` pasó a ignorarse entero más abajo: git
 # no re-incluye un archivo bajo un directorio excluido. Se retira en vez de
 # dejarla, porque una regla que dice preservar algo y no lo preserva se cree.

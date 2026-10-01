@@ -1,8 +1,8 @@
 # scripts/headroom-vscode-setup.ps1 — Print Headroom runtime env plan (Windows).
 #
-# Does NOT write secrets to VS Code ChatLanguageModel.json (NVIDIA layer is
-# orthogonal). Prints an actionable env-var plan + PowerShell snippet for the
-# operator. Idempotent / read-only. Never auto-edits $PROFILE silently.
+# Prints env vars for a runtime. It never touches the VS Code model config: the
+# providers there, and their secret references, belong to the customendpoint layer
+# and are orthogonal. Idempotent / read-only. Never auto-edits $PROFILE silently.
 #
 # Invocations:
 #   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/headroom-vscode-setup.ps1                    # info
@@ -29,7 +29,7 @@ if ($EmitPowerShell -or $DryRun) {
   @'
 
 # Headroom runtime env (adjacent to AOI bootstrapper — does NOT touch VS Code
-# ChatLanguageModel.json which belongs to NVIDIA customendpoint layer)
+# ChatLanguageModel.json which belongs to the customendpoint layer)
 $env:HEADROOM_HOST = "127.0.0.1"
 $env:HEADROOM_PORT = "8787"
 $env:HEADROOM_PROXY_PORT = "8787"

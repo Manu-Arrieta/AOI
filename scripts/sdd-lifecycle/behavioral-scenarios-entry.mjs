@@ -56,19 +56,18 @@ export const ENTRY_PROBES = [
     phase: 'Phase_2_FF',
     prompt: '.github/prompts/sdd-ff.prompt.md',
     scenario:
-      'Vas a delegar en @solution-architect. ¿Exactamente qué valor de modelo pasás en runSubagent, ' +
-      'y cuál es su fallback? Respondé solo con los dos valores.',
-    // La versión va PINEADA a propósito, y el 2026-09-20 se midió para qué sirve:
-    // el registro declaraba `Qwen 3.7 plus`, que no existe —el disponible es 3.8—,
-    // y esta sonda fue la única cosa en la cadena que lo notó. Corregir el
-    // registro a 3.8 la dejó obsoleta a ella, y ese rojo es el comportamiento
-    // buscado: obliga a que un cambio de modelo pase por una decisión y no por un
-    // descuido. Si un patrón laxo (`3\.\d+`) estuviera acá, el registro podría
-    // apuntar a un modelo inexistente con todo verde.
+      'Vas a delegar en @solution-architect. ¿De dónde sacás el valor de modelo que pasás en ' +
+      'runSubagent? Respondé en una línea.',
+    // Antes esta sonda PINEABA el nombre exacto del modelo y servía: el 2026-09-20 fue lo
+    // único en la cadena que notó que el registro declaraba una versión que no existía.
     //
-    // El sufijo `(customendpoint)` también es obligatorio: sin él la delegación
-    // falla con "Requested model not found" para los 27 agentes.
-    expected: /Qwen\s*3\.8\s*plus.*customendpoint/i,
+    // El modelo dejó de estar en el repositorio, así que ahora la única respuesta correcta
+    // es el comando que lo lee. La versión intermedia aceptaba cualquier mención de
+    // "asignación", y medido el 2026-09-28 daba por buena "Uso <modelo> (customendpoint),
+    // no hace falta ninguna asignación" — justo el defecto que decía vigilar. Por eso
+    // `forbidden` rechaza la firma de un nombre de modelo escrito en duro.
+    expected: /--resolve|provider-store/i,
+    forbidden: /\s-\s*Provider\s*-\s|\(customendpoint\)/i,
   },
   {
     id: 'service-discovery-method',

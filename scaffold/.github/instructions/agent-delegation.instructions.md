@@ -4,8 +4,8 @@ description: "Mandatory protocol for all agents that invoke runSubagent. Model s
 applyTo: ".github/{agents,prompts}/**,**/*.agent.md,**/*.prompt.md"
 ---
 
-> ⚠️ Cada agente declara su modelo en su bloque `## Model Requirement`. Seleccionalo
-> en el picker de Copilot antes de invocarlo. Este archivo es el registro completo.
+> ⚠️ Cada agente declara su **CATEGORÍA**. Su modelo se elige en el setup y sólo cambia con
+> `/aoi-providers`. Este archivo es el registro.
 
 # Agent Delegation Protocol
 
@@ -13,11 +13,14 @@ applyTo: ".github/{agents,prompts}/**,**/*.agent.md,**/*.prompt.md"
 
 When delegating work to another agent, the caller MUST follow this protocol. NO EXCEPTIONS.
 
-## Step 1 — Look up the agent in the Registry
+## Step 1 — Resolve the model
 
-Consult the Agent Registry below to find:
-- `model` — exact value for the `runSubagent` parameter
-- `{SKILL_PATH}` — no se lista: es derivado, ver la nota del Registry
+```bash
+node scripts/multi-harness/provider-store.mjs --resolve <agent>
+```
+
+It prints the exact `model` value. Non-zero exit: **do NOT delegate**; tell the Owner to
+run `/aoi-providers`. `{SKILL_PATH}` is `.github/agents/<agent>.agent.md`.
 
 ## Step 2 — Construct Sanitized Payload (MANDATORY)
 
@@ -51,7 +54,7 @@ Expected output: [Exactly what to return or what files to create/modify]
 ```ts
 runSubagent({
   agentName: "[agent from Registry]",
-  model: "[model from Registry]",
+  model: "[output of Step 1]",
   description: "[3-5 word description]",
   prompt: "[prompt from Step 2]",
 });
@@ -60,7 +63,7 @@ runSubagent({
 ## Step 4 — Verify
 
 After the subagent returns, verify:
-- [ ] The subagent used the correct model (check its response for tool calls)
+- [ ] The subagent used the model Step 1 printed
 - [ ] The subagent read its skill file
 - [ ] The output matches the expected format and constraints
 
@@ -74,57 +77,46 @@ After the subagent returns, verify:
 > inyección.
 
 > [!IMPORTANT]
-> **La columna `runSubagent Model Parameter` es lo que muestra el picker, NO el identificador
-> que acepta la API.** Medido el 2026-09-12: pasar `"Deepseek v4 pro - Provider - Deepseek"` a
-> `runSubagent` devuelve *"Requested model not found"*, y **falla para todos los agentes por
-> igual**, porque el identificador real lleva el sufijo del transporte:
->
-> | En el picker (esta tabla) | Lo que acepta `runSubagent` |
-> | :--- | :--- |
-> | `Deepseek v4 pro - Provider - Deepseek` | `Deepseek v4 pro - Provider - Deepseek (customendpoint)` |
-> | `Glm5.2 - Provider - Zai` | `Glm5.2 - Provider - Zai (customendpoint)` |
-> | `Qwen 3.8 plus - Provider - Alibaba` | `Qwen 3.8 plus - Provider - Alibaba (customendpoint)` |
->
-> Es la misma clase de defecto que la guardia de entry del `mcp-gateway` y los prompts del
-> protocolo: **un valor documentado que no coincide con el que el sistema acepta**. Si un
-> agente lee esta tabla y la pasa tal cual, la delegación falla en el primer intento.
+> **Acá NO se declara el proveedor.** La asignación vive en ICM (`{WORKSPACE}.assignment.*`)
+> y se lee con el Step 1, nunca de memoria. `pnpm aoi:providers` falla si un valor asignado
+> no está configurado en la máquina.
 
 ### Domain Agents
 
-| Agent | `runSubagent` Model Parameter | Fallback (NVIDIA NIM) | Category |
-| :--- | :--- | :--- | :--- |
-| `supervisor` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `solution-architect` | `Qwen 3.8 plus - Provider - Alibaba` | DeepSeek (`deepseek-v4-pro`) | Razonamiento |
-| `functional-analyst` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `triage-specialist` | `Qwen 3.8 plus - Provider - Alibaba` | DeepSeek (`deepseek-v4-pro`) | Razonamiento |
-| `integration-specialist` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `documentation-analyst` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `project-analyzer` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `project-expert` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `resource-analyst` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `ux-designer` | `Minimax M3 - Provider - Minimax` | `minimaxai/minimax-m3` | Razonamiento |
-| `frontend-developer` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | Implementación |
-| `backend-developer` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | Implementación |
-| `devops-engineer` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | Implementación |
+| Agent | Category |
+| :--- | :--- |
+| `supervisor` | Razonamiento |
+| `solution-architect` | Razonamiento |
+| `functional-analyst` | Razonamiento |
+| `triage-specialist` | Razonamiento |
+| `integration-specialist` | Razonamiento |
+| `documentation-analyst` | Razonamiento |
+| `project-analyzer` | Razonamiento |
+| `project-expert` | Razonamiento |
+| `resource-analyst` | Razonamiento |
+| `ux-designer` | Razonamiento |
+| `frontend-developer` | Implementación |
+| `backend-developer` | Implementación |
+| `devops-engineer` | Implementación |
 
 ### Spec-Kit Agents
 
-| Agent | `runSubagent` Model Parameter | Fallback (NVIDIA NIM) | Category |
-| :--- | :--- | :--- | :--- |
-| `speckit.constitution` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `speckit.specify` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `speckit.clarify` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `speckit.plan` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `speckit.tasks` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `speckit.analyze` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `speckit.checklist` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `speckit.taskstoissues` | `Deepseek v4 pro - Provider - Deepseek` | `deepseek-ai/deepseek-v4-pro` | Razonamiento |
-| `speckit.implement` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | Implementación |
-| `speckit.git.initialize` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | Implementación |
-| `speckit.git.feature` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | Implementación |
-| `speckit.git.commit` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | Implementación |
-| `speckit.git.remote` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | Implementación |
-| `speckit.git.validate` | `Glm5.2 - Provider - Zai` | `z-ai/glm-5.2` | Implementación |
+| Agent | Category |
+| :--- | :--- |
+| `speckit.constitution` | Razonamiento |
+| `speckit.specify` | Razonamiento |
+| `speckit.clarify` | Razonamiento |
+| `speckit.plan` | Razonamiento |
+| `speckit.tasks` | Razonamiento |
+| `speckit.analyze` | Razonamiento |
+| `speckit.checklist` | Razonamiento |
+| `speckit.taskstoissues` | Razonamiento |
+| `speckit.implement` | Implementación |
+| `speckit.git.initialize` | Implementación |
+| `speckit.git.feature` | Implementación |
+| `speckit.git.commit` | Implementación |
+| `speckit.git.remote` | Implementación |
+| `speckit.git.validate` | Implementación |
 
 
 ---
@@ -135,12 +127,12 @@ After the subagent returns, verify:
 // ❌ 1. No model specified
 runSubagent({ agentName: "solution-architect", prompt: "..." })
 
-// ❌ 2. Prompt doesn't instruct subagent to read its skill file first
-runSubagent({ agentName: "backend-developer", model: "Glm5.2 - Provider - Zai", prompt: "Implement X" })
+// ❌ 2. Prompt doesn't tell the subagent to read its skill file first
+runSubagent({ agentName: "backend-developer", model: resolved, prompt: "Implement X" })
 
-// ❌ 3. Wrong model for agent category
-runSubagent({ agentName: "solution-architect", model: "Glm5.2 - Provider - Zai", ... })
+// ❌ 3. A model typed by hand instead of the Step 1 output
+runSubagent({ agentName: "solution-architect", model: "hardcoded", ... })
 
 // ❌ 4. Subagent lacks workspace, feature or TASK-ID context
-runSubagent({ agentName: "frontend-developer", model: "Glm5.2 - Provider - Zai", prompt: "Fix the header" })
+runSubagent({ agentName: "frontend-developer", model: resolved, prompt: "Fix X" })
 ```

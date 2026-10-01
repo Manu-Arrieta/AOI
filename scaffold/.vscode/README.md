@@ -1,177 +1,96 @@
-# Multi-Provider Customendpoint Setup — AOI
+# Configuración de modelos en VS Code
 
-Este directorio contiene artefactos para configurar los providers directos
-(DeepSeek, Zai, Alibaba, MiniMax, Kimi) con NVIDIA como fallback universal
-en VS Code como **custom endpoints** para el catálogo AOI.
+AOI **no envía** configuración de proveedores. La detecta.
 
-> ⚠️ **OPCIONAL**. AOI funciona perfectamente sin este setup. Si NO se configura,
-> los modelos que se usarán son los defaults declarados en cada plataforma
-> (`DeepSeek V4 Pro` / `GLM 5.2`). El catálogo multi-provider queda inerte
-> hasta que el operador active los custom endpoints.
+## Por qué
 
-## Archivos
+Hasta el 2026-09-28 este directorio contenía `ChatLanguageModel.example.json`, una
+plantilla con los proveedores ya cargados, y `scripts/nvidia-vscode-setup.{sh,ps1}` —hoy
+reemplazado por el detector `provider-vscode-setup.{sh,ps1}`— la copiaba al User dir de
+VS Code.
 
-| Archivo                          | Estado       | Función                                                                                                 |
-| :------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------ |
-| `ChatLanguageModel.example.json` | **tracked**  | Plantilla con `apiKey` placeholders. **NO contiene secrets reales.**                                    |
-| `ChatLanguageModel.json`         | **ignorado** | (si lo creás localmente con tus API keys reales, debe estar en `.gitignore` del downstream / scaffold). |
+Se retiró. La plantilla declaraba secretos como `${input:chat.lm.secret.<hash>}`, un
+puntero al llavero de VS Code **cuyo hash lo genera VS Code** al agregar el proveedor.
+Medido contra el perfil real: **4 de 6 no resolvían**. Copiar la plantilla producía una
+configuración que parece correcta y falla al autenticar.
 
-## Proveedores configurados
+> **Un artefacto del repositorio no puede ser la fuente de verdad de un entorno que el
+> repositorio no ve.** Un script no puede fabricar ese hash, así que la decisión correcta
+> no es copiar mejor, sino no copiar.
 
-| Provider | Modelo               | Agentes | Uso                               |
-| :------- | :------------------- | ------: | :-------------------------------- |
-| DeepSeek | DeepSeek V4 Pro      |      15 | análisis, docs, orquestación      |
-| Zai      | GLM 5.2              |       9 | código, terminal, git             |
-| Alibaba  | Qwen 3.8 Plus        |       2 | arquitectura, triage              |
-| MiniMax  | MiniMax M3           |       1 | UX/visual                         |
-| Kimi     | Kimi K2.6            |       0 | sin caso de uso                   |
-| NVIDIA   | Todos los anteriores |       — | fallback universal cross-provider |
+## Cómo se configura
 
-Los conteos se **derivan** del Agent Registry de
-`agent-delegation.instructions.md` y `pnpm aoi:routing` los verifica: si un agente
-cambia de provider y esta tabla no, la compuerta falla.
-
-> Estas cifras estuvieron mal hasta el 2026-09-20 —decían `22` para DeepSeek y `8`
-> para Zai, sobre un registro de **15** y **9**—, y la suma daba 33 sobre las 27
-> filas del registro. Dimensionar la capacidad de un provider con esos números
-> deja corto al picker en medio de un ciclo: la cuenta que importa es la que se
-> deriva, no la que se copia.
-
-## Pasos para activarlo (una vez, en tu máquina)
-
-### 1. Reemplazá la API key
-
-Editá `ChatLanguageModel.example.json` localmente y reemplazá
-`APIKEY-CONFIGURADA-PREVIAMENTE` por tu API key real de NVIDIA.
-
-### 2. Identificá el destino correcto (perfil VS Code)
-
-VS Code puede usar **perfiles** que reubican la configuración de modelos. Si tu
-workspace tiene un perfil asignado, el archivo destino es:
+Desde VS Code:
 
 ```
-<User dir>/profiles/<profile-id>/chatLanguageModels.json
+Chat: Manage Models  →  Add Provider  →  Custom Endpoint
 ```
 
-Si el workspace usa el perfil por defecto (`__default__profile__`), el destino es:
-
-```
-<User dir>/ChatLanguageModel.json
-```
-
-Para saber cuál aplica, revisá `globalStorage/storage.json` dentro del User dir.
-El script `nvidia-vscode-setup.{sh,ps1}` **detecta el perfil automáticamente** y
-escribe en la ubicación correcta.
-
-### 3. Copiá el archivo al destino
-
-**Forma automática (recomendado)**:
+Eso crea la entrada **y** el secreto en el llavero. Después, para verificar:
 
 ```bash
-bash scripts/nvidia-vscode-setup.sh --yes --key <TU-API-KEY>
+node scripts/multi-harness/provider-config.mjs      # reporte legible
+node scripts/multi-harness/provider-config.mjs --json
+bash scripts/provider-vscode-setup.sh                 # lo mismo, desde el instalador
 ```
 
-El script detecta el perfil y escribe en `profiles/<id>/chatLanguageModels.json`
-si aplica, o en `ChatLanguageModel.json` de la raíz en caso contrario.
+El detector **nunca imprime una `apiKey`**: filtra a `name`, `vendor`, `id` y
+`models[].name`. Los archivos de configuración contienen *referencias*
+(`input:chat.lm.secret.*`), no claves.
 
-**Forma manual — sin perfil (default profile)**:
+## Dónde vive la configuración
 
-**macOS**:
+La detección recorre las ubicaciones en orden y usa la primera que declare modelos:
+
+| Ubicación | Estado observado |
+| :--- | :--- |
+| `<User>/profiles/<id>/chatLanguageModels.json` | **la autoritativa** — la que VS Code usa con perfil |
+| `<User>/ChatLanguageModel.json` | copia parcial; puede quedar vieja |
+| `<User>/chatLanguageModels.json` | en esta máquina es `[]` |
+
+Si el workspace usa el perfil por defecto (`__default__profile__`), la autoritativa es la
+segunda. El detector escanea **todos** los perfiles antes de las rutas sueltas, toma el
+primero con modelos en orden alfabético —no el asociado al workspace— y avisa si más de
+una ubicación declara proveedores. Revisá esa lista antes de elegir en el setup.
+
+**User dir por plataforma**:
+
+| Plataforma | Path canónico |
+| :--- | :--- |
+| macOS | `~/Library/Application Support/Code/User/` |
+| Linux | `~/.config/Code/User/` |
+| Windows | `%APPDATA%\Code\User\` |
+
+## Agentes por categoría
+
+| Categoría | Agentes | Uso |
+| :--- | ------: | :--- |
+| Razonamiento | 18 | análisis, arquitectura, docs, orquestación |
+| Implementación | 9 | código, terminal, git |
+
+Los conteos se **derivan** del Agent Registry de `agent-delegation.instructions.md` y
+`pnpm aoi:routing` los verifica: si un agente cambia de categoría y esta tabla no, la
+cadena falla.
+
+**No hay columna de proveedor, y es a propósito.** AOI sin instalar no trae ninguno. El
+modelo de cada agente se elige en el **setup** (Phase 5.1) entre los que esta máquina
+tenga configurados —uno para todos, uno por categoría, o uno por agente— y queda como
+hechos O(1) en ICM bajo `{WORKSPACE}.assignment.*`. Sólo cambia con `/aoi-providers`.
 
 ```bash
-mkdir -p "$HOME/Library/Application Support/Code/User"
-cp .vscode/ChatLanguageModel.example.json "$HOME/Library/Application Support/Code/User/ChatLanguageModel.json"
-sed -i '' 's/APIKEY-CONFIGURADA-PREVIAMENTE/<tu-api-key-real>/' "$HOME/Library/Application Support/Code/User/ChatLanguageModel.json"
+node scripts/multi-harness/provider-setup.mjs --show            # qué tiene cada agente
+node scripts/multi-harness/provider-store.mjs --resolve <agente> # lo que lee la delegación
 ```
 
-**Linux**:
-
-```bash
-mkdir -p "$HOME/.config/Code/User"
-cp .vscode/ChatLanguageModel.example.json "$HOME/.config/Code/User/ChatLanguageModel.json"
-sed -i 's/APIKEY-CONFIGURADA-PREVIAMENTE/<tu-api-key-real>/' "$HOME/.config/Code/User/ChatLanguageModel.json"
-```
-
-**Windows (PowerShell)**:
-
-```powershell
-New-Item -ItemType Directory -Force -Path "$env:APPDATA\Code\User"
-Copy-Item .vscode/ChatLanguageModel.example.json "$env:APPDATA\Code\User\ChatLanguageModel.json"
-(Get-Content "$env:APPDATA\Code\User\ChatLanguageModel.json") -replace 'APIKEY-CONFIGURADA-PREVIAMENTE','<tu-api-key-real>' | Set-Content "$env:APPDATA\Code\User\ChatLanguageModel.json"
-```
-
-**Forma manual — con perfil activo**:
-
-Reemplazá `<profile-id>` por el ID de tu perfil (ej. `-5f85a270`):
-
-**macOS**:
-
-```bash
-PROFILE_DIR="$HOME/Library/Application Support/Code/User/profiles/<profile-id>"
-mkdir -p "$PROFILE_DIR"
-cp .vscode/ChatLanguageModel.example.json "$PROFILE_DIR/chatLanguageModels.json"
-sed -i '' 's/APIKEY-CONFIGURADA-PREVIAMENTE/<tu-api-key-real>/' "$PROFILE_DIR/chatLanguageModels.json"
-```
-
-**Linux**:
-
-```bash
-PROFILE_DIR="$HOME/.config/Code/User/profiles/<profile-id>"
-mkdir -p "$PROFILE_DIR"
-cp .vscode/ChatLanguageModel.example.json "$PROFILE_DIR/chatLanguageModels.json"
-sed -i 's/APIKEY-CONFIGURADA-PREVIAMENTE/<tu-api-key-real>/' "$PROFILE_DIR/chatLanguageModels.json"
-```
-
-> 📍 **Resumen de VS Code User dir por plataforma**:
->
-> | Plataforma | Path canónico                              |
-> | :--------- | :----------------------------------------- |
-> | macOS      | `~/Library/Application Support/Code/User/` |
-> | Linux      | `~/.config/Code/User/`                     |
-> | Windows    | `%APPDATA%\Code\User\`                     |
->
-> El script `nvidia-vscode-setup.{sh,ps1}` resuelve todo automáticamente (User dir,
-> perfil activo, y destino correcto).
-
-### 4. Reiniciá VS Code
-
-Tras reiniciar, los modelos aparecerán en el picker de GitHub Copilot Chat agrupados
-por provider (NVIDIA, Alibaba, MiniMax, DeepSeek, Kimi, etc.).
-
-### 4. Seleccioná manualmente por agente
-
-Para cada agente que invocás, elegí el modelo en el picker (ver
-`## Model Requirement` en cada `.agent.md`):
-
-- `@supervisor`, `@functional-analyst`, `@integration-specialist`,
-  `@documentation-analyst`, `@resource-analyst`,
-  `@project-analyzer`, `@project-expert` → DeepSeek V4 Pro (DeepSeek)
-- `@frontend-developer`, `@backend-developer`, `@devops-engineer` → GLM 5.2 (Zai)
-- `@solution-architect`, `@triage-specialist` → Qwen 3.8 Plus (Alibaba)
-- `@ux-designer` → MiniMax M3 (MiniMax)
-
-## Forma automática
-
-`setup.sh` (macOS/Linux) y `setup.ps1` (Windows) ejecutan un sub-paso opcional
-después de instalar `rtk` + `icm`:
-
-```text
-▸ Custom endpoints (opcional)
-  Detectar VS Code User dir + perfil activo + copiar plantilla en la ubicación
-  correcta (root o profiles/<id>/chatLanguageModels.json) + recordatorio de
-  reemplazar API keys.
-```
-
-El script **detecta automáticamente el perfil VS Code** desde `storage.json`.
-Si el workspace está asociado a un perfil (ej. `-5f85a270`), escribe en
-`profiles/<id>/chatLanguageModels.json`. Si usa el perfil por defecto, escribe
-en `ChatLanguageModel.json` de la raíz.
-
-Si el operador responde `n`, AOI continúa con defaults vendor-copilot sin
-bloquearse.
+Publicar acá qué proveedor usa cada agente sería fijar en el repositorio una decisión que
+es de cada workspace — y ya cobró su precio: la versión anterior de esta tabla declaraba
+una versión de modelo que la configuración real ya había superado.
 
 ## Seguridad
 
-> 🔐 **NUNCA** commitees el archivo `ChatLanguageModel.json` con tu API key real.
-> El `.gitignore` de scaffold y la convención de tracked-only-example están
-> diseñados para que un commit accidental NO leak-ee el secret.
+> 🔐 **NUNCA** commitees `ChatLanguageModel.json` con una API key real. Está en
+> `.gitignore`.
+>
+> El archivo **con** claves nunca entra al repo. El que contenía las referencias y podía
+> versionarse se retiró, así que ya no hay una plantilla que alguien pueda commitear por
+> error creyendo que es inofensiva.

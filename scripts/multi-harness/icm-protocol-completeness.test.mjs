@@ -18,6 +18,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
+import { estimateTokens } from '../sdd-lifecycle/token-accounting.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const PROTOCOL = path.join(ROOT, '.github/instructions/icm-protocol.instructions.md')
@@ -84,7 +85,7 @@ describe('ICM protocol — always-injected surface', () => {
   })
 
   it('stays within a budget, because every token here is paid on every operation', () => {
-    const tokens = Math.round(text.length / 4)
+    const tokens = estimateTokens(text)
     assert.ok(tokens <= 2200, `icm-protocol grew to ${tokens} tokens; it is injected on every operation`)
   })
 })

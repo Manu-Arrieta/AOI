@@ -14,9 +14,9 @@ coverage/
 # Exported memory bundle artifacts
 .exportsmemories/
 
-# NVIDIA customendpoint credentials — keep example tracked, ignore real keyfile
+# Credenciales de custom endpoints — el template de ejemplo se retiró (auditoría C7:
+# sus referencias de secreto son de la máquina que lo generó y no resuelven en otra)
 .vscode/ChatLanguageModel.json
-!.vscode/ChatLanguageModel.example.json*
 !.exportsmemories/.gitkeep
 scaffold/.exportsmemories/*
 !scaffold/.exportsmemories/.gitkeep

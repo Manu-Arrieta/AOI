@@ -87,4 +87,4 @@ The `specify` CLI is installed during setup and provides the `/speckit.*` comman
 
 ## Model Requirements for Spec-Kit Agents
 
-All spec-kit reasoning agents use **DeepSeek V4 Pro** (Primary) with **NVIDIA** fallback. `speckit.implement` and speckit git agents use **GLM 5.2** (Primary) with **NVIDIA** fallback. See `.github/instructions/model-selection.instructions.md` for the full table.
+Los agentes de spec-kit declaran su **categoría** en su bloque `## Model Requirement`: los de razonamiento y los de implementación no usan el mismo. **Qué modelo sirve a cada agente se elige en el setup** y sólo cambia con `/aoi-providers`; vive en `{WORKSPACE}.assignment.*`. Ver `model-selection.instructions.md`.

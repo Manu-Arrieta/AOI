@@ -1,6 +1,6 @@
 ---
 name: "Model Selection Protocol"
-description: "Mandatory model selection rules for all AOI agents. Covers reasoning, implementation, multi-provider config, and NVIDIA fallback."
+description: "Mandatory model selection rules for all AOI agents."
 applyTo: ".github/{agents,prompts}/**,**/*.agent.md,**/*.prompt.md"
 ---
 
@@ -8,28 +8,21 @@ applyTo: ".github/{agents,prompts}/**,**/*.agent.md,**/*.prompt.md"
 
 **MANDATORY FOR ALL AGENTS**
 
----
+## 1. Categorías
 
-## 1. Categorías (solo para autoría de agentes nuevos)
+Razonamiento y arquitectura → `Razonamiento`. Implementación y terminal → `Implementación`.
 
-Razonamiento y arquitectura → `DeepSeek V4 Pro`. Implementación y terminal → `GLM-5.2`.
-Es una guía para elegir al crear un agente, no una regla de runtime: la regla 2.1 hace que
-el bloque del propio agente siempre gane, y `pnpm aoi:routing` rechaza a cualquier agente
-sin fila explícita en el registro, así que un default nunca llega a aplicarse.
+La categoría es lo único que el repo declara. El modelo se **elige en el setup** (uno para
+todos, por categoría o por agente) y sólo cambia con `/aoi-providers`.
 
-## 2. Preeminence & Selection Rules (CRITICAL)
+## 2. Selection Rules (CRITICAL)
 
-1. **Preeminence**: An agent's `## Model Requirement` block in its `.agent.md` file supersedes category defaults.
-2. **Picker Hierarchy**: The operator MUST select the `Primary` model in the picker before invocation. If unavailable, select the `Fallback`.
-3. **Missing Model Gate**: If neither `Primary` nor `Fallback` is available in the picker, the agent **MUST STOP and notify the operator** before executing any tool or modifying files.
+1. **Resolve, never recall**: el modelo sale de `provider-store.mjs --resolve <agente>`
+   (ver `agent-delegation.instructions.md`, Step 1). Agente → categoría → todos.
+2. **Missing Model Gate**: exit ≠ 0 o un modelo que no responde → el agente
+   **DEBE PARAR y notificar**. Nunca elegir otro por su cuenta.
 
----
+## 3. Multi-Provider & Tooling Context
 
-## 3. Valores concretos de `runSubagent`
-
-> Fuente única: el **Agent Registry** de `agent-delegation.instructions.md`.
-
-## 4. Multi-Provider & Tooling Context
-
-Provider configuration lives at `scaffold/.vscode/ChatLanguageModel.example.json`; automated setup is
-`scripts/nvidia-vscode-setup.{sh,ps1}`. Terminal command filtering is governed by `rtk.instructions.md`.
+Providers live in VS Code; `scripts/provider-vscode-setup.{sh,ps1}` **detects** them and
+never writes a template. Terminal filtering is governed by `rtk.instructions.md`.

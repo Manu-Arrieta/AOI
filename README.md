@@ -317,7 +317,7 @@ AOI Doctor verifica de forma determinista:
 - [Notas de la Versión v2.0.0](docs/internal/releases/v2.0.0.es.md) — Arquitectura de bootstrapper ligero y matriz TanStack.
 - **Matriz de Verificación en el Mundo Real** — Protocolo de validación integral. No vive en este repositorio: se ejecuta desde el workspace de verificación, contra una instalación real.
 - [Benchmark de Optimización de Tokens](docs/internal/benchmarks/TOKEN_OPTIMIZATION_BENCHMARK_v2.0.0.es.md) — Métricas y mediciones de ahorro de tokens.
-- [Guía de Custom Endpoints de VS Code](scaffold/.vscode/README.md) — Configuración opcional multi-proveedor (DeepSeek, Zai, Alibaba, MiniMax, NVIDIA).
+- [Configuración de Modelos en VS Code](scaffold/.vscode/README.md) — Cómo AOI **detecta** los proveedores que ya tengas configurados. Los proveedores son de tu máquina, no del repositorio: el modelo de cada agente se elige en el setup y se cambia con `/aoi-providers`.
 
 ---
 

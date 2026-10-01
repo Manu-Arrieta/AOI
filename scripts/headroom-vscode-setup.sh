@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # scripts/headroom-vscode-setup.sh — Print Headroom runtime env plan for the operator.
 #
-# Unlike `nvidia-vscode-setup.sh`, this script does NOT write secrets to VS Code
-# `ChatLanguageModel.json` (those belong to the NVIDIA customendpoint layer and
-# are orthogonal). Headroom is configured by:
+# Unlike `provider-vscode-setup.sh`, this script writes env vars for a runtime; that
+# one only DETECTS the providers already configured in VS Code and never writes
+# (the model configs, and their secret references, belong to the customendpoint
+# layer and are orthogonal). Headroom is configured by:
 #   1. Optional Copilot OAuth token (`GITHUB_COPILOT_TOKEN` or auto-detected
 #      from `gh auth token` / macOS Keychain via `headroom copilot-auth login`).
 #   2. Runtime env vars: `HEADROOM_HOST`, `HEADROOM_PORT`, `HEADROOM_PROXY_PORT`.
@@ -52,7 +53,7 @@ header(){ printf "\n${BOLD}═══ %s ═══${NC}\n\n" "$1"; }
 if [[ "$MODE" == "emit-bash" || "$MODE" == "emit-zsh" ]]; then
   cat <<'EOF'
 # Headroom runtime env (adjacent to AOI bootstrapper — does NOT touch VS Code
-# ChatLanguageModel.json which belongs to NVIDIA customendpoint layer)
+# ChatLanguageModel.json which belongs to the customendpoint layer)
 export HEADROOM_HOST=127.0.0.1
 export HEADROOM_PORT=8787
 export HEADROOM_PROXY_PORT=8787

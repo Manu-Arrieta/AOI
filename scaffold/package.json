@@ -42,6 +42,8 @@
     "aoi:srp": "node scripts/scaffold/validate-srp.mjs",
     "aoi:reachability": "node scripts/scaffold/source-reachability.mjs",
     "aoi:routing": "node scripts/multi-harness/validate-agent-routing.mjs",
+    "aoi:providers": "node scripts/multi-harness/provider-assignment.mjs",
+    "aoi:assignment": "node scripts/multi-harness/provider-setup.mjs --show",
     "aoi:invariant-gate": "node scripts/sdd-lifecycle/invariant-gate.mjs --exit-code",
     "aoi:blueprint-gate": "node scripts/sdd-lifecycle/blueprint-gate.mjs",
     "aoi:archify": "node scripts/archify-path.mjs",
@@ -57,6 +59,6 @@
     "aoi:hooks": "node scripts/multi-harness/install-hooks.mjs --audit",
     "aoi:registry": "node scripts/sdd-lifecycle/registry-sync.mjs",
     "aoi:task-artifacts": "node scripts/sdd-lifecycle/audit-task-artifacts.mjs --exit-code",
-    "test": "pnpm aoi:test-globs && pnpm aoi:srp && pnpm aoi:reachability && pnpm aoi:routing && pnpm aoi:handoffs && pnpm aoi:cache-prefix && pnpm aoi:tools && pnpm aoi:entry-points && pnpm aoi:hooks && pnpm aoi:registry && pnpm test:parity && pnpm test:doctor && pnpm test:multi-harness && pnpm test:sandbox && pnpm test:memory-sync && pnpm test:subagent-payload && pnpm test:conf && pnpm test:sdd-lifecycle && pnpm test:spatiotemporal && pnpm test:mcp-gateway && pnpm test:code-lens && pnpm aoi:cache-guard && pnpm aoi:lint-refs && pnpm aoi:audit-protocol && pnpm aoi:claims && pnpm aoi:importance && pnpm test:dashboard"
+    "test": "pnpm aoi:test-globs && pnpm aoi:srp && pnpm aoi:reachability && pnpm aoi:routing && pnpm aoi:providers && pnpm aoi:handoffs && pnpm aoi:cache-prefix && pnpm aoi:tools && pnpm aoi:entry-points && pnpm aoi:hooks && pnpm aoi:registry && pnpm test:parity && pnpm test:doctor && pnpm test:multi-harness && pnpm test:sandbox && pnpm test:memory-sync && pnpm test:subagent-payload && pnpm test:conf && pnpm test:sdd-lifecycle && pnpm test:spatiotemporal && pnpm test:mcp-gateway && pnpm test:code-lens && pnpm aoi:cache-guard && pnpm aoi:lint-refs && pnpm aoi:audit-protocol && pnpm aoi:claims && pnpm aoi:importance && pnpm test:dashboard"
   }
 }

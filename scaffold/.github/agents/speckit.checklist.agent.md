@@ -4,7 +4,7 @@ description: Generate a custom checklist for the current feature based on user r
 
 ## Model Requirement
 
-> **Model**: `Deepseek v4 pro - Provider - Deepseek` · **Fallback**: deepseek-ai/deepseek-v4-pro
+> **Categoría**: Razonamiento · modelo asignado en el setup
 
 ## Checklist Purpose: "Unit Tests for English"
 

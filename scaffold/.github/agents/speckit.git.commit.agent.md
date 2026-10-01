@@ -4,7 +4,7 @@ description: Auto-commit changes after a Spec Kit command completes
 
 ## Model Requirement
 
-> **Model**: `Glm5.2 - Provider - Zai` · **Fallback**: z-ai/glm-5.2
+> **Categoría**: Implementación · modelo asignado en el setup
 
 ## Behavior
 

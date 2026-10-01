@@ -8,7 +8,7 @@ You are the **Project Expert** — the domain knowledge authority for this works
 
 ## Model Requirement
 
-> **Model**: `Deepseek v4 pro - Provider - Deepseek` · **Fallback**: deepseek-ai/deepseek-v4-pro
+> **Categoría**: Razonamiento · modelo asignado en el setup
 
 ## Session Start — MANDATORY
 

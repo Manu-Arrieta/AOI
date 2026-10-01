@@ -22,6 +22,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
 import { SDD_PHASES, formatHarnessBands, harnessSkillBands } from './context-budget.mjs'
+import { estimateTokens } from './token-accounting.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
@@ -52,7 +53,11 @@ describe('harnessSkillBands', () => {
     // mano convierte "agregué una fase" en "el test miente".
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi-bandas-'))
     t.after(() => fs.rmSync(root, { recursive: true, force: true }))
-    const cuerpo = 'x'.repeat(400)
+    // 401 y no 400, a propósito. Con un múltiplo de 4, `round`, `ceil` y `floor`
+    // coinciden y este test no distingue la política de redondeo; con 401 la deriva
+    // vieja —`Math.ceil(cuerpo.length / 4)`, que NO es la fórmula de producción— daba
+    // 101 contra los 100 reales. La discrepancia estaba tapada por el fixture.
+    const cuerpo = 'x'.repeat(401)
     for (const dir of ['.github/skills/icm', '.agents/skills/icm']) {
       fs.mkdirSync(path.join(root, dir), { recursive: true })
       fs.writeFileSync(path.join(root, dir, 'SKILL.md'), cuerpo)
@@ -62,7 +67,10 @@ describe('harnessSkillBands', () => {
     assert.equal(b.github, b.agents)
     assert.equal(
       b.github,
-      Math.ceil(cuerpo.length / 4) * SDD_PHASES.length,
+      // `estimateTokens` y no una copia de la fórmula: el estimador único ya está
+      // exportado y documentado como tal, y reimplementarlo acá es exactamente cómo
+      // este test llegó a derivar con `ceil` mientras la producción redondea.
+      estimateTokens(cuerpo) * SDD_PHASES.length,
       `no aplicó el multiplicador de las ${SDD_PHASES.length} fases`,
     )
   })

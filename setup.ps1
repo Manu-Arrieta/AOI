@@ -1112,29 +1112,22 @@ Install-Uv
 $null = Install-McpCompressor
 Install-Specify
 
-Write-Header "Phase 1.5: NVIDIA customendpoint (opcional)"
-$nvidiaScript = Join-Path $PSScriptRoot "scripts/nvidia-vscode-setup.ps1"
-if (Test-Path $nvidiaScript) {
-    Write-Info "Detectando VS Code para configurar custom endpoint NVIDIA (Kimi K2.6, DeepSeek V4 Pro, MiniMax M3, Qwen 3.5)."
-    Write-Info "Presione Enter para ejecutar ahora, o 'n' + Enter para omitir (AOI seguirá funcionando con defaults vendor-copilot)."
-    $nvidiaChoice = "n"
-    if (-not ($Yes.IsPresent -or $NonInteractive.IsPresent)) {
-        $nvidiaChoice = Read-Prompt -Prompt "▸ Configurar customendpoint NVIDIA? [Y/n]" -Default "Y"
-    }
-    if ($nvidiaChoice -match '^[nN]([oO])?$') {
-        Write-Warn "Saltado por elección del operador. AOI continúa con defaults vendor-copilot (Gemini 3.1 Pro Preview / GPT-5.4 xhigh)."
-    } else {
-        try {
-            $nvidiaExitCode = Invoke-WindowsPowerShellFile -ScriptPath $nvidiaScript
-            if ($nvidiaExitCode -ne 0) {
-                Write-Warn "nvidia-vscode-setup.ps1 salió con código $nvidiaExitCode — el setup continúa. El operador puede correrlo manualmente tras finalizar."
-            }
-        } catch {
-            Write-Warn "No se pudo invocar nvidia-vscode-setup.ps1: $($_.Exception.Message) — el setup continúa."
+Write-Header "Phase 1.5: Proveedores de modelos (detección)"
+# Era un configurador que copiaba un template al User dir de VS Code. Se convirtió en un
+# DETECTOR: el template declaraba secretos con hashes que genera VS Code y 4 de 6 no
+# resolvían en otra máquina. Sin prompt: no escribe nada, así que no hay nada que consentir.
+$providerScript = Join-Path $PSScriptRoot "scripts/provider-vscode-setup.ps1"
+if (Test-Path $providerScript) {
+    try {
+        $providerExitCode = Invoke-WindowsPowerShellFile -ScriptPath $providerScript
+        if ($providerExitCode -ne 0) {
+            Write-Warn "No se pudieron detectar los proveedores (exit $providerExitCode) — el setup continúa."
         }
+    } catch {
+        Write-Warn "No se pudo invocar provider-vscode-setup.ps1: $($_.Exception.Message) — el setup continúa."
     }
 } else {
-    Write-Warn "scripts/nvidia-vscode-setup.ps1 no encontrado junto a setup.ps1 — saltando Phase 1.5"
+    Write-Warn "provider-vscode-setup.ps1 no encontrado junto a setup.ps1 — saltando Phase 1.5"
 }
 
 if ($ProfileIncludesAdvanced) {

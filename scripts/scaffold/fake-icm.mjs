@@ -75,3 +75,30 @@ export function fakeIcm({ topics = [] } = {}) {
 export function removeFakeIcm(dir) {
   fs.rmSync(dir, { recursive: true, force: true })
 }
+
+/**
+ * Un `icm` EN PROCESO, para módulos que reciben `exec` inyectado. No crea binario:
+ * emula `facts set|forget|list` con la salida del real, incluida la columna de
+ * claves de 32 caracteres — la que hacía que una clave larga quedara a un solo
+ * espacio de su valor y el parser la descartara.
+ *
+ * @param {Record<string,string>} [initial]
+ * @returns {{ exec: (args: string[]) => string, facts: Map<string,string>, calls: string[][] }}
+ */
+export function memoryIcm(initial = {}) {
+  const facts = new Map(Object.entries(initial))
+  const calls = []
+  const exec = (args) => {
+    calls.push(args)
+    const [, op, , key, value] = args
+    if (op === 'set') return facts.set(key, value), ''
+    if (op === 'forget') return facts.delete(key), ''
+    if (op === 'list') {
+      if (facts.size === 0) return `no facts for ${args[2]}\n`
+      const rows = [...facts].map(([k, v]) => `${k.padEnd(32)} ${v}`)
+      return ['key                              value', '-'.repeat(60), ...rows].join('\n') + '\n'
+    }
+    throw new Error(`op no emulada: ${op}`)
+  }
+  return { exec, facts, calls }
+}

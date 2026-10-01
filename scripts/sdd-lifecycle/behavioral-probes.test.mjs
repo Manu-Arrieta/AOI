@@ -162,9 +162,12 @@ describe('every probe has its evidence inside the context it is asked over', () 
     // El conteo es un TRIPWIRE deliberado y por eso está hardcodeado: sube
     // cuando alguien agrega una sonda de este tipo, y obliga a reconocer que la
     // cobertura conductual creció en la dirección débil (prohibir) y no en la
-    // fuerte (exigir). Pasó de 6 a 9 al sumar las tres de la Fase -2.
+    // fuerte (exigir). Pasó de 6 a 9 al sumar las tres de la Fase -2, y a 10 con
+    // `model-parameter`, que es la excepción: sigue EXIGIENDO `--resolve` y suma la
+    // prohibición encima, porque su versión que sólo exigía aceptaba una respuesta
+    // con el modelo escrito en duro — medido el 2026-09-28.
     const answerOnly = PROBES.filter((p) => p.forbidden).map((p) => p.id)
-    assert.equal(answerOnly.length, 9, 'cambió el conjunto de sondas solo verificables con un modelo')
+    assert.equal(answerOnly.length, 10, 'cambió el conjunto de sondas solo verificables con un modelo')
   })
 })
 

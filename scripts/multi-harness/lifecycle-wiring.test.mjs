@@ -18,6 +18,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
 import { speckitIn } from '../sdd-lifecycle/context-budget.mjs'
+import { estimateTokens } from '../sdd-lifecycle/token-accounting.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8')
@@ -161,7 +162,7 @@ describe('the supervisor routes phases without re-specifying them', () => {
   })
 
   it('stays within a budget, since it is the priciest file in the system', () => {
-    const tokens = Math.round(supervisor.length / 4)
+    const tokens = estimateTokens(supervisor)
     assert.ok(tokens <= 2800, `supervisor.agent.md grew to ${tokens} tokens, and it loads in all six phases`)
   })
 

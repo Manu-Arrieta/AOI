@@ -248,6 +248,8 @@ inference tokens.
 | \`aoi:srp\` | a governed file over 300 LOC (Invariant 5), as a ratchet: recorded debt may only shrink |
 | \`test:parity\` | any drift between a governed path and its \`scaffold/\` mirror (Principle I) |
 | \`aoi:reachability\` | a source file no test ever loads |
+| \`aoi:routing\` | an agent with no registry row, an unknown category, or a definition file that is not there |
+| \`aoi:providers\` | an agent block that names a provider, or an assigned model this machine does not have configured |
 | \`aoi:test-globs\` | a declared test glob matching nothing — a suite reporting green over zero assertions |
 | \`aoi:lint-refs\` | prose naming a script or \`/command\` that does not exist |
 | \`aoi:entry-points\` | a script the prose invokes that answers \`node <path>\` with exit 0 and no output — the line is there and the tool does not respond |

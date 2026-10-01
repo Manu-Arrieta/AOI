@@ -41,10 +41,10 @@
  * actual, lo congela. Se derivó del instrumento, no se copió a mano.
  */
 export const BAND_BUDGET = {
-  '.github/agents/supervisor.agent.md': 1577,
-  '.github/instructions/agent-delegation.instructions.md': 1860,
+  '.github/agents/supervisor.agent.md': 1568,
+  '.github/instructions/agent-delegation.instructions.md': 1195,
   '.github/instructions/icm-protocol.instructions.md': 2124,
-  '.github/instructions/model-selection.instructions.md': 396,
+  '.github/instructions/model-selection.instructions.md': 266,
   '.github/instructions/rtk.instructions.md': 329,
   '.github/skills/icm/SKILL.md': 414,
   '.github/skills/rtk/SKILL.md': 226,
@@ -88,8 +88,23 @@ export const BAND_BUDGET = {
  * promesa viva. La redacción honesta que lo reemplaza quedó **dos tokens más
  * barata**, no más cara — el primer intento la escribió cinco más caras y este
  * mismo trinquete lo devolvió en el acto, con la banda en 8.088.
+ *
+ * Bajó de 8.081 a 7.277 al sacar del repositorio la asignación de modelos
+ * (`agent-delegation` 1.860 → 1.195, `model-selection` 396 → 266, `supervisor`
+ * 1.577 → 1.568). Son −804 por inyección, −5.628 por ciclo. No es un recorte de
+ * prosa: el registro declaraba qué modelo usa cada agente —un dato que sólo la
+ * máquina sabe— y produjo tres defectos medidos: nueve agentes con un id que había
+ * dejado de existir, un proveedor en uso sin fila de conversión, y dos transportes
+ * sin reconciliar. Ahora el modelo se elige en el setup, se cambia con
+ * `/aoi-providers`, y la delegación lo lee con un comando de una línea en vez de
+ * cargar una tabla.
+ *
+ * El bloque de modelo de los agentes se reescribió una vez y este trinquete lo
+ * devolvió: `supervisor` creció 4 tokens al nombrar `/aoi-providers` en cada uno de
+ * los 27 agentes. El puntero ya está en el registro, que todas las fases cargan; la
+ * redacción final es más corta que la original.
  */
-export const BAND_CEILING = 8081
+export const BAND_CEILING = 7277
 
 /**
  * Compara la banda derivada contra su baseline. Pura: sólo decide, no imprime.
