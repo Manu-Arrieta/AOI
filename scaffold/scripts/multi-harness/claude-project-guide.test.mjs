@@ -116,3 +116,71 @@ describe('claude-project-guide area table', () => {
     assert.equal(isDevelopmentRepo(root), true)
   })
 })
+
+describe('claude-project-guide only states what is true where it is compiled', () => {
+  it('keeps the scaffold mirror and test:parity out of an installed workspace', () => {
+    // Medido en una instalación real: el CLAUDE.md instalado decía que
+    // `aoi:sync-rules` refresca un `scaffold/` que el instalador no deja y que
+    // `test:parity` rechaza drift, cuando allí sale 0 sin comparar nada.
+    const installed = renderProjectGuide({ repoRoot: fixtureWithAreas(['sandbox']) })
+    const devRoot = fixtureWithAreas(['sandbox'])
+    fs.writeFileSync(path.join(devRoot, 'setup.sh'), '#!/usr/bin/env bash\n')
+    const dev = renderProjectGuide({ repoRoot: devRoot })
+
+    for (const claim of ['`test:parity`', 'refreshes the `scaffold/` mirror', 'mirroring it into `scaffold/`', 'mirrored under `scaffold/`']) {
+      assert.ok(!installed.includes(claim), `el workspace instalado afirma: ${claim}`)
+    }
+    for (const claim of ['`test:parity`', 'refreshes the `scaffold/` mirror', 'mirroring it into `scaffold/`']) {
+      assert.ok(dev.includes(claim), `el repo de desarrollo perdió: ${claim}`)
+    }
+    assert.ok(installed.includes('edit the generator in the AOI development repository'))
+  })
+
+  it('carries no file count, which went stale on the first install', () => {
+    // "`.md` files count 60 without them and 1356 with": en una instalación
+    // eran 1 y 235. Una cuenta escrita en prosa es falsa en todo árbol menos uno.
+    const guide = renderProjectGuide({ repoRoot: fixtureWithAreas(['sandbox']) })
+    assert.doesNotMatch(guide, /count \d+ without/)
+  })
+
+  it('recommends the cheap mode of every lens and search it names', () => {
+    // Se carga en cada turno. Medido: `aoi:graph` 38 KB contra 465 B con
+    // `--hubs`, `aoi:determinism` 32 KB contra 109 B con `--summary`, y
+    // `fd -H -I` 1367 `.md` de los cuales 973 eran de node_modules.
+    const guide = renderProjectGuide({ repoRoot: path.resolve(import.meta.dirname, '..', '..') })
+    const cheap = [
+      [/pnpm aoi:graph(?! --hubs)/, 'aoi:graph sin --hubs'],
+      [/pnpm aoi:determinism(?! --summary)/, 'aoi:determinism sin --summary'],
+      [/fd -H -I(?! -E node_modules)/, 'fd -H -I sin -E node_modules'],
+      [/rg --no-ignore(?! -g '!node_modules')/, "rg --no-ignore sin -g '!node_modules'"],
+    ]
+    for (const [expensive, label] of cheap) assert.doesNotMatch(guide, expensive, label)
+  })
+
+  it('does not claim compile-rules ignores unknown flags, which exit 2', () => {
+    const guide = renderProjectGuide({ workspace: 'ws one', repoRoot: fixtureWithAreas(['sandbox']) })
+    assert.doesNotMatch(guide, /fall back\s+to defaults silently/)
+    assert.ok(guide.includes('`--workspace "ws one"`'), 'el workspace con espacio llega sin comillas')
+  })
+})
+
+describe('the compiled harness files have a single writer', () => {
+  it('no agent or prompt runs spec-kit\'s agent-context updater', () => {
+    // `speckit.plan` corría `update-agent-context.sh copilot`. Medido: le agregó
+    // 104 B ("Active Technologies") a `.github/copilot-instructions.md`, que
+    // compila `aoi:sync-rules`: el prefijo cacheado cambia a mitad de ciclo y el
+    // siguiente sync lo vuelve a 2558 B. Lo que agregaba ya está en el
+    // Technical Context del plan, que tasks e implement leen.
+    const repoRoot = path.resolve(import.meta.dirname, '..', '..')
+    const offenders = []
+    for (const dir of ['.github/agents', '.github/prompts']) {
+      const abs = path.join(repoRoot, dir)
+      if (!fs.existsSync(abs)) continue
+      for (const name of fs.readdirSync(abs).filter((n) => n.endsWith('.md'))) {
+        const text = fs.readFileSync(path.join(abs, name), 'utf8')
+        if (/update-agent-context|update-context\.(sh|ps1)/.test(text)) offenders.push(`${dir}/${name}`)
+      }
+    }
+    assert.deepEqual(offenders, [], `reescriben un archivo compilado: ${offenders.join(', ')}`)
+  })
+})

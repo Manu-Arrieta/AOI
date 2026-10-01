@@ -79,8 +79,8 @@ defect.** These paths arrive from AOI's \`scaffold/\` and are overwritten on the
 next install or sync, so a repair made here is lost and every other installation
 keeps the bug. Fix it in the AOI development repository and let it propagate.
 
-- Gates run in \`governedOnly\` mode: only files mirrored under \`scaffold/\` are
-  audited, so a script added outside that set is not judged by Invariant 5.
+- Gates run in \`governedOnly\` mode: only the paths AOI syncs in are audited,
+  so a script added outside that set is not judged by Invariant 5.
 - ${dashboard}`
 }
 
@@ -163,6 +163,13 @@ ${rows}`
  * @param {{ workspace?: string, repoRoot?: string }} options
  */
 export function renderProjectGuide({ workspace = 'AOI', repoRoot = process.cwd() } = {}) {
+  // Lo que sólo es cierto en el repo de desarrollo va sólo ahí. Medido en una
+  // instalación real: el CLAUDE.md instalado afirmaba que `aoi:sync-rules`
+  // refresca un `scaffold/` que el instalador no deja, y que `test:parity`
+  // rechaza drift cuando allí sale 0 sin comparar nada. Y como se carga en cada
+  // turno, nombra el modo barato de cada lente: medido, `aoi:graph` 38 KB contra
+  // 465 B con `--hubs`, y `aoi:determinism` 32 KB contra 109 B con `--summary`.
+  const dev = isDevelopmentRepo(repoRoot)
   return `
 ---
 
@@ -179,7 +186,7 @@ holds for \`AGENTS.md\`, \`.cursorrules\`, \`.clinerules\`,
 \`.cursor/rules/aoi-rules.mdc\`, \`.agents/rules/aoi-rules.md\` and
 \`.github/copilot-instructions.md\`.
 
-To change what this file says, edit the generator:
+To change what this file says, edit the generator${dev ? '' : ' in the AOI development repository'}:
 
 | To change | Edit |
 | --- | --- |
@@ -187,7 +194,7 @@ To change what this file says, edit the generator:
 | The ICM protocol blocks | \`.github/instructions/icm-protocol.instructions.md\` — every harness derives from it |
 | The skeleton and the other dialects | \`scripts/multi-harness/compile-rules.mjs\` |
 
-Then run \`pnpm aoi:sync-rules\`, which also refreshes the \`scaffold/\` mirror.
+Then run \`pnpm aoi:sync-rules\`${dev ? ', which also refreshes the `scaffold/` mirror' : ''}.
 
 A \`commit-msg\` hook (\`.githooks/pre-commit-aoi-guard.sh\`) blocks any commit
 touching those files unless the subject carries \`[aoi-managed-ok]\`. That block is
@@ -199,7 +206,7 @@ intended behaviour, not an obstacle to route around: it exists because
 \`\`\`bash
 pnpm test                 # the full chain: every gate, then every suite
 pnpm aoi:doctor           # 360° health check, 0 inference tokens
-pnpm aoi:sync-rules       # recompile all harness files + scaffold mirror
+pnpm aoi:sync-rules       # recompile every harness file
 \`\`\`
 
 While iterating, run one area's suite or one file rather than the whole chain:
@@ -213,10 +220,10 @@ node --test --test-name-pattern "ratchet" scripts/scaffold/validate-srp.test.mjs
 Read-only lenses. All deterministic; none of them needs a model:
 
 \`\`\`bash
-pnpm aoi:graph          # prompt→script→agent interaction graph (JSON)
-pnpm aoi:handoffs       # SDD phase sequence and its artifact contract
-pnpm aoi:determinism    # per-file determinism classification
-pnpm aoi:ast-lens       # fold function bodies, keep signatures
+pnpm aoi:graph --hubs          # fan-out ranking; bare: full graph JSON
+pnpm aoi:handoffs              # SDD phase sequence and its artifact contract
+pnpm aoi:determinism --summary # count per class; bare: one row per file
+pnpm aoi:ast-lens <file>       # fold function bodies, keep signatures
 \`\`\`
 
 ## Architecture
@@ -225,7 +232,7 @@ ${renderAreaTable(repoRoot)}
 
 Do not mistake that table for the architecture. It is a taxonomy, and a taxonomy
 hides the thing that actually matters — who calls whom, in what order. For the
-real shape run \`pnpm aoi:graph\` and \`pnpm aoi:handoffs\`: they answer from the
+real shape run \`pnpm aoi:graph --hubs\` and \`pnpm aoi:handoffs\`: they answer from the
 current tree instead of from prose written once and never re-measured.
 
 The governance spine is \`.specify/memory/constitution.md\` and its five
@@ -245,8 +252,7 @@ inference tokens.
 
 | Gate | Refuses |
 | --- | --- |
-| \`aoi:srp\` | a governed file over 300 LOC (Invariant 5), as a ratchet: recorded debt may only shrink |
-| \`test:parity\` | any drift between a governed path and its \`scaffold/\` mirror (Principle I) |
+| \`aoi:srp\` | a governed file over 300 LOC (Invariant 5), as a ratchet: recorded debt may only shrink |${dev ? '\n| `test:parity` | any drift between a governed path and its `scaffold/` mirror (Principle I) |' : ''}
 | \`aoi:reachability\` | a source file no test ever loads |
 | \`aoi:routing\` | an agent with no registry row, an unknown category, or a definition file that is not there |
 | \`aoi:providers\` | an agent block that names a provider, or an assigned model this machine does not have configured |
@@ -256,20 +262,20 @@ inference tokens.
 | \`aoi:invariant-gate\` | a Behavioral Intent Contract invariant with no test asserting it |
 | \`aoi:blueprint-gate\` | a System Blueprint Contract left unclosed, or missing its diagram |
 | \`aoi:hooks\` | harness hooks declared but not wired into \`.claude/settings.json\` |
-
+${dev ? `
 Adding a file under a governed path means mirroring it into \`scaffold/\` in the
 same change, or \`test:parity\` fails. Adding one no test loads fails
 \`aoi:reachability\`.
-
+` : ''}
 ## Working conventions
 
 - **Most of this tree is gitignored, and most of it is hidden.** For files use
-  \`fd -H -I\` — two flags: \`-H\` for dot-directories, \`-I\` for ignored ones. Here
-  \`.md\` files count 60 without them and 1356 with. For content use
-  \`rtk proxy rg --no-ignore\`: bare \`rg\` is rewritten to \`grep\` by the RTK hook, and
-  \`grep\` rejects \`--no-ignore\` outright, so the plain form cannot be followed.
-- \`compile-rules.mjs\` takes \`--workspace ${workspace}\`. Unknown flags fall back
-  to defaults silently rather than erroring.
+  \`fd -H -I -E node_modules\`: \`-H\` for dot-directories, \`-I\` for ignored ones,
+  \`-E\` drops dependencies. For content use
+  \`rtk proxy rg --no-ignore -g '!node_modules'\`: bare \`rg\` is rewritten by the
+  RTK hook to \`grep\`, and \`grep\` rejects \`--no-ignore\`.
+- \`aoi:sync-rules\` names the workspace after the directory unless given
+  \`--workspace "${workspace}"\`: pass it from a worktree or a copy.
 - ICM content passes through a shell: backticks inside it are command-substituted.
   Keep them out of \`icm store -c\` values.
 - Comments in this codebase carry the measured defect that motivated the code,
