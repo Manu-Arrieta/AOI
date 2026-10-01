@@ -66,10 +66,15 @@ describe('ledger accounting', () => {
     assert.equal(ledger.phases.P2.percentSaved, 'n/a')
   })
 
-  it('never reports a negative saving when the optimized path costs more', () => {
+  it('reports a loss as a loss, and the totals still close', () => {
+    // Antes este test fijaba lo contrario —ahorro 0 cuando AOI costaba más—, y
+    // ese piso era el que hacía mentir al porcentaje y al total.
     const ledger = createLedger()
     ledger.record('P1', 'one', { raw: 100, opt: 150, provenance: FIXTURE })
-    assert.equal(ledger.phases.P1.savedTokens, 0)
+    ledger.record('P2', 'two', { raw: 1000, opt: 250, provenance: MEASURED })
+    assert.equal(ledger.phases.P1.savedTokens, -50)
+    assert.equal(ledger.phases.P1.percentSaved, '-50.0%')
+    assert.equal(ledger.totals.savedTokens, ledger.totals.rawTokens - ledger.totals.optimizedTokens)
   })
 })
 
