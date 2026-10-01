@@ -182,5 +182,7 @@ Present the proposal to the Owner. Ask:
 - If changes requested → iterate the proposal
 - If cancelled → update registry to `❌ Cancelado`, persist reason in ICM
 
+**Corte de contexto:** la fase siguiente arranca en un contexto nuevo (sesión o subagente) con los artefactos y facts de esta (`aoi:handoffs`), no con este chat.
+
 **The change to start is:**
 {{input}}

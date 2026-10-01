@@ -15,7 +15,8 @@
  * no puede reproducir ese hash.
  *
  * Leer es seguro — el archivo contiene REFERENCIAS, no claves — pero igual se filtra a
- * `name`, `vendor`, `id` y `models[].name`, y `apiKey` nunca sale de acá.
+ * `name`, `vendor`, `id`, `models[].name` y `models[].maxInputTokens`, y `apiKey` nunca
+ * sale de acá.
  */
 
 import fs from 'node:fs'
@@ -26,6 +27,12 @@ import { fileURLToPath } from 'node:url'
 /** Campos que se conservan de cada modelo. `apiKey` NO está, y no es un olvido. */
 const SAFE_PROVIDER = ['name', 'vendor']
 const SAFE_MODEL = ['id', 'name']
+/**
+ * Numéricos que se conservan sólo si el modelo los declara. `maxInputTokens` es la
+ * ventana que lee `context-window.mjs`; medido el 2026-10-01, 7 de los 11 modelos
+ * declarados la traen y 4 no (Kimi, MiniMax y GLM 5.3 vía Nvidia), así que un campo ausente no se rellena con nada.
+ */
+const SAFE_MODEL_NUMERIC = ['maxInputTokens']
 
 /**
  * El directorio `User` de VS Code por plataforma.
@@ -101,6 +108,7 @@ export function readProviders(file) {
       if (!m || typeof m !== 'object') continue
       const model = {}
       for (const k of SAFE_MODEL) model[k] = m[k]
+      for (const k of SAFE_MODEL_NUMERIC) if (Number.isFinite(m[k]) && m[k] > 0) model[k] = m[k]
       provider.models.push(model)
     }
     out.push(provider)
@@ -113,7 +121,9 @@ export function flatten(providers) {
   const out = []
   for (const p of providers ?? []) {
     for (const m of p.models ?? []) {
-      out.push({ provider: p.name, vendor: p.vendor, id: m.id, name: m.name })
+      const entry = { provider: p.name, vendor: p.vendor, id: m.id, name: m.name }
+      if (m.maxInputTokens) entry.maxInputTokens = m.maxInputTokens
+      out.push(entry)
     }
   }
   return out

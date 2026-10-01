@@ -162,5 +162,7 @@ If ICM warns about topic exceeding 7 entries:
 icm_memory_consolidate(topic: "sdd-{WORKSPACE}-{FEATURE}-TASK-YYYY-NNN")
 ```
 
+**Corte de contexto:** la fase siguiente arranca en un contexto nuevo (sesión o subagente) con los artefactos y facts de esta (`aoi:handoffs`), no con este chat.
+
 **The task to implement is:**
 {{input}}

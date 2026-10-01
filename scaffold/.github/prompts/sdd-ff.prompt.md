@@ -136,6 +136,8 @@ Show:
 - If changes requested → iterate (re-run the affected step)
 - If cancelled → update registry, persist reason
 
+**Corte de contexto:** la fase siguiente arranca en un contexto nuevo (sesión o subagente) con los artefactos y facts de esta (`aoi:handoffs`), no con este chat.
+
 **The task to fast-forward is:**
 {{input}}
 

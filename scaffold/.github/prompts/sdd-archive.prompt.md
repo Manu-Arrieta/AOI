@@ -179,5 +179,7 @@ Write `.tasks/{feature-name}/TASK-YYYY-NNN/archive-report.md`:
    )
    ```
 
+**Corte de contexto:** con la tarea archivada, lo siguiente arranca en un contexto nuevo, no en este chat.
+
 **The task to archive is:**
 {{input}}
