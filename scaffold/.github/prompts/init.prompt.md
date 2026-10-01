@@ -237,7 +237,6 @@ Check all hook files in `.github/hooks/`:
 | `icm.json`                | `SessionStart`, `PreToolUse`, `PostToolUse`, `UserPromptSubmit` |
 | `rtk-rewrite.json`        | `PreToolUse`                                                    |
 | `session-init.json`       | `SessionStart`                                                  |
-| `post-tool-learning.json` | `PostToolUse`                                                   |
 | `session-close.json`      | `Stop`                                                          |
 
 Validate: each hook file is valid JSON with `hooks` object containing PascalCase event names.

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
 import { auditHookWiring, installClaudeHooks, readDeclarations, toClaudeSettings } from './install-hooks.mjs'
@@ -23,7 +24,7 @@ const decl = (event, command) => JSON.stringify({ hooks: { [event]: [{ type: 'co
 
 describe('the shipped hooks reach a harness', () => {
   it('every declaration is loaded by something', () => {
-    assert.deepEqual(auditHookWiring(REPO).orphaned, [])
+    assert.deepEqual(auditHookWiring(REPO, { userHooks: {} }).orphaned, [])
   })
 
   it('there are declarations to wire in the first place', () => {
@@ -32,7 +33,7 @@ describe('the shipped hooks reach a harness', () => {
   })
 
   it('every script a shipped hook invokes exists and is executable', () => {
-    assert.deepEqual(auditHookWiring(REPO).broken, [])
+    assert.deepEqual(auditHookWiring(REPO, { userHooks: {} }).broken, [])
   })
 })
 
@@ -45,11 +46,11 @@ describe('a hook whose script cannot run is as bad as one nobody loads', () => {
     const root = workspace({
       '.github/hooks/h.json': decl('PreToolUse', 'bash .github/scripts/fantasma.sh'),
       '.claude/settings.json': JSON.stringify({
-        hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [{ command: 'bash .github/scripts/fantasma.sh' }] }] },
+        hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [{ command: 'bash "${CLAUDE_PROJECT_DIR:-.}/.github/scripts/fantasma.sh"' }] }] },
       }),
     })
 
-    const r = auditHookWiring(root)
+    const r = auditHookWiring(root, { userHooks: {} })
 
     assert.deepEqual(r.orphaned, [], 'está cableado; el problema es otro')
     assert.equal(r.broken.length, 1)
@@ -62,12 +63,12 @@ describe('a hook whose script cannot run is as bad as one nobody loads', () => {
       '.github/hooks/h.json': decl('PreToolUse', 'bash .github/scripts/inerte.sh'),
       '.github/scripts/inerte.sh': '#!/usr/bin/env bash\nexit 0\n',
       '.claude/settings.json': JSON.stringify({
-        hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [{ command: 'bash .github/scripts/inerte.sh' }] }] },
+        hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [{ command: 'bash "${CLAUDE_PROJECT_DIR:-.}/.github/scripts/inerte.sh"' }] }] },
       }),
     })
     fs.chmodSync(path.join(root, '.github/scripts/inerte.sh'), 0o644)
 
-    assert.match(auditHookWiring(root).broken[0], /no es ejecutable/)
+    assert.match(auditHookWiring(root, { userHooks: {} }).broken[0], /no es ejecutable/)
     clean(root)
   })
 })
@@ -79,7 +80,7 @@ describe('translation into the harness shape', () => {
     // silently ignores, which is the failure this whole module exists to end.
     const out = toClaudeSettings([{ source: 'x', hooks: JSON.parse(decl('PreToolUse', 'bash a.sh')).hooks }])
     assert.equal(out.hooks.PreToolUse[0].matcher, 'Bash')
-    assert.equal(out.hooks.PreToolUse[0].hooks[0].command, 'bash a.sh')
+    assert.equal(out.hooks.PreToolUse[0].hooks[0].command, 'bash "${CLAUDE_PROJECT_DIR:-.}/a.sh"')
   })
 
   it('groups several declarations of the same event under one matcher', () => {
@@ -122,7 +123,7 @@ describe('the audit detects an unwired declaration', () => {
     // Negative control: the exact state the audit found in the repository —
     // five declarations, five scripts on disk, nobody loading any of them.
     const root = workspace({ '.github/hooks/h.json': decl('PreToolUse', 'bash orphan.sh') })
-    assert.deepEqual(auditHookWiring(root).orphaned, ['.github/hooks/h.json'])
+    assert.deepEqual(auditHookWiring(root, { userHooks: {} }).orphaned, ['.github/hooks/h.json'])
     clean(root)
   })
 
@@ -136,7 +137,7 @@ describe('the audit detects an unwired declaration', () => {
       '.claude/settings.json': '{"hooks":{}}',
     })
 
-    assert.deepEqual(auditHookWiring(root).orphaned, ['.github/hooks/empty.json'])
+    assert.deepEqual(auditHookWiring(root, { userHooks: {} }).orphaned, ['.github/hooks/empty.json'])
     clean(root)
   })
 
@@ -149,8 +150,8 @@ describe('the audit detects an unwired declaration', () => {
       { source: 'b', hooks: JSON.parse(decl('PostToolUse', 'bash post.sh')).hooks },
     ])
 
-    assert.equal(out.hooks.PreToolUse[0].hooks[0].command, 'bash pre.sh')
-    assert.equal(out.hooks.PostToolUse[0].hooks[0].command, 'bash post.sh')
+    assert.equal(out.hooks.PreToolUse[0].hooks[0].command, 'bash "${CLAUDE_PROJECT_DIR:-.}/pre.sh"')
+    assert.equal(out.hooks.PostToolUse[0].hooks[0].command, 'bash "${CLAUDE_PROJECT_DIR:-.}/post.sh"')
     assert.equal(out.hooks.PreToolUse[0].hooks.length, 1)
     clean(workspace({}))
   })
@@ -162,10 +163,36 @@ describe('the audit detects an unwired declaration', () => {
       '.github/hooks/h.json': JSON.stringify({
         hooks: { PreToolUse: [{ type: 'command', command: 'bash a.sh' }, { type: 'command', command: 'bash b.sh' }] },
       }),
-      '.claude/settings.json': JSON.stringify({ hooks: { PreToolUse: [{ hooks: [{ command: 'bash a.sh' }] }] } }),
+      '.claude/settings.json': JSON.stringify({ hooks: { PreToolUse: [{ hooks: [{ command: 'bash "${CLAUDE_PROJECT_DIR:-.}/a.sh"' }] }] } }),
     })
 
-    assert.deepEqual(auditHookWiring(root).orphaned, ['.github/hooks/h.json'])
+    assert.deepEqual(auditHookWiring(root, { userHooks: {} }).orphaned, ['.github/hooks/h.json'])
     clean(root)
   })
+})
+
+describe('the user scope is the single source of what it already injects', () => {
+  it('leaves out of the project every icm mode the user settings fire', () => {
+    // Regresión de A1: `icm init --mode hook` y `icm.json` disparaban el mismo
+    // `icm hook prompt` con otra cadena, y Claude Code no lo deduplicaba.
+    const decl = { source: 'icm', hooks: { UserPromptSubmit: [{ command: 'bash .github/scripts/icm-hook.sh prompt' }] } }
+    const user = { UserPromptSubmit: [{ hooks: [{ type: 'command', command: 'icm hook prompt' }] }] }
+    assert.deepEqual(toClaudeSettings([decl], { userHooks: user }).hooks, {})
+    assert.equal(toClaudeSettings([decl]).hooks.UserPromptSubmit[0].hooks.length, 1)
+  })
+})
+
+describe('the CLI refuses an argument it does not know', () => {
+  // Regresión de D1: con `argv.includes('--audit')`, `--audti` corría la rama
+  // que ESCRIBE `.claude/settings.json` y salía con 0.
+  const CLI = path.join(REPO, 'scripts/multi-harness/install-hooks.mjs')
+  for (const args of [['--audti'], ['--audit', '--bogus'], ['--user-settings']]) {
+    it(`exits 2 and writes nothing for ${args.join(' ')}`, () => {
+      const root = workspace({ '.github/hooks/h.json': decl('PreToolUse', 'bash h.sh') })
+      const r = spawnSync(process.execPath, [CLI, ...args], { cwd: root, encoding: 'utf8' })
+      assert.equal(r.status, 2, r.stderr)
+      assert.ok(!fs.existsSync(path.join(root, '.claude/settings.json')), 'no tiene que escribir nada')
+      clean(root)
+    })
+  }
 })

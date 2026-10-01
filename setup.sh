@@ -2103,6 +2103,12 @@ ok "ICM → Workspace MCP registered (.vscode/mcp.json)"
 if [[ -n "$(get_codebase_memory_path || true)" ]]; then
   ok "codebase-memory-mcp → Workspace MCP registered (.vscode/mcp.json)"
 fi
+# `icm init --mode hook` registra `icm hook start|pre|post|prompt|compact|end`
+# en el settings de USUARIO de Claude Code (y en Copilot CLI, Codex y
+# OpenCode): es la fuente única de esas inyecciones en Claude Code. Tiene que
+# correr ANTES de install-hooks.mjs, que lee ese settings y no vuelve a cablear
+# en el proyecto lo que ya dispara el usuario. Con los dos, UserPromptSubmit
+# inyectaba el recall dos veces por prompt (270 164 B en 155 prompts medidos).
 icm init --mode hook 2>/dev/null && ok "ICM → Hooks installed (auto-extraction)" || warn "ICM hooks skipped"
 icm init --mode skill 2>/dev/null && ok "ICM → Skills installed" || warn "ICM skills skipped"
 # `icm init --mode cli` writes rule files for every tool it knows, so it can
