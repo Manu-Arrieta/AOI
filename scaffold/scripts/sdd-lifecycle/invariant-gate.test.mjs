@@ -33,6 +33,20 @@ describe('invariant-gate unit tests', () => {
     assert.equal(parseFactTable('').length, 0)
   })
 
+  it('parseFactTable keeps a key that fills the 32-char column, separated by ONE space', () => {
+    // `icm` imprime `{key:<32} {value}`. Antes esta fila se descartaba en silencio
+    // y el invariante salía del gate: la guardia de cero filas no lo veía porque
+    // las demás sí se leían.
+    const long = 'bic.TASK-2026-001-checkout.never.1'
+    const facts = parseFactTable(`${FACT_TABLE}\n${long} NUNCA cobrar dos veces`)
+    assert.equal(facts.length, 6)
+    assert.deepEqual(facts.at(-1), { key: long, value: 'NUNCA cobrar dos veces' })
+  })
+
+  it('parseFactTable still rejects `key: value`, which is not an icm table', () => {
+    assert.equal(parseFactTable('bic.X.never.1: NUNCA algo').length, 0)
+  })
+
   it('extractContractRules keeps only BIC never/oracle facts', () => {
     const rules = extractContractRules(parseFactTable(FACT_TABLE))
     assert.equal(rules.length, 4)

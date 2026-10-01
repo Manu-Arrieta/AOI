@@ -20,6 +20,9 @@ import { execFileSync } from 'node:child_process'
 export const NEVER_KEY_PATTERN = /^bic\.([A-Za-z0-9_-]+)\.never\.(\d+)$/
 export const ORACLE_KEY_PATTERN = /^bic\.([A-Za-z0-9_-]+)\.oracle$/
 
+/** Ancho de la columna de claves en la tabla de `icm facts list`. */
+export const ICM_KEY_COLUMN = 32
+
 /**
  * Parses the two-column table emitted by `icm facts list <entity>`.
  * @param {string} text
@@ -33,11 +36,18 @@ export function parseFactTable(text = '') {
     if (/^-{3,}$/.test(line.trim())) continue
     if (/^key\s+value$/i.test(line.trim())) continue
 
-    const match = line.match(/^(\S+)\s{2,}(.*)$/)
+    // `icm` imprime `{key:<32} {value}`: una clave de 32 caracteres o más queda
+    // separada de su valor por UN espacio. Exigir dos descartaba esa fila en
+    // silencio — medido el 2026-09-28 con `bic.TASK-2026-001-checkout.never.1`,
+    // que desaparecía del gate sin que la guardia de "cero filas" lo notara
+    // porque las demás sí se leían. Un espacio simple con una clave CORTA sigue
+    // rechazándose: es la firma de `key: value`, un formato que no es de `icm`.
+    const match = line.match(/^(\S+)(\s+)(.*)$/)
     if (!match) continue
+    if (match[2].length < 2 && match[1].length < ICM_KEY_COLUMN) continue
 
     const key = match[1].trim()
-    const value = match[2].trim()
+    const value = match[3].trim()
     if (key) facts.push({ key, value })
   }
   return facts
