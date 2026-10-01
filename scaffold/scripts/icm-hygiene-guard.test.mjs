@@ -9,7 +9,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
 
-import { checkIcmHygiene, classifyMemories, junkKind, stalePaths, workspaceTopics } from './icm-hygiene-guard.mjs'
+import { checkIcmHygiene, classifyMemories, junkKind, mainCheckoutRoot, stalePaths, workspaceTopics } from './icm-hygiene-guard.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 
@@ -35,6 +35,11 @@ describe('junkKind: the measured shapes of extractor junk', () => {
     'RESUELTO 2026-10-01 rama fix/stress-ledger-truth dd25220: token-accounting.mjs mide lo que reporta',
     'Nuxt UI v4.x uses `:items` instead of `:options` on USelect',
     'PURGA ICM 2026-10-01 autorizada por el Owner: 193 memorias eliminadas',
+    // Falsos positivos del verificador: prosa curada que empieza nombrando código.
+    '`set` on an existing key supersedes the previous row and keeps its history',
+    '`assemblePhaseContext.mjs` materializa el contrato de entrada de cada fase',
+    // Una cita al principio no hace fragmento a una memoria larga.
+    `"Nunca por largo" fue la regla del Owner para los prompts de continuación: ${'x'.repeat(140)}`,
   ]
   for (const summary of CURATED) {
     it(`curated is not junk: ${summary.slice(0, 40)}`, () => assert.equal(junkKind(summary), null))
@@ -59,6 +64,40 @@ describe('stalePaths: only paths this tree could have', () => {
 
   it('an elided example is not a path', () => {
     assert.deepEqual(stalePaths('el guard de scripts/....mjs no corría', '/r', exists), [])
+  })
+
+  for (const said of ['eliminado', 'se borró: quedó borrado', 'was removed', 'deleted in 3eba0b6', 'ya no existe']) {
+    it(`a memory that records the removal ("${said}") is not stale`, () => {
+      assert.deepEqual(stalePaths(`scripts/nvidia-vscode-setup.sh ${said}`, '/r', exists), [])
+    })
+  }
+
+  it('"a.md/b.md" is two files, judged one by one', () => {
+    const t = new Set(['/r/README.md', '/r/README.es.md', '/r/docs', '/r/docs/a.md'])
+    assert.deepEqual(stalePaths('ver README.md/README.es.md', '/r', (p) => t.has(p)), [])
+    assert.deepEqual(stalePaths('ver docs/a.md/b.md', '/r', (p) => t.has(p)), ['docs/b.md'])
+  })
+
+  it('a file the worktree lacks but the main checkout has is not stale', () => {
+    const t = new Set(['/wt/docs', '/main/docs', '/main/docs/internal/proposals/p.md'])
+    assert.deepEqual(stalePaths('docs/internal/proposals/p.md', ['/wt', '/main'], (p) => t.has(p)), [])
+    assert.deepEqual(stalePaths('docs/internal/proposals/p.md', ['/wt'], (p) => t.has(p)), ['docs/internal/proposals/p.md'])
+  })
+})
+
+describe('mainCheckoutRoot', () => {
+  it("a worktree resolves to the main checkout, from git's common dir", async () => {
+    const main = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi main '))
+    fs.mkdirSync(path.join(main, '.git'))
+    const r = await mainCheckoutRoot('/some/worktree', async () => ({ stdout: `${path.join(main, '.git')}\n` }))
+    assert.equal(r, main)
+  })
+
+  it('the main checkout itself, a bare answer or no git → null', async () => {
+    const main = fs.mkdtempSync(path.join(os.tmpdir(), 'aoi main '))
+    assert.equal(await mainCheckoutRoot(main, async () => ({ stdout: path.join(main, '.git') })), null)
+    assert.equal(await mainCheckoutRoot(main, async () => ({ stdout: 'All 15 ICM hook entries are healthy.' })), null)
+    assert.equal(await mainCheckoutRoot(main, async () => { throw new Error('no git') }), null)
   })
 })
 

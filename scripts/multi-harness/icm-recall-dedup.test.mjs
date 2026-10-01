@@ -40,14 +40,15 @@ const HEADER = "Here is context recalled from ICM's memory store (stored notes f
 const recall = (...items) => fs.writeFileSync(out, `${HEADER}\n\n${items.map((i) => `- ${i}`).join('\n')}\n\n---\n`)
 // /bin/bash es el 3.2 de macOS: el que corre los hooks si nadie instaló otro.
 const BASH = fs.existsSync('/bin/bash') ? '/bin/bash' : 'bash'
-const fire = (mode, stdin, { dialect = ['claude'], configDir = EMPTY, rc = 0 } = {}) =>
+const fire = (mode, stdin, { dialect = ['claude'], configDir = EMPTY, rc = 0, env = {}, PATH = `${bin}${path.delimiter}${process.env.PATH}` } = {}) =>
   spawnSync(BASH, [HOOK, mode, ...dialect], {
-    env: { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH}`, TMPDIR: tmp, CLAUDE_CONFIG_DIR: configDir, FAKE_RC: String(rc) },
+    env: { ...process.env, PATH, TMPDIR: tmp, CLAUDE_CONFIG_DIR: configDir, FAKE_RC: String(rc), ...env },
     input: JSON.stringify(stdin),
     encoding: 'utf8',
   })
 const prompt = (stdin, opts) => fire('prompt', { prompt: 'arreglá el cableado', ...stdin }, opts)
 const items = (stdout) => stdout.split('\n').filter((l) => l.startsWith('- '))
+const icmCalls = () => (fs.existsSync(log) ? fs.readFileSync(log, 'utf8').split('\n').filter(Boolean) : [])
 const promptCalls = () => (fs.existsSync(log) ? fs.readFileSync(log, 'utf8').split('\n').filter((l) => l === 'icm hook prompt').length : 0)
 
 describe('icm-hook.sh prompt: a recall line enters a session once', () => {
@@ -108,6 +109,60 @@ describe('icm-hook.sh prompt: a recall line enters a session once', () => {
     assert.equal(r.stdout, 'partial\n\n')
   })
 
+  for (const tail of ['\n', '', '\n\n']) {
+    it(`what passes the filter keeps icm's bytes (ending ${JSON.stringify(tail)})`, () => {
+      const body = `${HEADER}\n\n- uno\n- dos\n\n---${tail}`
+      fs.writeFileSync(out, body)
+      assert.equal(prompt({ session_id: 'S' }).stdout, body)
+      fs.writeFileSync(out, `${HEADER}\n\n- dos\n- tres\n\n---${tail}`)
+      assert.equal(prompt({ session_id: 'S' }).stdout, `${HEADER}\n\n- tres\n\n---${tail}`)
+    })
+  }
+
+  it('a broken awk fails open: the recall unfiltered, never none', () => {
+    const broken = path.join(dir, 'broken awk')
+    fs.mkdirSync(broken, { recursive: true })
+    fs.writeFileSync(path.join(broken, 'awk'), '#!/bin/sh\nexit 2\n', { mode: 0o755 })
+    recall('uno')
+    const opts = { PATH: `${broken}${path.delimiter}${bin}${path.delimiter}${process.env.PATH}` }
+    prompt({ session_id: 'S' }, opts)
+    const r = prompt({ session_id: 'S' }, opts)
+    assert.equal(r.status, 0)
+    assert.deepEqual(items(r.stdout), ['- uno'])
+  })
+
+  it('no awk at all fails open too', () => {
+    // Un PATH con el icm falso y lo que él necesita (bash, cat), sin awk. El
+    // directorio del registro ya existe para que el camino llegue hasta awk.
+    const noawk = path.join(dir, 'no awk')
+    fs.mkdirSync(noawk, { recursive: true })
+    for (const tool of ['bash', 'cat']) {
+      const real = spawnSync('/bin/sh', ['-c', `command -v ${tool}`], { encoding: 'utf8' }).stdout.trim()
+      if (!fs.existsSync(path.join(noawk, tool))) fs.symlinkSync(real, path.join(noawk, tool))
+    }
+    if (!fs.existsSync(path.join(noawk, 'icm'))) fs.symlinkSync(path.join(bin, 'icm'), path.join(noawk, 'icm'))
+    fs.mkdirSync(path.join(tmp, 'aoi-recall-seen'), { recursive: true })
+    recall('uno')
+    const r = prompt({ session_id: 'S' }, { PATH: noawk })
+    assert.equal(r.status, 0)
+    assert.deepEqual(items(r.stdout), ['- uno'])
+  })
+
+  it('a seen line counts again after RECALL_TTL prompts (rewind fires no hook)', () => {
+    const env = { AOI_RECALL_TTL: '3' }
+    recall('uno')
+    assert.deepEqual(items(prompt({ session_id: 'S' }, { env }).stdout), ['- uno'])
+    assert.equal(prompt({ session_id: 'S' }, { env }).stdout, '')
+    assert.equal(prompt({ session_id: 'S' }, { env }).stdout, '')
+    assert.deepEqual(items(prompt({ session_id: 'S' }, { env }).stdout), ['- uno'])
+  })
+
+  it('the default TTL keeps a line out across a long stretch of prompts', () => {
+    recall('uno')
+    prompt({ session_id: 'S' })
+    for (let i = 0; i < 38; i++) assert.equal(prompt({ session_id: 'S', prompt: `p${i}` }).stdout, '')
+  })
+
   it('Copilot (no dialect) gets the same filter', () => {
     recall('uno')
     prompt({ session_id: 'S' }, { dialect: [] })
@@ -147,6 +202,22 @@ describe('the register follows what the context still holds', () => {
     prompt({ session_id: 'S' })
     fire('compact', { session_id: 'S' }, { configDir: userCompact })
     assert.deepEqual(items(prompt({ session_id: 'S' }).stdout), ['- uno'])
+  })
+})
+
+describe('compact never calls icm from the project', () => {
+  // main no cableaba `icm hook compact` desde el proyecto y ese modo extrae
+  // memorias del transcript: declararlo en icm.json lo encendía en Copilot.
+  it('clean machine: compact only clears the register; icm is not run', () => {
+    recall('uno')
+    prompt({ session_id: 'S' })
+    fs.rmSync(log, { force: true })
+    for (const dialect of [['claude'], []]) {
+      const r = fire('compact', { session_id: 'S', trigger: 'auto' }, { dialect })
+      assert.equal(r.status, 0)
+      assert.equal(r.stdout, '')
+    }
+    assert.deepEqual(icmCalls(), [])
   })
 })
 

@@ -44,8 +44,11 @@ export const JUNK_RULES = {
   // El extractor explicando que no hay nada que guardar, guardado como memoria.
   refusal: /(?:^(?:These|The|The provided) (?:tool )?outputs? (?:are|contain|show))|(?:no durable (?:facts|architectural))/i,
   // Una línea suelta de la salida de una herramienta: número de línea, comentario
-  // de código, string citado, glifos de `node --test`.
-  fragment: /^\s*(\d+\s*[:\s]\s*\S|\/\/|\/\*|\*\s|\*$|['"`]|[✖✔ℹ▶]|Structured output provided successfully\s*$)/,
+  // de código, string citado, glifos de `node --test`. El backtick NO: una
+  // memoria curada empieza a menudo nombrando código ("`set` on an existing
+  // key supersedes…") y la regla la marcaba como basura. Sólo cuenta debajo de
+  // FRAGMENT_MAX caracteres, como en la purga: un fragmento es una línea.
+  fragment: /^\s*(\d+\s*[:\s]\s*\S|\/\/|\/\*|\*\s|\*$|['"]|[✖✔ℹ▶]|Structured output provided successfully\s*$)/,
   // Una fila de `--help`: flag, columna de espacios, descripción.
   cliHelp: /^\s*-{1,2}[a-z][\w-]*(\s+<[^>]+>)?\s{2,}\S/,
   // La respuesta conversacional del LLM extractor, no un hecho.
@@ -55,8 +58,27 @@ export const JUNK_RULES = {
 /** Por qué una memoria es basura, o null si ninguna regla la reconoce. */
 export function junkKind(summary) {
   const s = String(summary ?? '')
-  for (const [kind, re] of Object.entries(JUNK_RULES)) if (re.test(s)) return kind
+  for (const [kind, re] of Object.entries(JUNK_RULES)) {
+    if (kind === 'fragment' && s.length >= FRAGMENT_MAX) continue
+    if (re.test(s)) return kind
+  }
   return null
+}
+
+export const FRAGMENT_MAX = 140
+
+// Una memoria que REGISTRA que un archivo se sacó no está vieja por citarlo:
+// "eliminado ChatLanguageModel.example.json" es el hecho, no un estado viejo.
+const REMOVAL = /\b(removed|deleted|dropped|no longer exists|eliminad[oa]s?|borrad[oa]s?|retirad[oa]s?|quitad[oa]s?|ya no existe)\b/i
+
+// "README.md/README.es.md" son dos archivos, no un directorio README.md.
+const FILE_SEGMENT = /^[^.].*\.[a-z]{1,5}$/
+function splitAlternatives(rel) {
+  const segs = rel.split('/')
+  const firstFile = segs.findIndex((x) => FILE_SEGMENT.test(x))
+  if (firstFile === -1 || firstFile === segs.length - 1) return [rel]
+  const prefix = segs.slice(0, firstFile)
+  return segs.slice(firstFile).map((f) => [...prefix, f].join('/'))
 }
 
 // Una ruta relativa con al menos un `/` y extensión de archivo.
@@ -65,26 +87,48 @@ export function junkKind(summary) {
 const PATH_TOKEN = /(?:^|[\s`'"([])((?:\.?[\w@-][\w.@-]*\/)+[\w-][\w.-]*\.[a-z]{1,5})(?=$|[\s`'"),.:;\]])/g
 
 /**
- * Las rutas que la memoria cita y este árbol no tiene.
+ * Las rutas que la memoria cita y ninguna de las raíces tiene.
  *
- * Sólo se juzga una ruta cuyo primer segmento SÍ existe en la raíz: "src/x.ts"
- * de otro proyecto no es evidencia de nada acá, pero "scripts/aoi-os/x.mjs" con
- * `scripts/` presente y el archivo ausente es exactamente la memoria vieja que
- * el recall servía como actual.
+ * Sólo se juzga una ruta cuyo primer segmento SÍ existe en alguna raíz:
+ * "src/x.ts" de otro proyecto no es evidencia de nada acá, pero
+ * "scripts/aoi-os/x.mjs" con `scripts/` presente y el archivo ausente es
+ * exactamente la memoria vieja que el recall servía como actual. Raíces, en
+ * plural: un worktree no tiene los archivos sin versionar del checkout
+ * principal (.tasks/, propuestas sin commitear) y los daba por inexistentes.
  *
  * @param {string} summary
- * @param {string} root
+ * @param {string|string[]} roots
  * @param {(p: string) => boolean} [exists]
  */
-export function stalePaths(summary, root, exists = fs.existsSync) {
+export function stalePaths(summary, roots, exists = fs.existsSync) {
+  const text = String(summary ?? '')
+  if (REMOVAL.test(text)) return []
+  const list = [].concat(roots)
+  const anyHas = (rel) => list.some((r) => exists(path.join(r, rel)))
   const out = new Set()
-  for (const m of String(summary ?? '').matchAll(PATH_TOKEN)) {
-    const rel = m[1].replace(/^\.\//, '')
-    const first = rel.split('/')[0]
-    if (!exists(path.join(root, first))) continue
-    if (!exists(path.join(root, rel))) out.add(rel)
+  for (const m of text.matchAll(PATH_TOKEN)) {
+    for (const rel of splitAlternatives(m[1].replace(/^\.\//, ''))) {
+      if (!anyHas(rel.split('/')[0])) continue
+      if (!anyHas(rel)) out.add(rel)
+    }
   }
   return [...out]
+}
+
+/**
+ * La raíz del checkout principal cuando `repoRoot` es un worktree (su
+ * `--git-common-dir` es el `.git` de aquél), o null.
+ */
+export async function mainCheckoutRoot(repoRoot, execFn = execFileAsync) {
+  try {
+    const { stdout } = await execFn('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: repoRoot })
+    const common = String(stdout).trim()
+    if (!path.isAbsolute(common) || path.basename(common) !== '.git') return null
+    const root = path.dirname(common)
+    return fs.existsSync(root) && path.resolve(root) !== path.resolve(repoRoot) ? root : null
+  } catch {
+    return null
+  }
 }
 
 /**
@@ -103,7 +147,7 @@ export function workspaceTopics(workspace, dirName = workspace) {
 }
 
 /** Clasifica memorias ya leídas. Exportada para fijarla sin ICM. */
-export function classifyMemories(memories, root, exists = fs.existsSync) {
+export function classifyMemories(memories, roots, exists = fs.existsSync) {
   const junk = []
   const stale = []
   for (const m of memories) {
@@ -112,7 +156,7 @@ export function classifyMemories(memories, root, exists = fs.existsSync) {
       junk.push({ id: m.id, topic: m.topic, kind })
       continue
     }
-    const paths = stalePaths(m?.summary, root, exists)
+    const paths = stalePaths(m?.summary, roots, exists)
     if (paths.length > 0) stale.push({ id: m.id, topic: m.topic, paths })
   }
   return { junk, stale }
@@ -163,7 +207,8 @@ export async function checkIcmHygiene(repoRoot, execFn = execFileAsync) {
     return { status: 'WARNING', details: `no se pudo leer ICM (${errors[0]})`, topics }
   }
 
-  const { junk, stale } = classifyMemories(memories, repoRoot)
+  const mainRoot = await mainCheckoutRoot(repoRoot, execFn)
+  const { junk, stale } = classifyMemories(memories, mainRoot ? [repoRoot, mainRoot] : [repoRoot])
   if (junk.length === 0 && stale.length === 0) {
     return { status: 'PASSED', details: `${memories.length} memoria(s) en ${topics.length} topic(s), sin basura ni rutas inexistentes`, junk, stale, topics }
   }

@@ -75,7 +75,6 @@ user_scope_fires() {
     pre) event=PreToolUse; matcher=Bash ;;
     post) event=PostToolUse; matcher=Bash ;;
     prompt) event=UserPromptSubmit ;;
-    compact) event=PreCompact ;;
     end) event=SessionEnd ;;
     *) return 1 ;;
   esac
@@ -171,8 +170,16 @@ is_continuation() {
   return $r
 }
 
+# Rewind (el de Claude Code, o editar y restaurar en VS Code) no dispara ningún
+# hook: lo inyectado en los turnos borrados sigue marcado como visto hasta un
+# compact o un arranque. Mitigación barata: una línea vista vuelve a valer
+# después de RECALL_TTL prompts con recall. Reinyectando el historial, 40
+# conserva casi todo el ahorro (ver el test); AOI_RECALL_TTL lo cambia.
+RECALL_TTL="${AOI_RECALL_TTL:-40}"
+case "$RECALL_TTL" in ''|*[!0-9]*) RECALL_TTL=40 ;; esac
+
 recall_inject() {
-  local out rc=0
+  local out feed filtered rc=0 arc=0 trail=0
   is_continuation && return 0
   # La `x` conserva los saltos finales que `$(...)` borraría: lo que no se
   # filtra sale byte por byte como lo dio icm.
@@ -185,18 +192,36 @@ recall_inject() {
     printf '%s' "$out"
     return "$rc"
   fi
-  # Si ninguna línea es nueva, tampoco va el encabezado.
-  awk -v state="$RECALL_FILE" '
-    BEGIN { while ((getline l < state) > 0) seen[l] = 1; close(state) }
+  # `<<<` agrega un salto: se lo saca antes para no sumar una línea vacía.
+  feed=$out
+  if [[ $out == *$'\n' ]]; then feed=${out%$'\n'}; trail=1; fi
+  # El registro: "#<prompts>" y "<prompt>\t<línea>" por línea inyectada. Si
+  # ninguna línea es nueva, tampoco va el encabezado.
+  filtered=$(awk -v state="$RECALL_FILE" -v ttl="$RECALL_TTL" '
+    BEGIN {
+      while ((getline l < state) > 0) {
+        if (l ~ /^#[0-9]+$/) { count = substr(l, 2) + 0; continue }
+        t = index(l, "\t"); if (t < 2) continue
+        at[substr(l, t + 1)] = substr(l, 1, t - 1) + 0
+      }
+      close(state); count++
+    }
     { line[++n] = $0
       if (substr($0, 1, 2) != "- ") { keep[n] = 1; next }
-      items++
-      if (!($0 in seen)) { keep[n] = 1; seen[$0] = 1; fresh[++m] = $0 } }
+      if (!($0 in at) || count - at[$0] >= ttl) { keep[n] = 1; at[$0] = count; m++ } }
     END {
-      if (m == 0) exit
-      for (i = 1; i <= n; i++) if (keep[i]) print line[i]
-      for (j = 1; j <= m; j++) print fresh[j] >> state
-    }' <<<"$out" || true
+      if (m > 0) for (i = 1; i <= n; i++) if (keep[i]) print line[i]
+      print "#" count > state
+      for (k in at) if (count - at[k] < ttl) print at[k] "\t" k > state
+    }' <<<"$feed"; r=$?; printf x; exit "$r") || arc=$?
+  # Sin awk, o un awk que falla: el recall sin filtrar, nunca ninguno.
+  if [ "$arc" -ne 0 ]; then
+    printf '%s' "$out"
+    return 0
+  fi
+  filtered=${filtered%x}
+  [ "$trail" = 1 ] || filtered=${filtered%$'\n'}
+  printf '%s' "$filtered"
 }
 
 # start, prompt, compact y end leen su stdin acá (es chico: no trae salida de
@@ -212,6 +237,15 @@ case "$MODE" in
     recall_maintain
     ;;
 esac
+
+# `compact` sólo vacía el registro. `icm hook compact` extrae memorias del
+# transcript, y main no lo cableaba desde el proyecto: VS Code lee
+# .github/hooks/*.json, así que llamarlo acá encendía esa escritura en cada
+# compactación de Copilot y en todo clon sin `icm init`. Donde el scope de
+# usuario lo registra, ya corre por su cuenta.
+if [ "$MODE" = compact ]; then
+  exit 0
+fi
 
 if [ "$DIALECT" = claude ] && user_scope_fires "$MODE"; then
   # Sin leer el stdin, un PostToolUse con salida grande deja a Claude Code

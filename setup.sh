@@ -2212,7 +2212,10 @@ fi
 # .claude/settings.json versionado es el mismo en toda máquina— y
 # `icm-hook.sh <modo> claude` se omite al disparar cuando este scope ya corre
 # el modo. Sin esa omisión, UserPromptSubmit inyectaba el recall dos veces por
-# prompt (270 164 B en 155 prompts medidos).
+# prompt (270 164 B en 155 prompts medidos). PreCompact también llega a
+# icm-hook.sh, pero sólo vacía su registro de recall por sesión: nunca llama
+# `icm hook compact`, que extrae memorias del transcript y que el proyecto no
+# encendía. compact y end quedan donde los pone este comando.
 icm init --mode hook 2>/dev/null && ok "ICM → Hooks installed (auto-extraction)" || warn "ICM hooks skipped"
 icm init --mode skill 2>/dev/null && ok "ICM → Skills installed" || warn "ICM skills skipped"
 # `icm init --mode cli` writes rule files for every tool it knows, so it can
