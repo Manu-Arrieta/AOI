@@ -9,6 +9,7 @@
 #   ./setup.sh --profile core /path     # base headless (default)
 #   ./setup.sh --profile advanced /path # Core + governance/indexing integrations
 #   ./setup.sh --profile dashboard /path # Advanced + auxiliary dashboard
+#   ./setup.sh --icm-db /tmp/x.db /path  # ICM aislado (también AOI_ICM_DB=...)
 
 set -euo pipefail
 
@@ -38,7 +39,13 @@ SCAFFOLD_DIR="$SCRIPT_DIR/scaffold"
 # vacío y `rm -f ""` es un no-op verificado.
 cleanup_temp_files() {
   rm -f "${FRESH_SNAPSHOT:-}" "${FRESH_RESTORE:-}" "${COMPARE_STDERR:-}" "${DASHBOARD_INSTALL_LOG:-}" 2>/dev/null || true
+  # El directorio del `icm` aislado (ver route_icm_to_isolated_db). Es un
+  # directorio y no un archivo, por eso va aparte y con -r.
+  [ -n "${AOI_ICM_SHIM_DIR:-}" ] && rm -rf "$AOI_ICM_SHIM_DIR" 2>/dev/null || true
 }
+# Vaciada ANTES del trap: un valor heredado del entorno haría que la limpieza
+# borrara con -rf un directorio que este proceso no creó.
+AOI_ICM_SHIM_DIR=""
 trap cleanup_temp_files EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
@@ -543,6 +550,9 @@ RAW_PROJECT_PATH=""
 HARNESS_EXPLICIT=0
 AUTO_YES=0
 SKIP_DASHBOARD_DEPS=0
+# Base de ICM aislada: la variable de entorno o `--icm-db`. Vacía = la base
+# real del Owner, que es lo correcto para una instalación de verdad.
+AOI_ICM_DB="${AOI_ICM_DB:-}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -572,6 +582,14 @@ while [[ $# -gt 0 ]]; do
       INSTALLATION_PROFILE="${1#*=}"
       shift
       ;;
+    --icm-db)
+      AOI_ICM_DB="$2"
+      shift 2
+      ;;
+    --icm-db=*)
+      AOI_ICM_DB="${1#*=}"
+      shift
+      ;;
     *)
       if [ -z "$RAW_PROJECT_PATH" ]; then
         RAW_PROJECT_PATH="$1"
@@ -580,6 +598,16 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# Absoluta desde acá: el instalador hace `cd "$PROJECT_PATH"` antes de Phase 5,
+# y una ruta relativa terminaría creando la base DENTRO del proyecto instalado.
+if [ -n "$AOI_ICM_DB" ]; then
+  case "$AOI_ICM_DB" in
+    /*) ;;
+    *) AOI_ICM_DB="$PWD/$AOI_ICM_DB" ;;
+  esac
+  export AOI_ICM_DB
+fi
 
 # Valida y normaliza lo que llegó por bandera ANTES de que nadie lo use.
 #
@@ -778,8 +806,83 @@ install_icm() {
   ok "ICM installed ($(icm --version 2>/dev/null))"
 }
 
+# ── ICM aislado ─────────────────────────────────────────────────────────────
+#
+# Medido el 2026-09-30: ~35 topics `aoi-*.XXXX-context` de workspaces de
+# prueba vivían en la base REAL del desarrollador, y cada corrida de
+# `aoi:installed-suite` ejecutaba `icm init --mode hook|skill|cli`, que escribe
+# en `~/.claude/` (settings.json, CLAUDE.md, commands/). Ninguna llamada de este
+# instalador llevaba `--db`, y `ICM_DB` en el entorno NO aísla: con
+# `ICM_DB=<base vacía>` `icm --read-only topics` devolvió los 425 topics reales.
+# Sólo `--db` aísla.
+#
+# Por qué un `icm` en el PATH y no una función bash: el instalador no es el
+# único que llama a `icm`. `provider-setup.mjs` (Phase 5.1) lo ejecuta por
+# nombre desde node, y una función no se hereda a un proceso que no es bash.
+# El shim cubre las dos cosas con una sola regla, y además NO corre los modos de
+# `icm` que escriben fuera del proyecto: con una base aislada nadie pidió tocar
+# la configuración global, y `--db` no los contiene.
+#
+# Lee la ruta real y la base del entorno en vez de interpolarlas en el texto:
+# así una ruta con espacios o comillas no puede romper el script. Y falla
+# CERRADO: sin alguna de las dos variables sale 3, porque caer al `icm` real
+# sería exactamente la fuga que esto existe para impedir.
+#
+# AOI_ICM_EN_SHIM corta un lazo medido el 2026-10-01: con AOI_ICM_REAL
+# resuelto por PATH DESPUÉS de anteponer el shim (`PATH=<shim>:…
+# AOI_ICM_REAL=$(command -v icm)`: bash y zsh expanden la segunda asignación con
+# el PATH de la primera), el shim se ejecutaba a sí mismo sin
+# fin, sumando un `--db` por vuelta: 2 minutos de CPU hasta matarlo a mano. Una
+# segunda entrada al shim en el mismo exec es siempre ese error, nunca una
+# llamada legítima.
+write_isolated_icm_shim() {
+  cat > "$1" <<'AOI_ICM_SHIM'
+#!/bin/sh
+# aoi-icm-aislado — generado por setup.sh (route_icm_to_isolated_db)
+if [ -z "${AOI_ICM_REAL:-}" ] || [ -z "${AOI_ICM_DB:-}" ]; then
+  echo "icm aislado: falta AOI_ICM_REAL o AOI_ICM_DB; no se cae a la base real" >&2
+  exit 3
+fi
+if [ -n "${AOI_ICM_EN_SHIM:-}" ]; then
+  echo "icm aislado: AOI_ICM_REAL ($AOI_ICM_REAL) es otro shim, no el icm real" >&2
+  exit 3
+fi
+for arg in "$@"; do
+  case "$arg" in
+    -*) continue ;;
+    init|uninstall|upgrade)
+      echo "icm $arg escribe fuera del proyecto (~/.claude y otros globales): no corre con AOI_ICM_DB" >&2
+      exit 3 ;;
+    *) break ;;
+  esac
+done
+export AOI_ICM_EN_SHIM=1
+exec "$AOI_ICM_REAL" --db "$AOI_ICM_DB" "$@"
+AOI_ICM_SHIM
+  chmod +x "$1"
+}
+
+# Idempotente: require_icm se llama tres veces, y la limpieza sólo conoce el
+# ÚLTIMO directorio: sin la guarda, cada llamada dejaba un shim huérfano en el
+# temporal. AOI_ICM_REAL se fija una sola vez y nunca se re-resuelve por PATH:
+# resuelto con el shim ya delante, apuntaría al shim, y `icm --db X --db X` es
+# un error del real ("--db can only be specified once").
+route_icm_to_isolated_db() {
+  [ -n "${AOI_ICM_DB:-}" ] || return 0
+  [ -n "${AOI_ICM_SHIM_DIR:-}" ] && return 0
+  AOI_ICM_REAL="${AOI_ICM_REAL:-$(command -v icm)}"
+  AOI_ICM_SHIM_DIR="$(mktemp -d "${TMPDIR:-/tmp}/aoi-icm-aislado.XXXXXX")"
+  mkdir -p "$(dirname "$AOI_ICM_DB")"
+  write_isolated_icm_shim "$AOI_ICM_SHIM_DIR/icm"
+  export AOI_ICM_REAL AOI_ICM_DB
+  export PATH="$AOI_ICM_SHIM_DIR:$PATH"
+  hash -r 2>/dev/null || true
+  info "ICM aislado → $AOI_ICM_DB (icm init no corre: escribe en ~/.claude)"
+}
+
 require_icm() {
   if command -v icm &>/dev/null; then
+    route_icm_to_isolated_db
     return 0
   fi
 
